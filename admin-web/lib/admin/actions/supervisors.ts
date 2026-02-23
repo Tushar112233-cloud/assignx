@@ -80,7 +80,7 @@ export async function getSupervisors(params: {
     })
   );
 
-  const filtered = supervisors.filter(Boolean);
+  const filtered = supervisors.filter((s): s is NonNullable<typeof s> => s !== null);
 
   return {
     data: filtered,
@@ -111,7 +111,7 @@ export async function getSupervisorById(supervisorId: string) {
 
   const { data: projects } = await supabase
     .from("projects")
-    .select("id, title, status, user_quote, user_id, doer_id, created_at")
+    .select("id, title, status, price, user_quote, user_id, doer_id, created_at")
     .eq("supervisor_id", supervisorId)
     .order("created_at", { ascending: false })
     .limit(50);

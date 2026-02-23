@@ -82,7 +82,7 @@ export async function getDoers(params: {
     })
   );
 
-  const filtered = doers.filter(Boolean);
+  const filtered = doers.filter((d): d is NonNullable<typeof d> => d !== null);
 
   return {
     data: filtered,
@@ -165,7 +165,7 @@ export async function getDoerById(doerId: string) {
 
   const { data: projects } = await supabase
     .from("projects")
-    .select("id, title, status, user_quote, user_id, supervisor_id, created_at")
+    .select("id, title, status, price, user_quote, user_id, supervisor_id, created_at")
     .eq("doer_id", doerId)
     .order("created_at", { ascending: false })
     .limit(50);

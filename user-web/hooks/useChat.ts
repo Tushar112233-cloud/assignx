@@ -135,7 +135,7 @@ export function useChat(projectId: string | null, userId: string | null) {
     setState((prev) => ({ ...prev, isLoading: true }))
 
     try {
-      const olderMessages = await chatService.getMessages(roomId, 50, oldestMessage.created_at)
+      const olderMessages = await chatService.getMessages(roomId, 50, oldestMessage.created_at ?? undefined)
       setState((prev) => ({
         ...prev,
         messages: [...olderMessages, ...prev.messages],

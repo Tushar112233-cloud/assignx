@@ -100,7 +100,7 @@ export async function getProjectById(id: string) {
   if (projectResult.error) throw new Error(projectResult.error.message);
 
   // Flatten supervisor/doer nested profile
-  const raw = projectResult.data as Record<string, unknown>;
+  const raw = projectResult.data as any;
   const supervisorRaw = raw.supervisor as { id: string; profile: Record<string, unknown> } | null;
   const doerRaw = raw.doer as { id: string; profile: Record<string, unknown> } | null;
 
@@ -112,7 +112,7 @@ export async function getProjectById(id: string) {
   };
 
   // Map from_status/to_status/notes to old_status/new_status/reason for the UI
-  const statusHistory = (historyResult.data || []).map((entry: Record<string, unknown>) => ({
+  const statusHistory = (historyResult.data || []).map((entry: any) => ({
     id: entry.id,
     old_status: entry.from_status,
     new_status: entry.to_status,
@@ -122,7 +122,7 @@ export async function getProjectById(id: string) {
   }));
 
   // Map transaction_type → type for the UI
-  const payments = (paymentsResult.data || []).map((txn: Record<string, unknown>) => ({
+  const payments = (paymentsResult.data || []).map((txn: any) => ({
     ...txn,
     type: txn.transaction_type,
   }));

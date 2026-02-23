@@ -216,5 +216,9 @@ export async function getAdmins() {
     .select("id, admin_role, profiles:profiles!profile_id(full_name, email)");
 
   if (error) throw new Error(error.message);
-  return data || [];
+  return (data || []).map((admin: any) => ({
+    id: admin.id,
+    role: admin.admin_role,
+    profiles: admin.profiles,
+  }));
 }
