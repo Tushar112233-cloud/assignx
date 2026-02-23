@@ -1,0 +1,200 @@
+# ===============================================
+# ASSIGN-X ROOT .GITIGNORE
+# Covers: Flutter Apps, Next.js Web Apps, Claude-Flow
+# ===============================================
+
+# -----------------------------------------------
+# NODE.JS / NEXT.JS (doer-web, user-web, superviser-web)
+# -----------------------------------------------
+node_modules/
+.next/
+out/
+.turbo/
+.vercel/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# -----------------------------------------------
+# FLUTTER / DART (doer_app, user_app, superviser_app)
+# -----------------------------------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+
+# Flutter metadata
+.metadata
+
+# Android
+**/android/.gradle/
+**/android/local.properties
+**/android/*.iml
+**/android/.idea/
+**/android/key.properties
+**/android/**/*.keystore
+**/android/**/gradle-wrapper.jar
+**/android/captures/
+**/android/.cxx/
+
+# iOS/macOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/engine/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/flutter_assets/
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/.generated/
+**/macos/Pods/
+**/macos/.symlinks/
+**/macos/Flutter/Flutter-Debug.xcconfig
+**/macos/Flutter/Flutter-Release.xcconfig
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Linux/Windows
+**/linux/flutter/ephemeral/
+**/windows/flutter/ephemeral/
+
+# Web
+**/web/favicon.png
+
+# -----------------------------------------------
+# CLAUDE-FLOW / MCP / SWARM
+# -----------------------------------------------
+.claude/settings.local.json
+.mcp.json
+claude-flow.config.json
+.swarm/
+.hive-mind/
+.claude-flow/
+memory/
+coordination/
+
+# Claude-flow specific patterns
+memory/claude-flow-data.json
+memory/sessions/*
+!memory/sessions/README.md
+memory/agents/*
+!memory/agents/README.md
+coordination/memory_bank/*
+coordination/subtasks/*
+coordination/orchestration/*
+hive-mind-prompt-*.txt
+
+# -----------------------------------------------
+# DATABASE FILES
+# -----------------------------------------------
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite3
+
+# -----------------------------------------------
+# IDE / EDITOR
+# -----------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# -----------------------------------------------
+# OPERATING SYSTEM
+# -----------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+nul
+
+# -----------------------------------------------
+# TESTING / COVERAGE
+# -----------------------------------------------
+coverage/
+.nyc_output/
+*.lcov
+.playwright-mcp/
+playwright-report/
+test-results/
+
+# -----------------------------------------------
+# BUILD / COMPILED
+# -----------------------------------------------
+dist/
+*.js.map
+*.min.js
+*.min.css
+
+# -----------------------------------------------
+# LOGS
+# -----------------------------------------------
+*.log
+logs/
+
+# -----------------------------------------------
+# TEMPORARY FILES
+# -----------------------------------------------
+*.tmp
+*.temp
+*.bak
+*.cache
+.cache/
+
+# -----------------------------------------------
+# SECRETS / CREDENTIALS (safety net)
+# -----------------------------------------------
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+credentials/
+google-services.json
+GoogleService-Info.plist
+
+# -----------------------------------------------
+# SCREENSHOTS / TEST ARTIFACTS
+# -----------------------------------------------
+screenshot_*.png
+screen_*.png
+ss*.png
+**/test_screenshots/
+**/test_results/
+Dassign-x*
+
+# -----------------------------------------------
+# MISC
+# -----------------------------------------------
+claude-flow
+Complete
+
+# Auto Claude data directory
+.auto-claude/
+.claude/
+.claude_settings.json
+.mcp.json

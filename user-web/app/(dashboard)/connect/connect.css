@@ -1,0 +1,863 @@
+/**
+ * Connect / Campus Marketplace Page Styles
+ * Premium SAAS-style design with workspace design system
+ */
+
+/* ============================================
+   1. HERO SECTION
+   ============================================ */
+
+.connect-hero {
+  position: relative;
+  background: var(--ws-glass-bg);
+  backdrop-filter: blur(var(--ws-glass-blur)) saturate(var(--ws-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--ws-glass-blur)) saturate(var(--ws-glass-saturate));
+  border-radius: var(--ws-radius-2xl);
+  border: 1px solid var(--ws-glass-border);
+  overflow: hidden;
+  box-shadow: var(--ws-shadow-lg);
+}
+
+.connect-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(
+    circle,
+    rgba(118, 83, 65, 0.15) 0%,
+    rgba(160, 122, 101, 0.08) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  pointer-events: none;
+  animation: connect-blob-float 8s ease-in-out infinite;
+}
+
+.connect-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    circle,
+    rgba(160, 122, 101, 0.12) 0%,
+    rgba(118, 83, 65, 0.06) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  pointer-events: none;
+  animation: connect-blob-float 10s ease-in-out infinite reverse;
+}
+
+@keyframes connect-blob-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -20px) scale(1.1); }
+}
+
+.connect-hero-content {
+  position: relative;
+  z-index: 1;
+  padding: var(--ws-space-6) var(--ws-space-8);
+}
+
+.connect-hero-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--ws-radius-lg);
+  background: linear-gradient(135deg, var(--ws-primary), var(--ws-secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(118, 83, 65, 0.3);
+  flex-shrink: 0;
+}
+
+.connect-hero-icon svg {
+  width: 28px;
+  height: 28px;
+  color: white;
+}
+
+/* ============================================
+   2. STATS ROW
+   ============================================ */
+
+.connect-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--ws-space-4);
+}
+
+@media (max-width: 768px) {
+  .connect-stats-grid {
+    grid-template-columns: 1fr;
+    gap: var(--ws-space-3);
+  }
+}
+
+.connect-stat-card {
+  background: var(--ws-bg-card);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-lg);
+  padding: var(--ws-space-5);
+  transition: all var(--ws-transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.connect-stat-card:hover {
+  border-color: rgba(118, 83, 65, 0.3);
+  box-shadow: var(--ws-shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.connect-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ws-primary), var(--ws-secondary));
+  opacity: 0;
+  transition: opacity var(--ws-transition-slow);
+}
+
+.connect-stat-card:hover::before {
+  opacity: 1;
+}
+
+.connect-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ws-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--ws-space-3);
+}
+
+.connect-stat-icon.primary {
+  background: linear-gradient(135deg, var(--ws-primary), var(--ws-primary-hover));
+  color: white;
+  box-shadow: 0 4px 12px rgba(118, 83, 65, 0.25);
+}
+
+.connect-stat-icon.secondary {
+  background: linear-gradient(135deg, var(--ws-secondary), var(--ws-secondary-hover));
+  color: white;
+  box-shadow: 0 4px 12px rgba(160, 122, 101, 0.25);
+}
+
+.connect-stat-icon.info {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.connect-stat-value {
+  font-size: var(--ws-text-3xl);
+  font-weight: 700;
+  color: var(--ws-text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.connect-stat-label {
+  font-size: var(--ws-text-sm);
+  color: var(--ws-text-secondary);
+  margin-top: var(--ws-space-1);
+}
+
+/* ============================================
+   3. CATEGORY TABS (PILL STYLE)
+   ============================================ */
+
+.connect-tabs-container {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-2);
+  padding: var(--ws-space-1);
+  background: var(--ws-bg-muted);
+  border-radius: var(--ws-radius-pill);
+  width: fit-content;
+}
+
+.connect-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-2);
+  padding: var(--ws-space-2) var(--ws-space-4);
+  border-radius: var(--ws-radius-pill);
+  font-size: var(--ws-text-sm);
+  font-weight: 500;
+  color: var(--ws-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--ws-transition-fast);
+  white-space: nowrap;
+}
+
+.connect-tab:hover {
+  color: var(--ws-text-primary);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.connect-tab.active {
+  background: var(--ws-bg-card);
+  color: var(--ws-text-primary);
+  box-shadow: var(--ws-shadow-sm);
+}
+
+.connect-tab svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================
+   4. SEARCH & FILTER BAR
+   ============================================ */
+
+.connect-search-container {
+  display: flex;
+  gap: var(--ws-space-3);
+  align-items: center;
+}
+
+.connect-search-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.connect-search-icon {
+  position: absolute;
+  left: var(--ws-space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ws-text-muted);
+  pointer-events: none;
+  width: 18px;
+  height: 18px;
+}
+
+.connect-search-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--ws-space-4);
+  padding-left: calc(var(--ws-space-4) + 18px + var(--ws-space-3));
+  background: var(--ws-bg-card);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-lg);
+  font-size: var(--ws-text-sm);
+  color: var(--ws-text-primary);
+  transition: all var(--ws-transition-fast);
+}
+
+.connect-search-input:hover {
+  border-color: var(--ws-border-strong);
+}
+
+.connect-search-input:focus {
+  outline: none;
+  border-color: var(--ws-primary);
+  box-shadow: var(--ws-shadow-focus);
+}
+
+.connect-search-input::placeholder {
+  color: var(--ws-text-placeholder);
+}
+
+.connect-filter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--ws-bg-card);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-lg);
+  cursor: pointer;
+  transition: all var(--ws-transition-fast);
+  position: relative;
+}
+
+.connect-filter-btn:hover {
+  border-color: var(--ws-border-strong);
+  background: var(--ws-bg-muted);
+}
+
+.connect-filter-btn svg {
+  width: 18px;
+  height: 18px;
+  color: var(--ws-text-secondary);
+}
+
+.connect-filter-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 10px;
+  height: 10px;
+  background: var(--ws-primary);
+  border-radius: 50%;
+  border: 2px solid var(--ws-bg-card);
+}
+
+/* ============================================
+   5. FILTER PILLS
+   ============================================ */
+
+.connect-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ws-space-2);
+  overflow-x: auto;
+  padding-bottom: var(--ws-space-1);
+}
+
+.connect-filter-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.connect-filter-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-1);
+  padding: var(--ws-space-1) var(--ws-space-3);
+  border-radius: var(--ws-radius-pill);
+  font-size: var(--ws-text-xs);
+  font-weight: 500;
+  color: var(--ws-text-secondary);
+  background: var(--ws-bg-card);
+  border: 1px solid var(--ws-border);
+  cursor: pointer;
+  transition: all var(--ws-transition-fast);
+  white-space: nowrap;
+}
+
+.connect-filter-pill:hover {
+  border-color: var(--ws-border-strong);
+}
+
+.connect-filter-pill.active {
+  background: var(--ws-primary-muted);
+  border-color: var(--ws-primary);
+  color: var(--ws-primary);
+}
+
+.connect-filter-pill svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ============================================
+   6. LISTING CARDS
+   ============================================ */
+
+.connect-listing-card {
+  background: var(--ws-bg-card);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-lg);
+  overflow: hidden;
+  transition: all var(--ws-transition-base);
+  cursor: pointer;
+}
+
+.connect-listing-card:hover {
+  border-color: var(--ws-border-strong);
+  box-shadow: var(--ws-shadow-card-hover);
+  transform: translateY(-4px);
+}
+
+.connect-listing-image {
+  position: relative;
+  aspect-ratio: 4/3;
+  background: var(--ws-bg-muted);
+  overflow: hidden;
+}
+
+.connect-listing-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--ws-transition-slow);
+}
+
+.connect-listing-card:hover .connect-listing-image img {
+  transform: scale(1.05);
+}
+
+.connect-listing-badge {
+  position: absolute;
+  top: var(--ws-space-2);
+  right: var(--ws-space-2);
+  padding: var(--ws-space-1) var(--ws-space-2);
+  border-radius: var(--ws-radius-sm);
+  font-size: var(--ws-text-xs);
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  backdrop-filter: blur(4px);
+}
+
+.connect-listing-favorite {
+  position: absolute;
+  top: var(--ws-space-2);
+  left: var(--ws-space-2);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--ws-transition-fast);
+  opacity: 0;
+}
+
+.connect-listing-card:hover .connect-listing-favorite {
+  opacity: 1;
+}
+
+.connect-listing-favorite:hover {
+  background: white;
+  transform: scale(1.1);
+}
+
+.connect-listing-favorite.liked {
+  opacity: 1;
+}
+
+.connect-listing-favorite.liked svg {
+  fill: #ef4444;
+  color: #ef4444;
+}
+
+.connect-listing-content {
+  padding: var(--ws-space-4);
+}
+
+.connect-listing-title {
+  font-size: var(--ws-text-sm);
+  font-weight: 600;
+  color: var(--ws-text-primary);
+  margin-bottom: var(--ws-space-1);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.connect-listing-price {
+  font-size: var(--ws-text-xl);
+  font-weight: 700;
+  color: var(--ws-primary);
+  margin-bottom: var(--ws-space-3);
+}
+
+.connect-listing-seller {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-2);
+}
+
+.connect-listing-seller-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ws-bg-muted);
+  overflow: hidden;
+}
+
+.connect-listing-seller-name {
+  font-size: var(--ws-text-xs);
+  color: var(--ws-text-secondary);
+}
+
+/* ============================================
+   7. TUTOR CARDS
+   ============================================ */
+
+.connect-tutor-card {
+  background: var(--ws-bg-card);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-lg);
+  padding: var(--ws-space-5);
+  transition: all var(--ws-transition-base);
+  cursor: pointer;
+}
+
+.connect-tutor-card:hover {
+  border-color: rgba(118, 83, 65, 0.3);
+  box-shadow: var(--ws-shadow-card-hover);
+}
+
+.connect-tutor-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--ws-primary);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.connect-tutor-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.connect-tutor-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.connect-tutor-name {
+  font-size: var(--ws-text-base);
+  font-weight: 600;
+  color: var(--ws-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-1);
+}
+
+.connect-tutor-expertise {
+  font-size: var(--ws-text-sm);
+  color: var(--ws-text-secondary);
+  margin-top: var(--ws-space-1);
+}
+
+.connect-tutor-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-1);
+  margin-top: var(--ws-space-2);
+}
+
+.connect-tutor-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.connect-tutor-stars svg {
+  width: 14px;
+  height: 14px;
+}
+
+.connect-tutor-stars svg.filled {
+  fill: #eab308;
+  color: #eab308;
+}
+
+.connect-tutor-stars svg.empty {
+  color: var(--ws-border);
+}
+
+.connect-tutor-review-count {
+  font-size: var(--ws-text-xs);
+  color: var(--ws-text-muted);
+}
+
+.connect-tutor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--ws-space-4);
+  padding-top: var(--ws-space-4);
+  border-top: 1px solid var(--ws-border-light);
+}
+
+.connect-tutor-rate {
+  font-size: var(--ws-text-lg);
+  font-weight: 700;
+  color: var(--ws-text-primary);
+}
+
+.connect-tutor-rate span {
+  font-size: var(--ws-text-sm);
+  font-weight: 400;
+  color: var(--ws-text-muted);
+}
+
+/* ============================================
+   8. Q&A SECTION
+   ============================================ */
+
+.connect-qa-card {
+  background: var(--ws-bg-card);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-lg);
+  padding: var(--ws-space-4);
+  transition: all var(--ws-transition-base);
+  cursor: pointer;
+}
+
+.connect-qa-card:hover {
+  border-color: var(--ws-border-strong);
+  box-shadow: var(--ws-shadow-sm);
+}
+
+.connect-qa-title {
+  font-size: var(--ws-text-sm);
+  font-weight: 600;
+  color: var(--ws-text-primary);
+  margin-bottom: var(--ws-space-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.connect-qa-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ws-space-1);
+  margin-bottom: var(--ws-space-3);
+}
+
+.connect-qa-tag {
+  padding: 2px var(--ws-space-2);
+  border-radius: var(--ws-radius-xs);
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--ws-bg-muted);
+  color: var(--ws-text-secondary);
+}
+
+.connect-qa-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-3);
+  font-size: var(--ws-text-xs);
+  color: var(--ws-text-muted);
+}
+
+.connect-qa-answers {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-1);
+  padding: 2px var(--ws-space-2);
+  border-radius: var(--ws-radius-sm);
+  background: var(--ws-score-excellent-bg);
+  color: var(--ws-score-excellent);
+  font-weight: 500;
+}
+
+.connect-qa-answers.unanswered {
+  background: var(--ws-badge-warning-bg);
+  color: var(--ws-badge-warning);
+}
+
+/* ============================================
+   9. SECTION CONTAINERS
+   ============================================ */
+
+.connect-section {
+  background: var(--ws-bg-card);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-xl);
+  overflow: hidden;
+}
+
+.connect-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ws-space-5) var(--ws-space-6);
+  border-bottom: 1px solid var(--ws-border-light);
+}
+
+.connect-section-title {
+  font-size: var(--ws-text-lg);
+  font-weight: 600;
+  color: var(--ws-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-2);
+}
+
+.connect-section-title svg {
+  width: 20px;
+  height: 20px;
+  color: var(--ws-primary);
+}
+
+.connect-section-content {
+  padding: var(--ws-space-6);
+}
+
+/* ============================================
+   10. TUTORS CAROUSEL
+   ============================================ */
+
+.connect-tutors-carousel {
+  display: flex;
+  gap: var(--ws-space-4);
+  overflow-x: auto;
+  padding-bottom: var(--ws-space-2);
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.connect-tutors-carousel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.connect-tutors-carousel::-webkit-scrollbar-track {
+  background: var(--ws-bg-muted);
+  border-radius: var(--ws-radius-pill);
+}
+
+.connect-tutors-carousel::-webkit-scrollbar-thumb {
+  background: var(--ws-border-strong);
+  border-radius: var(--ws-radius-pill);
+}
+
+.connect-tutors-carousel::-webkit-scrollbar-thumb:hover {
+  background: var(--ws-primary);
+}
+
+.connect-tutors-item {
+  flex-shrink: 0;
+  width: 300px;
+  scroll-snap-align: start;
+}
+
+/* ============================================
+   11. GRID LAYOUTS
+   ============================================ */
+
+.connect-listings-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ws-space-4);
+}
+
+@media (max-width: 1280px) {
+  .connect-listings-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .connect-listings-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .connect-listings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.connect-qa-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--ws-space-4);
+}
+
+@media (max-width: 768px) {
+  .connect-qa-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   12. EMPTY STATE
+   ============================================ */
+
+.connect-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ws-space-16) var(--ws-space-6);
+  text-align: center;
+}
+
+.connect-empty-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: var(--ws-space-4);
+  color: var(--ws-text-muted);
+  opacity: 0.4;
+}
+
+.connect-empty-title {
+  font-size: var(--ws-text-lg);
+  font-weight: 600;
+  color: var(--ws-text-primary);
+  margin-bottom: var(--ws-space-2);
+}
+
+.connect-empty-description {
+  font-size: var(--ws-text-sm);
+  color: var(--ws-text-secondary);
+  max-width: 320px;
+  margin-bottom: var(--ws-space-6);
+}
+
+/* ============================================
+   13. ANIMATION UTILITIES
+   ============================================ */
+
+.connect-animate-in {
+  animation: connect-fade-slide-up 0.4s ease-out forwards;
+}
+
+@keyframes connect-fade-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.connect-stagger-1 { animation-delay: 0.05s; opacity: 0; }
+.connect-stagger-2 { animation-delay: 0.1s; opacity: 0; }
+.connect-stagger-3 { animation-delay: 0.15s; opacity: 0; }
+.connect-stagger-4 { animation-delay: 0.2s; opacity: 0; }
+
+/* ============================================
+   14. DARK MODE ADJUSTMENTS
+   ============================================ */
+
+.dark .connect-hero {
+  background: rgba(30, 29, 11, 0.72);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .connect-listing-favorite {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.dark .connect-listing-favorite:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.dark .connect-listing-favorite svg {
+  color: white;
+}
+
+.dark .connect-tabs-container {
+  background: var(--ws-bg-card);
+}
+
+.dark .connect-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .connect-tab.active {
+  background: var(--ws-bg-muted);
+}

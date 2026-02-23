@@ -1,0 +1,122 @@
+'use client'
+
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { User, Bell, Shield, LogOut, Trash2 } from 'lucide-react'
+import {
+  SettingsHero,
+  AccountSettings,
+  NotificationSettings,
+  PrivacySettings,
+} from '@/components/settings'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
+
+type SettingsClientProps = {
+  userEmail: string
+  profile: any
+  doer: any
+}
+
+type SettingsTab = 'account' | 'notifications' | 'privacy'
+
+/**
+ * Settings client component
+ * Comprehensive settings page with account, notifications, privacy, and display preferences
+ */
+export function SettingsClient({ userEmail, profile, doer }: SettingsClientProps) {
+  const [activeTab, setActiveTab] = useState<SettingsTab>('account')
+
+  return (
+    <div className="relative min-h-screen">
+      {/* Background gradient overlay - matches dashboard */}
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(90,124,255,0.18),transparent_55%),radial-gradient(circle_at_80%_20%,rgba(73,197,255,0.16),transparent_50%)]" />
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6"
+      >
+        {/* Hero Section */}
+        <SettingsHero
+          userName={profile?.full_name || doer?.full_name || 'User'}
+          userEmail={userEmail}
+        />
+
+        {/* Tabs Navigation — explicit id prevents Radix useId() hydration mismatch
+            where server-generated aria-controls IDs differ from client-generated ones */}
+        <Tabs id="settings-tabs" value={activeTab} onValueChange={(value) => setActiveTab(value as SettingsTab)}>
+          <TabsList className="grid w-full grid-cols-3 h-12 rounded-full bg-white/85 p-1 shadow-[0_14px_28px_rgba(30,58,138,0.08)]">
+            <TabsTrigger
+              value="account"
+              className="rounded-full text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#5A7CFF] data-[state=active]:to-[#49C5FF] data-[state=active]:text-white transition-all"
+            >
+              <User className="mr-2 h-4 w-4" />
+              Account
+            </TabsTrigger>
+            <TabsTrigger
+              value="notifications"
+              className="rounded-full text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#5A7CFF] data-[state=active]:to-[#49C5FF] data-[state=active]:text-white transition-all"
+            >
+              <Bell className="mr-2 h-4 w-4" />
+              Notifications
+            </TabsTrigger>
+            <TabsTrigger
+              value="privacy"
+              className="rounded-full text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#5A7CFF] data-[state=active]:to-[#49C5FF] data-[state=active]:text-white transition-all"
+            >
+              <Shield className="mr-2 h-4 w-4" />
+              Privacy
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="mt-5">
+            <motion.main
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="min-w-0"
+            >
+              <TabsContent value="account" className="mt-0">
+                <AccountSettings profile={profile} />
+              </TabsContent>
+
+              <TabsContent value="notifications" className="mt-0">
+                <NotificationSettings />
+              </TabsContent>
+
+              <TabsContent value="privacy" className="mt-0">
+                <PrivacySettings />
+              </TabsContent>
+
+            </motion.main>
+          </div>
+        </Tabs>
+
+        {/* Account Actions */}
+        <div className="mt-8 rounded-[24px] border border-white/70 bg-white/85 p-6 shadow-[0_18px_40px_rgba(30,58,138,0.08)]">
+          <h3 className="text-base font-semibold text-slate-900 mb-4">Account</h3>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-11 rounded-2xl border-slate-200/80 bg-white text-slate-700 hover:bg-slate-50"
+            >
+              <LogOut className="h-5 w-5 text-slate-600" />
+              <span>Sign Out</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-11 rounded-2xl border-red-200/80 bg-white text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="h-5 w-5" />
+              <span>Delete Account</span>
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}

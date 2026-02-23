@@ -1,0 +1,12 @@
+/**
+ * Dashboard - Minimal Styles
+ * Most styling handled by Tailwind in components
+ */
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

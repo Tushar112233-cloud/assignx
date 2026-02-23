@@ -1,0 +1,302 @@
+/* AssignX Design System - Color Tokens */
+/* Brand Palette: Pitch Black | Graphite | Coffee Bean | Vanilla Cream */
+/* #14110F | #34312D | #765341 | #E4E1C7 */
+/* Font: Sora */
+
+:root {
+  /* ============================================
+     BRAND COLORS - Core Identity
+     ============================================ */
+  --brand-pitch-black: 8 11% 7%;           /* #14110F */
+  --brand-pitch-black-hex: #14110F;
+  --brand-pitch-black-rgb: 20, 17, 15;
+
+  --brand-graphite: 12 7% 19%;             /* #34312D */
+  --brand-graphite-hex: #34312D;
+  --brand-graphite-rgb: 52, 49, 45;
+
+  --brand-coffee: 20 28% 36%;              /* #765341 - PRIMARY ACCENT */
+  --brand-coffee-hex: #765341;
+  --brand-coffee-rgb: 118, 83, 65;
+
+  --brand-cream: 51 31% 84%;               /* #E4E1C7 */
+  --brand-cream-hex: #E4E1C7;
+  --brand-cream-rgb: 228, 225, 199;
+
+  /* ============================================
+     BACKGROUND COLORS - Clean White Base
+     ============================================ */
+  --background: 0 0% 100%;                 /* Pure white #FFFFFF */
+  --background-rgb: 255, 255, 255;
+
+  --surface: 40 20% 99%;                   /* Slightly warm white #FDFCFB */
+  --surface-rgb: 253, 252, 251;
+
+  --surface-muted: 40 15% 96%;             /* Subtle warm gray #F6F5F3 */
+  --surface-muted-rgb: 246, 245, 243;
+
+  --surface-hover: 40 12% 94%;             /* Hover state */
+  --surface-hover-rgb: 241, 240, 237;
+
+  /* ============================================
+     TEXT COLORS - Pitch Black Based
+     ============================================ */
+  --foreground: 8 11% 7%;                  /* #14110F Pitch Black */
+  --foreground-rgb: 20, 17, 15;
+
+  --muted: 12 7% 35%;                      /* Softer graphite */
+  --muted-rgb: 92, 86, 82;
+
+  --muted-foreground: 12 5% 50%;           /* Light graphite */
+  --muted-foreground-rgb: 133, 127, 121;
+
+  /* ============================================
+     PRIMARY - Coffee Bean (Main Accent)
+     ============================================ */
+  --primary: 20 28% 36%;                   /* #765341 Coffee Bean */
+  --primary-rgb: 118, 83, 65;
+  --primary-foreground: 0 0% 100%;         /* White text on primary */
+
+  --primary-hover: 20 30% 30%;             /* Darker coffee on hover */
+  --primary-hover-rgb: 100, 69, 54;
+
+  --primary-light: 20 25% 48%;             /* Lighter coffee variant */
+  --primary-light-rgb: 153, 115, 92;
+
+  /* ============================================
+     SECONDARY - Graphite Based
+     ============================================ */
+  --secondary: 40 10% 94%;                 /* Light warm gray */
+  --secondary-foreground: 8 11% 7%;        /* Pitch Black text */
+
+  --secondary-hover: 40 12% 90%;
+  --secondary-hover-rgb: 233, 231, 227;
+
+  /* ============================================
+     ACCENT - Warm Complementary Tones
+     ============================================ */
+  --accent: 30 35% 55%;                    /* Warm caramel accent */
+  --accent-rgb: 189, 145, 107;
+  --accent-foreground: 8 11% 7%;           /* Pitch Black text */
+
+  --accent-warm: 25 40% 60%;               /* Terracotta warmth */
+  --accent-warm-rgb: 204, 152, 112;
+
+  --accent-soft: 51 31% 84%;               /* Vanilla Cream as soft accent */
+  --accent-soft-rgb: 228, 225, 199;
+
+  /* ============================================
+     STATUS COLORS - Harmonized with Brand
+     ============================================ */
+  --success: 152 60% 36%;                  /* Sage green - earthy */
+  --success-rgb: 37, 147, 105;
+  --success-foreground: 0 0% 100%;
+
+  --success-muted: 152 40% 94%;            /* Light success bg */
+  --success-muted-rgb: 232, 246, 240;
+
+  --warning: 38 92% 50%;                   /* Warm amber */
+  --warning-rgb: 245, 158, 11;
+  --warning-foreground: 8 11% 7%;
+
+  --warning-muted: 38 90% 95%;             /* Light warning bg */
+  --warning-muted-rgb: 254, 243, 224;
+
+  --info: 200 65% 48%;                     /* Balanced blue */
+  --info-rgb: 43, 147, 190;
+  --info-foreground: 0 0% 100%;
+
+  --info-muted: 200 60% 95%;               /* Light info bg */
+  --info-muted-rgb: 230, 244, 250;
+
+  --destructive: 4 72% 51%;                /* Warm red */
+  --destructive-rgb: 220, 53, 47;
+  --destructive-foreground: 0 0% 100%;
+
+  --destructive-muted: 4 70% 96%;          /* Light destructive bg */
+  --destructive-muted-rgb: 254, 236, 235;
+
+  /* ============================================
+     BORDERS & INPUTS
+     ============================================ */
+  --border: 40 12% 88%;                    /* Subtle warm border */
+  --border-rgb: 229, 226, 221;
+
+  --border-hover: 40 15% 78%;              /* Darker on hover */
+  --border-focus: 20 28% 36%;              /* Coffee Bean on focus */
+
+  --ring: 20 28% 36%;                      /* Focus ring - Coffee Bean */
+  --ring-offset: 0 0% 100%;                /* White offset */
+
+  --input: 40 12% 92%;                     /* Input background */
+  --input-border: 40 12% 85%;              /* Input border */
+
+  /* ============================================
+     CARDS & POPOVERS
+     ============================================ */
+  --card: 0 0% 100%;                       /* Pure white cards */
+  --card-foreground: 8 11% 7%;             /* Pitch Black text */
+
+  --card-hover: 40 15% 98%;                /* Subtle warm on hover */
+  --card-border: 40 10% 90%;               /* Soft card border */
+
+  --popover: 0 0% 100%;                    /* White popovers */
+  --popover-foreground: 8 11% 7%;
+
+  /* ============================================
+     SIDEBAR - Premium Dark Theme
+     ============================================ */
+  --sidebar-background: 8 11% 7%;          /* Pitch Black */
+  --sidebar-foreground: 40 15% 92%;        /* Light warm text */
+  --sidebar-muted: 12 7% 19%;              /* Graphite */
+  --sidebar-muted-foreground: 40 10% 65%;  /* Muted sidebar text */
+  --sidebar-accent: 20 28% 36%;            /* Coffee Bean accent */
+  --sidebar-accent-foreground: 0 0% 100%;  /* White on accent */
+  --sidebar-border: 12 7% 25%;             /* Subtle dark border */
+  --sidebar-ring: 20 28% 36%;              /* Coffee Bean ring */
+
+  /* ============================================
+     CHART COLORS - Earthy Warm Palette
+     ============================================ */
+  --chart-1: 20 28% 36%;                   /* Coffee Bean - Primary */
+  --chart-2: 30 35% 55%;                   /* Caramel */
+  --chart-3: 12 7% 30%;                    /* Graphite light */
+  --chart-4: 45 30% 55%;                   /* Honey */
+  --chart-5: 15 35% 45%;                   /* Sienna */
+  --chart-6: 51 31% 70%;                   /* Light cream */
+
+  /* ============================================
+     SHADOWS & OVERLAYS
+     ============================================ */
+  --shadow-color: 20 20% 10%;
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.05);
+  --shadow-md: 0 4px 6px -1px hsl(var(--shadow-color) / 0.08);
+  --shadow-lg: 0 10px 15px -3px hsl(var(--shadow-color) / 0.1);
+  --shadow-xl: 0 20px 25px -5px hsl(var(--shadow-color) / 0.12);
+
+  --overlay: 8 11% 7%;                     /* Pitch Black overlay */
+  --overlay-opacity: 0.5;
+
+  /* ============================================
+     GRADIENTS
+     ============================================ */
+  --gradient-primary: linear-gradient(135deg, hsl(20 28% 36%) 0%, hsl(20 30% 28%) 100%);
+  --gradient-warm: linear-gradient(135deg, hsl(20 28% 36%) 0%, hsl(30 35% 55%) 100%);
+  --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(40 15% 96%) 100%);
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+.dark {
+  /* Background - Deep Pitch Black */
+  --background: 8 11% 6%;                  /* Slightly darker than brand */
+  --background-rgb: 16, 14, 13;
+
+  --surface: 8 10% 10%;                    /* Elevated surface */
+  --surface-rgb: 27, 25, 23;
+
+  --surface-muted: 12 8% 14%;              /* Muted surface */
+  --surface-muted-rgb: 39, 36, 33;
+
+  --surface-hover: 12 8% 18%;              /* Hover state */
+  --surface-hover-rgb: 50, 46, 42;
+
+  /* Text - Light warm tones */
+  --foreground: 40 15% 92%;                /* Warm white */
+  --foreground-rgb: 240, 238, 234;
+
+  --muted: 40 8% 55%;                      /* Muted text */
+  --muted-foreground: 40 6% 45%;           /* Lighter muted */
+
+  /* Primary - Coffee Bean stays consistent */
+  --primary: 20 35% 48%;                   /* Slightly lighter for dark mode */
+  --primary-rgb: 166, 115, 80;
+  --primary-foreground: 0 0% 100%;
+
+  --primary-hover: 20 38% 55%;
+  --primary-hover-rgb: 189, 135, 97;
+
+  /* Secondary */
+  --secondary: 12 8% 18%;
+  --secondary-foreground: 40 15% 90%;
+
+  /* Accent */
+  --accent: 30 40% 50%;
+  --accent-rgb: 179, 132, 77;
+  --accent-foreground: 0 0% 100%;
+
+  /* Status colors - Adjusted for dark mode */
+  --success: 152 50% 45%;
+  --success-muted: 152 30% 15%;
+
+  --warning: 38 85% 55%;
+  --warning-muted: 38 50% 15%;
+
+  --info: 200 60% 55%;
+  --info-muted: 200 40% 15%;
+
+  --destructive: 4 65% 55%;
+  --destructive-muted: 4 50% 15%;
+
+  /* Borders */
+  --border: 12 8% 22%;
+  --border-hover: 12 10% 30%;
+  --border-focus: 20 35% 48%;
+
+  --ring: 20 35% 48%;
+  --input: 12 8% 15%;
+  --input-border: 12 8% 25%;
+
+  /* Cards */
+  --card: 8 10% 10%;
+  --card-foreground: 40 15% 92%;
+  --card-hover: 12 8% 14%;
+  --card-border: 12 8% 20%;
+
+  --popover: 8 10% 10%;
+  --popover-foreground: 40 15% 92%;
+
+  /* Sidebar - Slightly darker */
+  --sidebar-background: 8 12% 5%;
+  --sidebar-foreground: 40 15% 90%;
+  --sidebar-muted: 12 8% 12%;
+  --sidebar-muted-foreground: 40 8% 50%;
+  --sidebar-accent: 20 35% 48%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 12 8% 15%;
+  --sidebar-ring: 20 35% 48%;
+
+  /* Charts - Lighter for dark bg */
+  --chart-1: 20 35% 55%;
+  --chart-2: 30 40% 60%;
+  --chart-3: 40 15% 50%;
+  --chart-4: 45 35% 60%;
+  --chart-5: 15 40% 55%;
+  --chart-6: 51 25% 60%;
+
+  /* Shadows & Overlays */
+  --shadow-color: 0 0% 0%;
+  --overlay: 0 0% 0%;
+  --overlay-opacity: 0.7;
+}
+
+/* ============================================
+   UTILITY CLASSES FOR BRAND COLORS
+   ============================================ */
+.bg-brand-coffee { background-color: hsl(var(--brand-coffee)); }
+.bg-brand-graphite { background-color: hsl(var(--brand-graphite)); }
+.bg-brand-cream { background-color: hsl(var(--brand-cream)); }
+.bg-brand-pitch-black { background-color: hsl(var(--brand-pitch-black)); }
+
+.text-brand-coffee { color: hsl(var(--brand-coffee)); }
+.text-brand-graphite { color: hsl(var(--brand-graphite)); }
+.text-brand-cream { color: hsl(var(--brand-cream)); }
+.text-brand-pitch-black { color: hsl(var(--brand-pitch-black)); }
+
+.border-brand-coffee { border-color: hsl(var(--brand-coffee)); }
+.border-brand-graphite { border-color: hsl(var(--brand-graphite)); }
+.border-brand-cream { border-color: hsl(var(--brand-cream)); }
+
+/* Focus ring using brand color */
+.ring-brand-coffee { --tw-ring-color: hsl(var(--brand-coffee)); }
