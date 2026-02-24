@@ -649,7 +649,7 @@ class _GoalTracker extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '₹${currentEarnings.toStringAsFixed(0)} earned this month',
+            '${'₹${currentEarnings.toStringAsFixed(0)}'} ${'earned this month'.tr(context)}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondaryLight,
                 ),
@@ -680,7 +680,7 @@ class _EarningsSnapshot extends StatelessWidget {
         children: [
           Expanded(
             child: _SnapshotCard(
-              label: 'Total',
+              label: 'Total'.tr(context),
               value: '₹${totalEarnings.toStringAsFixed(0)}',
               icon: Icons.account_balance_wallet,
               color: AppColors.primary,
@@ -689,7 +689,7 @@ class _EarningsSnapshot extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: _SnapshotCard(
-              label: 'This Month',
+              label: 'This Month'.tr(context),
               value: '₹${monthlyEarnings.toStringAsFixed(0)}',
               icon: Icons.calendar_month,
               color: AppColors.accent,
@@ -698,7 +698,7 @@ class _EarningsSnapshot extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: _SnapshotCard(
-              label: 'Today',
+              label: 'Today'.tr(context),
               value: '₹${todayEarnings.toStringAsFixed(0)}',
               icon: Icons.today,
               color: Colors.green,
@@ -784,7 +784,7 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
     final transactionsState = ref.watch(transactionsProvider);
 
     return AlertDialog(
-      title: const Text('Request Withdrawal'),
+      title: Text('Request Withdrawal'.tr(context)),
       content: Form(
         key: _formKey,
         child: Column(
@@ -792,8 +792,8 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
           children: [
             TextFormField(
               controller: _amountController,
-              decoration: const InputDecoration(
-                labelText: 'Amount',
+              decoration: InputDecoration(
+                labelText: 'Amount'.tr(context),
                 prefixText: '₹',
                 hintText: '0.00',
               ),

@@ -418,7 +418,7 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
                 children: eventTypes.map((type) {
                   final isSelected = _filters.eventType.contains(type.id);
                   return _EventTypeChip(
-                    label: type.label,
+                    label: type.label.tr(context),
                     icon: type.icon,
                     color: type.color,
                     isSelected: isSelected,
@@ -438,7 +438,7 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
                 children: datePresets.map((preset) {
                   final isSelected = _selectedDatePreset == preset.id;
                   return _FilterChip(
-                    label: preset.label,
+                    label: preset.label.tr(context),
                     isSelected: isSelected,
                     onTap: () => _handleDatePreset(preset),
                   );
@@ -470,13 +470,13 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
               const SizedBox(height: 24),
 
               // Free/Paid Section
-              _buildSectionHeader('Entry', Icons.currency_rupee),
+              _buildSectionHeader('Entry'.tr(context), Icons.currency_rupee),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
                     child: _EntryToggleButton(
-                      label: 'Free',
+                      label: 'Free'.tr(context),
                       icon: Icons.check_circle_outline,
                       isSelected: _filters.isFree == true,
                       color: AppColors.success,
@@ -488,7 +488,7 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _EntryToggleButton(
-                      label: 'Paid',
+                      label: 'Paid'.tr(context),
                       icon: Icons.paid_outlined,
                       isSelected: _filters.isFree == false,
                       color: AppColors.darkBrown,
@@ -531,7 +531,7 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
                     side: BorderSide(color: AppColors.border),
                   ),
                   child: Text(
-                    'Cancel',
+                    'Cancel'.tr(context),
                     style: AppTextStyles.labelMedium.copyWith(
                       color: AppColors.textPrimary,
                     ),
@@ -555,7 +555,7 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
                       const Icon(Icons.check, color: Colors.white, size: 18),
                       const SizedBox(width: 8),
                       Text(
-                        'Apply',
+                        'Apply'.tr(context),
                         style: AppTextStyles.labelMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -635,7 +635,7 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
             return DropdownMenuItem<String>(
               value: item['value'],
               child: Text(
-                item['label']!,
+                item['label']!.tr(context),
                 style: AppTextStyles.bodyMedium,
               ),
             );
