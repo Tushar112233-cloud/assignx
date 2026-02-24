@@ -122,7 +122,7 @@ class FilterTabsBar extends StatelessWidget {
             padding: EdgeInsets.only(right: index < availableCategories.length - 1 ? 8 : 0),
             child: _FilterCapsule(
               icon: category.icon,
-              label: category.label,
+              label: category.label.tr(context),
               isSelected: selectedCategory == category,
               onTap: () => onCategoryChanged(
                 selectedCategory == category ? null : category,
@@ -245,7 +245,7 @@ class EnhancedFilterTabsBar extends StatelessWidget {
             padding: EdgeInsets.only(right: index < availableCategories.length - 1 ? 8 : 0),
             child: _FilterCapsuleWithBadge(
               icon: showIcons ? category.icon : null,
-              label: category.label,
+              label: category.label.tr(context),
               isSelected: selectedCategory == category,
               badgeCount: count,
               onTap: () => onCategoryChanged(

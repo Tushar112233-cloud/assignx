@@ -800,11 +800,11 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter an amount';
+                  return 'Please enter an amount'.tr(context);
                 }
                 final amount = double.tryParse(value);
                 if (amount == null || amount <= 0) {
-                  return 'Please enter a valid amount';
+                  return 'Please enter a valid amount'.tr(context);
                 }
                 return null;
               },
@@ -812,8 +812,8 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _selectedMethod,
-              decoration: const InputDecoration(
-                labelText: 'Payment Method',
+              decoration: InputDecoration(
+                labelText: 'Payment Method'.tr(context),
               ),
               items: const [
                 DropdownMenuItem(value: 'upi', child: Text('UPI')),
@@ -832,7 +832,7 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text('Cancel'.tr(context)),
         ),
         FilledButton(
           onPressed: transactionsState.isWithdrawing ? null : _submit,
@@ -842,7 +842,7 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Submit'),
+              : Text('Submit'.tr(context)),
         ),
       ],
     );
@@ -860,8 +860,8 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
         Navigator.pop(context);
         if (result != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Withdrawal request submitted successfully'),
+            SnackBar(
+              content: Text('Withdrawal request submitted successfully'.tr(context)),
               backgroundColor: Colors.green,
             ),
           );

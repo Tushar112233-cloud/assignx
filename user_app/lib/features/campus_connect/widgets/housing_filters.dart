@@ -276,7 +276,7 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
                   const Icon(Icons.home_outlined, size: 24),
                   const SizedBox(width: 12),
                   Text(
-                    'Housing Filters',
+                    'Housing Filters'.tr(context),
                     style: AppTextStyles.headingSmall.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -310,7 +310,7 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
                   });
                 },
                 child: Text(
-                  'Reset',
+                  'Reset'.tr(context),
                   style: AppTextStyles.labelMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -329,14 +329,14 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
             padding: const EdgeInsets.all(20),
             children: [
               // Location Section
-              _buildSectionHeader('Location', Icons.location_on_outlined),
+              _buildSectionHeader('Location'.tr(context), Icons.location_on_outlined),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
                     child: _buildDropdown(
                       value: _filters.location,
-                      hint: 'Select city',
+                      hint: 'Select city'.tr(context),
                       items: locations,
                       onChanged: (value) =>
                           _updateFilter((f) => f.copyWith(location: value)),
@@ -346,7 +346,7 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
                   Expanded(
                     child: _buildDropdown(
                       value: _filters.distanceFromCampus,
-                      hint: 'Distance',
+                      hint: 'Distance'.tr(context),
                       items: distanceOptions,
                       onChanged: (value) => _updateFilter(
                           (f) => f.copyWith(distanceFromCampus: value)),
@@ -358,7 +358,7 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
               const SizedBox(height: 24),
 
               // Price Range Section
-              _buildSectionHeader('Monthly Rent', Icons.currency_rupee),
+              _buildSectionHeader('Monthly Rent'.tr(context), Icons.currency_rupee),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
