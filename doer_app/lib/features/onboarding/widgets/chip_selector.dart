@@ -49,7 +49,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
-import '../../../core/translation/translation_extensions.dart';
 
 /// A multi-select chip selector widget.
 ///

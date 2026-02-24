@@ -227,7 +227,7 @@ class _OverviewTab extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: StatsCard(
-                        title: 'Avg/Project',
+                        title: 'Avg/Project'.tr(context),
                         value: '₹${state.summary!.averagePerProject.toStringAsFixed(0)}',
                         icon: Icons.trending_up,
                         iconColor: Colors.green,
@@ -243,7 +243,7 @@ class _OverviewTab extends StatelessWidget {
             if (state.chartData.isNotEmpty)
               EarningsChartCard(
                 dataPoints: state.chartData,
-                title: 'Earnings Trend',
+                title: 'Earnings Trend'.tr(context),
               ),
 
             // Performance Metrics
@@ -288,13 +288,13 @@ class _TransactionsTab extends StatelessWidget {
                 child: Row(
                   children: [
                     _QuickStat(
-                      label: 'Income',
+                      label: 'Income'.tr(context),
                       value: '₹${state.totalCredits.toStringAsFixed(0)}',
                       color: AppColors.success,
                     ),
                     const SizedBox(width: 16),
                     _QuickStat(
-                      label: 'Outgoing',
+                      label: 'Outgoing'.tr(context),
                       value: '₹${state.totalDebits.toStringAsFixed(0)}',
                       color: AppColors.error,
                     ),
@@ -432,7 +432,7 @@ class _CommissionTab extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    'Total Commission',
+                    'Total Commission'.tr(context),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: AppColors.textSecondaryLight,
                         ),
@@ -447,7 +447,7 @@ class _CommissionTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${breakdown.fold(0, (sum, item) => sum + item.projectCount)} projects',
+                    '${breakdown.fold(0, (sum, item) => sum + item.projectCount)} ${'projects'.tr(context)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondaryLight,
                         ),
@@ -460,7 +460,7 @@ class _CommissionTab extends StatelessWidget {
 
           // Pie chart
           Text(
-            'Commission by Category',
+            'Commission by Category'.tr(context),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -472,7 +472,7 @@ class _CommissionTab extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Text(
-                  'No commission data for this period',
+                  'No commission data for this period'.tr(context),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondaryLight,
                       ),
@@ -490,7 +490,7 @@ class _CommissionTab extends StatelessWidget {
           // Detailed breakdown list
           if (breakdown.isNotEmpty) ...[
             Text(
-              'Detailed Breakdown',
+              'Detailed Breakdown'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -554,7 +554,7 @@ class _CommissionItem extends StatelessWidget {
                         ),
                   ),
                   Text(
-                    '${item.projectCount} projects',
+                    '${item.projectCount} ${'projects'.tr(context)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondaryLight,
                         ),
@@ -607,7 +607,7 @@ class _GoalTracker extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Monthly Goal',
+                'Monthly Goal'.tr(context),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),

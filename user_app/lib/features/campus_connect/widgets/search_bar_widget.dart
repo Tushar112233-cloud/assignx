@@ -95,7 +95,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                       color: AppColors.textPrimary,
                     ),
                     decoration: InputDecoration(
-                      hintText: widget.placeholder ?? 'Search events, housing, resources...',
+                      hintText: widget.placeholder ?? 'Search events, housing, resources...'.tr(context),
                       hintStyle: AppTextStyles.bodyMedium.copyWith(
                         fontSize: 15,
                         color: AppColors.textTertiary,
@@ -162,7 +162,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Filter',
+                          'Filter'.tr(context),
                           style: AppTextStyles.labelMedium.copyWith(
                             fontSize: 13,
                             color: AppColors.textSecondary,
@@ -241,7 +241,7 @@ class _CompactSearchInputState extends State<CompactSearchInput> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                widget.placeholder ?? 'Search...',
+                widget.placeholder ?? 'Search...'.tr(context),
                 style: AppTextStyles.bodyMedium.copyWith(
                   fontSize: 14,
                   color: AppColors.textTertiary,

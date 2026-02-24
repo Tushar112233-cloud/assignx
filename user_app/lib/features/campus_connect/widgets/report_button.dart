@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import 'report_dialog.dart';
 
 /// Report button for flagging inappropriate listings.

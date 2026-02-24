@@ -331,7 +331,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
                   maxLines: 3,
                   maxLength: 1000,
                   decoration: InputDecoration(
-                    hintText: 'Provide any additional context that might help us review this report...',
+                    hintText: 'Provide any additional context that might help us review this report...'.tr(context),
                     hintStyle: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -382,7 +382,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            _error!,
+                            _error!.tr(context),
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.error,
                             ),
@@ -418,7 +418,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
                       side: const BorderSide(color: AppColors.border),
                     ),
                     child: Text(
-                      'Cancel',
+                      'Cancel'.tr(context),
                       style: AppTextStyles.labelLarge.copyWith(
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
@@ -450,7 +450,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
                             ),
                           )
                         : Text(
-                            'Submit Report',
+                            'Submit Report'.tr(context),
                             style: AppTextStyles.labelLarge.copyWith(
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
@@ -533,7 +533,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        reason.label,
+                        reason.label.tr(context),
                         style: AppTextStyles.labelMedium.copyWith(
                           fontWeight: FontWeight.w600,
                           color: isSelected
@@ -543,7 +543,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        reason.description,
+                        reason.description.tr(context),
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),

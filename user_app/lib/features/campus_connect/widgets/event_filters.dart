@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Event filter state model
 class EventFilters {
@@ -355,7 +356,7 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
                   const Icon(Icons.event_outlined, size: 24),
                   const SizedBox(width: 12),
                   Text(
-                    'Event Filters',
+                    'Event Filters'.tr(context),
                     style: AppTextStyles.headingSmall.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -390,7 +391,7 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
                   });
                 },
                 child: Text(
-                  'Reset',
+                  'Reset'.tr(context),
                   style: AppTextStyles.labelMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -409,7 +410,7 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
             padding: const EdgeInsets.all(20),
             children: [
               // Event Type Section
-              _buildSectionHeader('Event Type', Icons.category_outlined),
+              _buildSectionHeader('Event Type'.tr(context), Icons.category_outlined),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -429,7 +430,7 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
               const SizedBox(height: 24),
 
               // Date Range Section
-              _buildSectionHeader('When', Icons.calendar_today_outlined),
+              _buildSectionHeader('When'.tr(context), Icons.calendar_today_outlined),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -456,11 +457,11 @@ class _EventFiltersContentState extends State<_EventFiltersContent> {
               const SizedBox(height: 24),
 
               // Location Section
-              _buildSectionHeader('Location', Icons.location_on_outlined),
+              _buildSectionHeader('Location'.tr(context), Icons.location_on_outlined),
               const SizedBox(height: 12),
               _buildDropdown(
                 value: _filters.location,
-                hint: 'Any location',
+                hint: 'Any location'.tr(context),
                 items: locationOptions,
                 onChanged: (value) =>
                     _updateFilter((f) => f.copyWith(location: value)),

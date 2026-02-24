@@ -64,7 +64,7 @@ class HousingRestrictedState extends StatelessWidget {
 
           // Title
           Text(
-            'Student-Only Feature',
+            'Student-Only Feature'.tr(context),
             style: AppTextStyles.headingSmall.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -74,7 +74,7 @@ class HousingRestrictedState extends StatelessWidget {
 
           // Description
           Text(
-            'Housing listings are available exclusively for verified students.',
+            'Housing listings are available exclusively for verified students.'.tr(context),
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -84,7 +84,7 @@ class HousingRestrictedState extends StatelessWidget {
 
           // Sub-description
           Text(
-            'Verify your student status to access PGs, flats, and roommate listings near your campus.',
+            'Verify your student status to access PGs, flats, and roommate listings near your campus.'.tr(context),
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.textTertiary,
             ),
@@ -104,7 +104,7 @@ class HousingRestrictedState extends StatelessWidget {
                   },
                   icon: const Icon(Icons.school_outlined, size: 20),
                   label: Text(
-                    'Verify Student Status',
+                    'Verify Student Status'.tr(context),
                     style: AppTextStyles.labelMedium.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -136,7 +136,7 @@ class HousingRestrictedState extends StatelessWidget {
                       side: BorderSide(color: AppColors.border),
                     ),
                     child: Text(
-                      'Browse Other Categories',
+                      'Browse Other Categories'.tr(context),
                       style: AppTextStyles.labelMedium.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
