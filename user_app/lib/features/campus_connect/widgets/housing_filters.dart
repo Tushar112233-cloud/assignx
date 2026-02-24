@@ -418,7 +418,7 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
               const SizedBox(height: 24),
 
               // Property Type Section
-              _buildSectionHeader('Property Type', Icons.apartment_outlined),
+              _buildSectionHeader('Property Type'.tr(context), Icons.apartment_outlined),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -426,7 +426,7 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
                 children: propertyTypes.map((type) {
                   final isSelected = _filters.propertyType.contains(type.id);
                   return _FilterChip(
-                    label: type.label,
+                    label: type.label.tr(context),
                     icon: type.icon,
                     isSelected: isSelected,
                     onTap: () => _togglePropertyType(type.id),
@@ -437,7 +437,7 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
               const SizedBox(height: 24),
 
               // Amenities Section
-              _buildSectionHeader('Amenities', Icons.check_circle_outline),
+              _buildSectionHeader('Amenities'.tr(context), Icons.check_circle_outline),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -445,7 +445,7 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
                 children: amenities.map((amenity) {
                   final isSelected = _filters.amenities.contains(amenity.id);
                   return _FilterChip(
-                    label: amenity.label,
+                    label: amenity.label.tr(context),
                     icon: amenity.icon,
                     isSelected: isSelected,
                     onTap: () => _toggleAmenity(amenity.id),
@@ -484,7 +484,7 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
                     side: BorderSide(color: AppColors.border),
                   ),
                   child: Text(
-                    'Cancel',
+                    'Cancel'.tr(context),
                     style: AppTextStyles.labelMedium.copyWith(
                       color: AppColors.textPrimary,
                     ),
@@ -508,7 +508,7 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
                       const Icon(Icons.check, color: Colors.white, size: 18),
                       const SizedBox(width: 8),
                       Text(
-                        'Apply',
+                        'Apply'.tr(context),
                         style: AppTextStyles.labelMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -588,7 +588,7 @@ class _HousingFiltersContentState extends State<_HousingFiltersContent> {
             return DropdownMenuItem<String>(
               value: item['value'],
               child: Text(
-                item['label']!,
+                item['label']!.tr(context),
                 style: AppTextStyles.bodyMedium,
               ),
             );

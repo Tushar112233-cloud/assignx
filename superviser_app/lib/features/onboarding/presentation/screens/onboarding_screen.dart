@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../shared/widgets/buttons/primary_button.dart';
 import '../providers/onboarding_provider.dart';
 import '../widgets/onboarding_page.dart';
@@ -69,7 +70,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: TextButton(
                   onPressed: _skipOnboarding,
                   child: Text(
-                    'Skip',
+                    'Skip'.tr(context),
                     style: AppTypography.labelLarge.copyWith(
                       color: AppColors.secondary,
                     ),
@@ -111,7 +112,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
                   // Action button
                   PrimaryButton(
-                    text: isLastPage ? 'Get Started' : 'Next',
+                    text: isLastPage ? 'Get Started'.tr(context) : 'Next'.tr(context),
                     onPressed: _nextPage,
                     icon: isLastPage ? Icons.arrow_forward : null,
                     iconPosition: IconPosition.right,
