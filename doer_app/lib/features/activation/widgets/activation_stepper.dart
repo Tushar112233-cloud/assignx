@@ -49,6 +49,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/activation_model.dart';
 
 /// Full activation stepper with three steps.
@@ -121,12 +122,14 @@ class ActivationStepper extends StatelessWidget {
           Row(
             children: [
               _buildStep(
+                context: context,
                 step: ActivationStep.training,
                 isCompleted: status.trainingCompleted,
                 isActive: currentStep == ActivationStep.training,
               ),
               _buildConnector(status.trainingCompleted),
               _buildStep(
+                context: context,
                 step: ActivationStep.quiz,
                 isCompleted: status.quizPassed,
                 isActive: currentStep == ActivationStep.quiz,
@@ -134,6 +137,7 @@ class ActivationStepper extends StatelessWidget {
               ),
               _buildConnector(status.quizPassed),
               _buildStep(
+                context: context,
                 step: ActivationStep.bankDetails,
                 isCompleted: status.bankDetailsAdded,
                 isActive: currentStep == ActivationStep.bankDetails,
@@ -147,6 +151,7 @@ class ActivationStepper extends StatelessWidget {
   }
 
   Widget _buildStep({
+    required BuildContext context,
     required ActivationStep step,
     required bool isCompleted,
     bool isActive = false,
@@ -227,10 +232,10 @@ class ActivationStepper extends StatelessWidget {
             // Status text
             Text(
               isCompleted
-                  ? 'Completed'
+                  ? 'Completed'.tr(context)
                   : isLocked
-                      ? 'Locked'
-                      : 'Pending',
+                      ? 'Locked'.tr(context)
+                      : 'Pending'.tr(context),
               style: TextStyle(
                 fontSize: 12,
                 color: isCompleted

@@ -13,6 +13,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../providers/statistics_provider.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Interactive line chart for earnings/projects over time.
 class InteractiveEarningsChart extends ConsumerStatefulWidget {
@@ -55,8 +56,8 @@ class _InteractiveEarningsChartState
             children: [
               const Icon(Icons.show_chart_rounded, size: 18, color: AppColors.accent),
               const SizedBox(width: 8),
-              const Text(
-                'Trends',
+              Text(
+                'Trends'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -73,10 +74,10 @@ class _InteractiveEarningsChartState
           SizedBox(
             height: 200,
             child: data.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
-                      'No data available',
-                      style: TextStyle(
+                      'No data available'.tr(context),
+                      style: const TextStyle(
                         color: AppColors.textTertiary,
                         fontSize: 14,
                       ),

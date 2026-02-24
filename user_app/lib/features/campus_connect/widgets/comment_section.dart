@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Comment data model.
 class CampusComment {
@@ -153,7 +154,7 @@ class _CommentSectionState extends State<CommentSection> {
               ),
               const SizedBox(width: 8),
               Text(
-                '${widget.comments.length} Comments',
+                '${widget.comments.length} ${'Comments'.tr(context)}',
                 style: AppTextStyles.labelLarge.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -246,7 +247,7 @@ class _CommentInput extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Replying to $replyingToName',
+                      '${'Replying to'.tr(context)} $replyingToName',
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -255,7 +256,7 @@ class _CommentInput extends StatelessWidget {
                   GestureDetector(
                     onTap: onCancelReply,
                     child: Text(
-                      'Cancel',
+                      'Cancel'.tr(context),
                       style: AppTextStyles.labelSmall.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
@@ -292,7 +293,7 @@ class _CommentInput extends StatelessWidget {
                     minLines: 1,
                     style: AppTextStyles.bodyMedium,
                     decoration: InputDecoration(
-                      hintText: 'Write a comment...',
+                      hintText: 'Write a comment...'.tr(context),
                       hintStyle: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -368,7 +369,7 @@ class _VerificationRequired extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Only verified college students can comment.',
+                'Only verified college students can comment.'.tr(context),
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -569,7 +570,7 @@ class _CommentItemState extends State<_CommentItem>
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Reply',
+                                'Reply'.tr(context),
                                 style: AppTextStyles.caption.copyWith(
                                   color: AppColors.textTertiary,
                                 ),
@@ -596,7 +597,7 @@ class _CommentItemState extends State<_CommentItem>
               child: Padding(
                 padding: const EdgeInsets.only(left: 46),
                 child: Text(
-                  'View ${widget.comment.replies.length} replies',
+                  '${'View'.tr(context)} ${widget.comment.replies.length} ${'replies'.tr(context)}',
                   style: AppTextStyles.labelSmall.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600,
@@ -630,7 +631,7 @@ class _CommentItemState extends State<_CommentItem>
               child: Padding(
                 padding: const EdgeInsets.only(left: 46, top: 8),
                 child: Text(
-                  'Hide replies',
+                  'Hide replies'.tr(context),
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -726,14 +727,14 @@ class _EmptyComments extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'No comments yet',
+            'No comments yet'.tr(context),
             style: AppTextStyles.labelLarge.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Be the first to comment!',
+            'Be the first to comment!'.tr(context),
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.textTertiary,
             ),

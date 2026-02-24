@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_shadows.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/service_model.dart';
 import '../../../shared/animations/common_animations.dart';
 import '../../../shared/decorations/app_gradients.dart';
@@ -36,7 +37,7 @@ class ServicesGrid extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Services',
+            'Services'.tr(context),
             style: AppTextStyles.headingSmall.copyWith(
               color: AppColors.textPrimary,
             ),
@@ -184,7 +185,7 @@ class _ServiceCardState extends State<_ServiceCard> {
 
                   // Title
                   Text(
-                    service.title,
+                    service.title.tr(context),
                     style: AppTextStyles.labelLarge.copyWith(
                       color: service.isAvailable
                           ? AppColors.textPrimary
@@ -195,7 +196,7 @@ class _ServiceCardState extends State<_ServiceCard> {
 
                   // Subtitle
                   Text(
-                    service.subtitle,
+                    service.subtitle.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -251,7 +252,7 @@ class _ServiceCardState extends State<_ServiceCard> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'Coming Soon',
+                          'Coming Soon'.tr(context),
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,

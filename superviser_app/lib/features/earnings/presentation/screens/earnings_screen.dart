@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/earnings_model.dart';
 import '../../data/models/transaction_model.dart';
 import '../providers/earnings_provider.dart';
@@ -39,13 +40,13 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Earnings'),
+        title: Text('Earnings'.tr(context)),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Transactions'),
-            Tab(text: 'Commission'),
+          tabs: [
+            Tab(text: 'Overview'.tr(context)),
+            Tab(text: 'Transactions'.tr(context)),
+            Tab(text: 'Commission'.tr(context)),
           ],
         ),
         actions: [
@@ -157,7 +158,7 @@ class _OverviewTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'No earnings yet',
+                      'No earnings yet'.tr(context),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             color: AppColors.textSecondaryLight,
                           ),
@@ -166,7 +167,7 @@ class _OverviewTab extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 48),
                       child: Text(
-                        'Your earnings will appear here once you complete projects.',
+                        'Your earnings will appear here once you complete projects.'.tr(context),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.textSecondaryLight,
                             ),
@@ -213,7 +214,7 @@ class _OverviewTab extends StatelessWidget {
                   children: [
                     Expanded(
                       child: StatsCard(
-                        title: 'Projects',
+                        title: 'Projects'.tr(context),
                         value: state.summary!.projectsCompleted.toString(),
                         icon: Icons.folder_copy,
                         iconColor: Colors.blue,

@@ -91,6 +91,10 @@ import '../../features/users/presentation/screens/users_screen.dart';
 import '../../features/doers/presentation/screens/doers_screen.dart';
 import '../../features/doers/presentation/screens/doer_detail_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/campus_connect/presentation/screens/campus_connect_screen.dart';
+import '../../features/campus_connect/presentation/screens/create_post_screen.dart';
+import '../../features/campus_connect/presentation/screens/post_detail_screen.dart';
+import '../../features/campus_connect/presentation/screens/saved_listings_screen.dart';
 import 'routes.dart';
 
 /// Riverpod provider for the application router.
@@ -291,6 +295,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) {
                   final id = state.pathParameters['id']!;
                   return ProjectDetailScreen(projectId: id);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: RoutePaths.businessHub,
+            name: RouteNames.businessHub,
+            builder: (context, state) => const CampusConnectScreen(),
+            routes: [
+              GoRoute(
+                path: 'create',
+                name: RouteNames.businessHubCreatePost,
+                builder: (context, state) => const CreatePostScreen(),
+              ),
+              GoRoute(
+                path: 'saved',
+                name: RouteNames.businessHubSaved,
+                builder: (context, state) => const SavedListingsScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                name: RouteNames.businessHubPostDetail,
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return PostDetailScreen(postId: id);
                 },
               ),
             ],
@@ -537,6 +566,7 @@ class AppShell extends ConsumerWidget {
 /// Provides navigation between:
 /// - Dashboard (home)
 /// - Projects
+/// - Business Hub (community)
 /// - Chat
 /// - Profile
 ///
@@ -558,6 +588,11 @@ class AppBottomNavigationBar extends ConsumerWidget {
       label: 'Projects',
     ),
     const BottomNavigationBarItem(
+      icon: Icon(Icons.business_center_outlined),
+      activeIcon: Icon(Icons.business_center),
+      label: 'Business Hub',
+    ),
+    const BottomNavigationBarItem(
       icon: Icon(Icons.chat_outlined),
       activeIcon: Icon(Icons.chat),
       label: 'Chat',
@@ -574,14 +609,16 @@ class AppBottomNavigationBar extends ConsumerWidget {
   /// Returns the index corresponding to the current route:
   /// - 0: Dashboard
   /// - 1: Projects
-  /// - 2: Chat
-  /// - 3: Profile
+  /// - 2: Business Hub
+  /// - 3: Chat
+  /// - 4: Profile
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith(RoutePaths.dashboard)) return 0;
     if (location.startsWith(RoutePaths.projects)) return 1;
-    if (location.startsWith(RoutePaths.chat)) return 2;
-    if (location.startsWith(RoutePaths.profile)) return 3;
+    if (location.startsWith(RoutePaths.businessHub)) return 2;
+    if (location.startsWith(RoutePaths.chat)) return 3;
+    if (location.startsWith(RoutePaths.profile)) return 4;
     return 0;
   }
 
@@ -597,9 +634,12 @@ class AppBottomNavigationBar extends ConsumerWidget {
         context.go(RoutePaths.projects);
         break;
       case 2:
-        context.go(RoutePaths.chat);
+        context.go(RoutePaths.businessHub);
         break;
       case 3:
+        context.go(RoutePaths.chat);
+        break;
+      case 4:
         context.go(RoutePaths.profile);
         break;
     }
@@ -608,6 +648,7 @@ class AppBottomNavigationBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
       currentIndex: _calculateSelectedIndex(context),
       onTap: (index) => _onItemTapped(context, index),
       items: _items,

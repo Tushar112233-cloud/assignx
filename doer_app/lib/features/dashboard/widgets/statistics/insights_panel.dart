@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../providers/statistics_provider.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Panel displaying AI insights and goal progress.
 class InsightsPanel extends ConsumerWidget {
@@ -22,15 +23,15 @@ class InsightsPanel extends ConsumerWidget {
     return Column(
       children: [
         // Insights section
-        _buildInsightsSection(stats.insights),
+        _buildInsightsSection(context, stats.insights),
         const SizedBox(height: 16),
         // Goals section
-        _buildGoalsSection(stats.goals),
+        _buildGoalsSection(context, stats.goals),
       ],
     );
   }
 
-  Widget _buildInsightsSection(List<InsightItem> insights) {
+  Widget _buildInsightsSection(BuildContext context, List<InsightItem> insights) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -47,12 +48,12 @@ class InsightsPanel extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.lightbulb_rounded, size: 18, color: AppColors.warning),
               SizedBox(width: 8),
               Text(
-                'Insights',
+                'Insights'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -63,11 +64,11 @@ class InsightsPanel extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           if (insights.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Center(
                 child: Text(
-                  'No insights available yet',
+                  'No insights available yet'.tr(context),
                   style: TextStyle(
                     fontSize: 13,
                     color: AppColors.textTertiary,
@@ -116,7 +117,7 @@ class InsightsPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildGoalsSection(List<GoalItem> goals) {
+  Widget _buildGoalsSection(BuildContext context, List<GoalItem> goals) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -133,12 +134,12 @@ class InsightsPanel extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.flag_rounded, size: 18, color: AppColors.accent),
               SizedBox(width: 8),
               Text(
-                'Goals',
+                'Goals'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -149,11 +150,11 @@ class InsightsPanel extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           if (goals.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Center(
                 child: Text(
-                  'No goals set yet',
+                  'No goals set yet'.tr(context),
                   style: TextStyle(
                     fontSize: 13,
                     color: AppColors.textTertiary,

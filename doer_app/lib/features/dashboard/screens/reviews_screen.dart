@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/dashboard_provider.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/loading_overlay.dart';
@@ -31,16 +32,16 @@ class ReviewsScreen extends ConsumerWidget {
         child: Column(
           children: [
             InnerHeader(
-              title: 'Reviews',
+              title: 'Reviews'.tr(context),
               onBack: () => Navigator.pop(context),
             ),
             Expanded(
               child: reviews.isEmpty && !isLoading
-                  ? const EmptyState(
+                  ? EmptyState(
                       icon: Icons.rate_review_outlined,
-                      title: 'No Reviews Yet',
+                      title: 'No Reviews Yet'.tr(context),
                       description:
-                          'Complete projects to receive reviews from clients.',
+                          'Complete projects to receive reviews from clients.'.tr(context),
                     )
                   : RefreshIndicator(
                       onRefresh: () async {

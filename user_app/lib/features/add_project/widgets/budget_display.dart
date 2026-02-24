@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Pricing tier for urgency.
 enum UrgencyTier {
@@ -66,7 +67,7 @@ class BudgetDisplay extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Estimated Price',
+                'Estimated Price'.tr(context),
                 style: AppTextStyles.labelMedium.copyWith(
                   color: AppColors.primary,
                 ),
@@ -83,7 +84,7 @@ class BudgetDisplay extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'Best Value',
+                    'Best Value'.tr(context),
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.success,
                       fontWeight: FontWeight.w500,
@@ -127,7 +128,7 @@ class BudgetDisplay extends StatelessWidget {
             const Divider(),
             const SizedBox(height: 12),
             _BreakdownRow(
-              label: 'Base Price',
+              label: 'Base Price'.tr(context),
               value: '₹${basePrice?.toStringAsFixed(0) ?? '--'}',
             ),
             if (urgencyTier != null) ...[
@@ -143,8 +144,8 @@ class BudgetDisplay extends StatelessWidget {
             if (wordCount != null) ...[
               const SizedBox(height: 8),
               _BreakdownRow(
-                label: 'Word Count',
-                value: '$wordCount words',
+                label: 'Word Count'.tr(context),
+                value: '$wordCount ${'words'.tr(context)}',
                 isInfo: true,
               ),
             ],
@@ -154,7 +155,7 @@ class BudgetDisplay extends StatelessWidget {
           if (calculatedPrice == null) ...[
             const SizedBox(height: 8),
             Text(
-              'Complete the form to see pricing',
+              'Complete the form to see pricing'.tr(context),
               style: AppTextStyles.caption.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -165,7 +166,7 @@ class BudgetDisplay extends StatelessWidget {
           if (onTierChange != null) ...[
             const SizedBox(height: 16),
             Text(
-              'Select Urgency',
+              'Select Urgency'.tr(context),
               style: AppTextStyles.labelSmall.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -307,13 +308,13 @@ class BudgetCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  subtitle ?? 'Estimated Total',
+                  subtitle ?? 'Estimated Total'.tr(context),
                   style: AppTextStyles.caption.copyWith(
                     color: Colors.white.withAlpha(180),
                   ),
                 ),
                 Text(
-                  price != null ? '₹${price!.toStringAsFixed(0)}' : 'Calculating...',
+                  price != null ? '₹${price!.toStringAsFixed(0)}' : 'Calculating...'.tr(context),
                   style: AppTextStyles.headingSmall.copyWith(
                     color: Colors.white,
                   ),

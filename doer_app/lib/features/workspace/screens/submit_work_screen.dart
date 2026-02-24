@@ -11,6 +11,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../dashboard/widgets/app_header.dart';
 import '../widgets/file_upload.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Submit work screen for final project submission.
 ///
@@ -123,7 +124,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
+                          Row(
                             children: [
                               Icon(
                                 Icons.note_alt_outlined,
@@ -132,7 +133,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                               ),
                               SizedBox(width: 8),
                               Text(
-                                'Submission Notes (Optional)',
+                                'Submission Notes (Optional)'.tr(context),
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -181,7 +182,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.summarize,
@@ -190,7 +191,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Submission Summary',
+                  'Submission Summary'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -242,7 +243,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                     color: AppColors.warning.withValues(alpha: 0.3),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(
                       Icons.warning_amber,
@@ -252,7 +253,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Progress is below 50%. Consider adding more work before submitting.',
+                        'Progress is below 50%. Consider adding more work before submitting.'.tr(context),
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.warning,
@@ -311,8 +312,8 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                   color: AppColors.primary,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Submission Files',
+                Text(
+                  'Submission Files'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -330,7 +331,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                       color: AppColors.success.withValues(alpha: 0.1),
                       borderRadius: AppSpacing.borderRadiusSm,
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
@@ -340,7 +341,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                         ),
                         SizedBox(width: 4),
                         Text(
-                          'Primary set',
+                          'Primary set'.tr(context),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -361,7 +362,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                   color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: AppSpacing.borderRadiusSm,
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(
                       Icons.error_outline,
@@ -370,7 +371,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                     ),
                     SizedBox(width: 8),
                     Text(
-                      'No files uploaded. Please add files before submitting.',
+                      'No files uploaded. Please add files before submitting.'.tr(context),
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.error,
@@ -401,7 +402,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.checklist,
@@ -410,7 +411,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Confirmation',
+                  'Confirmation'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -426,8 +427,8 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
               onChanged: (value) => setState(() {
                 _confirmChecklist = value ?? false;
               }),
-              title: const Text(
-                'I have completed all requirements',
+              title: Text(
+                'I have completed all requirements'.tr(context),
                 style: TextStyle(fontSize: 14),
               ),
               controlAffinity: ListTileControlAffinity.leading,
@@ -440,8 +441,8 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
               onChanged: (value) => setState(() {
                 _confirmOriginal = value ?? false;
               }),
-              title: const Text(
-                'This is my original work and plagiarism-free',
+              title: Text(
+                'This is my original work and plagiarism-free'.tr(context),
                 style: TextStyle(fontSize: 14),
               ),
               controlAffinity: ListTileControlAffinity.leading,
@@ -566,8 +567,8 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            const Text(
-              'Work Submitted!',
+            Text(
+              'Work Submitted!'.tr(context),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -575,8 +576,8 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'Your work has been submitted for review. You\'ll be notified once it\'s reviewed.',
+            Text(
+              'Your work has been submitted for review. You\'ll be notified once it\'s reviewed.'.tr(context),
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,

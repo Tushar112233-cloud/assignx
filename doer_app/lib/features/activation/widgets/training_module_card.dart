@@ -47,6 +47,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/training_model.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Card widget for displaying a single training module.
 ///
@@ -125,7 +126,7 @@ class TrainingModuleCard extends StatelessWidget {
                               color: AppColors.success.withValues(alpha: 0.1),
                               borderRadius: AppSpacing.borderRadiusSm,
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
@@ -135,7 +136,7 @@ class TrainingModuleCard extends StatelessWidget {
                                 ),
                                 SizedBox(width: 4),
                                 Text(
-                                  'Completed',
+                                  'Completed'.tr(context),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,

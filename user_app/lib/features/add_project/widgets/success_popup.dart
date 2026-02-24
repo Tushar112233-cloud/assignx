@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Success popup with confetti animation.
 class SuccessPopup extends StatefulWidget {
@@ -165,7 +166,7 @@ class _SuccessPopupState extends State<SuccessPopup>
 
                   // Title
                   Text(
-                    widget.title,
+                    widget.title.tr(context),
                     style: AppTextStyles.headingMedium.copyWith(
                       color: AppColors.textPrimary,
                     ),
@@ -176,7 +177,7 @@ class _SuccessPopupState extends State<SuccessPopup>
 
                   // Message
                   Text(
-                    widget.message,
+                    widget.message.tr(context),
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -232,7 +233,7 @@ class _SuccessPopupState extends State<SuccessPopup>
                             ),
                           ),
                           child: Text(
-                            'Close',
+                            'Close'.tr(context),
                             style: AppTextStyles.labelMedium.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -252,7 +253,7 @@ class _SuccessPopupState extends State<SuccessPopup>
                             ),
                           ),
                           child: Text(
-                            'View Project',
+                            'View Project'.tr(context),
                             style: AppTextStyles.labelLarge.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,

@@ -8,20 +8,52 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { DeadlinePicker } from "../deadline-picker";
 import { PriceEstimate } from "../price-estimate";
-import { urgencyLevels, type ProjectStep3Schema } from "@/lib/validations/project";
+import { urgencyLevels, type ProjectStep2Schema, type ProjectStep3Schema } from "@/lib/validations/project";
+import type { ProjectType } from "@/types/add-project";
 import { cn } from "@/lib/utils";
+
+/** Urgency level labels per project type */
+const urgencyLabelsByType: Record<ProjectType, Record<string, string>> = {
+  assignment: {
+    standard: "Standard (5-7 days)",
+    express: "Express (3-4 days)",
+    urgent: "Urgent (1-2 days)",
+  },
+  document: {
+    standard: "Standard (5-7 days)",
+    express: "Express (3-4 days)",
+    urgent: "Urgent (1-2 days)",
+  },
+  website: {
+    standard: "Standard (2-3 weeks)",
+    express: "Express (1-2 weeks)",
+    urgent: "Urgent (5-7 days)",
+  },
+  app: {
+    standard: "Standard (4-6 weeks)",
+    express: "Express (2-3 weeks)",
+    urgent: "Urgent (1-2 weeks)",
+  },
+  consultancy: {
+    standard: "Standard (3-5 days)",
+    express: "Express (1-2 days)",
+    urgent: "Urgent (Same day)",
+  },
+};
 
 /** Props for StepDeadline component */
 interface StepDeadlineProps {
   form: UseFormReturn<ProjectStep3Schema>;
-  wordCount: number;
+  projectType: ProjectType;
+  requirements: Partial<ProjectStep2Schema>;
   onSubmit: () => void;
 }
 
-/** Step 3: Deadline and urgency selection - Clean Professional Design */
-export function StepDeadline({ form, wordCount, onSubmit }: StepDeadlineProps) {
+/** Step 3: Deadline and urgency selection */
+export function StepDeadline({ form, projectType, requirements, onSubmit }: StepDeadlineProps) {
   const selectedUrgency = urgencyLevels.find((u) => u.value === form.watch("urgency"));
   const urgencyMultiplier = selectedUrgency?.multiplier || 1;
+  const typeLabels = urgencyLabelsByType[projectType] || urgencyLabelsByType.assignment;
 
   return (
     <motion.form
@@ -73,7 +105,9 @@ export function StepDeadline({ form, wordCount, onSubmit }: StepDeadlineProps) {
             >
               <RadioGroupItem value={level.value} id={level.value} />
               <label htmlFor={level.value} className="flex-1 cursor-pointer">
-                <div className="font-medium text-sm">{level.label}</div>
+                <div className="font-medium text-sm">
+                  {typeLabels[level.value] || level.label}
+                </div>
                 {level.multiplier > 1 && (
                   <div className="text-xs text-muted-foreground mt-0.5">
                     +{Math.round((level.multiplier - 1) * 100)}% fee
@@ -86,7 +120,11 @@ export function StepDeadline({ form, wordCount, onSubmit }: StepDeadlineProps) {
       </div>
 
       {/* Price Estimate */}
-      <PriceEstimate wordCount={wordCount} urgencyMultiplier={urgencyMultiplier} />
+      <PriceEstimate
+        projectType={projectType}
+        requirements={requirements}
+        urgencyMultiplier={urgencyMultiplier}
+      />
 
       {/* Continue Button */}
       <Button type="submit" className="w-full h-12 text-sm font-medium mt-8">

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
 /// Quick stats row displaying key metrics as pills.
@@ -53,19 +54,19 @@ class QuickStatsRow extends StatelessWidget {
         children: [
           _StatPill(
             icon: Icons.folder_outlined,
-            label: 'Active',
+            label: 'Active'.tr(context),
             value: '$activeProjects',
             highlight: activeProjects > 0,
           ),
           _StatPill(
             icon: Icons.schedule_outlined,
-            label: 'Pending',
+            label: 'Pending'.tr(context),
             value: '$pendingActions',
             highlight: pendingActions > 0,
           ),
           _StatPill(
             icon: Icons.account_balance_wallet_outlined,
-            label: 'Wallet',
+            label: 'Wallet'.tr(context),
             value: _formatBalance(walletBalance),
             highlight: false,
           ),

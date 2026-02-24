@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../dashboard/data/models/doer_model.dart';
 import '../providers/doers_provider.dart';
 
@@ -42,15 +43,15 @@ class _DoersScreenState extends ConsumerState<DoersScreen> {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search doers...',
+                decoration: InputDecoration(
+                  hintText: 'Search doers...'.tr(context),
                   border: InputBorder.none,
                 ),
                 onChanged: (query) {
                   ref.read(doersProvider.notifier).search(query);
                 },
               )
-            : const Text('Doers'),
+            : Text('Doers'.tr(context)),
         actions: [
           IconButton(
             onPressed: () {
@@ -67,7 +68,7 @@ class _DoersScreenState extends ConsumerState<DoersScreen> {
           IconButton(
             onPressed: () => _showFiltersSheet(context, ref),
             icon: const Icon(Icons.filter_list),
-            tooltip: 'Filters',
+            tooltip: 'Filters'.tr(context),
           ),
         ],
       ),
@@ -174,7 +175,7 @@ class _ActiveFiltersBar extends ConsumerWidget {
                     ),
                   if (state.isAvailableOnly)
                     _FilterChip(
-                      label: 'Available only',
+                      label: 'Available only'.tr(context),
                       onRemove: () {
                         ref.read(doersProvider.notifier).setAvailableOnly(false);
                       },
@@ -194,7 +195,7 @@ class _ActiveFiltersBar extends ConsumerWidget {
             onPressed: () {
               ref.read(doersProvider.notifier).clearFilters();
             },
-            child: const Text('Clear'),
+            child: Text('Clear'.tr(context)),
           ),
         ],
       ),
@@ -280,7 +281,7 @@ class _DoersFilterSheetState extends ConsumerState<_DoersFilterSheet> {
               child: Row(
                 children: [
                   Text(
-                    'Filter Doers',
+                    'Filter Doers'.tr(context),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -294,7 +295,7 @@ class _DoersFilterSheetState extends ConsumerState<_DoersFilterSheet> {
                         _minRating = null;
                       });
                     },
-                    child: const Text('Reset'),
+                    child: Text('Reset'.tr(context)),
                   ),
                 ],
               ),
@@ -310,8 +311,8 @@ class _DoersFilterSheetState extends ConsumerState<_DoersFilterSheet> {
                 children: [
                   // Available only
                   SwitchListTile(
-                    title: const Text('Available only'),
-                    subtitle: const Text('Show only doers ready for work'),
+                    title: Text('Available only'.tr(context)),
+                    subtitle: Text('Show only doers ready for work'.tr(context)),
                     value: _isAvailableOnly,
                     onChanged: (value) {
                       setState(() => _isAvailableOnly = value);
@@ -322,7 +323,7 @@ class _DoersFilterSheetState extends ConsumerState<_DoersFilterSheet> {
 
                   // Minimum rating
                   Text(
-                    'Minimum Rating',
+                    'Minimum Rating'.tr(context),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -333,7 +334,7 @@ class _DoersFilterSheetState extends ConsumerState<_DoersFilterSheet> {
                     children: [null, 3.0, 3.5, 4.0, 4.5].map((rating) {
                       final isSelected = _minRating == rating;
                       return ChoiceChip(
-                        label: Text(rating == null ? 'Any' : '$rating+'),
+                        label: Text(rating == null ? 'Any'.tr(context) : '$rating+'),
                         selected: isSelected,
                         onSelected: (_) {
                           setState(() => _minRating = rating);
@@ -346,7 +347,7 @@ class _DoersFilterSheetState extends ConsumerState<_DoersFilterSheet> {
 
                   // Expertise
                   Text(
-                    'Expertise',
+                    'Expertise'.tr(context),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -358,7 +359,7 @@ class _DoersFilterSheetState extends ConsumerState<_DoersFilterSheet> {
                       runSpacing: 8,
                       children: [
                         ChoiceChip(
-                          label: const Text('All'),
+                          label: Text('All'.tr(context)),
                           selected: _selectedExpertise == null,
                           onSelected: (_) {
                             setState(() => _selectedExpertise = null);
@@ -377,7 +378,7 @@ class _DoersFilterSheetState extends ConsumerState<_DoersFilterSheet> {
                       ],
                     ),
                     loading: () => const CircularProgressIndicator(),
-                    error: (_, _) => const Text('Failed to load'),
+                    error: (_, _) => Text('Failed to load'.tr(context)),
                   ),
                 ],
               ),
@@ -397,7 +398,7 @@ class _DoersFilterSheetState extends ConsumerState<_DoersFilterSheet> {
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                 ),
-                child: const Text('Apply Filters'),
+                child: Text('Apply Filters'.tr(context)),
               ),
             ),
           ],
@@ -613,7 +614,7 @@ class DoerCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '${doer.completedProjects} completed',
+                              '${doer.completedProjects} ${'completed'.tr(context)}',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppColors.textSecondaryLight,
                                     fontSize: 11,
@@ -628,7 +629,7 @@ class DoerCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${doer.activeProjects} active',
+                                '${doer.activeProjects} ${'active'.tr(context)}',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: AppColors.warning,
                                       fontSize: 11,
@@ -683,7 +684,7 @@ class DoerCard extends StatelessWidget {
                         // TODO: Navigate to assign doer flow
                       },
                       icon: const Icon(Icons.assignment_ind, size: 16),
-                      label: const Text('Assign'),
+                      label: Text('Assign'.tr(context)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.accent,
                         side: const BorderSide(color: AppColors.accent),
@@ -703,7 +704,7 @@ class DoerCard extends StatelessWidget {
                         // TODO: Navigate to chat with doer
                       },
                       icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                      label: const Text('Chat'),
+                      label: Text('Chat'.tr(context)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primary,
                         side: BorderSide(
@@ -774,7 +775,7 @@ class _DoersHeroSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Doer Network',
+                'Doer Network'.tr(context),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -785,10 +786,10 @@ class _DoersHeroSection extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _HeroStat(label: 'Total Doers', value: '$totalDoers'),
-              _HeroStat(label: 'Available', value: '$available'),
-              _HeroStat(label: 'Busy', value: '$busy'),
-              _HeroStat(label: 'Top Rated', value: '$topRated'),
+              _HeroStat(label: 'Total Doers'.tr(context), value: '$totalDoers'),
+              _HeroStat(label: 'Available'.tr(context), value: '$available'),
+              _HeroStat(label: 'Busy'.tr(context), value: '$busy'),
+              _HeroStat(label: 'Top Rated'.tr(context), value: '$topRated'),
             ],
           ),
         ],
@@ -856,7 +857,7 @@ class _TopPerformers extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Top Performers',
+            'Top Performers'.tr(context),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -962,14 +963,14 @@ class _EmptyDoers extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No doers found',
+              'No doers found'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Try adjusting your filters or search criteria',
+              'Try adjusting your filters or search criteria'.tr(context),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),

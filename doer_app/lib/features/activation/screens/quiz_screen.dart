@@ -10,6 +10,7 @@ import '../../../providers/activation_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../widgets/quiz_question.dart';
 import '../widgets/quiz_result.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Quiz screen for the activation interview quiz.
 ///
@@ -84,7 +85,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
     if (questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Quiz')),
+        appBar: AppBar(title: Text('Quiz'.tr(context))),
         body: const Center(
           child: CircularProgressIndicator(),
         ),
@@ -99,8 +100,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           automaticallyImplyLeading: false,
-          title: const Text(
-            'Quiz Result',
+          title: Text(
+            'Quiz Result'.tr(context),
             style: TextStyle(
               color: AppColors.textPrimary,
             ),
@@ -133,8 +134,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           icon: const Icon(Icons.close),
           onPressed: () => _showExitDialog(context),
         ),
-        title: const Text(
-          'Interview Quiz',
+        title: Text(
+          'Interview Quiz'.tr(context),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -266,7 +267,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       final shouldSubmit = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Unanswered Questions'),
+          title: Text('Unanswered Questions'.tr(context)),
           content: Text(
             'You have ${unanswered.length} unanswered question(s). '
             'Do you want to submit anyway?',
@@ -274,11 +275,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Review'),
+              child: Text('Review'.tr(context)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Submit'),
+              child: Text('Submit'.tr(context)),
             ),
           ],
         ),
@@ -307,22 +308,22 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Exit Quiz?'),
-        content: const Text(
-          'Your progress will be lost. Are you sure you want to exit?',
+        title: Text('Exit Quiz?'.tr(context)),
+        content: Text(
+          'Your progress will be lost. Are you sure you want to exit?'.tr(context),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               context.go(RouteNames.activationGate);
             },
-            child: const Text(
-              'Exit',
+            child: Text(
+              'Exit'.tr(context),
               style: TextStyle(color: AppColors.error),
             ),
           ),
@@ -350,8 +351,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Questions',
+                Text(
+                  'Questions'.tr(context),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

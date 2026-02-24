@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +11,9 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../providers/accessibility_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../providers/theme_provider.dart';
+import '../../../providers/translation_provider.dart';
 import '../../../shared/widgets/dashboard_app_bar.dart';
+import '../../../shared/widgets/language_picker.dart';
 import '../../profile/widgets/account_upgrade_card.dart';
 
 // ============================================================
@@ -173,6 +176,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         error: (e, s) => const SizedBox.shrink(),
                       ),
                       const SizedBox(height: 16),
+
+                      // Language Section (mobile only)
+                      if (!kIsWeb) _buildLanguageCard(),
+                      if (!kIsWeb) const SizedBox(height: 16),
 
                       // Privacy & Data Section
                       privacyPrefsAsync.when(
@@ -468,6 +475,83 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           value: prefs.compactMode,
           onChanged: (value) => _updateAppearancePref('compact_mode', value),
           showDivider: false,
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // LANGUAGE CARD
+  // ============================================================
+
+  /// Builds the language settings card (mobile only).
+  Widget _buildLanguageCard() {
+    final translationState = ref.watch(translationProvider);
+
+    return _SettingsCard(
+      icon: Icons.translate_outlined,
+      iconBackgroundColor: const Color(0xFFE3F2FD), // Soft blue
+      title: 'Language',
+      subtitle: 'Change the display language',
+      children: [
+        InkWell(
+          onTap: () => showLanguagePicker(context),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: _SettingsColors.chipBackground,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.language,
+                    size: 18,
+                    color: _SettingsColors.secondaryText,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Display Language',
+                        style: AppTextStyles.labelLarge.copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: _SettingsColors.primaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        translationState.selectedLanguageName,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: _SettingsColors.secondaryText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (translationState.isDownloading)
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: _SettingsColors.mutedText,
+                  ),
+              ],
+            ),
+          ),
         ),
       ],
     );

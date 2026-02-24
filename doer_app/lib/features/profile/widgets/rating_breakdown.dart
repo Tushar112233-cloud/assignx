@@ -30,6 +30,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Rating category model.
 class RatingCategory {
@@ -183,7 +184,7 @@ class RatingBreakdown extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.star_rate,
@@ -192,7 +193,7 @@ class RatingBreakdown extends StatelessWidget {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Rating Breakdown',
+                  'Rating Breakdown'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -205,7 +206,7 @@ class RatingBreakdown extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
 
             // Overall rating section
-            _buildOverallRating(),
+            _buildOverallRating(context),
 
             const SizedBox(height: AppSpacing.lg),
 
@@ -215,8 +216,8 @@ class RatingBreakdown extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
 
             // Category breakdown
-            const Text(
-              'By Category',
+            Text(
+              'By Category'.tr(context),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -238,8 +239,8 @@ class RatingBreakdown extends StatelessWidget {
 
             const SizedBox(height: AppSpacing.md),
 
-            const Text(
-              'Rating Distribution',
+            Text(
+              'Rating Distribution'.tr(context),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -257,7 +258,7 @@ class RatingBreakdown extends StatelessWidget {
   }
 
   /// Builds the overall rating section.
-  Widget _buildOverallRating() {
+  Widget _buildOverallRating(BuildContext context) {
     return Row(
       children: [
         // Large rating number
@@ -340,8 +341,8 @@ class RatingBreakdown extends StatelessWidget {
                   color: AppColors.primary,
                 ),
               ),
-              const Text(
-                'Reviews',
+              Text(
+                'Reviews'.tr(context),
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary,

@@ -350,6 +350,76 @@ abstract class AppColors {
   /// Alias for [borderLight] for convenience.
   static const border = borderLight;
 
+  // ============ Glass Effect Colors ============
+
+  /// Glass background - White with opacity for glass morphism.
+  static Color get glassBackground => Colors.white.withValues(alpha: 0.85);
+
+  /// Glass border - Subtle white border for glass effect.
+  static Color get glassBorder => Colors.white.withValues(alpha: 0.3);
+
+  /// Glass background dark.
+  static Color get glassBackgroundDark => Colors.black.withValues(alpha: 0.6);
+
+  /// Glass border dark.
+  static Color get glassBorderDark => Colors.white.withValues(alpha: 0.1);
+
+  // ============ Mesh Gradient Colors ============
+
+  /// Mesh Pink - Soft pastel pink.
+  static const meshPink = Color(0xFFFBE8E8);
+
+  /// Mesh Peach - Soft pastel peach.
+  static const meshPeach = Color(0xFFFCEDE8);
+
+  /// Mesh Orange - Soft pastel orange.
+  static const meshOrange = Color(0xFFFEF3E8);
+
+  // ============ Shimmer Colors (Convenience) ============
+
+  /// Shimmer base color (light theme).
+  static const shimmerBase = shimmerBaseLight;
+
+  /// Shimmer highlight color (light theme).
+  static const shimmerHighlight = shimmerHighlightLight;
+
+  // ============ Category Colors ============
+
+  /// Insight category - Orange.
+  static const categoryOrange = Color(0xFFE07B4C);
+
+  /// Recruitment category - Indigo.
+  static const categoryIndigo = Color(0xFF5C6BC0);
+
+  /// Service category - Teal.
+  static const categoryTeal = Color(0xFF009688);
+
+  /// Opportunity category - Green.
+  static const categoryGreen = Color(0xFF4CAF50);
+
+  /// Event category - Amber.
+  static const categoryAmber = Color(0xFFF5A623);
+
+  /// Resource category - Blue.
+  static const categoryBlue = Color(0xFF2196F3);
+
+  // ============ Neutral Colors ============
+
+  /// Light gray background for icon areas.
+  static const neutralLight = Color(0xFFF5F5F5);
+
+  /// Gray for disabled icons/placeholders.
+  static const neutralGray = Color(0xFFBDBDBD);
+
+  /// Tertiary text (light theme alias).
+  static const textTertiary = textTertiaryLight;
+
+  /// Light gray for avatar backgrounds.
+  static const avatarGray = Color(0xFFE0E0E0);
+
+  /// Warm avatar background.
+  static const avatarWarm = Color(0xFFE8E0D8);
+
   /// Returns the appropriate color for a given project status.
   ///
   /// This method maps status strings (typically from the backend) to

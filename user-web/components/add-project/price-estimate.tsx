@@ -8,30 +8,89 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { ProjectType } from "@/types/add-project";
+import type { ProjectStep2Schema } from "@/lib/validations/project";
 
 interface PriceEstimateProps {
-  wordCount: number;
+  projectType: ProjectType;
+  requirements: Partial<ProjectStep2Schema>;
   urgencyMultiplier?: number;
-  baseRatePerWord?: number;
   className?: string;
 }
 
+/** Computes base price and description label based on project type and requirements */
+function computeBasePrice(
+  projectType: ProjectType,
+  requirements: Partial<ProjectStep2Schema>
+): { basePrice: number; label: string } {
+  switch (projectType) {
+    case "assignment":
+    case "document": {
+      const wordCount = requirements.wordCount || 0;
+      const rate = 0.8;
+      return {
+        basePrice: wordCount * rate,
+        label: `${wordCount.toLocaleString()} words × ₹${rate}`,
+      };
+    }
+    case "website": {
+      const pageCount = requirements.pageCount || 0;
+      const rate = 2000;
+      return {
+        basePrice: pageCount * rate,
+        label: `${pageCount} page${pageCount !== 1 ? "s" : ""} × ₹${rate.toLocaleString()}`,
+      };
+    }
+    case "app": {
+      const platform = requirements.platform || "";
+      const isBoth = platform === "both";
+      const basePrice = isBoth ? 40000 : 25000;
+      const platformLabel = isBoth ? "iOS & Android" : platform || "Single platform";
+      return {
+        basePrice,
+        label: `${platformLabel} — base`,
+      };
+    }
+    case "consultancy": {
+      const duration = requirements.consultationDuration || "";
+      const priceMap: Record<string, number> = {
+        "30min": 500,
+        "1hr": 800,
+        "2hr": 1500,
+      };
+      const durationLabelMap: Record<string, string> = {
+        "30min": "30 minutes",
+        "1hr": "1 hour",
+        "2hr": "2 hours",
+      };
+      const basePrice = priceMap[duration] || 0;
+      const durationLabel = durationLabelMap[duration] || duration;
+      return {
+        basePrice,
+        label: durationLabel,
+      };
+    }
+    default:
+      return { basePrice: 0, label: "" };
+  }
+}
+
 /**
- * Price estimate card - Clean Professional Design
+ * Price estimate card supporting all project types
  */
 export function PriceEstimate({
-  wordCount,
+  projectType,
+  requirements,
   urgencyMultiplier = 1,
-  baseRatePerWord = 0.8, // ₹0.80 per word base rate
   className,
 }: PriceEstimateProps) {
-  const basePrice = wordCount * baseRatePerWord;
+  const { basePrice, label } = computeBasePrice(projectType, requirements);
   const urgencyFee = basePrice * (urgencyMultiplier - 1);
   const subtotal = basePrice + urgencyFee;
   const gst = subtotal * 0.18;
   const total = subtotal + gst;
 
-  if (wordCount <= 0) {
+  if (basePrice <= 0) {
     return null;
   }
 
@@ -60,7 +119,7 @@ export function PriceEstimate({
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">
-              Base ({wordCount.toLocaleString()} words × ₹{baseRatePerWord})
+              Base ({label})
             </span>
             <span className="font-medium tabular-nums">₹{Math.round(basePrice).toLocaleString()}</span>
           </div>
@@ -85,7 +144,7 @@ export function PriceEstimate({
         {/* Total */}
         <div className="border-t pt-3">
           <div className="flex items-center justify-between">
-            <span className="font-semibold">Total</span>
+            <span className="font-semibold">Estimated Total</span>
             <span className="text-xl font-bold tabular-nums">
               ₹{Math.round(total).toLocaleString()}
             </span>
@@ -94,7 +153,7 @@ export function PriceEstimate({
 
         {/* Disclaimer */}
         <p className="text-[11px] text-muted-foreground pt-1">
-          * This is an estimate. Final quote will be provided after review.
+          * This is an estimate only. Final quote will be provided by our team after review.
         </p>
       </div>
     </div>

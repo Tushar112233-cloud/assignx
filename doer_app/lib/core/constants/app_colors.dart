@@ -252,6 +252,86 @@ class AppColors {
   static const Color shadow = Color(0x1A000000);
 
   // ---------------------------------------------------------------------------
+  // Glass Effect Colors
+  // ---------------------------------------------------------------------------
+
+  /// Glass background - White with opacity for glass morphism.
+  static Color get glassBackground => Colors.white.withValues(alpha: 0.85);
+
+  /// Glass border - Subtle white border for glass effect.
+  static Color get glassBorder => Colors.white.withValues(alpha: 0.3);
+
+  /// Glass background dark - For dark theme glass effects.
+  static Color get glassBackgroundDark => Colors.black.withValues(alpha: 0.6);
+
+  /// Glass border dark - For dark theme glass borders.
+  static Color get glassBorderDark => Colors.white.withValues(alpha: 0.1);
+
+  // ---------------------------------------------------------------------------
+  // Mesh Gradient Colors
+  // ---------------------------------------------------------------------------
+
+  /// Mesh Pink - Soft pastel pink.
+  static const Color meshPink = Color(0xFFE8EEF8);
+
+  /// Mesh Peach - Soft pastel blue-gray.
+  static const Color meshPeach = Color(0xFFECF0F8);
+
+  /// Mesh Orange - Soft pastel slate.
+  static const Color meshOrange = Color(0xFFF0F3F8);
+
+  // ---------------------------------------------------------------------------
+  // Shimmer Colors
+  // ---------------------------------------------------------------------------
+
+  /// Shimmer base color.
+  static const Color shimmerBase = Color(0xFFE2E8F0);
+
+  /// Shimmer highlight color.
+  static const Color shimmerHighlight = Color(0xFFF1F5F9);
+
+  // ---------------------------------------------------------------------------
+  // Category Colors
+  // ---------------------------------------------------------------------------
+
+  /// Discussion category - Orange.
+  static const Color categoryOrange = Color(0xFFE07B4C);
+
+  /// Portfolio category - Indigo.
+  static const Color categoryIndigo = Color(0xFF5C6BC0);
+
+  /// Skill Exchange category - Teal.
+  static const Color categoryTeal = Color(0xFF009688);
+
+  /// Freelance/Gig category - Green.
+  static const Color categoryGreen = Color(0xFF4CAF50);
+
+  /// Event category - Amber.
+  static const Color categoryAmber = Color(0xFFF5A623);
+
+  /// News/Resource category - Blue.
+  static const Color categoryBlue = Color(0xFF2196F3);
+
+  // ---------------------------------------------------------------------------
+  // Neutral Colors
+  // ---------------------------------------------------------------------------
+
+  /// Light gray background for icon areas.
+  static const Color neutralLight = Color(0xFFF5F5F5);
+
+  /// Gray for disabled icons/placeholders.
+  static const Color neutralGray = Color(0xFFBDBDBD);
+
+  /// Light surface for subtle backgrounds.
+  static const Color surfaceLight = Color(0xFFF1F5F9);
+
+  /// Light gray for avatar backgrounds.
+  static const Color avatarGray = Color(0xFFE0E0E0);
+
+  /// Warm avatar background.
+  static const Color avatarWarm = Color(0xFFD6E4F0);
+
+  // ---------------------------------------------------------------------------
   // Dark Theme Colors
   // ---------------------------------------------------------------------------
 

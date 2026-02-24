@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Campus Pulse section for dashboard preview.
 ///
@@ -51,7 +52,7 @@ class CampusPulseSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Campus Pulse',
+                    'Campus Pulse'.tr(context),
                     style: AppTextStyles.headingSmall.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -59,7 +60,7 @@ class CampusPulseSection extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Trending at your campus',
+                    'Trending at your campus'.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       fontSize: 12,
                       color: AppColors.textTertiary,
@@ -74,7 +75,7 @@ class CampusPulseSection extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      'See all',
+                      'See all'.tr(context),
                       style: AppTextStyles.bodySmall.copyWith(
                         fontSize: 12,
                         color: AppColors.textTertiary,
@@ -142,25 +143,25 @@ class _CampusPulsePreviewCard extends StatelessWidget {
                     children: [
                       _CategoryPill(
                         icon: Icons.inventory_2_outlined,
-                        label: 'For Sale',
+                        label: 'For Sale'.tr(context),
                         color: AppColors.primary,
                       ),
                       const SizedBox(width: 8),
                       _CategoryPill(
                         icon: Icons.home_outlined,
-                        label: 'Housing',
+                        label: 'Housing'.tr(context),
                         color: const Color(0xFF16A34A),
                       ),
                       const SizedBox(width: 8),
                       _CategoryPill(
                         icon: Icons.work_outline,
-                        label: 'Opportunities',
+                        label: 'Opportunities'.tr(context),
                         color: AppColors.accent,
                       ),
                       const SizedBox(width: 8),
                       _CategoryPill(
                         icon: Icons.people_outline,
-                        label: 'Community',
+                        label: 'Community'.tr(context),
                         color: const Color(0xFFB45309),
                       ),
                     ],
@@ -199,7 +200,7 @@ class _CampusPulsePreviewCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Explore Campus Connect',
+                              'Explore Campus Connect'.tr(context),
                               style: AppTextStyles.labelMedium.copyWith(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -207,7 +208,7 @@ class _CampusPulsePreviewCard extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              'Buy, sell, and discover at your campus',
+                              'Buy, sell, and discover at your campus'.tr(context),
                               style: AppTextStyles.bodySmall.copyWith(
                                 fontSize: 11,
                                 color: AppColors.textTertiary,

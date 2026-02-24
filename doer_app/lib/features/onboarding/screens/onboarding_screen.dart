@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/router/route_names.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Onboarding carousel screen with 4 slides.
 ///
@@ -142,8 +143,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 padding: AppSpacing.paddingMd,
                 child: TextButton(
                   onPressed: _navigateToRegister,
-                  child: const Text(
-                    'Skip',
+                  child: Text(
+                    'Skip'.tr(context),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -206,16 +207,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Already have an account? ',
+                      Text(
+                        'Already have an account? '.tr(context),
                         style: TextStyle(
                           color: AppColors.textSecondary,
                         ),
                       ),
                       GestureDetector(
                         onTap: () => context.go(RouteNames.login),
-                        child: const Text(
-                          'Sign In',
+                        child: Text(
+                          'Sign In'.tr(context),
                           style: TextStyle(
                             color: AppColors.accent,
                             fontWeight: FontWeight.w600,

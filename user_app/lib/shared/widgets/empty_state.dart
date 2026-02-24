@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/translation/translation_extensions.dart';
 import 'app_button.dart';
 
 /// Illustrated empty state widget for when content is unavailable.
@@ -154,7 +155,7 @@ class EmptyState extends StatelessWidget {
 
   Widget _buildTitle(BuildContext context) {
     return Text(
-      title,
+      title.tr(context),
       style: AppTextStyles.headingSmall.copyWith(
         fontSize: 20,
         fontWeight: FontWeight.w600,
@@ -166,7 +167,7 @@ class EmptyState extends StatelessWidget {
 
   Widget _buildSubtitle(BuildContext context) {
     return Text(
-      subtitle!,
+      subtitle!.tr(context),
       style: AppTextStyles.bodyMedium.copyWith(
         fontSize: 14,
         color: AppColors.textSecondary,

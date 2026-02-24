@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../core/utils/validators.dart';
 import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
@@ -80,7 +81,7 @@ class _ProfessionalProfileScreenState
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(message.tr(context)),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -93,12 +94,12 @@ class _ProfessionalProfileScreenState
   Future<void> _submitForm() async {
     // Validate
     if (_nameController.text.trim().isEmpty) {
-      _showError('Please enter your full name');
+      _showError('Please enter your full name'); // Translated at display
       return;
     }
 
     if (_selectedProfessionalType == null) {
-      _showError('Please select your professional type');
+      _showError('Please select your professional type'); // Translated at display
       return;
     }
 
@@ -134,7 +135,7 @@ class _ProfessionalProfileScreenState
         context.go(RouteNames.signupSuccess);
       }
     } catch (e) {
-      _showError('Failed to save profile. Please try again.');
+      _showError('Failed to save profile. Please try again.'); // Translated at display
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -159,7 +160,7 @@ class _ProfessionalProfileScreenState
         child: SafeArea(
           child: LoadingOverlay(
             isLoading: _isLoading,
-            message: 'Saving profile...',
+            message: 'Saving profile...'.tr(context),
             child: Column(
               children: [
                 // App bar with glass effect
@@ -177,7 +178,7 @@ class _ProfessionalProfileScreenState
                       ),
                       Expanded(
                         child: Text(
-                          'Complete Profile',
+                          'Complete Profile'.tr(context),
                           style: AppTextStyles.headingSmall,
                           textAlign: TextAlign.center,
                         ),
@@ -227,14 +228,14 @@ class _ProfessionalProfileScreenState
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Professional Details',
+                                      'Professional Details'.tr(context),
                                       style: AppTextStyles.headingMedium.copyWith(
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Tell us a bit about yourself',
+                                      'Tell us a bit about yourself'.tr(context),
                                       style: AppTextStyles.bodyMedium.copyWith(
                                         color: AppColors.textSecondary,
                                       ),
@@ -250,8 +251,8 @@ class _ProfessionalProfileScreenState
                           // Full Name
                           AppTextField(
                             controller: _nameController,
-                            label: 'Full Name',
-                            hint: 'Enter your full name',
+                            label: 'Full Name'.tr(context),
+                            hint: 'Enter your full name'.tr(context),
                             prefixIcon: Icons.person_outline,
                             textCapitalization: TextCapitalization.words,
                             validator: Validators.name,
@@ -261,8 +262,8 @@ class _ProfessionalProfileScreenState
 
                           // Professional Type (required)
                           AppDropdown<ProfessionalType>(
-                            label: 'Professional Type',
-                            hint: 'Select your professional type',
+                            label: 'Professional Type'.tr(context),
+                            hint: 'Select your professional type'.tr(context),
                             value: _selectedProfessionalType,
                             items: ProfessionalType.values,
                             itemLabel: (item) => item.displayName,
@@ -276,8 +277,8 @@ class _ProfessionalProfileScreenState
                           // Industry
                           industries.when(
                             data: (items) => AppDropdown<Map<String, dynamic>>(
-                              label: 'Industry (Optional)',
-                              hint: 'Select your industry',
+                              label: 'Industry (Optional)'.tr(context),
+                              hint: 'Select your industry'.tr(context),
                               value: items
                                   .where((i) => i['id'] == _selectedIndustryId)
                                   .firstOrNull,
@@ -294,7 +295,7 @@ class _ProfessionalProfileScreenState
                               ),
                             ),
                             error: (_, _) => Text(
-                              'Failed to load industries',
+                              'Failed to load industries'.tr(context),
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: AppColors.error,
                               ),
@@ -307,11 +308,11 @@ class _ProfessionalProfileScreenState
                           AppTextField(
                             controller: _jobTitleController,
                             label: _selectedProfessionalType == ProfessionalType.business
-                                ? 'Your Role (Optional)'
-                                : 'Job Title (Optional)',
+                                ? 'Your Role (Optional)'.tr(context)
+                                : 'Job Title (Optional)'.tr(context),
                             hint: _selectedProfessionalType == ProfessionalType.business
-                                ? 'e.g., Founder, CEO'
-                                : 'e.g., Software Engineer',
+                                ? 'e.g., Founder, CEO'.tr(context)
+                                : 'e.g., Software Engineer'.tr(context),
                             prefixIcon: Icons.work_outline,
                             textCapitalization: TextCapitalization.words,
                           ),
@@ -322,11 +323,11 @@ class _ProfessionalProfileScreenState
                           AppTextField(
                             controller: _companyController,
                             label: _selectedProfessionalType == ProfessionalType.business
-                                ? 'Business Name (Optional)'
-                                : 'Company (Optional)',
+                                ? 'Business Name (Optional)'.tr(context)
+                                : 'Company (Optional)'.tr(context),
                             hint: _selectedProfessionalType == ProfessionalType.business
-                                ? 'Enter your business name'
-                                : 'Enter your company name',
+                                ? 'Enter your business name'.tr(context)
+                                : 'Enter your company name'.tr(context),
                             prefixIcon: Icons.business_outlined,
                             textCapitalization: TextCapitalization.words,
                           ),
@@ -336,7 +337,7 @@ class _ProfessionalProfileScreenState
                           // LinkedIn URL (optional)
                           AppTextField(
                             controller: _linkedinController,
-                            label: 'LinkedIn Profile (Optional)',
+                            label: 'LinkedIn Profile (Optional)'.tr(context),
                             hint: 'https://linkedin.com/in/yourprofile',
                             prefixIcon: Icons.link,
                             keyboardType: TextInputType.url,
@@ -358,7 +359,7 @@ class _ProfessionalProfileScreenState
                   child: GlassContainer(
                     padding: const EdgeInsets.all(4),
                     child: AppButton(
-                      label: 'Complete',
+                      label: 'Complete'.tr(context),
                       onPressed: _submitForm,
                       icon: Icons.check,
                     ),

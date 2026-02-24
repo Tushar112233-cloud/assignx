@@ -11,6 +11,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// A toggle switch widget for supervisor availability status.
 ///
@@ -119,7 +120,7 @@ class AvailabilityToggle extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isAvailable ? 'Available' : 'Unavailable',
+                  isAvailable ? 'Available'.tr(context) : 'Unavailable'.tr(context),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: isAvailable
@@ -130,8 +131,8 @@ class AvailabilityToggle extends StatelessWidget {
                 if (showLabel)
                   Text(
                     isAvailable
-                        ? 'Accepting new requests'
-                        : 'Not accepting requests',
+                        ? 'Accepting new requests'.tr(context)
+                        : 'Not accepting requests'.tr(context),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondaryLight,
                         ),
@@ -200,7 +201,7 @@ class _CompactToggle extends StatelessWidget {
         const SizedBox(width: 8),
         // Status text
         Text(
-          isAvailable ? 'Available' : 'Unavailable',
+          isAvailable ? 'Available'.tr(context) : 'Unavailable'.tr(context),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: isAvailable ? AppColors.success : AppColors.secondaryLight,
                 fontWeight: FontWeight.w500,
@@ -282,7 +283,7 @@ class AvailabilityChip extends StatelessWidget {
           const SizedBox(width: 6),
           // Status text
           Text(
-            isAvailable ? 'Available' : 'Unavailable',
+            isAvailable ? 'Available'.tr(context) : 'Unavailable'.tr(context),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color:
                       isAvailable ? AppColors.success : AppColors.secondaryLight,

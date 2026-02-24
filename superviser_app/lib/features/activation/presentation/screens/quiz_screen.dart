@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../shared/widgets/dialogs/confirm_dialog.dart';
 import '../providers/activation_provider.dart';
 import '../widgets/quiz_widgets.dart';
@@ -55,19 +56,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Submit Quiz?'),
+          title: Text('Submit Quiz?'.tr(context)),
           content: Text(
-            'You have $unanswered unanswered question${unanswered > 1 ? 's' : ''}. '
-            'Are you sure you want to submit?',
+            '${'You have'.tr(context)} $unanswered ${'unanswered question${unanswered > 1 ? 's' : ''}'.tr(context)}. '
+            '${'Are you sure you want to submit?'.tr(context)}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Continue Quiz'),
+              child: Text('Continue Quiz'.tr(context)),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Submit'),
+              child: Text('Submit'.tr(context)),
             ),
           ],
         ),
@@ -89,10 +90,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
     final shouldLeave = await ConfirmDialog.show(
       context,
-      title: 'Leave Quiz?',
-      message: 'Your progress will be lost if you leave now.',
-      confirmLabel: 'Leave',
-      cancelLabel: 'Stay',
+      title: 'Leave Quiz?'.tr(context),
+      message: 'Your progress will be lost if you leave now.'.tr(context),
+      confirmLabel: 'Leave'.tr(context),
+      cancelLabel: 'Stay'.tr(context),
       isDestructive: true,
     );
 
@@ -120,7 +121,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       child: Scaffold(
         appBar: _hasStarted && state.result == null
             ? AppBar(
-                title: Text(state.quiz?.title ?? 'Quiz'),
+                title: Text(state.quiz?.title ?? 'Quiz'.tr(context)),
                 centerTitle: true,
                 automaticallyImplyLeading: false,
                 actions: [
@@ -131,7 +132,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                 ],
               )
             : AppBar(
-                title: const Text('Supervisor Assessment'),
+                title: Text('Supervisor Assessment'.tr(context)),
                 leading: IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () async {
@@ -204,26 +205,26 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           // Quiz info cards
           _buildInfoCard(
             icon: Icons.help_outline,
-            title: '${quiz.totalQuestions} Questions',
-            subtitle: 'Multiple choice questions',
+            title: '${quiz.totalQuestions} ${'Questions'.tr(context)}',
+            subtitle: 'Multiple choice questions'.tr(context),
           ),
           const SizedBox(height: 12),
           _buildInfoCard(
             icon: Icons.timer_outlined,
-            title: '${quiz.timeLimitMinutes} Minutes',
-            subtitle: 'Time limit for completion',
+            title: '${quiz.timeLimitMinutes} ${'Minutes'.tr(context)}',
+            subtitle: 'Time limit for completion'.tr(context),
           ),
           const SizedBox(height: 12),
           _buildInfoCard(
             icon: Icons.check_circle_outline,
-            title: '${quiz.passingScore}% to Pass',
-            subtitle: 'Minimum score required',
+            title: '${quiz.passingScore}% ${'to Pass'.tr(context)}',
+            subtitle: 'Minimum score required'.tr(context),
           ),
           const SizedBox(height: 12),
           _buildInfoCard(
             icon: Icons.refresh,
-            title: '${quiz.maxAttempts} Attempts',
-            subtitle: 'Maximum allowed tries',
+            title: '${quiz.maxAttempts} ${'Attempts'.tr(context)}',
+            subtitle: 'Maximum allowed tries'.tr(context),
           ),
           const SizedBox(height: 32),
 
@@ -233,7 +234,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             height: 52,
             child: ElevatedButton(
               onPressed: _startQuiz,
-              child: const Text('Start Quiz'),
+              child: Text('Start Quiz'.tr(context)),
             ),
           ),
           const SizedBox(height: 16),
@@ -241,7 +242,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           // Cancel button
           TextButton(
             onPressed: () => context.pop(),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
         ],
       ),
@@ -344,7 +345,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             Expanded(
               child: OutlinedButton(
                 onPressed: ref.read(quizProvider.notifier).previousQuestion,
-                child: const Text('Previous'),
+                child: Text('Previous'.tr(context)),
               ),
             ),
           if (!isFirst) const SizedBox(width: 16),
@@ -354,7 +355,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               onPressed: isLast
                   ? _confirmSubmit
                   : ref.read(quizProvider.notifier).nextQuestion,
-              child: Text(isLast ? 'Submit' : 'Next'),
+              child: Text(isLast ? 'Submit'.tr(context) : 'Next'.tr(context)),
             ),
           ),
         ],

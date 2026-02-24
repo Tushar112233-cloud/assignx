@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Google sign-in button with official branding.
 ///
@@ -78,7 +79,7 @@ class GoogleSignInButton extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Continue with Google',
+                    'Continue with Google'.tr(context),
                     style: AppTextStyles.labelLarge.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,

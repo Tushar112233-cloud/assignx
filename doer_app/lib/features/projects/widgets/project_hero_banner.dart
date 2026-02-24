@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../providers/projects_provider.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// A gradient hero banner showing project stats at the top of My Projects.
 class ProjectHeroBanner extends StatelessWidget {
@@ -48,12 +49,12 @@ class ProjectHeroBanner extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.work_outline, color: Colors.white70, size: 20),
               SizedBox(width: AppSpacing.sm),
               Text(
-                'My Projects Overview',
+                'My Projects Overview'.tr(context),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,

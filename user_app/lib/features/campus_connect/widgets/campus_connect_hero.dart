@@ -3,6 +3,7 @@ import 'package:lottie/lottie.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Production-grade hero section for Campus Connect.
 ///
@@ -35,7 +36,7 @@ class CampusConnectHero extends StatelessWidget {
               children: [
                 // Main title
                 Text(
-                  'Campus Connect',
+                  'Campus Connect'.tr(context),
                   style: AppTextStyles.displayMedium.copyWith(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
@@ -47,7 +48,7 @@ class CampusConnectHero extends StatelessWidget {
                 const SizedBox(height: 6),
                 // Subtitle
                 Text(
-                  'Discover events, housing, resources & more',
+                  'Discover events, housing, resources & more'.tr(context),
                   style: AppTextStyles.bodyMedium.copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,

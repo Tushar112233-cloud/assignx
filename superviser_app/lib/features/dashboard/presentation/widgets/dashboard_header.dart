@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 /// Dashboard header with greeting and notifications.
@@ -27,7 +28,7 @@ class DashboardHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final userName = authState.user?.fullName ?? 'Supervisor';
+    final userName = authState.user?.fullName ?? 'Supervisor'.tr(context);
     final firstName = userName.split(' ').first;
 
     return Container(
@@ -68,7 +69,7 @@ class DashboardHeader extends ConsumerWidget {
             const SizedBox(height: 16),
             // Greeting
             Text(
-              _getGreeting(),
+              _getGreeting(context),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),
                   ),
@@ -89,14 +90,14 @@ class DashboardHeader extends ConsumerWidget {
   }
 
   /// Returns greeting based on time of day.
-  String _getGreeting() {
+  String _getGreeting(BuildContext context) {
     final hour = DateTime.now().hour;
     if (hour < 12) {
-      return 'Good Morning,';
+      return 'Good Morning,'.tr(context);
     } else if (hour < 17) {
-      return 'Good Afternoon,';
+      return 'Good Afternoon,'.tr(context);
     } else {
-      return 'Good Evening,';
+      return 'Good Evening,'.tr(context);
     }
   }
 }

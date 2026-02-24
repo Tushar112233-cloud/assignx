@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/doer_project_model.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// A card representing a single project in the My Projects list.
 class ProjectListCard extends StatelessWidget {
@@ -94,7 +95,7 @@ class ProjectListCard extends StatelessWidget {
                                 color: AppColors.urgentBg,
                                 borderRadius: AppSpacing.borderRadiusXs,
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
@@ -104,7 +105,7 @@ class ProjectListCard extends StatelessWidget {
                                   ),
                                   SizedBox(width: 2),
                                   Text(
-                                    'Urgent',
+                                    'Urgent'.tr(context),
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,

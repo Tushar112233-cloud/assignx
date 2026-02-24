@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/training_module.dart';
 import '../providers/activation_provider.dart';
 import '../widgets/training_module_card.dart';
@@ -82,7 +83,7 @@ class ActivationScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Complete Your Training',
+            'Complete Your Training'.tr(context),
             style: AppTypography.headlineSmall.copyWith(
               color: AppColors.textPrimaryLight,
               fontWeight: FontWeight.bold,
@@ -91,7 +92,7 @@ class ActivationScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Complete all training modules to unlock your supervisor dashboard.',
+            'Complete all training modules to unlock your supervisor dashboard.'.tr(context),
             style: AppTypography.bodyMedium.copyWith(
               color: AppColors.textSecondaryLight,
             ),
@@ -136,7 +137,7 @@ class ActivationScreen extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'All training modules completed!',
+                    'All training modules completed!'.tr(context),
                     style: AppTypography.titleSmall.copyWith(
                       color: AppColors.success,
                       fontWeight: FontWeight.w600,
@@ -152,7 +153,7 @@ class ActivationScreen extends ConsumerWidget {
             height: 52,
             child: ElevatedButton(
               onPressed: () => context.go('/activation/complete'),
-              child: const Text('Continue to Dashboard'),
+              child: Text('Continue to Dashboard'.tr(context)),
             ),
           ),
         ],

@@ -50,6 +50,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Work progress tracker with visual bar and optional slider.
 ///
@@ -91,7 +92,7 @@ class ProgressTracker extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(
                       Icons.trending_up,
@@ -100,7 +101,7 @@ class ProgressTracker extends StatelessWidget {
                     ),
                     SizedBox(width: 8),
                     Text(
-                      'Work Progress',
+                      'Work Progress'.tr(context),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -149,7 +150,7 @@ class ProgressTracker extends StatelessWidget {
 
             // Slider (if editable)
             if (editable && onChanged != null) ...[
-              const Row(
+              Row(
                 children: [
                   Icon(
                     Icons.tune,
@@ -158,7 +159,7 @@ class ProgressTracker extends StatelessWidget {
                   ),
                   SizedBox(width: 8),
                   Text(
-                    'Adjust progress:',
+                    'Adjust progress:'.tr(context),
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,

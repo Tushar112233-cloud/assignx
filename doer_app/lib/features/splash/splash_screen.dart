@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/router/route_names.dart';
 import '../../providers/auth_provider.dart';
+import '../../core/translation/translation_extensions.dart';
 
 /// Splash screen with animated logo and app name.
 ///
@@ -172,8 +173,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                       ),
                   const SizedBox(height: AppSpacing.lg),
                   // App name
-                  const Text(
-                    'DOER',
+                  Text(
+                    'DOER'.tr(context),
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
@@ -186,8 +187,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                       .slideY(begin: 0.3, end: 0),
                   const SizedBox(height: AppSpacing.sm),
                   // Tagline
-                  const Text(
-                    'Your Skills, Your Earnings',
+                  Text(
+                    'Your Skills, Your Earnings'.tr(context),
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white70,
@@ -201,8 +202,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             ),
             const Spacer(),
             // Powered by footer
-            const Text(
-              'Powered by AssignX',
+            Text(
+              'Powered by AssignX'.tr(context),
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.white54,

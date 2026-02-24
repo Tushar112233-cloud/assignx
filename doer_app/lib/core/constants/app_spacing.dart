@@ -157,6 +157,11 @@ class AppSpacing {
   /// Use for main content areas on screens.
   static const EdgeInsets screenPadding = EdgeInsets.all(md);
 
+  /// Card padding (16px all sides).
+  ///
+  /// Use for card content padding.
+  static const EdgeInsets cardPadding = EdgeInsets.all(md);
+
   /// Horizontal-only screen padding (16px left and right).
   ///
   /// Use when vertical padding is handled separately.

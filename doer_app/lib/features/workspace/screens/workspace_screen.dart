@@ -45,6 +45,7 @@ import '../../dashboard/widgets/deadline_countdown.dart';
 import '../widgets/file_upload.dart';
 import '../widgets/progress_tracker.dart';
 import '../widgets/project_info_card.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Main workspace screen for working on projects.
 ///
@@ -83,7 +84,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             // Content
             Expanded(
               child: project == null
-                  ? const Center(child: Text('Project not found'))
+                  ? Center(child: Text('Project not found'.tr(context)))
                   : SingleChildScrollView(
                       padding: AppSpacing.paddingMd,
                       child: Column(
@@ -146,7 +147,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                                   color: AppColors.surfaceVariant,
                                   borderRadius: AppSpacing.borderRadiusMd,
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
@@ -156,7 +157,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                                     ),
                                     SizedBox(width: 8),
                                     Text(
-                                      'Show Project Details',
+                                      'Show Project Details'.tr(context),
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
@@ -227,8 +228,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Workspace',
+                  Text(
+                    'Workspace'.tr(context),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -253,13 +254,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   context.push('/project/${widget.projectId}/chat'),
               icon: const Icon(Icons.chat_outlined),
               color: AppColors.textSecondary,
-              tooltip: 'Chat',
+              tooltip: 'Chat'.tr(context),
             ),
             IconButton(
               onPressed: () => context.push('/project/${widget.projectId}'),
               icon: const Icon(Icons.info_outline),
               color: AppColors.textSecondary,
-              tooltip: 'Project Details',
+              tooltip: 'Project Details'.tr(context),
             ),
           ],
         ),
@@ -278,7 +279,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.folder_outlined,
@@ -287,7 +288,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Work Files',
+                  'Work Files'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -408,8 +409,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            const Text(
-              'Upload File',
+            Text(
+              'Upload File'.tr(context),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -429,8 +430,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   color: AppColors.primary,
                 ),
               ),
-              title: const Text('Choose from Files'),
-              subtitle: const Text('PDF, DOC, DOCX, ZIP'),
+              title: Text('Choose from Files'.tr(context)),
+              subtitle: Text('PDF, DOC, DOCX, ZIP'.tr(context)),
               onTap: () {
                 Navigator.pop(context);
                 _mockAddFile();
@@ -448,13 +449,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   color: AppColors.info,
                 ),
               ),
-              title: const Text('Import from Cloud'),
-              subtitle: const Text('Google Drive, Dropbox'),
+              title: Text('Import from Cloud'.tr(context)),
+              subtitle: Text('Google Drive, Dropbox'.tr(context)),
               onTap: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Cloud import coming soon'),
+                  SnackBar(
+                    content: Text('Cloud import coming soon'.tr(context)),
                   ),
                 );
               },
@@ -480,8 +481,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('File uploaded successfully'),
+        SnackBar(
+          content: Text('File uploaded successfully'.tr(context)),
           backgroundColor: AppColors.success,
         ),
       );

@@ -16,28 +16,36 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { subjects, type Subject } from "@/lib/data/subjects";
 
 interface SubjectSelectorProps {
   value: string;
   onChange: (value: string) => void;
+  customSubject?: string;
+  onCustomSubjectChange?: (value: string) => void;
   error?: string;
+  customSubjectError?: string;
   className?: string;
 }
 
 /**
- * Subject selector with search and icons
+ * Subject selector with search, icons, and "Other" custom input support
  */
 export function SubjectSelector({
   value,
   onChange,
+  customSubject,
+  onCustomSubjectChange,
   error,
+  customSubjectError,
   className,
 }: SubjectSelectorProps) {
   const [open, setOpen] = useState(false);
 
   const selectedSubject = subjects.find((s) => s.id === value);
+  const isOther = value === "other";
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -116,6 +124,27 @@ export function SubjectSelector({
           <span className="h-1 w-1 rounded-full bg-red-500" />
           {error}
         </p>
+      )}
+
+      {/* Custom subject input when "Other" is selected */}
+      {isOther && (
+        <div className="space-y-1.5 pt-1">
+          <Input
+            placeholder="Enter your subject name..."
+            value={customSubject || ""}
+            onChange={(e) => onCustomSubjectChange?.(e.target.value)}
+            className={cn(
+              "h-10",
+              customSubjectError && "border-red-500"
+            )}
+          />
+          {customSubjectError && (
+            <p className="text-xs text-red-500 font-medium flex items-center gap-1">
+              <span className="h-1 w-1 rounded-full bg-red-500" />
+              {customSubjectError}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

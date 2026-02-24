@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Report reason options.
 enum ReportReason {
@@ -90,7 +91,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
   Future<void> _submitReport() async {
     if (_selectedReason == null) {
       setState(() {
-        _error = 'Please select a reason for your report';
+        _error = 'Please select a reason for your report'; // Translated at display
       });
       return;
     }
@@ -106,7 +107,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
 
       if (user == null) {
         setState(() {
-          _error = 'Please log in to report listings';
+          _error = 'Please log in to report listings'; // Translated at display
           _isSubmitting = false;
         });
         return;
@@ -122,7 +123,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
 
       if (existing != null) {
         setState(() {
-          _error = 'You have already reported this listing';
+          _error = 'You have already reported this listing'; // Translated at display
           _isSubmitting = false;
         });
         return;
@@ -157,7 +158,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
       }
     } catch (e) {
       setState(() {
-        _error = 'Failed to submit report. Please try again.';
+        _error = 'Failed to submit report. Please try again.'; // Translated at display
         _isSubmitting = false;
       });
     }
@@ -202,7 +203,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Report Submitted',
+            'Report Submitted'.tr(context),
             style: AppTextStyles.headingSmall.copyWith(
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
@@ -210,7 +211,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Thank you for helping keep our community safe. We\'ll review your report shortly.',
+            'Thank you for helping keep our community safe. We\'ll review your report shortly.'.tr(context),
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textSecondary,
@@ -265,14 +266,14 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Report Listing',
+                        'Report Listing'.tr(context),
                         style: AppTextStyles.headingSmall.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Help us maintain a safe community',
+                        'Help us maintain a safe community'.tr(context),
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -298,7 +299,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Why are you reporting this listing?',
+                  'Why are you reporting this listing?'.tr(context),
                   style: AppTextStyles.labelLarge.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -312,14 +313,14 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
 
                 // Details text field
                 Text(
-                  'Additional Details',
+                  'Additional Details'.tr(context),
                   style: AppTextStyles.labelMedium.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Optional',
+                  'Optional'.tr(context),
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),

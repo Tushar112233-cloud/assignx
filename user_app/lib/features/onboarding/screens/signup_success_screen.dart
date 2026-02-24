@@ -8,6 +8,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -119,7 +120,7 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
 
                           // Welcome message
                           Text(
-                            'Welcome, $displayName! 🎉',
+                            '${'Welcome'.tr(context)}, $displayName! 🎉',
                             style: AppTextStyles.displaySmall.copyWith(
                               color: AppColors.textPrimary,
                               fontWeight: FontWeight.bold,
@@ -134,7 +135,7 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
                           const SizedBox(height: 12),
 
                           Text(
-                            'Your account is ready',
+                            'Your account is ready'.tr(context),
                             style: AppTextStyles.headingMedium.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
@@ -145,7 +146,7 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
                           const SizedBox(height: 8),
 
                           Text(
-                            "You're all set to get expert help for your projects and connect with professionals.",
+                            "You're all set to get expert help for your projects and connect with professionals.".tr(context),
                             style: AppTextStyles.bodyLarge.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -169,7 +170,7 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
                         children: [
                           _buildFeatureRow(
                             Icons.upload_file_outlined,
-                            'Upload projects easily',
+                            'Upload projects easily'.tr(context),
                             AppColors.primary,
                           ).animate(delay: 600.ms).fadeIn(duration: 400.ms).slideX(
                                 begin: -0.2,
@@ -179,7 +180,7 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
                           const SizedBox(height: 16),
                           _buildFeatureRow(
                             Icons.visibility_outlined,
-                            'Track progress in real-time',
+                            'Track progress in real-time'.tr(context),
                             AppColors.success,
                           ).animate(delay: 700.ms).fadeIn(duration: 400.ms).slideX(
                                 begin: -0.2,
@@ -189,7 +190,7 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
                           const SizedBox(height: 16),
                           _buildFeatureRow(
                             Icons.verified_outlined,
-                            'Get quality-assured work',
+                            'Get quality-assured work'.tr(context),
                             AppColors.success,
                           ).animate(delay: 800.ms).fadeIn(duration: 400.ms).slideX(
                                 begin: -0.2,
@@ -206,7 +207,7 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
                     GlassContainer(
                       padding: const EdgeInsets.all(4),
                       child: AppButton(
-                        label: 'Go to Dashboard',
+                        label: 'Go to Dashboard'.tr(context),
                         onPressed: () => context.go(RouteNames.home),
                         icon: Icons.arrow_forward,
                       ),

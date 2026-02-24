@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import 'event_filters.dart';
 import 'housing_filters.dart';
 import 'resource_filters.dart';
@@ -211,7 +212,7 @@ class _FilterSheetContentState extends State<_FilterSheetContent>
                   const Icon(Icons.filter_list_outlined, size: 24),
                   const SizedBox(width: 12),
                   Text(
-                    'Filters',
+                    'Filters'.tr(context),
                     style: AppTextStyles.headingSmall.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -228,7 +229,7 @@ class _FilterSheetContentState extends State<_FilterSheetContent>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '${_filters.totalActiveFilterCount} active',
+                        '${_filters.totalActiveFilterCount} ${'active'.tr(context)}',
                         style: AppTextStyles.labelSmall.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w600,
@@ -241,7 +242,7 @@ class _FilterSheetContentState extends State<_FilterSheetContent>
               TextButton.icon(
                 onPressed: _resetFilters,
                 icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Reset'),
+                label: Text('Reset'.tr(context)),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.textSecondary,
                 ),
@@ -340,7 +341,7 @@ class _FilterSheetContentState extends State<_FilterSheetContent>
                     side: BorderSide(color: AppColors.border),
                   ),
                   child: Text(
-                    'Cancel',
+                    'Cancel'.tr(context),
                     style: AppTextStyles.labelMedium.copyWith(
                       color: AppColors.textPrimary,
                     ),
@@ -364,7 +365,7 @@ class _FilterSheetContentState extends State<_FilterSheetContent>
                       const Icon(Icons.check, color: Colors.white, size: 18),
                       const SizedBox(width: 8),
                       Text(
-                        'Apply',
+                        'Apply'.tr(context),
                         style: AppTextStyles.labelMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,

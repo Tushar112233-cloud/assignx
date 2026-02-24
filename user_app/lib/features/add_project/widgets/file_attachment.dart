@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Attachment model for uploaded files.
 class AttachmentFile {
@@ -141,8 +142,8 @@ class FileAttachment extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   files.length < maxFiles
-                      ? 'Tap to upload files'
-                      : 'Maximum files reached',
+                      ? 'Tap to upload files'.tr(context)
+                      : 'Maximum files reached'.tr(context),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: files.length < maxFiles
                         ? AppColors.textPrimary

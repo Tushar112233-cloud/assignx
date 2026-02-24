@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/training_module.dart';
 
 /// Card displaying a training module with progress indicator.
@@ -66,7 +67,7 @@ class TrainingModuleCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      _buildTypeChip(),
+                      _buildTypeChip(context),
                       const SizedBox(width: 8),
                       Icon(
                         Icons.schedule,
@@ -135,7 +136,7 @@ class TrainingModuleCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTypeChip() {
+  Widget _buildTypeChip(BuildContext context) {
     IconData icon;
     String label;
     Color color;
@@ -143,17 +144,17 @@ class TrainingModuleCard extends StatelessWidget {
     switch (module.type) {
       case ModuleType.video:
         icon = Icons.play_circle_outline;
-        label = 'Video';
+        label = 'Video'.tr(context);
         color = AppColors.info;
         break;
       case ModuleType.pdf:
         icon = Icons.description_outlined;
-        label = 'Document';
+        label = 'Document'.tr(context);
         color = AppColors.warning;
         break;
       case ModuleType.quiz:
         icon = Icons.quiz_outlined;
-        label = 'Quiz';
+        label = 'Quiz'.tr(context);
         color = AppColors.primary;
         break;
     }
@@ -204,13 +205,13 @@ class TrainingProgressBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Training Progress',
+              'Training Progress'.tr(context),
               style: AppTypography.titleSmall.copyWith(
                 color: AppColors.textPrimaryLight,
               ),
             ),
             Text(
-              '$completed of $total completed',
+              '$completed ${'of'.tr(context)} $total ${'completed'.tr(context)}',
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textSecondaryLight,
               ),

@@ -9,6 +9,7 @@ import '../../../shared/widgets/loading_overlay.dart';
 import '../widgets/profile_hero.dart';
 import '../widgets/profile_scorecard.dart';
 import '../widgets/profile_tabs.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Profile screen showing user profile with hero section, scorecard, and tabs.
 ///
@@ -68,7 +69,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       body: LoadingOverlay(
         isLoading: profileState.isLoading,
         child: profile == null
-            ? const Center(child: Text('Profile not found'))
+            ? Center(child: Text('Profile not found'.tr(context)))
             : RefreshIndicator(
                 onRefresh: () =>
                     ref.read(profileProvider.notifier).refresh(),

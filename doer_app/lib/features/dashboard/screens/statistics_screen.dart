@@ -31,6 +31,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/statistics_provider.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../widgets/app_header.dart';
@@ -59,7 +60,7 @@ class StatisticsScreen extends ConsumerWidget {
         child: Column(
           children: [
             InnerHeader(
-              title: 'Statistics',
+              title: 'Statistics'.tr(context),
               onBack: () => Navigator.pop(context),
             ),
             Expanded(
@@ -78,7 +79,7 @@ class StatisticsScreen extends ConsumerWidget {
                       const SizedBox(height: 20),
 
                       // 2. Quick Stats Grid
-                      _buildQuickStatsGrid(stats),
+                      _buildQuickStatsGrid(context, stats),
                       const SizedBox(height: 20),
 
                       // 3. Interactive Earnings Chart
@@ -114,7 +115,7 @@ class StatisticsScreen extends ConsumerWidget {
   }
 
   /// Builds the 2x2 quick stats grid with enhanced cards.
-  Widget _buildQuickStatsGrid(StatisticsState stats) {
+  Widget _buildQuickStatsGrid(BuildContext context, StatisticsState stats) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -125,32 +126,32 @@ class StatisticsScreen extends ConsumerWidget {
       children: [
         EnhancedStatCard(
           icon: Icons.assignment_rounded,
-          title: 'Active Projects',
+          title: 'Active Projects'.tr(context),
           value: stats.distribution.inProgress.toString(),
-          subtitle: 'Currently working on',
+          subtitle: 'Currently working on'.tr(context),
           variant: StatCardVariant.teal,
         ),
         EnhancedStatCard(
           icon: Icons.check_circle_rounded,
-          title: 'Completed',
+          title: 'Completed'.tr(context),
           value: stats.distribution.completed.toString(),
-          subtitle: 'All time',
+          subtitle: 'All time'.tr(context),
           trend: 8.5,
           variant: StatCardVariant.blue,
         ),
         EnhancedStatCard(
           icon: Icons.currency_rupee_rounded,
-          title: 'Total Earnings',
+          title: 'Total Earnings'.tr(context),
           value: _formatCurrency(stats.totalEarnings),
-          subtitle: 'From completed projects',
+          subtitle: 'From completed projects'.tr(context),
           trend: stats.earningsTrend,
           variant: StatCardVariant.purple,
         ),
         EnhancedStatCard(
           icon: Icons.star_rounded,
-          title: 'Rating',
+          title: 'Rating'.tr(context),
           value: stats.averageRating.toStringAsFixed(1),
-          subtitle: 'out of 5.0',
+          subtitle: 'out of 5.0'.tr(context),
           trend: stats.ratingTrend,
           variant: StatCardVariant.orange,
         ),

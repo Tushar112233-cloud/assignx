@@ -43,6 +43,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// A circular step progress bar for multi-step forms.
 ///
@@ -125,7 +126,7 @@ class StepProgressBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Step $currentStep of $totalSteps',
+                'Step $currentStep of $totalSteps'.tr(context),
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -310,7 +311,7 @@ class LinearStepProgress extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Step $currentStep of $totalSteps',
+          'Step $currentStep of $totalSteps'.tr(context),
           style: const TextStyle(
             fontSize: 12,
             color: AppColors.textSecondary,

@@ -10,6 +10,7 @@ import '../widgets/budget_display.dart';
 import '../widgets/deadline_picker.dart';
 import '../widgets/file_attachment.dart';
 import '../widgets/focus_area_chips.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../widgets/success_popup.dart';
 import '../widgets/word_count_input.dart';
 
@@ -64,7 +65,7 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
     if (_attachments.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please upload at least one document'),
+          content: Text('Please upload at least one document'.tr(context)),
           backgroundColor: AppColors.error,
         ),
       );
@@ -128,7 +129,7 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          'Proofreading Service',
+          'Proofreading Service'.tr(context),
           style: AppTextStyles.headingSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.transparent,
@@ -217,7 +218,7 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Professional Proofreading',
+                                  'Professional Proofreading'.tr(context),
                                   style: AppTextStyles.labelLarge.copyWith(
                                     color: Colors.blue.shade700,
                                     fontWeight: FontWeight.bold,
@@ -225,7 +226,7 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Get your document polished by experts',
+                                  'Get your document polished by experts'.tr(context),
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
@@ -239,7 +240,7 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
                     const SizedBox(height: 28),
 
                     // Document type
-                    _buildSectionLabel('Document Type', Icons.description_outlined),
+                    _buildSectionLabel('Document Type'.tr(context), Icons.description_outlined),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
@@ -301,13 +302,13 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
                     const SizedBox(height: 24),
 
                     // Upload document
-                    _buildSectionLabel('Upload Document', Icons.cloud_upload_outlined),
+                    _buildSectionLabel('Upload Document'.tr(context), Icons.cloud_upload_outlined),
                     const SizedBox(height: 8),
                     FileAttachment(
                       files: _attachments,
                       onChanged: (files) => setState(() => _attachments = files),
-                      label: 'Upload Document',
-                      hint: 'Upload the document you want proofread',
+                      label: 'Upload Document'.tr(context),
+                      hint: 'Upload the document you want proofread'.tr(context),
                       maxFiles: 3,
                       maxSizeMB: 20,
                       allowedExtensions: ['doc', 'docx', 'pdf', 'txt', 'rtf'],
@@ -316,7 +317,7 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
                     const SizedBox(height: 24),
 
                     // Word count
-                    _buildSectionLabel('Word Count', Icons.format_size),
+                    _buildSectionLabel('Word Count'.tr(context), Icons.format_size),
                     const SizedBox(height: 8),
                     WordCountInput(
                       value: _wordCount,
@@ -325,7 +326,7 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
                     const SizedBox(height: 24),
 
                     // Focus areas
-                    _buildSectionLabel('Focus Areas', Icons.flag_outlined),
+                    _buildSectionLabel('Focus Areas'.tr(context), Icons.flag_outlined),
                     const SizedBox(height: 8),
                     FocusAreaChips(
                       selectedAreas: _focusAreas,
@@ -334,7 +335,7 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
                     const SizedBox(height: 24),
 
                     // Deadline
-                    _buildSectionLabel('Deadline', Icons.calendar_today),
+                    _buildSectionLabel('Deadline'.tr(context), Icons.calendar_today),
                     const SizedBox(height: 8),
                     DeadlinePicker(
                       value: _deadline,
@@ -343,10 +344,10 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
                     const SizedBox(height: 24),
 
                     // Special instructions
-                    _buildSectionLabel('Special Instructions', Icons.notes),
+                    _buildSectionLabel('Special Instructions'.tr(context), Icons.notes),
                     const SizedBox(height: 4),
                     Text(
-                      'Any specific guidelines or preferences (optional)',
+                      'Any specific guidelines or preferences (optional)'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -421,7 +422,7 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
                                 ),
                               )
                             : Text(
-                                'Submit Request',
+                                'Submit Request'.tr(context),
                                 style: AppTextStyles.labelLarge.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,

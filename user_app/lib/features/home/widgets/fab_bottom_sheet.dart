@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Bottom sheet with quick actions from FAB.
 class FabBottomSheet extends StatelessWidget {
@@ -45,7 +46,7 @@ class FabBottomSheet extends StatelessWidget {
 
           // Title
           Text(
-            'Quick Actions',
+            'Quick Actions'.tr(context),
             style: AppTextStyles.headingSmall,
           ),
 
@@ -159,14 +160,14 @@ class _ActionCard extends StatelessWidget {
             Icon(icon, color: color, size: 28),
             const SizedBox(height: 12),
             Text(
-              title,
+              title.tr(context),
               style: AppTextStyles.labelLarge.copyWith(
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 2),
             Text(
-              subtitle,
+              subtitle.tr(context),
               style: AppTextStyles.bodySmall,
             ),
           ],

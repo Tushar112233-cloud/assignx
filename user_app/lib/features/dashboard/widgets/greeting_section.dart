@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../shared/animations/common_animations.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
@@ -42,17 +43,17 @@ class GreetingSection extends StatelessWidget {
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) {
-      return 'Good Morning,';
+      return 'Good Morning';
     } else if (hour < 17) {
-      return 'Good Afternoon,';
+      return 'Good Afternoon';
     } else {
-      return 'Good Evening,';
+      return 'Good Evening';
     }
   }
 
   /// Extracts first name from full name or returns default.
   String _getFirstName(String? fullName) {
-    if (fullName == null || fullName.isEmpty) return 'Student';
+    if (fullName == null || fullName.isEmpty) return 'Student'; // Translated at call site
     final parts = fullName.split(' ');
     return parts.first;
   }
@@ -70,7 +71,7 @@ class GreetingSection extends StatelessWidget {
         children: [
           // Time-based greeting - normal weight, dark gray
           Text(
-            _getGreeting(),
+            '${'${_getGreeting()}'.tr(context)},',
             style: AppTextStyles.displayMedium.copyWith(
               fontSize: 28,
               fontWeight: FontWeight.w400,
@@ -91,7 +92,7 @@ class GreetingSection extends StatelessWidget {
           const SizedBox(height: 8),
           // Subtitle - medium gray
           Text(
-            subtitle ?? 'Ready to optimize your workflow and generate insights.',
+            subtitle ?? 'Ready to optimize your workflow and generate insights.'.tr(context),
             style: AppTextStyles.bodyMedium.copyWith(
               fontSize: 15,
               fontWeight: FontWeight.w400,

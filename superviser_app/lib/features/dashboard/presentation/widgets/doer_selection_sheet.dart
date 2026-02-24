@@ -12,6 +12,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../shared/widgets/buttons/primary_button.dart';
 import '../../../../shared/widgets/inputs/app_text_field.dart';
 import '../../data/models/doer_model.dart';
@@ -168,7 +169,7 @@ class _DoerSelectionSheetState extends ConsumerState<DoerSelectionSheet> {
                     Row(
                       children: [
                         Text(
-                          'Select Doer',
+                          'Select Doer'.tr(context),
                           style:
                               Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
@@ -183,7 +184,7 @@ class _DoerSelectionSheetState extends ConsumerState<DoerSelectionSheet> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'For: ${widget.request.title}',
+                      '${'For:'.tr(context)} ${widget.request.title}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppColors.textSecondaryLight,
                           ),
@@ -198,7 +199,7 @@ class _DoerSelectionSheetState extends ConsumerState<DoerSelectionSheet> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: AppTextField(
                   controller: _searchController,
-                  hint: 'Search by name...',
+                  hint: 'Search by name...'.tr(context),
                   prefixIcon: Icons.search,
                   onChanged: (value) {
                     ref.read(doerSelectionProvider.notifier).search(value);
@@ -224,8 +225,8 @@ class _DoerSelectionSheetState extends ConsumerState<DoerSelectionSheet> {
                     : doerState.filteredDoers.isEmpty
                         ? _EmptyState(
                             message: doerState.searchQuery.isNotEmpty
-                                ? 'No doers match your search'
-                                : 'No available doers found',
+                                ? 'No doers match your search'.tr(context)
+                                : 'No available doers found'.tr(context),
                           )
                         : ListView.separated(
                             controller: scrollController,
@@ -322,7 +323,7 @@ class _DoerSelectionSheetState extends ConsumerState<DoerSelectionSheet> {
                     else
                       Expanded(
                         child: Text(
-                          'Select a doer to assign',
+                          'Select a doer to assign'.tr(context),
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: AppColors.textSecondaryLight,
@@ -332,7 +333,7 @@ class _DoerSelectionSheetState extends ConsumerState<DoerSelectionSheet> {
                     const SizedBox(width: 16),
                     // Assign button (disabled if no doer selected)
                     PrimaryButton(
-                      text: 'Assign',
+                      text: 'Assign'.tr(context),
                       onPressed:
                           _selectedDoer != null ? _assignDoer : null,
                       width: 120,
@@ -549,7 +550,7 @@ class DoerCard extends StatelessWidget {
                             size: 14, color: AppColors.textSecondaryLight),
                         const SizedBox(width: 4),
                         Text(
-                          '${doer.completedProjects} completed',
+                          '${doer.completedProjects} ${'completed'.tr(context)}',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppColors.textSecondaryLight,

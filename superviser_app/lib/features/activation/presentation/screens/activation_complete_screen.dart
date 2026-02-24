@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 /// Activation Complete Screen (S17)
@@ -98,7 +99,7 @@ class _ActivationCompleteScreenState
                 child: Column(
                   children: [
                     Text(
-                      'Welcome aboard,',
+                      'Welcome aboard,'.tr(context),
                       style: AppTypography.titleLarge.copyWith(
                         color: AppColors.textSecondaryLight,
                       ),
@@ -106,7 +107,7 @@ class _ActivationCompleteScreenState
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      user?.fullName ?? 'Supervisor',
+                      user?.fullName ?? 'Supervisor'.tr(context),
                       style: AppTypography.headlineMedium.copyWith(
                         color: AppColors.textPrimaryLight,
                         fontWeight: FontWeight.bold,
@@ -115,7 +116,7 @@ class _ActivationCompleteScreenState
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'You have successfully completed all training modules and are now an activated supervisor.',
+                      'You have successfully completed all training modules and are now an activated supervisor.'.tr(context),
                       style: AppTypography.bodyLarge.copyWith(
                         color: AppColors.textSecondaryLight,
                       ),
@@ -133,20 +134,20 @@ class _ActivationCompleteScreenState
                   children: [
                     _buildFeatureCard(
                       icon: Icons.dashboard_outlined,
-                      title: 'Access Dashboard',
-                      description: 'View and manage your assignments',
+                      title: 'Access Dashboard'.tr(context),
+                      description: 'View and manage your assignments'.tr(context),
                     ),
                     const SizedBox(height: 12),
                     _buildFeatureCard(
                       icon: Icons.chat_outlined,
-                      title: 'Chat with Clients',
-                      description: 'Communicate directly with clients',
+                      title: 'Chat with Clients'.tr(context),
+                      description: 'Communicate directly with clients'.tr(context),
                     ),
                     const SizedBox(height: 12),
                     _buildFeatureCard(
                       icon: Icons.payments_outlined,
-                      title: 'Earn Money',
-                      description: 'Complete tasks and receive payments',
+                      title: 'Earn Money'.tr(context),
+                      description: 'Complete tasks and receive payments'.tr(context),
                     ),
                   ],
                 ),
@@ -162,7 +163,7 @@ class _ActivationCompleteScreenState
                   height: 52,
                   child: ElevatedButton(
                     onPressed: _goToDashboard,
-                    child: const Text('Go to Dashboard'),
+                    child: Text('Go to Dashboard'.tr(context)),
                   ),
                 ),
               ),

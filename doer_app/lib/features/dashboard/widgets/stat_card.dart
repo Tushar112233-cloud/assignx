@@ -29,6 +29,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// A card widget for displaying statistics with an icon.
 ///
@@ -468,7 +469,7 @@ class RatingDisplay extends StatelessWidget {
         if (reviewCount != null) ...[
           const SizedBox(width: 4),
           Text(
-            '($reviewCount)',
+            '($reviewCount)'.tr(context),
             style: TextStyle(
               fontSize: size - 4,
               color: AppColors.textSecondary,

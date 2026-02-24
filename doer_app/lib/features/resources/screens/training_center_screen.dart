@@ -7,6 +7,7 @@ import '../../../providers/resources_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../../dashboard/widgets/app_header.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Training center screen with modules and progress tracking.
 ///
@@ -149,8 +150,8 @@ class TrainingCenterScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Your Progress',
+                      Text(
+                        'Your Progress'.tr(context),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -237,7 +238,7 @@ class TrainingCenterScreen extends ConsumerWidget {
                   color: AppColors.success.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
@@ -247,7 +248,7 @@ class TrainingCenterScreen extends ConsumerWidget {
                     ),
                     SizedBox(width: 6),
                     Text(
-                      'All required modules completed!',
+                      'All required modules completed!'.tr(context),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.white,
@@ -425,8 +426,8 @@ class TrainingCenterScreen extends ConsumerWidget {
                               color: AppColors.error.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
-                              'Required',
+                            child: Text(
+                              'Required'.tr(context),
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -470,8 +471,8 @@ class TrainingCenterScreen extends ConsumerWidget {
                             color: AppColors.textTertiary,
                           ),
                           const SizedBox(width: 4),
-                          const Text(
-                            'Video',
+                          Text(
+                            'Video'.tr(context),
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.textTertiary,
@@ -585,8 +586,8 @@ class _ModuleDetailSheetState extends ConsumerState<_ModuleDetailSheet> {
                                   color: AppColors.error.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: const Text(
-                                  'Required Module',
+                                child: Text(
+                                  'Required Module'.tr(context),
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -662,8 +663,8 @@ class _ModuleDetailSheetState extends ConsumerState<_ModuleDetailSheet> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            const Text(
-                              'Video content',
+                            Text(
+                              'Video content'.tr(context),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: AppColors.textSecondary,
@@ -677,8 +678,8 @@ class _ModuleDetailSheetState extends ConsumerState<_ModuleDetailSheet> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Description
-                  const Text(
-                    'About this module',
+                  Text(
+                    'About this module'.tr(context),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -713,8 +714,8 @@ class _ModuleDetailSheetState extends ConsumerState<_ModuleDetailSheet> {
 
                   // Content preview
                   if (widget.module.contentMarkdown != null) ...[
-                    const Text(
-                      'Module Content',
+                    Text(
+                      'Module Content'.tr(context),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

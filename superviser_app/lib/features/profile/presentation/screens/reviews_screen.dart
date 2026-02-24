@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/review_model.dart';
 import '../providers/profile_provider.dart';
 
@@ -14,7 +15,7 @@ class ReviewsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Reviews'),
+        title: Text('My Reviews'.tr(context)),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -102,8 +103,8 @@ class ReviewsScreen extends ConsumerWidget {
           if (context.mounted && success) {
             Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Response submitted successfully'),
+              SnackBar(
+                content: Text('Response submitted successfully'.tr(context)),
                 backgroundColor: Colors.green,
               ),
             );
@@ -164,7 +165,7 @@ class _ReviewsSummaryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${summary.totalReviews} reviews',
+                    '${summary.totalReviews} ${'reviews'.tr(context)}',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 12,
@@ -387,7 +388,7 @@ class _ReviewCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Your response',
+                          'Your response'.tr(context),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: AppColors.textSecondaryLight,
                                 fontWeight: FontWeight.w500,
@@ -424,7 +425,7 @@ class _ReviewCard extends StatelessWidget {
                 child: TextButton.icon(
                   onPressed: onRespond,
                   icon: const Icon(Icons.reply, size: 16),
-                  label: const Text('Respond'),
+                  label: Text('Respond'.tr(context)),
                 ),
               ),
             ],
@@ -458,14 +459,14 @@ class _EmptyReviews extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No reviews yet',
+              'No reviews yet'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Reviews from clients will appear here',
+              'Reviews from clients will appear here'.tr(context),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
@@ -516,7 +517,7 @@ class _ReviewFilterSheetState extends State<_ReviewFilterSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Filter Reviews',
+                  'Filter Reviews'.tr(context),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -528,14 +529,14 @@ class _ReviewFilterSheetState extends State<_ReviewFilterSheet> {
                       _maxRating = null;
                     });
                   },
-                  child: const Text('Clear'),
+                  child: Text('Clear'.tr(context)),
                 ),
               ],
             ),
             const SizedBox(height: 16),
 
             Text(
-              'Rating Range',
+              'Rating Range'.tr(context),
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -632,7 +633,7 @@ class _ReviewFilterSheetState extends State<_ReviewFilterSheet> {
                   ));
                   Navigator.pop(context);
                 },
-                child: const Text('Apply Filter'),
+                child: Text('Apply Filter'.tr(context)),
               ),
             ),
             const SizedBox(height: 16),
@@ -670,7 +671,7 @@ class _RespondDialogState extends State<_RespondDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Respond to Review'),
+      title: Text('Respond to Review'.tr(context)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -722,9 +723,9 @@ class _RespondDialogState extends State<_RespondDialog> {
           const SizedBox(height: 16),
           TextField(
             controller: _controller,
-            decoration: const InputDecoration(
-              labelText: 'Your response',
-              hintText: 'Write a professional response...',
+            decoration: InputDecoration(
+              labelText: 'Your response'.tr(context),
+              hintText: 'Write a professional response...'.tr(context),
               alignLabelWithHint: true,
             ),
             maxLines: 4,
@@ -735,7 +736,7 @@ class _RespondDialogState extends State<_RespondDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text('Cancel'.tr(context)),
         ),
         FilledButton(
           onPressed: _isSubmitting
@@ -752,7 +753,7 @@ class _RespondDialogState extends State<_RespondDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Submit'),
+              : Text('Submit'.tr(context)),
         ),
       ],
     );

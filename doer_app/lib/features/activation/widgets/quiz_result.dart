@@ -45,6 +45,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/quiz_model.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Full quiz result screen widget.
 ///
@@ -151,8 +152,8 @@ class QuizResultWidget extends StatelessWidget {
 
                 const SizedBox(height: AppSpacing.sm),
 
-                const Text(
-                  'Your Score',
+                Text(
+                  'Your Score'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     color: AppColors.textSecondary,
@@ -223,7 +224,7 @@ class QuizResultWidget extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Text(
-                    'Attempt #${attempt.attemptNumber}',
+                    'Attempt #${attempt.attemptNumber}'.tr(context),
                     style: const TextStyle(
                       fontSize: 14,
                       color: AppColors.info,
@@ -352,7 +353,7 @@ class QuizResultCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Score: ${attempt.score}/${attempt.totalQuestions} (${attempt.percentage.toInt()}%)',
+                  'Score: ${attempt.score}/${attempt.totalQuestions} (${attempt.percentage.toInt()}%)'.tr(context),
                   style: const TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,

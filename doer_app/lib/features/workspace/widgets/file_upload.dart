@@ -50,6 +50,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/deliverable_model.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Tappable file upload area widget.
 ///
@@ -115,8 +116,8 @@ class FileUploadArea extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'PDF, DOC, DOCX, ZIP (max 25MB)',
+            Text(
+              'PDF, DOC, DOCX, ZIP (max 25MB)'.tr(context),
               style: TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
@@ -162,7 +163,7 @@ class FileList extends StatelessWidget {
           color: AppColors.surfaceVariant,
           borderRadius: AppSpacing.borderRadiusMd,
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
@@ -172,7 +173,7 @@ class FileList extends StatelessWidget {
             ),
             SizedBox(width: 8),
             Text(
-              'No files uploaded yet',
+              'No files uploaded yet'.tr(context),
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -306,8 +307,8 @@ class FileListItem extends StatelessWidget {
                               color: AppColors.primary,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
-                              'PRIMARY',
+                            child: Text(
+                              'PRIMARY'.tr(context),
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
@@ -336,7 +337,7 @@ class FileListItem extends StatelessWidget {
                   icon: const Icon(Icons.star_border),
                   iconSize: 20,
                   color: AppColors.textSecondary,
-                  tooltip: 'Set as primary',
+                  tooltip: 'Set as primary'.tr(context),
                 ),
               if (onRemove != null)
                 IconButton(
@@ -344,7 +345,7 @@ class FileListItem extends StatelessWidget {
                   icon: const Icon(Icons.close),
                   iconSize: 20,
                   color: AppColors.error,
-                  tooltip: 'Remove',
+                  tooltip: 'Remove'.tr(context),
                 ),
             ],
           ),

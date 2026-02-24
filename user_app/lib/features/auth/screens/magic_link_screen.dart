@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/auth_provider.dart';
 
 /// Magic link confirmation screen shown after sending a magic link.
@@ -120,7 +121,7 @@ class _MagicLinkScreenState extends ConsumerState<MagicLinkScreen>
 
       if (mounted) {
         setState(() {
-          _successMessage = 'Magic link sent! Check your inbox.';
+          _successMessage = 'Magic link sent! Check your inbox.';  // Translated at display
           _isResending = false;
         });
 
@@ -139,7 +140,7 @@ class _MagicLinkScreenState extends ConsumerState<MagicLinkScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to resend. Please try again.';
+          _errorMessage = 'Failed to resend. Please try again.';  // Translated at display
           _isResending = false;
         });
       }
@@ -212,7 +213,7 @@ class _MagicLinkScreenState extends ConsumerState<MagicLinkScreen>
 
                         // Title
                         Text(
-                          'Check Your Email',
+                          'Check Your Email'.tr(context),
                           style: AppTextStyles.headingLarge.copyWith(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.bold,
@@ -232,8 +233,8 @@ class _MagicLinkScreenState extends ConsumerState<MagicLinkScreen>
                               height: 1.5,
                             ),
                             children: [
-                              const TextSpan(
-                                text: 'We sent a magic link to\n',
+                              TextSpan(
+                                text: '${'We sent a magic link to'.tr(context)}\n',
                               ),
                               TextSpan(
                                 text: widget.email,
@@ -327,7 +328,7 @@ class _MagicLinkScreenState extends ConsumerState<MagicLinkScreen>
                         TextButton(
                           onPressed: _tryAnotherMethod,
                           child: Text(
-                            'Try another sign in method',
+                            'Try another sign in method'.tr(context),
                             style: AppTextStyles.labelMedium.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
@@ -352,7 +353,7 @@ class _MagicLinkScreenState extends ConsumerState<MagicLinkScreen>
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Secure passwordless authentication',
+                        'Secure passwordless authentication'.tr(context),
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textSecondary.withValues(alpha: 0.6),
                         ),
@@ -582,7 +583,7 @@ class _InfoCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'How it works',
+                    'How it works'.tr(context),
                     style: AppTextStyles.labelLarge.copyWith(
                       color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
@@ -593,17 +594,17 @@ class _InfoCard extends StatelessWidget {
               const SizedBox(height: 16),
               _InfoItem(
                 icon: Icons.mark_email_read_outlined,
-                text: 'Click the link in the email we sent you',
+                text: 'Click the link in the email we sent you'.tr(context),
               ),
               const SizedBox(height: 10),
               _InfoItem(
                 icon: Icons.timer_outlined,
-                text: 'The link expires in 10 minutes',
+                text: 'The link expires in 10 minutes'.tr(context),
               ),
               const SizedBox(height: 10),
               _InfoItem(
                 icon: Icons.folder_outlined,
-                text: 'Check your spam folder if you don\'t see it',
+                text: 'Check your spam folder if you don\'t see it'.tr(context),
               ),
             ],
           ),
@@ -663,8 +664,8 @@ class _ResendButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final buttonText = canResend
-        ? 'Resend magic link'
-        : 'Resend in ${cooldownSeconds}s';
+        ? 'Resend magic link'.tr(context)
+        : '${'Resend in'.tr(context)} ${cooldownSeconds}s';
 
     return SizedBox(
       width: double.infinity,

@@ -41,6 +41,8 @@ export type {
   ChatRoomWithDetails,
   MessageWithSender,
   MessageCallback,
+  ConnectionState,
+  ConnectionStateCallback,
 } from './chat.service'
 
 export { marketplaceService } from './marketplace.service'

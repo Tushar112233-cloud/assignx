@@ -9,6 +9,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../dashboard/widgets/app_header.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// AI content checker screen for detecting AI-generated text.
 ///
@@ -173,22 +174,22 @@ class _AICheckerScreenState extends ConsumerState<AICheckerScreen>
               ),
             ),
             const SizedBox(width: AppSpacing.md),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'AI Detection Tool',
-                    style: TextStyle(
+                    'AI Detection Tool'.tr(context),
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: AppColors.info,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Paste your text below to check for AI-generated content patterns.',
-                    style: TextStyle(
+                    'Paste your text below to check for AI-generated content patterns.'.tr(context),
+                    style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
                     ),
@@ -209,7 +210,7 @@ class _AICheckerScreenState extends ConsumerState<AICheckerScreen>
       trailing: TextButton.icon(
         onPressed: _pasteFromClipboard,
         icon: const Icon(Icons.paste, size: 16),
-        label: const Text('Paste'),
+        label: Text('Paste'.tr(context)),
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -241,8 +242,8 @@ class _AICheckerScreenState extends ConsumerState<AICheckerScreen>
                     ref.read(resourcesProvider.notifier).clearCurrentCheck();
                     setState(() {});
                   },
-                  child: const Text(
-                    'Clear',
+                  child: Text(
+                    'Clear'.tr(context),
                     style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
@@ -272,7 +273,7 @@ class _AICheckerScreenState extends ConsumerState<AICheckerScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.analytics,
@@ -281,7 +282,7 @@ class _AICheckerScreenState extends ConsumerState<AICheckerScreen>
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Analysis Results',
+                  'Analysis Results'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -362,8 +363,8 @@ class _AICheckerScreenState extends ConsumerState<AICheckerScreen>
             // Highlights
             if (result.highlights.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.lg),
-              const Text(
-                'Flagged Sections',
+              Text(
+                'Flagged Sections'.tr(context),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -383,7 +384,7 @@ class _AICheckerScreenState extends ConsumerState<AICheckerScreen>
                   child: OutlinedButton.icon(
                     onPressed: () => _copyResults(result),
                     icon: const Icon(Icons.copy, size: 16),
-                    label: const Text('Copy Report'),
+                    label: Text('Copy Report'.tr(context)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
                     ),
@@ -394,7 +395,7 @@ class _AICheckerScreenState extends ConsumerState<AICheckerScreen>
                   child: OutlinedButton.icon(
                     onPressed: () => _shareResults(result),
                     icon: const Icon(Icons.share, size: 16),
-                    label: const Text('Share'),
+                    label: Text('Share'.tr(context)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
                     ),
@@ -517,8 +518,8 @@ class _AICheckerScreenState extends ConsumerState<AICheckerScreen>
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            const Text(
-              'No checks yet',
+            Text(
+              'No checks yet'.tr(context),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -526,8 +527,8 @@ class _AICheckerScreenState extends ConsumerState<AICheckerScreen>
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'Your AI content check history will appear here',
+            Text(
+              'Your AI content check history will appear here'.tr(context),
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -695,8 +696,8 @@ class _AICheckerScreenState extends ConsumerState<AICheckerScreen>
   Future<void> _checkContent() async {
     if (_textController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter some text to check'),
+        SnackBar(
+          content: Text('Please enter some text to check'.tr(context)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -721,8 +722,8 @@ Checked on: ${_formatDateTime(result.checkedAt)}
 
     Clipboard.setData(ClipboardData(text: report));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Report copied to clipboard'),
+      SnackBar(
+        content: Text('Report copied to clipboard'.tr(context)),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -731,8 +732,8 @@ Checked on: ${_formatDateTime(result.checkedAt)}
   void _shareResults(AICheckResult result) {
     // In production, use share_plus package
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Share functionality coming soon'),
+      SnackBar(
+        content: Text('Share functionality coming soon'.tr(context)),
         behavior: SnackBarBehavior.floating,
       ),
     );

@@ -28,6 +28,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Earnings data point model.
 class EarningsDataPoint {
@@ -177,8 +178,8 @@ class _EarningsGraphState extends State<EarningsGraph> {
           color: AppColors.primary,
         ),
         const SizedBox(width: 8),
-        const Text(
-          'Earnings Overview',
+        Text(
+          'Earnings Overview'.tr(context),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -244,8 +245,8 @@ class _EarningsGraphState extends State<EarningsGraph> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Total Earnings',
+              Text(
+                'Total Earnings'.tr(context),
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary,
@@ -255,8 +256,8 @@ class _EarningsGraphState extends State<EarningsGraph> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text(
-                    '\u20B9',
+                  Text(
+                    '\u20B9'.tr(context),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -315,8 +316,8 @@ class _EarningsGraphState extends State<EarningsGraph> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const Text(
-              'Daily Avg',
+            Text(
+              'Daily Avg'.tr(context),
               style: TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
@@ -324,7 +325,7 @@ class _EarningsGraphState extends State<EarningsGraph> {
             ),
             const SizedBox(height: 4),
             Text(
-              '\u20B9${_formatAmount(_dailyAverage)}',
+              '\u20B9${_formatAmount(_dailyAverage)}'.tr(context),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -340,9 +341,9 @@ class _EarningsGraphState extends State<EarningsGraph> {
   /// Builds the fl_chart line chart with gradient fill.
   Widget _buildFlChart() {
     if (_data.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: 180,
-        child: Center(child: Text('No data available')),
+        child: Center(child: Text('No data available'.tr(context))),
       );
     }
 

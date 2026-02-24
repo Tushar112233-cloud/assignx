@@ -9,6 +9,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../dashboard/widgets/app_header.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Citation builder screen for generating properly formatted citations.
 ///
@@ -318,7 +319,7 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
             'Author(s)',
             _authorsController,
             hint: 'e.g., Smith, J. D., & Jones, M.',
-            helperText: 'Use format: Last, F. M. for multiple authors',
+            helperText: 'Use format: Last, F. M. for multiple authors'.tr(context),
             isRequired: false,
           ),
           // Title
@@ -472,8 +473,8 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
                   color: AppColors.success,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Generated Citation',
+                Text(
+                  'Generated Citation'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -565,8 +566,8 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            const Text(
-              'No citations yet',
+            Text(
+              'No citations yet'.tr(context),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -574,8 +575,8 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'Your generated citations will appear here',
+            Text(
+              'Your generated citations will appear here'.tr(context),
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -705,8 +706,8 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
   void _generateCitation() {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a title'),
+        SnackBar(
+          content: Text('Please enter a title'.tr(context)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -739,12 +740,12 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Row(
           children: [
             Icon(Icons.check_circle, color: Colors.white),
             SizedBox(width: 8),
-            Text('Citation generated!'),
+            Text('Citation generated!'.tr(context)),
           ],
         ),
         backgroundColor: AppColors.success,
@@ -757,8 +758,8 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
     if (_generatedCitation != null) {
       Clipboard.setData(ClipboardData(text: _generatedCitation!.formattedCitation));
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Citation copied to clipboard'),
+        SnackBar(
+          content: Text('Citation copied to clipboard'.tr(context)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -850,8 +851,8 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
                 );
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Citation copied to clipboard'),
+                  SnackBar(
+                    content: Text('Citation copied to clipboard'.tr(context)),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );

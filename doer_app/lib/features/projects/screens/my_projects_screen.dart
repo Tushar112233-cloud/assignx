@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/doer_project_model.dart';
 import '../../../providers/projects_provider.dart';
 import '../../../shared/widgets/empty_state.dart';
@@ -54,7 +55,7 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
         children: [
           // Header
           InnerHeader(
-            title: 'My Projects',
+            title: 'My Projects'.tr(context),
             onBack: () => Navigator.pop(context),
           ),
 
@@ -116,9 +117,9 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
                           _ProjectList(
                             projects: projectsState.filteredActiveProjects,
                             emptyIcon: Icons.assignment_outlined,
-                            emptyTitle: 'No Active Projects',
+                            emptyTitle: 'No Active Projects'.tr(context),
                             emptyDescription:
-                                'You don\'t have any active projects right now. Check the dashboard for available projects.',
+                                'You don\'t have any active projects right now. Check the dashboard for available projects.'.tr(context),
                           ),
 
                           // Under review tab
@@ -126,18 +127,18 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
                             projects:
                                 projectsState.filteredUnderReviewProjects,
                             emptyIcon: Icons.rate_review_outlined,
-                            emptyTitle: 'Nothing Under Review',
+                            emptyTitle: 'Nothing Under Review'.tr(context),
                             emptyDescription:
-                                'No projects are currently being reviewed. Submit your work to see them here.',
+                                'No projects are currently being reviewed. Submit your work to see them here.'.tr(context),
                           ),
 
                           // Completed tab
                           _ProjectList(
                             projects: projectsState.filteredCompletedProjects,
                             emptyIcon: Icons.check_circle_outline,
-                            emptyTitle: 'No Completed Projects',
+                            emptyTitle: 'No Completed Projects'.tr(context),
                             emptyDescription:
-                                'Completed projects will appear here once they are approved.',
+                                'Completed projects will appear here once they are approved.'.tr(context),
                           ),
                         ],
                       ),
@@ -234,9 +235,9 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
           fontWeight: FontWeight.w500,
         ),
         tabs: [
-          Tab(text: 'Active ($activeCount)'),
-          Tab(text: 'Review ($reviewCount)'),
-          Tab(text: 'Completed ($completedCount)'),
+          Tab(text: '${'Active'.tr(context)} ($activeCount)'),
+          Tab(text: '${'Review'.tr(context)} ($reviewCount)'),
+          Tab(text: '${'Completed'.tr(context)} ($completedCount)'),
         ],
       ),
     );

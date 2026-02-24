@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Word count input with presets and custom input.
 class WordCountInput extends StatefulWidget {
@@ -54,12 +55,12 @@ class _WordCountInputState extends State<WordCountInput> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Word Count',
+          'Word Count'.tr(context),
           style: AppTextStyles.labelMedium,
         ),
         const SizedBox(height: 4),
         Text(
-          'Approximate number of words in your document',
+          'Approximate number of words in your document'.tr(context),
           style: AppTextStyles.caption.copyWith(
             color: AppColors.textTertiary,
           ),
@@ -83,7 +84,7 @@ class _WordCountInputState extends State<WordCountInput> {
               );
             }),
             _PresetChip(
-              label: 'Custom',
+              label: 'Custom'.tr(context),
               isSelected: _showCustomInput,
               onTap: () {
                 setState(() => _showCustomInput = true);
@@ -116,13 +117,13 @@ class _WordCountInputState extends State<WordCountInput> {
                 LengthLimitingTextInputFormatter(6),
               ],
               decoration: InputDecoration(
-                hintText: 'Enter word count',
+                hintText: 'Enter word count'.tr(context),
                 hintStyle: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textTertiary,
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(16),
-                suffixText: 'words',
+                suffixText: 'words'.tr(context),
                 suffixStyle: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textTertiary,
                 ),

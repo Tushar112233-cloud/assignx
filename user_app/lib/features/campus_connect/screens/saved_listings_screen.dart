@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/marketplace_model.dart';
 import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../widgets/post_card.dart';
@@ -145,7 +146,7 @@ class _SavedListingsScreenState extends ConsumerState<SavedListingsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to remove saved listing'),
+            content: Text('Failed to remove saved listing'.tr(context)),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -195,7 +196,7 @@ class _SavedListingsScreenState extends ConsumerState<SavedListingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Saved Listings',
+                          'Saved Listings'.tr(context),
                           style: AppTextStyles.headingSmall.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -206,21 +207,21 @@ class _SavedListingsScreenState extends ConsumerState<SavedListingsScreen> {
                             final count = listings.length - _removingIds.length;
                             return Text(
                               count == 0
-                                  ? 'No saved listings yet'
-                                  : '$count saved ${count == 1 ? "listing" : "listings"}',
+                                  ? 'No saved listings yet'.tr(context)
+                                  : '$count ${'saved'.tr(context)} ${count == 1 ? 'listing'.tr(context) : 'listings'.tr(context)}',
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: AppColors.textSecondary,
                               ),
                             );
                           },
                           loading: () => Text(
-                            'Loading...',
+                            'Loading...'.tr(context),
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.textSecondary,
                             ),
                           ),
                           error: (_, __) => Text(
-                            'Failed to load',
+                            'Failed to load'.tr(context),
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.error,
                             ),
@@ -465,7 +466,7 @@ class _SavedListingCard extends StatelessWidget {
                               Icons.bookmark_remove_outlined,
                               color: AppColors.error,
                             ),
-                      tooltip: 'Remove from saved',
+                      tooltip: 'Remove from saved',  // Tooltips are not typically translated but keeping as-is
                       visualDensity: VisualDensity.compact,
                     ),
                   ],
@@ -574,14 +575,14 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'No Saved Listings',
+              'No Saved Listings'.tr(context),
               style: AppTextStyles.headingSmall.copyWith(
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Save listings by tapping the bookmark icon.\nThey\'ll appear here for easy access.',
+              "Save listings by tapping the bookmark icon.\nThey'll appear here for easy access.".tr(context),
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
@@ -602,7 +603,7 @@ class _EmptyState extends StatelessWidget {
               ),
               icon: const Icon(Icons.explore_outlined, size: 18),
               label: Text(
-                'Browse Listings',
+                'Browse Listings'.tr(context),
                 style: AppTextStyles.labelLarge.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -649,7 +650,7 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Something went wrong',
+              'Something went wrong'.tr(context),
               style: AppTextStyles.headingSmall.copyWith(
                 color: AppColors.textPrimary,
               ),
@@ -679,7 +680,7 @@ class _ErrorState extends StatelessWidget {
               ),
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: Text(
-                'Try Again',
+                'Try Again'.tr(context),
                 style: AppTextStyles.labelLarge.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.white,

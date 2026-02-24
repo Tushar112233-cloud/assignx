@@ -29,6 +29,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Skill verification status.
 enum VerificationStatus {
@@ -145,7 +146,7 @@ class SkillVerification extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            _buildHeader(),
+            _buildHeader(context),
 
             const SizedBox(height: AppSpacing.md),
 
@@ -160,7 +161,7 @@ class SkillVerification extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
 
             // Info note
-            _buildInfoNote(),
+            _buildInfoNote(context),
           ],
         ),
       ),
@@ -168,8 +169,8 @@ class SkillVerification extends StatelessWidget {
   }
 
   /// Builds the header.
-  Widget _buildHeader() {
-    return const Row(
+  Widget _buildHeader(BuildContext context) {
+    return Row(
       children: [
         Icon(
           Icons.verified_user,
@@ -178,7 +179,7 @@ class SkillVerification extends StatelessWidget {
         ),
         SizedBox(width: 8),
         Text(
-          'Skill Verification',
+          'Skill Verification'.tr(context),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -345,8 +346,8 @@ class SkillVerification extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text(
-                'Verify',
+              child: Text(
+                'Verify'.tr(context),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -363,7 +364,7 @@ class SkillVerification extends StatelessWidget {
                 color: AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
@@ -376,7 +377,7 @@ class SkillVerification extends StatelessWidget {
                   ),
                   SizedBox(width: 4),
                   Text(
-                    'In Review',
+                    'In Review'.tr(context),
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -398,14 +399,14 @@ class SkillVerification extends StatelessWidget {
   }
 
   /// Builds the info note at the bottom.
-  Widget _buildInfoNote() {
+  Widget _buildInfoNote(BuildContext context) {
     return Container(
       padding: AppSpacing.paddingSm,
       decoration: BoxDecoration(
         color: AppColors.info.withValues(alpha: 0.1),
         borderRadius: AppSpacing.borderRadiusSm,
       ),
-      child: const Row(
+      child: Row(
         children: [
           Icon(
             Icons.info_outline,
@@ -415,7 +416,7 @@ class SkillVerification extends StatelessWidget {
           SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Verified skills increase your chances of getting assigned to relevant projects.',
+              'Verified skills increase your chances of getting assigned to relevant projects.'.tr(context),
               style: TextStyle(
                 fontSize: 11,
                 color: AppColors.info,
@@ -432,18 +433,18 @@ class SkillVerification extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Request Verification'),
+        title: Text('Request Verification'.tr(context)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Request verification for "${skill.name}"?',
+              '${'Request verification for'.tr(context)} "${skill.name}"?',
               style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Our team will review your profile and work history to verify this skill. This typically takes 2-3 business days.',
+            Text(
+              'Our team will review your profile and work history to verify this skill. This typically takes 2-3 business days.'.tr(context),
               style: TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
@@ -454,7 +455,7 @@ class SkillVerification extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -462,7 +463,7 @@ class SkillVerification extends StatelessWidget {
               onRequestVerification?.call(skill.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Verification requested for ${skill.name}'),
+                  content: Text('${'Verification requested for'.tr(context)} ${skill.name}'),
                   backgroundColor: AppColors.success,
                 ),
               );
@@ -471,7 +472,7 @@ class SkillVerification extends StatelessWidget {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Request'),
+            child: Text('Request'.tr(context)),
           ),
         ],
       ),

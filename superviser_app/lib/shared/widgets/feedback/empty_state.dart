@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../buttons/primary_button.dart';
 
 /// {@template empty_state}
@@ -241,10 +242,10 @@ class EmptySearchState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EmptyState(
-      title: 'No results found',
+      title: 'No results found'.tr(context),
       description: query.isNotEmpty
-          ? 'No results found for "$query"'
-          : 'Try adjusting your search or filters',
+          ? '${'No results found for'.tr(context)} "$query"'
+          : 'Try adjusting your search or filters'.tr(context),
       icon: Icons.search_off_outlined,
     );
   }

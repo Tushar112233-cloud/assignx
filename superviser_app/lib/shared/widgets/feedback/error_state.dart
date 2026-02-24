@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../buttons/primary_button.dart';
 
 /// {@template error_state}
@@ -179,8 +180,8 @@ class NetworkErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ErrorState(
-      title: 'No Connection',
-      message: 'Please check your internet connection and try again.',
+      title: 'No Connection'.tr(context),
+      message: 'Please check your internet connection and try again.'.tr(context),
       icon: Icons.wifi_off_outlined,
       onRetry: onRetry,
     );
@@ -228,8 +229,8 @@ class ServerErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ErrorState(
-      title: 'Something Went Wrong',
-      message: 'We encountered an error. Please try again later.',
+      title: 'Something Went Wrong'.tr(context),
+      message: 'We encountered an error. Please try again later.'.tr(context),
       icon: Icons.cloud_off_outlined,
       onRetry: onRetry,
     );

@@ -15,7 +15,7 @@
 /// AppCard(
 ///   padding: AppSpacing.paddingMd,
 ///   onTap: () => handleTap(),
-///   child: Text('Card content'),
+///   child: Text('Card content'.tr(context)),
 /// )
 /// ```
 ///
@@ -40,7 +40,7 @@ import '../../core/constants/app_spacing.dart';
 /// AppCard(
 ///   padding: AppSpacing.paddingMd,
 ///   onTap: () => handleTap(),
-///   child: Text('Card content'),
+///   child: Text('Card content'.tr(context)),
 /// )
 /// ```
 ///

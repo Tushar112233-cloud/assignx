@@ -36,13 +36,16 @@ function transformProjectToDetail(dbProject: Awaited<ReturnType<typeof getProjec
     completedAt: dbProject.completed_at || undefined,
     cancelledAt: dbProject.cancelled_at || undefined,
     instructions: dbProject.specific_instructions || "",
-    budget: dbProject.user_quote ? `₹${dbProject.user_quote}` : undefined,
+    budget: (dbProject.final_quote || dbProject.user_quote)
+      ? `₹${dbProject.final_quote || dbProject.user_quote}`
+      : undefined,
     liveDocUrl: dbProject.live_document_url || undefined,
     supervisorName: undefined, // Will be fetched from chat room participants
     unreadMessages: 0, // Will be calculated from chat messages
     attachedFiles: (dbProject.files || []).map((file: {
       id: string;
       file_name: string;
+      file_url?: string;
       file_size_bytes?: number | null;
       file_type?: string | null;
       created_at?: string | null;
@@ -52,10 +55,12 @@ function transformProjectToDetail(dbProject: Awaited<ReturnType<typeof getProjec
       size: formatFileSize(file.file_size_bytes || 0),
       type: getFileType(file.file_type || ""),
       uploadedAt: file.created_at || "",
+      url: file.file_url || undefined,
     })),
     deliverables: (dbProject.deliverables || []).map((del: {
       id: string;
       file_name: string;
+      file_url?: string;
       file_size_bytes?: number | null;
       version?: number | null;
       created_at?: string | null;
@@ -67,6 +72,7 @@ function transformProjectToDetail(dbProject: Awaited<ReturnType<typeof getProjec
       version: del.version || 1,
       uploadedAt: del.created_at || "",
       isFinal: del.is_final || false,
+      url: del.file_url || undefined,
     })),
     qualityReports: [
       {

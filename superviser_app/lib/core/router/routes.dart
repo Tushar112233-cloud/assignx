@@ -217,6 +217,28 @@ abstract class RoutePaths {
   /// Path: `/settings`
   static const settings = '/settings';
 
+  // ============ Business Hub / Community Routes ============
+
+  /// Business Hub main feed screen.
+  ///
+  /// Path: `/business-hub`
+  static const businessHub = '/business-hub';
+
+  /// Create a new business hub post.
+  ///
+  /// Path: `/business-hub/create`
+  static const businessHubCreatePost = '/business-hub/create';
+
+  /// Business hub post detail screen with ID parameter.
+  ///
+  /// Path: `/business-hub/:id`
+  static const businessHubPostDetail = '/business-hub/:id';
+
+  /// Saved business hub posts screen.
+  ///
+  /// Path: `/business-hub/saved`
+  static const businessHubSaved = '/business-hub/saved';
+
   // ============ User Management Routes ============
 
   /// Users / clients list screen.
@@ -366,6 +388,20 @@ abstract class RouteNames {
 
   /// Name for the settings route.
   static const settings = 'settings';
+
+  // ============ Business Hub / Community Routes ============
+
+  /// Name for the business hub main feed route.
+  static const businessHub = 'business-hub';
+
+  /// Name for the create business hub post route.
+  static const businessHubCreatePost = 'business-hub-create-post';
+
+  /// Name for the business hub post detail route.
+  static const businessHubPostDetail = 'business-hub-post-detail';
+
+  /// Name for the saved business hub posts route.
+  static const businessHubSaved = 'business-hub-saved';
 
   // ============ User Management Routes ============
 

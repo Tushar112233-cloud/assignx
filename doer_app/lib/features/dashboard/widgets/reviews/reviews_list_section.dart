@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../data/models/project_model.dart';
 import 'review_card.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Full reviews list with tabs, search, and scrollable review cards.
 class ReviewsListSection extends StatefulWidget {
@@ -87,8 +88,8 @@ class _ReviewsListSectionState extends State<ReviewsListSection>
                   size: 18, color: AppColors.accent),
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Text(
-              'All Reviews',
+            Text(
+              'All Reviews'.tr(context),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -117,7 +118,7 @@ class _ReviewsListSectionState extends State<ReviewsListSection>
           child: TextField(
             onChanged: (v) => setState(() => _searchQuery = v),
             decoration: InputDecoration(
-              hintText: 'Search reviews...',
+              hintText: 'Search reviews...'.tr(context),
               hintStyle: const TextStyle(
                   color: AppColors.textTertiary, fontSize: 14),
               prefixIcon: const Icon(Icons.search_rounded,
@@ -178,8 +179,8 @@ class _ReviewsListSectionState extends State<ReviewsListSection>
                 Icon(Icons.search_off_rounded,
                     size: 40, color: AppColors.textTertiary.withValues(alpha: 0.5)),
                 const SizedBox(height: AppSpacing.sm),
-                const Text(
-                  'No reviews found',
+                Text(
+                  'No reviews found'.tr(context),
                   style: TextStyle(
                       fontSize: 14, color: AppColors.textTertiary),
                 ),

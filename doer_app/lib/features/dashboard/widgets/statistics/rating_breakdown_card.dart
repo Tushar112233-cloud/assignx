@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../providers/statistics_provider.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Card showing rating breakdown across categories.
 class RatingBreakdownCard extends ConsumerWidget {
@@ -41,8 +42,8 @@ class RatingBreakdownCard extends ConsumerWidget {
             children: [
               const Icon(Icons.star_rounded, size: 18, color: AppColors.warning),
               const SizedBox(width: 8),
-              const Text(
-                'Rating Breakdown',
+              Text(
+                'Rating Breakdown'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../providers/statistics_provider.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Donut chart showing project distribution by status.
 class ProjectDistributionChart extends ConsumerWidget {
@@ -38,12 +39,12 @@ class ProjectDistributionChart extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          const Row(
+          Row(
             children: [
               Icon(Icons.donut_large_rounded, size: 18, color: Color(0xFF8B5CF6)),
               SizedBox(width: 8),
               Text(
-                'Project Distribution',
+                'Project Distribution'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -62,10 +63,10 @@ class ProjectDistributionChart extends ConsumerWidget {
                 height: 140,
                 width: 140,
                 child: dist.total == 0
-                    ? const Center(
+                    ? Center(
                         child: Text(
-                          'No projects',
-                          style: TextStyle(
+                          'No projects'.tr(context),
+                          style: const TextStyle(
                             color: AppColors.textTertiary,
                             fontSize: 12,
                           ),
@@ -93,8 +94,8 @@ class ProjectDistributionChart extends ConsumerWidget {
                                   color: AppColors.textPrimary,
                                 ),
                               ),
-                              const Text(
-                                'Total',
+                              Text(
+                                'Total'.tr(context),
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: AppColors.textTertiary,

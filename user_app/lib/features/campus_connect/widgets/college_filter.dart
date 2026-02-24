@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/auth_provider.dart';
 
 /// College filter mode for Campus Connect.
@@ -345,7 +346,7 @@ class _CollegeFilterBottomSheetState
             child: Row(
               children: [
                 Text(
-                  'Filter by College',
+                  'Filter by College'.tr(context),
                   style: AppTextStyles.headingSmall.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -358,7 +359,7 @@ class _CollegeFilterBottomSheetState
                       widget.onFilterChanged?.call();
                     },
                     child: Text(
-                      'Clear',
+                      'Clear'.tr(context),
                       style: AppTextStyles.labelMedium.copyWith(
                         color: AppColors.primary,
                       ),
@@ -377,8 +378,8 @@ class _CollegeFilterBottomSheetState
                 // All Colleges option
                 _FilterOptionTile(
                   icon: Icons.public,
-                  title: 'All Colleges',
-                  subtitle: 'Show posts from everyone',
+                  title: 'All Colleges'.tr(context),
+                  subtitle: 'Show posts from everyone'.tr(context),
                   isSelected: filterState.mode == CollegeFilterMode.all,
                   onTap: () {
                     notifier.setMode(CollegeFilterMode.all);
@@ -392,7 +393,7 @@ class _CollegeFilterBottomSheetState
                 if (filterState.userCollege != null)
                   _FilterOptionTile(
                     icon: Icons.school,
-                    title: 'My College Only',
+                    title: 'My College Only'.tr(context),
                     subtitle: filterState.userCollege!,
                     isSelected: filterState.mode == CollegeFilterMode.myCollege,
                     onTap: () {
@@ -415,7 +416,7 @@ class _CollegeFilterBottomSheetState
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
-                    'Or select specific college',
+                    'Or select specific college'.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: Colors.grey[600],
                     ),
@@ -434,7 +435,7 @@ class _CollegeFilterBottomSheetState
               controller: _searchController,
               onChanged: (value) => setState(() => _searchQuery = value),
               decoration: InputDecoration(
-                hintText: 'Search colleges...',
+                hintText: 'Search colleges...'.tr(context),
                 hintStyle: AppTextStyles.bodyMedium.copyWith(
                   color: Colors.grey[500],
                 ),

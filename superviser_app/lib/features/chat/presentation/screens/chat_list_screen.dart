@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/router/routes.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/chat_room_tile.dart';
@@ -47,7 +48,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Messages'),
+        title: Text('Messages'.tr(context)),
         actions: [
           // Mark all as read button
           if (state.totalUnread > 0)
@@ -55,14 +56,14 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
               onPressed: () {
                 ref.read(chatRoomsProvider.notifier).refresh();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Marking all as read...'),
+                  SnackBar(
+                    content: Text('Marking all as read...'.tr(context)),
                     duration: Duration(seconds: 1),
                   ),
                 );
               },
               icon: const Icon(Icons.done_all),
-              tooltip: 'Mark All as Read',
+              tooltip: 'Mark All as Read'.tr(context),
             ),
           IconButton(
             onPressed: () => ref.read(chatRoomsProvider.notifier).refresh(),
@@ -108,7 +109,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           padding: const EdgeInsets.all(32),
           child: Center(
             child: Text(
-              'No chats in this category',
+              'No chats in this category'.tr(context),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
@@ -124,7 +125,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     return [
       if (unreadRooms.isNotEmpty) ...[
         _SectionHeader(
-          title: 'Unread',
+          title: 'Unread'.tr(context),
           count: unreadRooms.length,
           color: AppColors.primary,
         ),
@@ -136,7 +137,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       ],
       if (readRooms.isNotEmpty) ...[
         _SectionHeader(
-          title: unreadRooms.isNotEmpty ? 'Other Chats' : 'All Chats',
+          title: unreadRooms.isNotEmpty ? 'Other Chats'.tr(context) : 'All Chats'.tr(context),
           count: readRooms.length,
         ),
         ...readRooms.map((room) => ChatRoomTile(
@@ -179,7 +180,7 @@ class _ChatHeroSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Your Messages',
+                  'Your Messages'.tr(context),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -187,7 +188,7 @@ class _ChatHeroSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '$totalChats conversations',
+                  '$totalChats ${'conversations'.tr(context)}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.white70,
                       ),
@@ -212,7 +213,7 @@ class _ChatHeroSection extends StatelessWidget {
                         ),
                   ),
                   Text(
-                    'unread',
+                    'unread'.tr(context),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: Colors.white70,
                         ),
@@ -241,11 +242,11 @@ class _CategoryChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final categories = [
-      ('all', 'All', Icons.chat_bubble_outline),
-      ('unread', 'Unread ($unreadCount)', Icons.mark_email_unread_outlined),
-      ('client', 'Client', Icons.person_outline),
-      ('expert', 'Expert', Icons.engineering_outlined),
-      ('group', 'Group', Icons.group_outlined),
+      ('all', 'All'.tr(context), Icons.chat_bubble_outline),
+      ('unread', '${'Unread'.tr(context)} ($unreadCount)', Icons.mark_email_unread_outlined),
+      ('client', 'Client'.tr(context), Icons.person_outline),
+      ('expert', 'Expert'.tr(context), Icons.engineering_outlined),
+      ('group', 'Group'.tr(context), Icons.group_outlined),
     ];
 
     return SizedBox(

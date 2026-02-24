@@ -12,6 +12,7 @@ import '../widgets/settings/display_settings.dart';
 import '../widgets/settings/notification_settings.dart';
 import '../widgets/settings/privacy_settings.dart';
 import '../widgets/settings/settings_hero.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Settings screen for managing app preferences and account settings.
 ///
@@ -77,10 +78,10 @@ class SettingsScreen extends ConsumerWidget {
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(Icons.arrow_back, color: Colors.white),
                       ),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Settings',
-                          style: TextStyle(
+                          'Settings'.tr(context),
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -132,55 +133,55 @@ class SettingsScreen extends ConsumerWidget {
                 indicatorPadding: const EdgeInsets.symmetric(
                   horizontal: -AppSpacing.sm,
                 ),
-                tabs: const [
+                tabs: [
                   Tab(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.person_outline, size: 16),
-                          SizedBox(width: 6),
-                          Text('Account'),
+                          const Icon(Icons.person_outline, size: 16),
+                          const SizedBox(width: 6),
+                          Text('Account'.tr(context)),
                         ],
                       ),
                     ),
                   ),
                   Tab(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.notifications_outlined, size: 16),
-                          SizedBox(width: 6),
-                          Text('Notifications'),
+                          const Icon(Icons.notifications_outlined, size: 16),
+                          const SizedBox(width: 6),
+                          Text('Notifications'.tr(context)),
                         ],
                       ),
                     ),
                   ),
                   Tab(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.lock_outline, size: 16),
-                          SizedBox(width: 6),
-                          Text('Privacy'),
+                          const Icon(Icons.lock_outline, size: 16),
+                          const SizedBox(width: 6),
+                          Text('Privacy'.tr(context)),
                         ],
                       ),
                     ),
                   ),
                   Tab(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.display_settings_outlined, size: 16),
-                          SizedBox(width: 6),
-                          Text('Display'),
+                          const Icon(Icons.display_settings_outlined, size: 16),
+                          const SizedBox(width: 6),
+                          Text('Display'.tr(context)),
                         ],
                       ),
                     ),
@@ -276,8 +277,8 @@ class SettingsScreen extends ConsumerWidget {
               child: OutlinedButton.icon(
                 onPressed: () => _showLogoutDialog(context, ref),
                 icon: const Icon(Icons.logout, color: AppColors.error),
-                label: const Text(
-                  'Logout',
+                label: Text(
+                  'Logout'.tr(context),
                   style: TextStyle(color: AppColors.error),
                 ),
                 style: OutlinedButton.styleFrom(
@@ -292,7 +293,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.sm),
             // App version
             Text(
-              'DOER App ${appInfo.displayVersion}',
+              'DOER App ${appInfo.displayVersion}'.tr(context),
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textTertiary,
@@ -311,12 +312,12 @@ class SettingsScreen extends ConsumerWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: AppSpacing.borderRadiusMd,
         ),
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: Text('Logout'.tr(context)),
+        content: Text('Are you sure you want to logout?'.tr(context)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           TextButton(
             onPressed: () {
@@ -324,8 +325,8 @@ class SettingsScreen extends ConsumerWidget {
               ref.read(authProvider.notifier).signOut();
               context.go('/login');
             },
-            child: const Text(
-              'Logout',
+            child: Text(
+              'Logout'.tr(context),
               style: TextStyle(color: AppColors.error),
             ),
           ),

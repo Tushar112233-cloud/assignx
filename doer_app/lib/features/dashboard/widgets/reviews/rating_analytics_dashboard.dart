@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../data/models/project_model.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Analytics dashboard showing rating distribution and category performance.
 class RatingAnalyticsDashboard extends StatelessWidget {
@@ -38,8 +39,8 @@ class RatingAnalyticsDashboard extends StatelessWidget {
                     size: 18, color: Color(0xFF5A7CFF)),
               ),
               const SizedBox(width: AppSpacing.sm),
-              const Text(
-                'Rating Analytics',
+              Text(
+                'Rating Analytics'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -57,7 +58,7 @@ class RatingAnalyticsDashboard extends StatelessWidget {
               // Left: Rating distribution (35%)
               Expanded(
                 flex: 35,
-                child: _buildRatingDistribution(),
+                child: _buildRatingDistribution(context),
               ),
 
               const SizedBox(width: AppSpacing.md),
@@ -65,7 +66,7 @@ class RatingAnalyticsDashboard extends StatelessWidget {
               // Right: Category performance (65%)
               Expanded(
                 flex: 65,
-                child: _buildCategoryPerformance(),
+                child: _buildCategoryPerformance(context),
               ),
             ],
           ),
@@ -77,7 +78,7 @@ class RatingAnalyticsDashboard extends StatelessWidget {
         .slideY(begin: 0.05, end: 0, duration: 500.ms);
   }
 
-  Widget _buildRatingDistribution() {
+  Widget _buildRatingDistribution(BuildContext context) {
     final distribution = _getDistribution();
     final maxCount =
         distribution.values.fold(0, (a, b) => a > b ? a : b);
@@ -85,8 +86,8 @@ class RatingAnalyticsDashboard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Distribution',
+        Text(
+          'Distribution'.tr(context),
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -167,7 +168,7 @@ class RatingAnalyticsDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryPerformance() {
+  Widget _buildCategoryPerformance(BuildContext context) {
     final qualityAvg = _averageCategory((r) => r.qualityRating);
     final timelinessAvg = _averageCategory((r) => r.timelinessRating);
     final communicationAvg = _averageCategory((r) => r.communicationRating);
@@ -175,8 +176,8 @@ class RatingAnalyticsDashboard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Category Performance',
+        Text(
+          'Category Performance'.tr(context),
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,

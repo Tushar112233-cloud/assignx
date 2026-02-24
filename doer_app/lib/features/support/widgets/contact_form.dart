@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../providers/support_provider.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// A form widget for submitting support tickets.
 ///
@@ -116,8 +117,8 @@ class _ContactFormState extends ConsumerState<ContactForm> {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                const Text(
-                  'Contact Support',
+                Text(
+                  'Contact Support'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -129,8 +130,8 @@ class _ContactFormState extends ConsumerState<ContactForm> {
             const SizedBox(height: AppSpacing.md),
 
             // Category selector
-            const Text(
-              'Category',
+            Text(
+              'Category'.tr(context),
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -171,8 +172,8 @@ class _ContactFormState extends ConsumerState<ContactForm> {
             const SizedBox(height: AppSpacing.md),
 
             // Subject field
-            const Text(
-              'Subject',
+            Text(
+              'Subject'.tr(context),
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -184,7 +185,7 @@ class _ContactFormState extends ConsumerState<ContactForm> {
               controller: _subjectController,
               enabled: !isSubmitting,
               decoration: InputDecoration(
-                hintText: 'Brief description of your issue',
+                hintText: 'Brief description of your issue'.tr(context),
                 hintStyle: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textTertiary,
@@ -216,8 +217,8 @@ class _ContactFormState extends ConsumerState<ContactForm> {
             const SizedBox(height: AppSpacing.md),
 
             // Message field
-            const Text(
-              'Message',
+            Text(
+              'Message'.tr(context),
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -230,7 +231,7 @@ class _ContactFormState extends ConsumerState<ContactForm> {
               enabled: !isSubmitting,
               maxLines: 4,
               decoration: InputDecoration(
-                hintText: 'Describe your issue in detail...',
+                hintText: 'Describe your issue in detail...'.tr(context),
                 hintStyle: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textTertiary,
@@ -311,8 +312,8 @@ class _ContactFormState extends ConsumerState<ContactForm> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Submit Ticket',
+                    : Text(
+                        'Submit Ticket'.tr(context),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,

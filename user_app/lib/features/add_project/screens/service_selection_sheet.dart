@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Service type for project creation.
 enum ServiceType {
@@ -113,11 +114,11 @@ class ServiceSelectionSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Create New',
+                            'Create New'.tr(context),
                             style: AppTextStyles.headingSmall,
                           ),
                           Text(
-                            'What would you like help with?',
+                            'What would you like help with?'.tr(context),
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -202,19 +203,19 @@ class _ServiceOption extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    service.title,
+                    service.title.tr(context),
                     style: AppTextStyles.labelLarge,
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    service.description,
+                    service.description.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    service.priceHint,
+                    service.priceHint.tr(context),
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.success,
                       fontWeight: FontWeight.w500,

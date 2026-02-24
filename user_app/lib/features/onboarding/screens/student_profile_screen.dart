@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../core/utils/validators.dart';
 import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
@@ -75,7 +76,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
     if (_currentStep == 1) {
       // Validate step 1
       if (_nameController.text.trim().isEmpty) {
-        _showError('Please enter your full name');
+        _showError('Please enter your full name'); // Translated at display
         return;
       }
     }
@@ -106,7 +107,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(message.tr(context)),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -145,7 +146,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
         context.go(RouteNames.signupSuccess);
       }
     } catch (e) {
-      _showError('Failed to save profile. Please try again.');
+      _showError('Failed to save profile. Please try again.'); // Translated at display
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -168,7 +169,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
         child: SafeArea(
           child: LoadingOverlay(
             isLoading: _isLoading,
-            message: 'Saving profile...',
+            message: 'Saving profile...'.tr(context),
             child: Column(
               children: [
                 // App bar with glass effect
@@ -186,7 +187,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                       ),
                       Expanded(
                         child: Text(
-                          'Complete Profile',
+                          'Complete Profile'.tr(context),
                           style: AppTextStyles.headingSmall,
                           textAlign: TextAlign.center,
                         ),
@@ -204,7 +205,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                     child: StepProgressBar(
                       currentStep: _currentStep,
                       totalSteps: 2,
-                      labels: const ['Basic Info', 'Education'],
+                      labels: ['Basic Info'.tr(context), 'Education'.tr(context)],
                     ),
                   ),
                 ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
@@ -229,7 +230,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                   child: GlassContainer(
                     padding: const EdgeInsets.all(4),
                     child: AppButton(
-                      label: _currentStep == 2 ? 'Complete' : 'Continue',
+                      label: _currentStep == 2 ? 'Complete'.tr(context) : 'Continue'.tr(context),
                       onPressed: _nextStep,
                       icon: _currentStep == 2 ? Icons.check : Icons.arrow_forward,
                     ),
@@ -284,14 +285,14 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Basic Information',
+                            'Basic Information'.tr(context),
                             style: AppTextStyles.headingMedium.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            "Let's start with your basic details",
+                            "Let's start with your basic details".tr(context),
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -305,8 +306,8 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                 // Full Name
                 AppTextField(
                   controller: _nameController,
-                  label: 'Full Name',
-                  hint: 'Enter your full name',
+                  label: 'Full Name'.tr(context),
+                  hint: 'Enter your full name'.tr(context),
                   prefixIcon: Icons.person_outline,
                   textCapitalization: TextCapitalization.words,
                   validator: Validators.name,
@@ -367,14 +368,14 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Education Details',
+                            'Education Details'.tr(context),
                             style: AppTextStyles.headingMedium.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Tell us about your academic background',
+                            'Tell us about your academic background'.tr(context),
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -389,8 +390,8 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                 // University
                 universities.when(
                   data: (unis) => AppDropdown<Map<String, dynamic>>(
-                    label: 'University',
-                    hint: 'Select your university',
+                    label: 'University'.tr(context),
+                    hint: 'Select your university'.tr(context),
                     value: unis.where((u) => u['id'] == _selectedUniversityId).firstOrNull,
                     items: unis,
                     itemLabel: (item) => item['name'] as String,
@@ -408,7 +409,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                     ),
                   ),
                   error: (_, _) => Text(
-                    'Failed to load universities',
+                    'Failed to load universities'.tr(context),
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.error,
                     ),
@@ -421,8 +422,8 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                 if (_selectedUniversityId != null)
                   ref.watch(coursesProvider(_selectedUniversityId!)).when(
                         data: (courses) => AppDropdown<Map<String, dynamic>>(
-                          label: 'Course',
-                          hint: 'Select your course',
+                          label: 'Course'.tr(context),
+                          hint: 'Select your course'.tr(context),
                           value: courses
                               .where((c) => c['id'] == _selectedCourseId)
                               .firstOrNull,
@@ -441,7 +442,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                           ),
                         ),
                         error: (_, _) => Text(
-                          'Failed to load courses',
+                          'Failed to load courses'.tr(context),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.error,
                           ),
@@ -452,11 +453,11 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
 
                 // Year of Study
                 AppDropdown<int>(
-                  label: 'Year of Study',
-                  hint: 'Select your current year',
+                  label: 'Year of Study'.tr(context),
+                  hint: 'Select your current year'.tr(context),
                   value: _selectedYearOfStudy,
                   items: List.generate(5, (i) => i + 1),
-                  itemLabel: (item) => 'Year $item',
+                  itemLabel: (item) => '${'Year'.tr(context)} $item',
                   onChanged: (value) {
                     setState(() => _selectedYearOfStudy = value);
                   },
@@ -466,11 +467,11 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
 
                 // Semester
                 AppDropdown<int>(
-                  label: 'Semester (Optional)',
-                  hint: 'Select your current semester',
+                  label: 'Semester (Optional)'.tr(context),
+                  hint: 'Select your current semester'.tr(context),
                   value: _selectedSemester,
                   items: List.generate(8, (i) => i + 1),
-                  itemLabel: (item) => 'Semester $item',
+                  itemLabel: (item) => '${'Semester'.tr(context)} $item',
                   onChanged: (value) {
                     setState(() => _selectedSemester = value);
                   },
@@ -481,8 +482,8 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                 // Student ID (optional)
                 AppTextField(
                   controller: _studentIdController,
-                  label: 'Student ID (Optional)',
-                  hint: 'Enter your student ID number',
+                  label: 'Student ID (Optional)'.tr(context),
+                  hint: 'Enter your student ID number'.tr(context),
                   prefixIcon: Icons.badge_outlined,
                 ),
               ],

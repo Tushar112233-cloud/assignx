@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../providers/profile_provider.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Account settings tab content.
 ///
@@ -270,12 +271,12 @@ class AccountSettings extends StatelessWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: AppSpacing.borderRadiusMd,
         ),
-        title: const Text('Change Password'),
-        content: const Text('Password change functionality coming soon.'),
+        title: Text('Change Password'.tr(context)),
+        content: Text('Password change functionality coming soon.'.tr(context)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text('OK'.tr(context)),
           ),
         ],
       ),

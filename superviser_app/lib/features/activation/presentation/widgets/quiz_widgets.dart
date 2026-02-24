@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/training_module.dart';
 
 /// Quiz timer widget with countdown display.
@@ -94,7 +95,7 @@ class QuizQuestionCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
-              'Question $questionNumber of $totalQuestions',
+              '${'Question'.tr(context)} $questionNumber ${'of'.tr(context)} $totalQuestions',
               style: AppTypography.labelMedium.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
@@ -144,7 +145,7 @@ class QuizQuestionCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Explanation',
+                          'Explanation'.tr(context),
                           style: AppTypography.labelMedium.copyWith(
                             color: AppColors.info,
                             fontWeight: FontWeight.w600,
@@ -379,7 +380,7 @@ class QuizResultCard extends StatelessWidget {
 
           // Result title
           Text(
-            result.passed ? 'Congratulations!' : 'Not Quite There',
+            result.passed ? 'Congratulations!'.tr(context) : 'Not Quite There'.tr(context),
             style: AppTypography.headlineSmall.copyWith(
               color: result.passed ? AppColors.success : AppColors.error,
               fontWeight: FontWeight.bold,
@@ -390,8 +391,8 @@ class QuizResultCard extends StatelessWidget {
           // Result message
           Text(
             result.passed
-                ? 'You passed the assessment!'
-                : 'You need $passingScore% to pass. Keep trying!',
+                ? 'You passed the assessment!'.tr(context)
+                : '${'You need'.tr(context)} $passingScore% ${'to pass. Keep trying!'.tr(context)}',
             style: AppTypography.bodyMedium.copyWith(
               color: AppColors.textSecondaryLight,
             ),
@@ -417,7 +418,7 @@ class QuizResultCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${result.correctAnswers} of ${result.totalQuestions} correct',
+                  '${result.correctAnswers} ${'of'.tr(context)} ${result.totalQuestions} ${'correct'.tr(context)}',
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
@@ -427,13 +428,13 @@ class QuizResultCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _buildStat(
-                      'Time',
+                      'Time'.tr(context),
                       _formatTime(result.timeTakenSeconds),
                       Icons.timer_outlined,
                     ),
                     const SizedBox(width: 24),
                     _buildStat(
-                      'Attempt',
+                      'Attempt'.tr(context),
                       '#${result.attemptNumber}',
                       Icons.refresh,
                     ),
@@ -451,7 +452,7 @@ class QuizResultCard extends StatelessWidget {
               height: 52,
               child: ElevatedButton(
                 onPressed: onContinue,
-                child: const Text('Continue'),
+                child: Text('Continue'.tr(context)),
               ),
             )
           else ...[
@@ -461,7 +462,7 @@ class QuizResultCard extends StatelessWidget {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: onRetry,
-                  child: const Text('Try Again'),
+                  child: Text('Try Again'.tr(context)),
                 ),
               ),
             if (!canRetry)
@@ -480,7 +481,7 @@ class QuizResultCard extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'You have used all attempts. Please contact support.',
+                        'You have used all attempts. Please contact support.'.tr(context),
                         style: AppTypography.bodySmall.copyWith(
                           color: AppColors.warning,
                         ),

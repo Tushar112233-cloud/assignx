@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/notification_model.dart';
 import '../providers/notifications_provider.dart';
 import '../widgets/notification_card.dart';
@@ -31,34 +32,34 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text('Notifications'.tr(context)),
         actions: [
           if (state.unreadCount > 0)
             TextButton(
               onPressed: () => _showMarkAllReadDialog(context, ref),
-              child: const Text('Mark all read'),
+              child: Text('Mark all read'.tr(context)),
             ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) => _handleMenuAction(context, ref, value),
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'settings',
                 child: Row(
                   children: [
-                    Icon(Icons.settings_outlined, size: 20),
-                    SizedBox(width: 12),
-                    Text('Settings'),
+                    const Icon(Icons.settings_outlined, size: 20),
+                    const SizedBox(width: 12),
+                    Text('Settings'.tr(context)),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'clear_all',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_outline, size: 20),
-                    SizedBox(width: 12),
-                    Text('Clear all'),
+                    const Icon(Icons.delete_outline, size: 20),
+                    const SizedBox(width: 12),
+                    Text('Clear all'.tr(context)),
                   ],
                 ),
               ),
@@ -95,9 +96,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                                 .deleteNotification(notification.id);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Notification deleted'),
+                                content: Text('Notification deleted'.tr(context)),
                                 action: SnackBarAction(
-                                  label: 'Undo',
+                                  label: 'Undo'.tr(context),
                                   onPressed: () {
                                     ref.read(notificationsProvider.notifier).undoDelete();
                                   },
@@ -189,7 +190,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text('Close'.tr(context)),
           ),
         ],
       ),
@@ -200,19 +201,19 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Mark all as read'),
-        content: const Text('Are you sure you want to mark all notifications as read?'),
+        title: Text('Mark all as read'.tr(context)),
+        content: Text('Are you sure you want to mark all notifications as read?'.tr(context)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(context);
               ref.read(notificationsProvider.notifier).markAllAsRead();
             },
-            child: const Text('Mark all'),
+            child: Text('Mark all'.tr(context)),
           ),
         ],
       ),
@@ -234,14 +235,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear all notifications'),
-        content: const Text(
-          'Are you sure you want to delete all notifications? This action cannot be undone.',
+        title: Text('Clear all notifications'.tr(context)),
+        content: Text(
+          'Are you sure you want to delete all notifications? This action cannot be undone.'.tr(context),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -251,7 +252,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               Navigator.pop(context);
               ref.read(notificationsProvider.notifier).deleteAllNotifications();
             },
-            child: const Text('Clear all'),
+            child: Text('Clear all'.tr(context)),
           ),
         ],
       ),
@@ -293,6 +294,7 @@ class _GroupedNotificationList extends StatelessWidget {
       return 'This Week';
     }
     return 'Older';
+    // Note: These are translated at the display site (_DateSectionHeader)
   }
 
   /// Builds grouped entries: a list of (String? header, NotificationModel? notification).
@@ -388,7 +390,7 @@ class _DateSectionHeader extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            title,
+            title.tr(context),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimaryLight,
@@ -426,83 +428,83 @@ class _NotificationSettingsScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notification Settings'),
+        title: Text('Notification Settings'.tr(context)),
       ),
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               children: [
                 // General settings
-                _buildSectionHeader(context, 'General'),
+                _buildSectionHeader(context, 'General'.tr(context)),
                 _buildSwitchTile(
                   context,
-                  'Push Notifications',
-                  'Receive push notifications on your device',
+                  'Push Notifications'.tr(context),
+                  'Receive push notifications on your device'.tr(context),
                   Icons.notifications,
                   state.settings.pushEnabled,
                   (value) => _toggleSetting('push_enabled', value),
                 ),
                 _buildSwitchTile(
                   context,
-                  'Email Notifications',
-                  'Receive notifications via email',
+                  'Email Notifications'.tr(context),
+                  'Receive notifications via email'.tr(context),
                   Icons.email,
                   state.settings.emailEnabled,
                   (value) => _toggleSetting('email_enabled', value),
                 ),
 
                 // Notification types
-                _buildSectionHeader(context, 'Notification Types'),
+                _buildSectionHeader(context, 'Notification Types'.tr(context)),
                 _buildSwitchTile(
                   context,
-                  'Project Updates',
-                  'New projects, quotes, and status changes',
+                  'Project Updates'.tr(context),
+                  'New projects, quotes, and status changes'.tr(context),
                   Icons.assignment,
                   state.settings.projectUpdates,
                   (value) => _toggleSetting('project_updates', value),
                 ),
                 _buildSwitchTile(
                   context,
-                  'Chat Messages',
-                  'New messages from clients and doers',
+                  'Chat Messages'.tr(context),
+                  'New messages from clients and doers'.tr(context),
                   Icons.chat_bubble,
                   state.settings.chatMessages,
                   (value) => _toggleSetting('chat_messages', value),
                 ),
                 _buildSwitchTile(
                   context,
-                  'Payment Alerts',
-                  'Payment received and commission updates',
+                  'Payment Alerts'.tr(context),
+                  'Payment received and commission updates'.tr(context),
                   Icons.payment,
                   state.settings.paymentAlerts,
                   (value) => _toggleSetting('payment_alerts', value),
                 ),
                 _buildSwitchTile(
                   context,
-                  'System Alerts',
-                  'Important system notifications and updates',
+                  'System Alerts'.tr(context),
+                  'Important system notifications and updates'.tr(context),
                   Icons.warning_amber,
                   state.settings.systemAlerts,
                   (value) => _toggleSetting('system_alerts', value),
                 ),
 
                 // Marketing
-                _buildSectionHeader(context, 'Marketing'),
+                _buildSectionHeader(context, 'Marketing'.tr(context)),
                 _buildSwitchTile(
                   context,
-                  'Marketing Emails',
-                  'Promotional emails and newsletters',
+                  'Marketing Emails'.tr(context),
+                  'Promotional emails and newsletters'.tr(context),
                   Icons.campaign,
                   state.settings.marketingEmails,
                   (value) => _toggleSetting('marketing_emails', value),
                 ),
 
                 // Quiet hours
-                _buildSectionHeader(context, 'Quiet Hours'),
+                _buildSectionHeader(context, 'Quiet Hours'.tr(context)),
                 _buildSwitchTile(
                   context,
-                  'Enable Quiet Hours',
-                  'Mute notifications during specified hours',
+                  'Enable Quiet Hours'.tr(context),
+                  'Mute notifications during specified hours'.tr(context),
                   Icons.do_not_disturb,
                   state.settings.quietHoursEnabled,
                   (value) => _toggleSetting('quiet_hours_enabled', value),
@@ -510,13 +512,13 @@ class _NotificationSettingsScreenState
                 if (state.settings.quietHoursEnabled) ...[
                   ListTile(
                     leading: const Icon(Icons.access_time),
-                    title: const Text('Start Time'),
+                    title: Text('Start Time'.tr(context)),
                     subtitle: Text(state.settings.quietHoursStart ?? '22:00'),
                     onTap: () => _selectTime(context, true),
                   ),
                   ListTile(
                     leading: const Icon(Icons.access_time),
-                    title: const Text('End Time'),
+                    title: Text('End Time'.tr(context)),
                     subtitle: Text(state.settings.quietHoursEnd ?? '07:00'),
                     onTap: () => _selectTime(context, false),
                   ),

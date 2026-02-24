@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../providers/support_provider.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// A widget that displays a list of expandable FAQ items.
 ///
@@ -57,10 +58,10 @@ class _FaqListState extends State<FaqList> {
           borderRadius: AppSpacing.borderRadiusMd,
           border: Border.all(color: AppColors.borderLight),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            'No FAQs available at the moment.',
-            style: TextStyle(
+            'No FAQs available at the moment.'.tr(context),
+            style: const TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
             ),

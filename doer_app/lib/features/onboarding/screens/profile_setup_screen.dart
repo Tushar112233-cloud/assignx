@@ -11,6 +11,7 @@ import '../../../shared/widgets/app_text_field.dart';
 import '../widgets/step_progress_bar.dart';
 import '../widgets/chip_selector.dart';
 import '../widgets/experience_slider.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Profile setup screen with multi-step form.
 ///
@@ -213,8 +214,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         context.go(RouteNames.activationGate);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to save profile. Please try again.'),
+          SnackBar(
+            content: Text('Failed to save profile. Please try again.'.tr(context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -223,7 +224,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Error: ${e.toString()}'.tr(context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -284,7 +285,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 onPressed: _previousStep,
               )
             : null,
-        title: const Text('Complete Your Profile'),
+        title: Text('Complete Your Profile'.tr(context)),
       ),
       body: SafeArea(
         child: Column(
@@ -345,8 +346,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'What\'s your highest qualification?',
+          Text(
+            'What\'s your highest qualification?'.tr(context),
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -354,8 +355,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          const Text(
-            'This helps us match you with relevant opportunities',
+          Text(
+            'This helps us match you with relevant opportunities'.tr(context),
             style: TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
@@ -367,10 +368,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           // Qualification dropdown
           DropdownButtonFormField<String>(
             value: _selectedQualification,
-            decoration: const InputDecoration(
-              labelText: 'Qualification',
-              hintText: 'Select your qualification',
-              prefixIcon: Icon(Icons.school_outlined),
+            decoration: InputDecoration(
+              labelText: 'Qualification'.tr(context),
+              hintText: 'Select your qualification'.tr(context),
+              prefixIcon: const Icon(Icons.school_outlined),
             ),
             items: _qualifications.map((q) {
               return DropdownMenuItem(value: q, child: Text(q));
@@ -400,13 +401,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               color: AppColors.infoLight,
               borderRadius: AppSpacing.borderRadiusSm,
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(Icons.lightbulb_outline, color: AppColors.info),
                 SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    'You can update this information later from your profile settings.',
+                    'You can update this information later from your profile settings.'.tr(context),
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.textPrimary,
@@ -432,8 +433,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'What are you good at?',
+          Text(
+            'What are you good at?'.tr(context),
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -441,8 +442,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          const Text(
-            'Select your areas of interest and skills',
+          Text(
+            'Select your areas of interest and skills'.tr(context),
             style: TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
@@ -454,7 +455,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           // Subject areas
           ChipSelector<String>(
             label: 'Areas of Interest',
-            helperText: 'Select up to 5 subject areas',
+            helperText: 'Select up to 5 subject areas'.tr(context),
             options: _subjectOptions,
             selectedValues: _selectedSubjects,
             maxSelections: 5,
@@ -470,7 +471,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           // Skills
           ChipSelector<String>(
             label: 'Your Skills',
-            helperText: 'Select up to 8 skills',
+            helperText: 'Select up to 8 skills'.tr(context),
             options: _skillOptions,
             selectedValues: _selectedSkills,
             maxSelections: 8,
@@ -496,8 +497,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'What\'s your experience level?',
+          Text(
+            'What\'s your experience level?'.tr(context),
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -505,8 +506,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          const Text(
-            'This helps us assign appropriate tasks to you',
+          Text(
+            'This helps us assign appropriate tasks to you'.tr(context),
             style: TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
@@ -536,8 +537,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Profile Summary',
+                Text(
+                  'Profile Summary'.tr(context),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

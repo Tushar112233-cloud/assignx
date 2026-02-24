@@ -47,6 +47,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Numbered list of project requirements.
 ///
@@ -81,7 +82,7 @@ class RequirementsList extends StatelessWidget {
           color: AppColors.surfaceVariant,
           borderRadius: AppSpacing.borderRadiusMd,
         ),
-        child: const Row(
+        child: Row(
           children: [
             Icon(
               Icons.info_outline,
@@ -90,7 +91,7 @@ class RequirementsList extends StatelessWidget {
             ),
             SizedBox(width: 8),
             Text(
-              'No specific requirements listed',
+              'No specific requirements listed'.tr(context),
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -113,8 +114,8 @@ class RequirementsList extends StatelessWidget {
               color: AppColors.primary,
             ),
             const SizedBox(width: 8),
-            const Text(
-              'Requirements',
+            Text(
+              'Requirements'.tr(context),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -312,7 +313,7 @@ class _CollapsibleRequirementsState extends State<CollapsibleRequirements> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Requirements (${widget.requirements.length})',
+                      'Requirements (${widget.requirements.length})'.tr(context),
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,

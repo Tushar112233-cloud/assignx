@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Onboarding carousel with 3 slides.
 ///
@@ -165,8 +166,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: _BottomContent(
               currentPage: _currentPage,
               totalPages: _pages.length,
-              title: _pages[_currentPage]['title'] as String,
-              subtitle: _pages[_currentPage]['subtitle'] as String,
+              title: (_pages[_currentPage]['title'] as String).tr(context),
+              subtitle: (_pages[_currentPage]['subtitle'] as String).tr(context),
               onNext: _nextPage,
               onSkip: _completeOnboarding,
             ),
@@ -717,7 +718,7 @@ class _BottomContent extends StatelessWidget {
             GestureDetector(
               onTap: () => GoRouter.of(context).go(RouteNames.signin),
               child: Text(
-                'Already have an account? Sign in',
+                'Already have an account? Sign in'.tr(context),
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w500,
@@ -762,7 +763,7 @@ class _NextButton extends StatelessWidget {
             ],
           ),
           child: Text(
-            'Get Started',
+            'Get Started'.tr(context),
             style: AppTextStyles.labelLarge.copyWith(
               color: Colors.white,
               fontSize: 18,

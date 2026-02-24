@@ -71,6 +71,17 @@ export const ALLOWED_FILE_TYPES = {
     magicBytes: [0x52, 0x49, 0x46, 0x46], // RIFF
     maxSize: 10 * 1024 * 1024,
   },
+  // Archives
+  "application/zip": {
+    extensions: [".zip"],
+    magicBytes: [0x50, 0x4b, 0x03, 0x04], // ZIP
+    maxSize: 25 * 1024 * 1024,
+  },
+  "application/x-zip-compressed": {
+    extensions: [".zip"],
+    magicBytes: [0x50, 0x4b, 0x03, 0x04], // ZIP
+    maxSize: 25 * 1024 * 1024,
+  },
   // Text
   "text/plain": {
     extensions: [".txt"],

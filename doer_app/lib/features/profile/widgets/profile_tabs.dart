@@ -8,6 +8,7 @@ import '../../../providers/profile_provider.dart';
 import 'earnings_graph.dart';
 import 'rating_breakdown.dart';
 import 'skill_verification.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Tabbed content section for the profile screen.
 ///
@@ -111,13 +112,13 @@ class ProfileTabs extends ConsumerWidget {
         children: [
           // About section
           if (profile.bio != null && profile.bio!.isNotEmpty)
-            _buildAboutCard(),
+            _buildAboutCard(context),
 
           if (profile.bio != null && profile.bio!.isNotEmpty)
             const SizedBox(height: AppSpacing.md),
 
           // Skills chip display
-          if (profile.skills.isNotEmpty) _buildSkillsChips(),
+          if (profile.skills.isNotEmpty) _buildSkillsChips(context),
 
           if (profile.skills.isNotEmpty) const SizedBox(height: AppSpacing.md),
 
@@ -141,7 +142,7 @@ class ProfileTabs extends ConsumerWidget {
     );
   }
 
-  Widget _buildAboutCard() {
+  Widget _buildAboutCard(BuildContext context) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -153,12 +154,12 @@ class ProfileTabs extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(Icons.person_outline, size: 18, color: AppColors.primary),
                 SizedBox(width: 8),
                 Text(
-                  'About Me',
+                  'About Me'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -200,7 +201,7 @@ class ProfileTabs extends ConsumerWidget {
     );
   }
 
-  Widget _buildSkillsChips() {
+  Widget _buildSkillsChips(BuildContext context) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -212,12 +213,12 @@ class ProfileTabs extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(Icons.psychology, size: 18, color: AppColors.primary),
                 SizedBox(width: 8),
                 Text(
-                  'Skills',
+                  'Skills'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -389,7 +390,7 @@ class ProfileTabs extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Wallet balance card
-          _buildWalletCard(),
+          _buildWalletCard(context),
 
           const SizedBox(height: AppSpacing.md),
 
@@ -401,7 +402,7 @@ class ProfileTabs extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
 
           // Bank details card (masked)
-          if (bankDetails != null) _buildBankDetailsCard(),
+          if (bankDetails != null) _buildBankDetailsCard(context),
 
           if (bankDetails != null) const SizedBox(height: AppSpacing.md),
 
@@ -419,7 +420,7 @@ class ProfileTabs extends ConsumerWidget {
     );
   }
 
-  Widget _buildWalletCard() {
+  Widget _buildWalletCard(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: AppSpacing.paddingLg,
@@ -459,8 +460,8 @@ class ProfileTabs extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Wallet Balance',
+              Text(
+                'Wallet Balance'.tr(context),
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.white70,
@@ -481,7 +482,7 @@ class ProfileTabs extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Available for payout',
+            'Available for payout'.tr(context),
             style: TextStyle(
               fontSize: 12,
               color: Colors.white.withValues(alpha: 0.7),
@@ -492,7 +493,7 @@ class ProfileTabs extends ConsumerWidget {
     );
   }
 
-  Widget _buildBankDetailsCard() {
+  Widget _buildBankDetailsCard(BuildContext context) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -509,8 +510,8 @@ class ProfileTabs extends ConsumerWidget {
                 const Icon(Icons.account_balance,
                     size: 18, color: AppColors.primary),
                 const SizedBox(width: 8),
-                const Text(
-                  'Bank Details',
+                Text(
+                  'Bank Details'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -528,13 +529,13 @@ class ProfileTabs extends ConsumerWidget {
                       color: AppColors.success.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.verified, size: 12, color: AppColors.success),
                         SizedBox(width: 4),
                         Text(
-                          'Verified',
+                          'Verified'.tr(context),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -606,8 +607,8 @@ class ProfileTabs extends ConsumerWidget {
                 const Icon(Icons.receipt_long,
                     size: 18, color: AppColors.primary),
                 const SizedBox(width: 8),
-                const Text(
-                  'Recent Transactions',
+                Text(
+                  'Recent Transactions'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -622,8 +623,8 @@ class ProfileTabs extends ConsumerWidget {
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: const Text(
-                    'View All',
+                  child: Text(
+                    'View All'.tr(context),
                     style: TextStyle(fontSize: 12),
                   ),
                 ),
@@ -631,11 +632,11 @@ class ProfileTabs extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             if (recentPayments.isEmpty)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 child: Center(
                   child: Text(
-                    'No transactions yet',
+                    'No transactions yet'.tr(context),
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.textTertiary,
@@ -765,15 +766,15 @@ class ProfileTabs extends ConsumerWidget {
         child: ElevatedButton.icon(
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Payout request submitted'),
+              SnackBar(
+                content: Text('Payout request submitted'.tr(context)),
                 backgroundColor: AppColors.success,
               ),
             );
           },
           icon: const Icon(Icons.send_rounded, size: 20),
-          label: const Text(
-            'Request Payout',
+          label: Text(
+            'Request Payout'.tr(context),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,

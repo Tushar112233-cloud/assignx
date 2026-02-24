@@ -8,6 +8,16 @@ export type ServiceType =
   | "consultation";
 
 /**
+ * Project types for project creation
+ */
+export type ProjectType =
+  | "assignment"
+  | "document"
+  | "website"
+  | "app"
+  | "consultancy";
+
+/**
  * Reference/citation styles
  */
 export type ReferenceStyle =
@@ -40,14 +50,39 @@ export interface BaseFormData {
  * New project form data
  */
 export interface ProjectFormData extends BaseFormData {
+  projectType: ProjectType;
   subject: string;
+  customSubject?: string;
   topic: string;
-  wordCount: number;
-  referenceStyle: ReferenceStyle;
-  referenceCount?: number;
   deadline: Date;
   urgency: UrgencyLevel;
   instructions?: string;
+
+  // Assignment & Document fields
+  wordCount?: number;
+  referenceStyle?: ReferenceStyle;
+  referenceCount?: number;
+
+  // Document-specific
+  documentType?: string;
+
+  // Website-specific
+  pageCount?: number;
+  techStack?: string;
+  websiteFeatures?: string[];
+  designReferenceUrl?: string;
+
+  // App-specific
+  platform?: string;
+  appFeatures?: string;
+  appDesignUrl?: string;
+  backendRequirements?: string;
+
+  // Consultancy-specific
+  consultationDuration?: string;
+  questionSummary?: string;
+  preferredDate?: string;
+  preferredTime?: string;
 }
 
 /**

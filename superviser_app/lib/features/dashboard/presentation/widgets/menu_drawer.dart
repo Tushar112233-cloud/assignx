@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
 import 'availability_toggle.dart';
@@ -17,7 +18,7 @@ class MenuDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final dashboardState = ref.watch(dashboardProvider);
-    final userName = authState.user?.fullName ?? 'Supervisor';
+    final userName = authState.user?.fullName ?? 'Supervisor'.tr(context);
     final email = authState.user?.email ?? '';
 
     return Drawer(
@@ -40,11 +41,11 @@ class MenuDrawer extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
                   _MenuSection(
-                    title: 'Dashboard',
+                    title: 'Dashboard'.tr(context),
                     children: [
                       _MenuItem(
                         icon: Icons.dashboard_outlined,
-                        title: 'Overview',
+                        title: 'Overview'.tr(context),
                         onTap: () {
                           Navigator.pop(context);
                           context.go(RoutePaths.dashboard);
@@ -52,7 +53,7 @@ class MenuDrawer extends ConsumerWidget {
                       ),
                       _MenuItem(
                         icon: Icons.pending_actions_outlined,
-                        title: 'Pending Requests',
+                        title: 'Pending Requests'.tr(context),
                         badge: dashboardState.pendingCount.toString(),
                         onTap: () {
                           Navigator.pop(context);
@@ -61,7 +62,7 @@ class MenuDrawer extends ConsumerWidget {
                       ),
                       _MenuItem(
                         icon: Icons.assignment_turned_in_outlined,
-                        title: 'Assigned Projects',
+                        title: 'Assigned Projects'.tr(context),
                         onTap: () {
                           Navigator.pop(context);
                           context.go(RoutePaths.projects);
@@ -70,11 +71,11 @@ class MenuDrawer extends ConsumerWidget {
                     ],
                   ),
                   _MenuSection(
-                    title: 'Doers',
+                    title: 'Doers'.tr(context),
                     children: [
                       _MenuItem(
                         icon: Icons.people_outline,
-                        title: 'My Doers',
+                        title: 'My Doers'.tr(context),
                         onTap: () {
                           Navigator.pop(context);
                           context.go(RoutePaths.doers);
@@ -82,7 +83,7 @@ class MenuDrawer extends ConsumerWidget {
                       ),
                       _MenuItem(
                         icon: Icons.person_add_outlined,
-                        title: 'Find Doers',
+                        title: 'Find Doers'.tr(context),
                         onTap: () {
                           Navigator.pop(context);
                           context.go(RoutePaths.doers);
@@ -91,11 +92,24 @@ class MenuDrawer extends ConsumerWidget {
                     ],
                   ),
                   _MenuSection(
-                    title: 'Reports',
+                    title: 'Community'.tr(context),
+                    children: [
+                      _MenuItem(
+                        icon: Icons.business_center_outlined,
+                        title: 'Business Hub'.tr(context),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.go(RoutePaths.businessHub);
+                        },
+                      ),
+                    ],
+                  ),
+                  _MenuSection(
+                    title: 'Reports'.tr(context),
                     children: [
                       _MenuItem(
                         icon: Icons.analytics_outlined,
-                        title: 'Analytics',
+                        title: 'Analytics'.tr(context),
                         onTap: () {
                           Navigator.pop(context);
                           context.go(RoutePaths.earnings);
@@ -103,7 +117,7 @@ class MenuDrawer extends ConsumerWidget {
                       ),
                       _MenuItem(
                         icon: Icons.payments_outlined,
-                        title: 'Earnings',
+                        title: 'Earnings'.tr(context),
                         onTap: () {
                           Navigator.pop(context);
                           context.go(RoutePaths.earnings);
@@ -114,7 +128,7 @@ class MenuDrawer extends ConsumerWidget {
                   const Divider(),
                   _MenuItem(
                     icon: Icons.settings_outlined,
-                    title: 'Settings',
+                    title: 'Settings'.tr(context),
                     onTap: () {
                       Navigator.pop(context);
                       context.go(RoutePaths.settings);
@@ -122,7 +136,7 @@ class MenuDrawer extends ConsumerWidget {
                   ),
                   _MenuItem(
                     icon: Icons.help_outline,
-                    title: 'Help & Support',
+                    title: 'Help & Support'.tr(context),
                     onTap: () {
                       Navigator.pop(context);
                       context.go(RoutePaths.support);
@@ -135,7 +149,7 @@ class MenuDrawer extends ConsumerWidget {
             const Divider(height: 1),
             _MenuItem(
               icon: Icons.logout,
-              title: 'Logout',
+              title: 'Logout'.tr(context),
               iconColor: AppColors.error,
               textColor: AppColors.error,
               onTap: () async {

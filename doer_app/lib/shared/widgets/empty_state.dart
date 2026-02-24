@@ -29,6 +29,7 @@ library;
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/translation/translation_extensions.dart';
 import 'app_button.dart';
 
 /// A reusable empty state widget for displaying when content is unavailable.
@@ -183,9 +184,9 @@ class ErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: Icons.error_outline,
-      title: 'Oops!',
+      title: 'Oops!'.tr(context),
       description: message,
-      actionText: onRetry != null ? 'Try Again' : null,
+      actionText: onRetry != null ? 'Try Again'.tr(context) : null,
       onAction: onRetry,
     );
   }

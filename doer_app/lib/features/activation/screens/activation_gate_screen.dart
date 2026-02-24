@@ -10,6 +10,7 @@ import '../../../providers/activation_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../widgets/activation_stepper.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Activation gate screen - locks dashboard until all steps are complete.
 ///
@@ -135,8 +136,8 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
                     const SizedBox(height: AppSpacing.lg),
 
                     // Header
-                    const Text(
-                      'Unlock Your Dashboard',
+                    Text(
+                      'Unlock Your Dashboard'.tr(context),
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -148,7 +149,7 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
                     const SizedBox(height: AppSpacing.sm),
 
                     Text(
-                      'Hello, ${user?.fullName.split(' ').first ?? 'there'}! Complete these 3 steps to start earning.',
+                      '${'Hello'.tr(context)}, ${user?.fullName.split(' ').first ?? 'there'}! ${'Complete these 3 steps to start earning.'.tr(context)}',
                       style: const TextStyle(
                         fontSize: 16,
                         color: AppColors.textSecondary,
@@ -173,7 +174,7 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
                       isCompleted: status.trainingCompleted,
                       isLocked: false,
                       icon: Icons.school,
-                      subtitle: 'Learn about DOER platform and guidelines',
+                      subtitle: 'Learn about DOER platform and guidelines'.tr(context),
                       progress: activationState.trainingProgressPercent,
                       onTap: () => _navigateToStep(ActivationStep.training),
                     ),
@@ -185,7 +186,7 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
                       isCompleted: status.quizPassed,
                       isLocked: !status.trainingCompleted,
                       icon: Icons.quiz,
-                      subtitle: 'Answer questions based on training',
+                      subtitle: 'Answer questions based on training'.tr(context),
                       lastAttempt: activationState.lastQuizAttempt,
                       onTap: status.trainingCompleted
                           ? () => _navigateToStep(ActivationStep.quiz)
@@ -199,7 +200,7 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
                       isCompleted: status.bankDetailsAdded,
                       isLocked: !status.quizPassed,
                       icon: Icons.account_balance,
-                      subtitle: 'Add your bank account for payments',
+                      subtitle: 'Add your bank account for payments'.tr(context),
                       onTap: status.quizPassed
                           ? () => _navigateToStep(ActivationStep.bankDetails)
                           : null,
@@ -217,7 +218,7 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
                           color: AppColors.info.withValues(alpha: 0.3),
                         ),
                       ),
-                      child: const Column(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
@@ -229,7 +230,7 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
                               ),
                               SizedBox(width: AppSpacing.sm),
                               Text(
-                                'Why is this important?',
+                                'Why is this important?'.tr(context),
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -240,9 +241,9 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
                           ),
                           SizedBox(height: AppSpacing.md),
                           Text(
-                            '• Training ensures you understand our quality standards\n'
-                            '• Quiz verifies your readiness to handle projects\n'
-                            '• Bank details enable us to pay you on time',
+                            '${'• Training ensures you understand our quality standards'.tr(context)}\n'
+                            '${'• Quiz verifies your readiness to handle projects'.tr(context)}\n'
+                            '${'• Bank details enable us to pay you on time'.tr(context)}',
                             style: TextStyle(
                               fontSize: 14,
                               color: AppColors.textSecondary,
@@ -274,8 +275,8 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
                           context.go(RouteNames.onboarding);
                         }
                       },
-                      child: const Text(
-                        'Sign Out',
+                      child: Text(
+                        'Sign Out'.tr(context),
                         style: TextStyle(
                           color: AppColors.textSecondary,
                         ),
@@ -363,7 +364,7 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Step ${step.number}: ${step.title}',
+                      'Step ${step.number}: ${step.title}'.tr(context),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -426,8 +427,8 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
                     color: AppColors.success.withValues(alpha: 0.1),
                     borderRadius: AppSpacing.borderRadiusSm,
                   ),
-                  child: const Text(
-                    'Done',
+                  child: Text(
+                    'Done'.tr(context),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -456,8 +457,8 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
 
   /// Returns appropriate button text based on current step.
   String _getButtonText(ActivationStatus status) {
-    if (!status.trainingCompleted) return 'Start Training';
-    if (!status.quizPassed) return 'Take Quiz';
-    return 'Add Bank Details';
+    if (!status.trainingCompleted) return 'Start Training'.tr(context);
+    if (!status.quizPassed) return 'Take Quiz'.tr(context);
+    return 'Add Bank Details'.tr(context);
   }
 }

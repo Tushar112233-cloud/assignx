@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Upload, X, FileText, Image, File, AlertCircle } from "lucide-react";
+import { Upload, X, FileText, Image, File, AlertCircle, FileArchive, FileSpreadsheet, Presentation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,12 @@ const DEFAULT_ACCEPTED_TYPES = [
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/zip",
+  "application/x-zip-compressed",
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -42,6 +48,9 @@ function formatFileSize(bytes: number): string {
 function getFileIcon(type: string) {
   if (type.startsWith("image/")) return Image;
   if (type.includes("pdf") || type.includes("word")) return FileText;
+  if (type.includes("zip")) return FileArchive;
+  if (type.includes("excel") || type.includes("spreadsheet")) return FileSpreadsheet;
+  if (type.includes("powerpoint") || type.includes("presentation")) return Presentation;
   return File;
 }
 
@@ -51,7 +60,7 @@ function getFileIcon(type: string) {
 export function FileUploadZone({
   files,
   onFilesChange,
-  maxFiles = 5,
+  maxFiles = 10,
   maxSizeMB = 10,
   acceptedTypes = DEFAULT_ACCEPTED_TYPES,
   className,
@@ -71,18 +80,14 @@ export function FileUploadZone({
 
   const validateFile = useCallback(
     (file: File): string | null => {
-      console.log("[FileUpload] Validating file:", {
-        fileName: file.name,
-        fileType: file.type,
-        acceptedTypes,
-        isTypeAccepted: acceptedTypes.includes(file.type)
-      });
-
       if (!acceptedTypes.includes(file.type)) {
-        return `File type not supported: ${file.name} (type: ${file.type})`;
+        return `File type not supported: ${file.name}`;
       }
       if (file.size > maxSizeMB * 1024 * 1024) {
         return `File too large: ${file.name} (max ${maxSizeMB}MB)`;
+      }
+      if (file.size === 0) {
+        return `File is empty: ${file.name}`;
       }
       return null;
     },
@@ -91,63 +96,39 @@ export function FileUploadZone({
 
   const processFiles = useCallback(
     (newFiles: FileList | null) => {
-      console.log("[FileUpload] processFiles called", {
-        newFilesCount: newFiles?.length,
-        currentFilesCount: files.length,
-        maxFiles
-      });
-
-      if (!newFiles) {
-        console.log("[FileUpload] No files provided");
-        return;
-      }
+      if (!newFiles) return;
 
       setError(null);
 
       if (files.length + newFiles.length > maxFiles) {
-        const errorMsg = `Maximum ${maxFiles} files allowed`;
-        console.log("[FileUpload] Error:", errorMsg);
-        setError(errorMsg);
+        setError(`Maximum ${maxFiles} files allowed`);
         return;
       }
 
       const filesToAdd: UploadedFile[] = [];
 
-      Array.from(newFiles).forEach((file, index) => {
-        console.log(`[FileUpload] Processing file ${index + 1}:`, {
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          sizeMB: (file.size / (1024 * 1024)).toFixed(2) + "MB"
-        });
-
+      Array.from(newFiles).forEach((file) => {
         const validationError = validateFile(file);
         if (validationError) {
-          console.log("[FileUpload] Validation error:", validationError);
           setError(validationError);
           return;
         }
 
-        // Simulate upload (in production, this would be actual upload)
         const uploadedFile: UploadedFile = {
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           file,
           name: file.name,
           size: file.size,
           type: file.type,
-          progress: 100, // Mock complete
+          progress: 0,
           status: "complete",
         };
 
-        console.log("[FileUpload] File validated successfully:", uploadedFile.id);
         filesToAdd.push(uploadedFile);
       });
 
       if (filesToAdd.length > 0) {
-        console.log("[FileUpload] Adding files to state:", filesToAdd.length);
         onFilesChange([...files, ...filesToAdd]);
-      } else {
-        console.log("[FileUpload] No valid files to add");
       }
     },
     [files, maxFiles, onFilesChange, validateFile]
@@ -212,7 +193,7 @@ export function FileUploadZone({
           or drag and drop
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          PDF, DOC, DOCX, or images (max {maxSizeMB}MB each)
+          PDF, DOC, DOCX, PPT, XLS, ZIP, or images (max {maxSizeMB}MB each)
         </p>
         {files.length > 0 && (
           <p className="mt-2 text-xs text-muted-foreground">

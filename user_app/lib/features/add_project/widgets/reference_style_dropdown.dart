@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Reference/citation styles available.
 enum ReferenceStyle {
@@ -48,13 +49,13 @@ class ReferenceStyleDropdown extends StatelessWidget {
         Row(
           children: [
             Text(
-              'Reference Style',
+              'Reference Style'.tr(context),
               style: AppTextStyles.labelMedium,
             ),
             if (!isRequired) ...[
               const SizedBox(width: 4),
               Text(
-                '(Optional)',
+                '(Optional)'.tr(context),
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.textTertiary,
                 ),
@@ -78,7 +79,7 @@ class ReferenceStyleDropdown extends StatelessWidget {
               hint: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Select reference style',
+                  'Select reference style'.tr(context),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textTertiary,
                   ),

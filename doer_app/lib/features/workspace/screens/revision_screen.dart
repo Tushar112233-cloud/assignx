@@ -7,6 +7,7 @@ import '../../../providers/workspace_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../dashboard/widgets/app_header.dart';
 import '../../dashboard/widgets/deadline_countdown.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Revision request screen showing detailed revision feedback.
 ///
@@ -73,14 +74,14 @@ class RevisionScreen extends ConsumerWidget {
           ),
           Expanded(
             child: project == null
-                ? const Center(child: Text('Project not found'))
+                ? Center(child: Text('Project not found'.tr(context)))
                 : SingleChildScrollView(
                     padding: AppSpacing.paddingMd,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Revision alert
-                        _buildRevisionAlert(),
+                        _buildRevisionAlert(context),
 
                         const SizedBox(height: AppSpacing.lg),
 
@@ -95,7 +96,7 @@ class RevisionScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Row(
+                                Row(
                                   children: [
                                     Icon(
                                       Icons.schedule,
@@ -104,7 +105,7 @@ class RevisionScreen extends ConsumerWidget {
                                     ),
                                     SizedBox(width: 8),
                                     Text(
-                                      'Revision Deadline',
+                                      'Revision Deadline'.tr(context),
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
@@ -123,17 +124,17 @@ class RevisionScreen extends ConsumerWidget {
                         const SizedBox(height: AppSpacing.lg),
 
                         // Revision feedback
-                        _buildFeedbackCard(),
+                        _buildFeedbackCard(context),
 
                         const SizedBox(height: AppSpacing.lg),
 
                         // Required changes
-                        _buildChangesCard(),
+                        _buildChangesCard(context),
 
                         const SizedBox(height: AppSpacing.lg),
 
                         // Previous submission
-                        _buildPreviousSubmissionCard(workspaceState),
+                        _buildPreviousSubmissionCard(context, workspaceState),
 
                         const SizedBox(height: AppSpacing.xl),
                       ],
@@ -148,7 +149,7 @@ class RevisionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRevisionAlert() {
+  Widget _buildRevisionAlert(BuildContext context) {
     return Container(
       padding: AppSpacing.paddingMd,
       decoration: BoxDecoration(
@@ -173,22 +174,22 @@ class RevisionScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Revision Requested',
-                  style: TextStyle(
+                  'Revision Requested'.tr(context),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppColors.error,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  'Your submission requires changes. Please review the feedback and resubmit.',
-                  style: TextStyle(
+                  'Your submission requires changes. Please review the feedback and resubmit.'.tr(context),
+                  style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
@@ -201,7 +202,7 @@ class RevisionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFeedbackCard() {
+  Widget _buildFeedbackCard(BuildContext context) {
     // Mock feedback data
     const feedback = '''The research paper needs some improvements:
 
@@ -230,8 +231,8 @@ Overall, the content quality is good but needs structural improvements.''';
                   color: AppColors.primary,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Reviewer Feedback',
+                Text(
+                  'Reviewer Feedback'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -285,7 +286,7 @@ Overall, the content quality is good but needs structural improvements.''';
     );
   }
 
-  Widget _buildChangesCard() {
+  Widget _buildChangesCard(BuildContext context) {
     // Mock required changes
     final changes = [
       {'text': 'Add clear thesis statement in introduction', 'priority': 'high'},
@@ -304,7 +305,7 @@ Overall, the content quality is good but needs structural improvements.''';
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.checklist,
@@ -313,7 +314,7 @@ Overall, the content quality is good but needs structural improvements.''';
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Required Changes',
+                  'Required Changes'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -393,7 +394,7 @@ Overall, the content quality is good but needs structural improvements.''';
     );
   }
 
-  Widget _buildPreviousSubmissionCard(WorkspaceState workspaceState) {
+  Widget _buildPreviousSubmissionCard(BuildContext context, WorkspaceState workspaceState) {
     return Card(
       elevation: 2,
       shape: const RoundedRectangleBorder(
@@ -404,7 +405,7 @@ Overall, the content quality is good but needs structural improvements.''';
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.history,
@@ -413,7 +414,7 @@ Overall, the content quality is good but needs structural improvements.''';
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Previous Submission',
+                  'Previous Submission'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -432,7 +433,7 @@ Overall, the content quality is good but needs structural improvements.''';
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Submitted on ${_formatDate(DateTime.now().subtract(const Duration(days: 1)))}',
+                  '${'Submitted on'.tr(context)} ${_formatDate(DateTime.now().subtract(const Duration(days: 1)))}',
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,

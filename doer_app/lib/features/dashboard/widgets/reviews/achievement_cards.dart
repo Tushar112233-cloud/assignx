@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../data/models/project_model.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Achievement milestone data model.
 class _Achievement {
@@ -113,8 +114,8 @@ class AchievementCards extends StatelessWidget {
                   size: 18, color: Color(0xFF8B5CF6)),
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Text(
-              'Achievements',
+            Text(
+              'Achievements'.tr(context),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/profile_model.dart';
 import '../providers/profile_provider.dart';
@@ -35,7 +36,7 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile'),
+        title: Text('My Profile'.tr(context)),
         actions: [
           if (effectiveProfile != null)
             IconButton(
@@ -47,7 +48,7 @@ class ProfileScreen extends ConsumerWidget {
       body: profileState.isLoading && effectiveProfile == null
           ? const Center(child: CircularProgressIndicator())
           : effectiveProfile == null
-              ? const Center(child: Text('Failed to load profile'))
+              ? Center(child: Text('Failed to load profile'.tr(context)))
               : RefreshIndicator(
                   onRefresh: () =>
                       ref.read(profileProvider.notifier).loadProfile(),
@@ -203,8 +204,8 @@ class _ProfileContent extends StatelessWidget {
                             color: Colors.greenAccent.shade200,
                           ),
                           const SizedBox(width: 4),
-                          const Text(
-                            'Verified',
+                          Text(
+                            'Verified'.tr(context),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -268,7 +269,7 @@ class _ProfileContent extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Supervisor',
+                      'Supervisor'.tr(context),
                       style: TextStyle(
                         color: AppColors.accent,
                         fontSize: 12,
@@ -291,7 +292,7 @@ class _ProfileContent extends StatelessWidget {
               Expanded(
                 child: _StatItem(
                   value: profile.totalProjects.toString(),
-                  label: 'Total Projects',
+                  label: 'Total Projects'.tr(context),
                 ),
               ),
               Container(
@@ -302,7 +303,7 @@ class _ProfileContent extends StatelessWidget {
               Expanded(
                 child: _StatItem(
                   value: profile.completedProjects.toString(),
-                  label: 'Completed',
+                  label: 'Completed'.tr(context),
                 ),
               ),
               Container(
@@ -313,7 +314,7 @@ class _ProfileContent extends StatelessWidget {
               Expanded(
                 child: _StatItem(
                   value: '${profile.completionRate.toStringAsFixed(0)}%',
-                  label: 'Success Rate',
+                  label: 'Success Rate'.tr(context),
                 ),
               ),
             ],
@@ -325,7 +326,7 @@ class _ProfileContent extends StatelessWidget {
         // Bio
         if (profile.bio != null && profile.bio!.isNotEmpty)
           _ProfileSection(
-            title: 'About',
+            title: 'About'.tr(context),
             child: Text(
               profile.bio!,
               style: Theme.of(context).textTheme.bodyMedium,
@@ -335,7 +336,7 @@ class _ProfileContent extends StatelessWidget {
         // Specializations
         if (profile.specializations.isNotEmpty)
           _ProfileSection(
-            title: 'Specializations',
+            title: 'Specializations'.tr(context),
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -355,7 +356,7 @@ class _ProfileContent extends StatelessWidget {
         // Qualifications
         if (profile.qualifications.isNotEmpty)
           _ProfileSection(
-            title: 'Qualifications',
+            title: 'Qualifications'.tr(context),
             child: Column(
               children: profile.qualifications.map((qual) {
                 return _QualificationItem(qualification: qual);
@@ -366,7 +367,7 @@ class _ProfileContent extends StatelessWidget {
         // Languages
         if (profile.languages.isNotEmpty)
           _ProfileSection(
-            title: 'Languages',
+            title: 'Languages'.tr(context),
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -381,24 +382,24 @@ class _ProfileContent extends StatelessWidget {
 
         // Contact Info
         _ProfileSection(
-          title: 'Contact Information',
+          title: 'Contact Information'.tr(context),
           child: Column(
             children: [
               if (profile.phone != null)
                 _InfoRow(
                   icon: Icons.phone,
-                  label: 'Phone',
+                  label: 'Phone'.tr(context),
                   value: profile.phone!,
                 ),
               _InfoRow(
                 icon: Icons.email,
-                label: 'Email',
+                label: 'Email'.tr(context),
                 value: profile.email,
               ),
               if (profile.timezone != null)
                 _InfoRow(
                   icon: Icons.access_time,
-                  label: 'Timezone',
+                  label: 'Timezone'.tr(context),
                   value: profile.timezone!,
                 ),
             ],
@@ -407,7 +408,7 @@ class _ProfileContent extends StatelessWidget {
 
         // Availability
         _ProfileSection(
-          title: 'Availability',
+          title: 'Availability'.tr(context),
           child: Row(
             children: [
               Expanded(
@@ -415,11 +416,11 @@ class _ProfileContent extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Currently Available',
+                      'Currently Available'.tr(context),
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     Text(
-                      'Max ${profile.maxConcurrentProjects} concurrent projects',
+                      '${'Max'.tr(context)} ${profile.maxConcurrentProjects} ${'concurrent projects'.tr(context)}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondaryLight,
                           ),
@@ -439,7 +440,7 @@ class _ProfileContent extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  profile.isAvailable ? 'Available' : 'Unavailable',
+                  profile.isAvailable ? 'Available'.tr(context) : 'Unavailable'.tr(context),
                   style: TextStyle(
                     color: profile.isAvailable
                         ? AppColors.success
@@ -483,7 +484,7 @@ class _ProfileMenu extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
-              'Menu',
+              'Menu'.tr(context),
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -491,35 +492,35 @@ class _ProfileMenu extends ConsumerWidget {
           ),
           ListTile(
             leading: Icon(Icons.bar_chart, color: AppColors.accent),
-            title: const Text('Stats Dashboard'),
+            title: Text('Stats Dashboard'.tr(context)),
             trailing: const Icon(Icons.chevron_right, size: 20),
             onTap: () => context.go(RoutePaths.earnings),
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
             leading: Icon(Icons.rate_review, color: AppColors.accent),
-            title: const Text('My Reviews'),
+            title: Text('My Reviews'.tr(context)),
             trailing: const Icon(Icons.chevron_right, size: 20),
             onTap: () => context.goNamed(RouteNames.reviews),
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
             leading: Icon(Icons.block, color: AppColors.accent),
-            title: const Text('Doer Blacklist'),
+            title: Text('Doer Blacklist'.tr(context)),
             trailing: const Icon(Icons.chevron_right, size: 20),
             onTap: () => context.goNamed(RouteNames.blacklist),
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
             leading: Icon(Icons.support_agent, color: AppColors.accent),
-            title: const Text('Support Contact'),
+            title: Text('Support Contact'.tr(context)),
             trailing: const Icon(Icons.chevron_right, size: 20),
             onTap: () => context.goNamed(RouteNames.support),
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
             leading: Icon(Icons.settings, color: AppColors.accent),
-            title: const Text('Settings'),
+            title: Text('Settings'.tr(context)),
             trailing: const Icon(Icons.chevron_right, size: 20),
             onTap: () => context.go(RoutePaths.settings),
           ),
@@ -532,19 +533,19 @@ class _ProfileMenu extends ConsumerWidget {
                 onPressed: () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Logout'),
-                      content: const Text(
-                        'Are you sure you want to logout?',
+                    builder: (ctx) => AlertDialog(
+                      title: Text('Logout'.tr(ctx)),
+                      content: Text(
+                        'Are you sure you want to logout?'.tr(ctx),
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text('Cancel'.tr(ctx)),
                         ),
                         FilledButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Logout'),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text('Logout'.tr(ctx)),
                         ),
                       ],
                     ),
@@ -555,8 +556,8 @@ class _ProfileMenu extends ConsumerWidget {
                   }
                 },
                 icon: const Icon(Icons.logout, color: Colors.red),
-                label: const Text(
-                  'Logout',
+                label: Text(
+                  'Logout'.tr(context),
                   style: TextStyle(color: Colors.red),
                 ),
                 style: OutlinedButton.styleFrom(
@@ -772,12 +773,12 @@ class _AvatarOptionsSheet extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Take Photo'),
+              title: Text('Take Photo'.tr(context)),
               onTap: () => _pickImage(ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from Gallery'),
+              title: Text('Choose from Gallery'.tr(context)),
               onTap: () => _pickImage(ImageSource.gallery),
             ),
           ],
@@ -850,7 +851,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        title: Text('Edit Profile'.tr(context)),
         actions: [
           TextButton(
             onPressed: profileState.isSaving ? null : _saveProfile,
@@ -860,7 +861,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Save'),
+                : Text('Save'.tr(context)),
           ),
         ],
       ),
@@ -872,13 +873,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             // Name
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Full Name',
+              decoration: InputDecoration(
+                labelText: 'Full Name'.tr(context),
                 prefixIcon: Icon(Icons.person),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter your name';
+                  return 'Please enter your name'.tr(context);
                 }
                 return null;
               },
@@ -888,8 +889,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             // Phone
             TextFormField(
               controller: _phoneController,
-              decoration: const InputDecoration(
-                labelText: 'Phone Number',
+              decoration: InputDecoration(
+                labelText: 'Phone Number'.tr(context),
                 prefixIcon: Icon(Icons.phone),
               ),
               keyboardType: TextInputType.phone,
@@ -899,8 +900,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             // Bio
             TextFormField(
               controller: _bioController,
-              decoration: const InputDecoration(
-                labelText: 'Bio',
+              decoration: InputDecoration(
+                labelText: 'Bio'.tr(context),
                 prefixIcon: Icon(Icons.description),
                 alignLabelWithHint: true,
               ),
@@ -912,8 +913,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             // Timezone
             TextFormField(
               controller: _timezoneController,
-              decoration: const InputDecoration(
-                labelText: 'Timezone',
+              decoration: InputDecoration(
+                labelText: 'Timezone'.tr(context),
                 prefixIcon: Icon(Icons.access_time),
                 hintText: 'e.g., America/New_York',
               ),
@@ -935,15 +936,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Availability Settings',
+                      'Availability Settings'.tr(context),
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                     ),
                     const SizedBox(height: 16),
                     SwitchListTile(
-                      title: const Text('Available for Projects'),
-                      subtitle: const Text('Allow new project assignments'),
+                      title: Text('Available for Projects'.tr(context)),
+                      subtitle: Text('Allow new project assignments'.tr(context)),
                       value: _isAvailable,
                       onChanged: (value) {
                         setState(() => _isAvailable = value);
@@ -957,9 +958,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Max Concurrent Projects'),
+                              Text('Max Concurrent Projects'.tr(context)),
                               Text(
-                                '$_maxProjects projects',
+                                '$_maxProjects ${'projects'.tr(context)}',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: AppColors.textSecondaryLight,
                                     ),
@@ -1048,8 +1049,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (mounted && success) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully'),
+          SnackBar(
+            content: Text('Profile updated successfully'.tr(context)),
             backgroundColor: Colors.green,
           ),
         );
@@ -1103,7 +1104,7 @@ class _ChipInputSectionState extends State<_ChipInputSection> {
               child: TextField(
                 controller: _controller,
                 decoration: InputDecoration(
-                  hintText: 'Add ${widget.title.toLowerCase()}',
+                  hintText: '${'Add'.tr(context)} ${widget.title.toLowerCase()}',
                   isDense: true,
                 ),
                 onSubmitted: (value) {

@@ -60,6 +60,10 @@ import '../../features/profile/screens/payment_history_screen.dart';
 import '../../features/profile/screens/settings_screen.dart';
 import '../../features/profile/screens/notifications_screen.dart';
 import '../../features/support/screens/support_screen.dart';
+import '../../features/community/screens/community_screen.dart';
+import '../../features/community/screens/create_post_screen.dart';
+import '../../features/community/screens/post_detail_screen.dart';
+import '../../features/community/screens/saved_posts_screen.dart';
 import '../../providers/auth_provider.dart';
 
 /// Public routes that don't require authentication.
@@ -285,6 +289,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'support',
         builder: (context, state) => const SupportScreen(),
       ),
+
+      // Community (Pro Network) Routes
+      GoRoute(
+        path: RouteNames.community,
+        name: 'community',
+        builder: (context, state) => const CommunityScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.communityCreate,
+        name: 'communityCreate',
+        builder: (context, state) => const CreatePostScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.communitySaved,
+        name: 'communitySaved',
+        builder: (context, state) => const SavedPostsScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.communityPost,
+        name: 'communityPost',
+        builder: (context, state) {
+          final postId = state.pathParameters['id']!;
+          return PostDetailScreen(postId: postId);
+        },
+      ),
+
       // Project & Workspace Routes
       GoRoute(
         path: RouteNames.projectDetail,

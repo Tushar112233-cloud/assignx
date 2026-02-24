@@ -45,6 +45,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/quiz_model.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Full quiz question display widget.
 ///
@@ -86,7 +87,7 @@ class QuizQuestionWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Question $questionNumber of $totalQuestions',
+              'Question $questionNumber of $totalQuestions'.tr(context),
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,

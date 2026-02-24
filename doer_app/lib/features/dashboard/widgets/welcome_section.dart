@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/dashboard_provider.dart';
 
@@ -73,7 +74,7 @@ class WelcomeSection extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _getGreeting(),
+                      _getGreeting(context),
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white.withValues(alpha: 0.8),
@@ -118,7 +119,7 @@ class WelcomeSection extends ConsumerWidget {
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            isAvailable ? 'Available' : 'Unavailable',
+                            isAvailable ? 'Available'.tr(context) : 'Unavailable'.tr(context),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
@@ -141,10 +142,10 @@ class WelcomeSection extends ConsumerWidget {
     );
   }
 
-  String _getGreeting() {
+  String _getGreeting(BuildContext context) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return 'Good Morning'.tr(context);
+    if (hour < 17) return 'Good Afternoon'.tr(context);
+    return 'Good Evening'.tr(context);
   }
 }

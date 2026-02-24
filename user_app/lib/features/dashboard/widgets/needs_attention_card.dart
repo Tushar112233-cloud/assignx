@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/project_model.dart';
 import '../../../shared/animations/common_animations.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -159,11 +160,11 @@ class NeedsAttentionSection extends StatelessWidget {
   String _getSubtitle(Project project) {
     switch (project.status) {
       case ProjectStatus.paymentPending:
-        return 'Payment Due';
+        return 'Payment Due';  // Translated at display site
       case ProjectStatus.delivered:
-        return 'Delivered';
+        return 'Delivered';  // Translated at display site
       case ProjectStatus.quoted:
-        return 'Quote Ready';
+        return 'Quote Ready';  // Translated at display site
       default:
         return project.status.displayName;
     }
@@ -199,7 +200,7 @@ class NeedsAttentionSection extends StatelessWidget {
             children: [
               // "NEEDS ATTENTION" in all caps
               Text(
-                'NEEDS ATTENTION',
+                'NEEDS ATTENTION'.tr(context),
                 style: AppTextStyles.labelSmall.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -318,7 +319,7 @@ class _NeedsAttentionListItem extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        subtitle,
+                        subtitle.tr(context),
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontSize: 14,
                           color: AppColors.textTertiary,

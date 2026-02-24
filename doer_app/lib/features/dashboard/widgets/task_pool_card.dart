@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/doer_project_model.dart';
 import 'deadline_countdown.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Open project card for the Task Pool section.
 ///
@@ -68,14 +69,14 @@ class TaskPoolCard extends StatelessWidget {
                           color: AppColors.urgent.withValues(alpha: 0.3),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.local_fire_department,
                               size: 12, color: AppColors.urgent),
                           SizedBox(width: 3),
                           Text(
-                            'Urgent',
+                            'Urgent'.tr(context),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -103,7 +104,7 @@ class TaskPoolCard extends StatelessWidget {
                     borderRadius: AppSpacing.borderRadiusSm,
                   ),
                   child: Text(
-                    project.topic ?? project.subject ?? 'General',
+                    project.topic ?? project.subject ?? 'General'.tr(context),
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -142,7 +143,7 @@ class TaskPoolCard extends StatelessWidget {
                         size: 14, color: AppColors.textSecondary),
                     const SizedBox(width: 3),
                     Text(
-                      '${project.wordCount} words',
+                      '${project.wordCount} ${'words'.tr(context)}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -210,12 +211,12 @@ class TaskPoolCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.add_circle_outline, size: 18),
                         SizedBox(width: 6),
-                        Text('Accept Task'),
+                        Text('Accept Task'.tr(context)),
                       ],
                     ),
                   ),

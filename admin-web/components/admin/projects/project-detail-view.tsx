@@ -39,7 +39,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { updateProjectStatus } from "@/lib/admin/actions/projects";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { updateProjectStatus, updateProjectQuote } from "@/lib/admin/actions/projects";
 import { toast } from "sonner";
 
 interface PersonInfo {
@@ -152,6 +154,42 @@ export function ProjectDetailView({
   const [newStatus, setNewStatus] = React.useState("");
   const [statusReason, setStatusReason] = React.useState("");
   const [updating, setUpdating] = React.useState(false);
+
+  const [userQuote, setUserQuote] = React.useState("");
+  const [doerPayout, setDoerPayout] = React.useState("");
+  const [supervisorCommission, setSupervisorCommission] = React.useState("");
+  const [settingQuote, setSettingQuote] = React.useState(false);
+
+  const parsedUserQuote = parseFloat(userQuote) || 0;
+  const parsedDoerPayout = parseFloat(doerPayout) || 0;
+  const parsedSupervisorCommission = parseFloat(supervisorCommission) || 0;
+  const platformFee = parsedUserQuote - parsedDoerPayout - parsedSupervisorCommission;
+
+  async function handleSetQuote() {
+    if (parsedUserQuote <= 0 || parsedDoerPayout <= 0) return;
+    if (parsedDoerPayout >= parsedUserQuote) {
+      toast.error("Doer payout must be less than user quote");
+      return;
+    }
+    setSettingQuote(true);
+    try {
+      await updateProjectQuote(
+        project.id,
+        parsedUserQuote,
+        parsedDoerPayout,
+        parsedSupervisorCommission > 0 ? parsedSupervisorCommission : undefined
+      );
+      toast.success("Quote set and user notified");
+      router.refresh();
+      setUserQuote("");
+      setDoerPayout("");
+      setSupervisorCommission("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to set quote");
+    } finally {
+      setSettingQuote(false);
+    }
+  }
 
   async function handleStatusUpdate() {
     if (!newStatus || newStatus === project.status) return;
@@ -315,6 +353,103 @@ export function ProjectDetailView({
                     className="w-full"
                   >
                     {updating ? "Updating..." : "Update Status"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Set Price</CardTitle>
+                  <CardDescription>
+                    Set the final quote for this project
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="userQuote">User Quote (what user pays)</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                        ₹
+                      </span>
+                      <Input
+                        id="userQuote"
+                        type="number"
+                        min={0}
+                        step={1}
+                        placeholder="0"
+                        value={userQuote}
+                        onChange={(e) => setUserQuote(e.target.value)}
+                        className="pl-7 tabular-nums"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="doerPayout">Doer Payout (what doer gets)</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                        ₹
+                      </span>
+                      <Input
+                        id="doerPayout"
+                        type="number"
+                        min={0}
+                        step={1}
+                        placeholder="0"
+                        value={doerPayout}
+                        onChange={(e) => setDoerPayout(e.target.value)}
+                        className="pl-7 tabular-nums"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="supervisorCommission">
+                      Supervisor Commission{" "}
+                      <span className="text-muted-foreground font-normal">(optional)</span>
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                        ₹
+                      </span>
+                      <Input
+                        id="supervisorCommission"
+                        type="number"
+                        min={0}
+                        step={1}
+                        placeholder="0"
+                        value={supervisorCommission}
+                        onChange={(e) => setSupervisorCommission(e.target.value)}
+                        className="pl-7 tabular-nums"
+                      />
+                    </div>
+                  </div>
+
+                  {parsedUserQuote > 0 && parsedDoerPayout > 0 && (
+                    <div className="rounded-md border bg-muted/30 p-3 space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Platform Fee</span>
+                        <span className={`font-medium tabular-nums ${platformFee < 0 ? "text-destructive" : ""}`}>
+                          ₹{platformFee.toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      {parsedSupervisorCommission > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Supervisor</span>
+                          <span className="font-medium tabular-nums">
+                            ₹{parsedSupervisorCommission.toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <Button
+                    onClick={handleSetQuote}
+                    disabled={parsedUserQuote <= 0 || parsedDoerPayout <= 0 || platformFee < 0 || settingQuote}
+                    className="w-full"
+                  >
+                    {settingQuote ? "Setting Quote..." : "Set Quote & Notify User"}
                   </Button>
                 </CardContent>
               </Card>

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/utils/validators.dart';
 import '../../data/models/message_model.dart';
 
@@ -101,7 +102,7 @@ class _MessageInputState extends State<MessageInput> {
           color: Colors.orange,
           size: 48,
         ),
-        title: const Text('Contact Information Detected'),
+        title: Text('Contact Information Detected'.tr(context)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,13 +111,13 @@ class _MessageInputState extends State<MessageInput> {
               'Your message appears to contain a ${ContactDetector.getTypeLabel(_contactWarning!.type!)}.',
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Sharing personal contact details is against our policies and may result in account suspension.',
+            Text(
+              'Sharing personal contact details is against our policies and may result in account suspension.'.tr(context),
               style: TextStyle(fontSize: 13),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'If you send this message, it will be flagged for review.',
+            Text(
+              'If you send this message, it will be flagged for review.'.tr(context),
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -127,14 +128,14 @@ class _MessageInputState extends State<MessageInput> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Edit Message'),
+            child: Text('Edit Message'.tr(context)),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.orange,
             ),
-            child: const Text('Send Anyway'),
+            child: Text('Send Anyway'.tr(context)),
           ),
         ],
       ),
@@ -209,7 +210,7 @@ class _MessageInputState extends State<MessageInput> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Contact information detected',
+                            'Contact information detected'.tr(context),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Colors.red.shade800,
                                   fontWeight: FontWeight.w600,
@@ -262,8 +263,8 @@ class _MessageInputState extends State<MessageInput> {
                         textCapitalization: TextCapitalization.sentences,
                         decoration: InputDecoration(
                           hintText: widget.enabled
-                              ? 'Type a message...'
-                              : 'Messaging disabled',
+                              ? 'Type a message...'.tr(context)
+                              : 'Messaging disabled'.tr(context),
                           hintStyle: TextStyle(
                             color: AppColors.textSecondaryLight,
                           ),
@@ -358,7 +359,7 @@ class _ReplyPreview extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  message.senderName ?? 'Unknown',
+                  message.senderName ?? 'Unknown'.tr(context),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,

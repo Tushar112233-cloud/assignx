@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/notification_model.dart';
 
 /// Notification card widget.
@@ -238,7 +239,7 @@ class NotificationFilterChips extends StatelessWidget {
       child: Row(
         children: _filters.map((filter) {
           final isSelected = selectedFilter == filter;
-          final label = filter?.displayName ?? 'All';
+          final label = filter?.displayName ?? 'All'.tr(context);
 
           return Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -287,14 +288,14 @@ class EmptyNotifications extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No notifications',
+              'No notifications'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'You\'re all caught up!',
+              'You\'re all caught up!'.tr(context),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),

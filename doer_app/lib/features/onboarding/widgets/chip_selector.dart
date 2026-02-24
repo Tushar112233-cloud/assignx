@@ -49,6 +49,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// A multi-select chip selector widget.
 ///
@@ -66,7 +67,7 @@ import '../../../core/constants/app_spacing.dart';
 ///   selectedValues: selectedSubjects,
 ///   onChanged: (values) => setState(() => selectedSubjects = values),
 ///   maxSelections: 5,
-///   helperText: 'Select up to 5 subjects',
+///   helperText: 'Select up to 5 subjects'.tr(context),
 /// )
 /// ```
 ///

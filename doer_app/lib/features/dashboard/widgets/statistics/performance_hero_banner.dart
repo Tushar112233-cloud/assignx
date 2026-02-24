@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../providers/statistics_provider.dart';
 
 /// Full-width hero banner showing key performance metrics.
@@ -44,7 +45,7 @@ class PerformanceHeroBanner extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Period selector
-            _buildPeriodSelector(ref, selectedPeriod),
+            _buildPeriodSelector(context, ref, selectedPeriod),
             const SizedBox(height: 20),
 
             // Main metrics row
@@ -52,7 +53,7 @@ class PerformanceHeroBanner extends ConsumerWidget {
               children: [
                 Expanded(
                   child: _buildMetric(
-                    label: 'Total Earnings',
+                    label: 'Total Earnings'.tr(context),
                     value: _formatCurrency(stats.totalEarnings),
                     trend: stats.earningsTrend,
                     icon: Icons.account_balance_wallet_rounded,
@@ -65,7 +66,7 @@ class PerformanceHeroBanner extends ConsumerWidget {
                 ),
                 Expanded(
                   child: _buildMetric(
-                    label: 'Avg Rating',
+                    label: 'Avg Rating'.tr(context),
                     value: stats.averageRating.toStringAsFixed(1),
                     trend: stats.ratingTrend,
                     icon: Icons.star_rounded,
@@ -78,7 +79,7 @@ class PerformanceHeroBanner extends ConsumerWidget {
                 ),
                 Expanded(
                   child: _buildMetric(
-                    label: 'Velocity',
+                    label: 'Velocity'.tr(context),
                     value: '${stats.projectVelocity.toStringAsFixed(1)}/wk',
                     icon: Icons.speed_rounded,
                   ),
@@ -91,7 +92,7 @@ class PerformanceHeroBanner extends ConsumerWidget {
     );
   }
 
-  Widget _buildPeriodSelector(WidgetRef ref, StatsPeriod selected) {
+  Widget _buildPeriodSelector(BuildContext context, WidgetRef ref, StatsPeriod selected) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
@@ -116,7 +117,7 @@ class PerformanceHeroBanner extends ConsumerWidget {
                 borderRadius: AppSpacing.borderRadiusXs,
               ),
               child: Text(
-                _periodLabel(period),
+                _periodLabel(context, period),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -188,16 +189,16 @@ class PerformanceHeroBanner extends ConsumerWidget {
     );
   }
 
-  String _periodLabel(StatsPeriod period) {
+  String _periodLabel(BuildContext context, StatsPeriod period) {
     switch (period) {
       case StatsPeriod.week:
-        return 'Week';
+        return 'Week'.tr(context);
       case StatsPeriod.month:
-        return 'Month';
+        return 'Month'.tr(context);
       case StatsPeriod.year:
-        return 'Year';
+        return 'Year'.tr(context);
       case StatsPeriod.all:
-        return 'All';
+        return 'All'.tr(context);
     }
   }
 

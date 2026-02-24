@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/theme_provider.dart';
+import 'providers/translation_provider.dart';
 
 /// Root application widget.
 ///
@@ -15,6 +16,8 @@ class UserApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
+    // Watch translation state to trigger rebuilds on language change
+    ref.watch(translationProvider);
 
     return MaterialApp.router(
       title: 'AssignX',

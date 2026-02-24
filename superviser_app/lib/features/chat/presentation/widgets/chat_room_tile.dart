@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/chat_room_model.dart';
 
 /// List tile widget for displaying a chat room.
@@ -134,7 +135,7 @@ class ChatRoomTile extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          room.lastMessage ?? 'No messages yet',
+                          room.lastMessage ?? 'No messages yet'.tr(context),
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: room.hasUnread
@@ -285,14 +286,14 @@ class ChatListEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No Conversations',
+              'No Conversations'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Chat rooms will appear here when you have active projects.',
+              'Chat rooms will appear here when you have active projects.'.tr(context),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),

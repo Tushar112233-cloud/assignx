@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// {@template confirm_dialog}
 /// A confirmation dialog for destructive or important actions.
@@ -197,9 +198,9 @@ class ConfirmDialog extends StatelessWidget {
   }) {
     return show(
       context,
-      title: 'Delete $itemName?',
-      message: 'This action cannot be undone.',
-      confirmLabel: 'Delete',
+      title: '${'Delete'.tr(context)} $itemName?',
+      message: 'This action cannot be undone.'.tr(context),
+      confirmLabel: 'Delete'.tr(context),
       isDestructive: true,
       icon: Icons.delete_outline,
     );
@@ -219,9 +220,9 @@ class ConfirmDialog extends StatelessWidget {
   static Future<bool> showLogout(BuildContext context) {
     return show(
       context,
-      title: 'Log Out?',
-      message: 'Are you sure you want to log out?',
-      confirmLabel: 'Log Out',
+      title: 'Log Out?'.tr(context),
+      message: 'Are you sure you want to log out?'.tr(context),
+      confirmLabel: 'Log Out'.tr(context),
       icon: Icons.logout,
     );
   }
@@ -243,9 +244,9 @@ class ConfirmDialog extends StatelessWidget {
   static Future<bool> showDiscardChanges(BuildContext context) {
     return show(
       context,
-      title: 'Discard Changes?',
-      message: 'You have unsaved changes. Are you sure you want to discard them?',
-      confirmLabel: 'Discard',
+      title: 'Discard Changes?'.tr(context),
+      message: 'You have unsaved changes. Are you sure you want to discard them?'.tr(context),
+      confirmLabel: 'Discard'.tr(context),
       isDestructive: true,
       icon: Icons.warning_amber_outlined,
     );

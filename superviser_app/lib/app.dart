@@ -4,6 +4,7 @@ import 'core/config/constants.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
+import 'core/translation/translation_provider.dart';
 
 /// Main application widget.
 ///
@@ -15,6 +16,8 @@ class AdminXApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final router = ref.watch(appRouterProvider);
+    // Watch translation state to trigger rebuilds on language change
+    ref.watch(translationProvider);
 
     return MaterialApp.router(
       // App info

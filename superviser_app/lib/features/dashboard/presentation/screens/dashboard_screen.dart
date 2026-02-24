@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/request_model.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/dashboard_header.dart';
@@ -130,17 +131,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             // New Requests section
             SliverToBoxAdapter(
               child: _SectionHeader(
-                title: 'New Requests',
-                subtitle: 'Awaiting your quote',
+                title: 'New Requests'.tr(context),
+                subtitle: 'Awaiting your quote'.tr(context),
                 count: dashboardState.filteredNewRequests.length,
                 icon: Icons.fiber_new,
                 iconColor: Colors.blue,
               ),
             ),
             if (dashboardState.filteredNewRequests.isEmpty)
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: _EmptySection(
-                  message: 'No new requests',
+                  message: 'No new requests'.tr(context),
                   icon: Icons.inbox_outlined,
                 ),
               )
@@ -152,7 +153,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     return RequestCard(
                       request: request,
                       onTap: () => _viewRequestDetails(request),
-                      actionLabel: 'Analyze & Quote',
+                      actionLabel: 'Analyze & Quote'.tr(context),
                       onAction: () => _showQuoteForm(request),
                     );
                   },
@@ -162,17 +163,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             // Paid Requests section
             SliverToBoxAdapter(
               child: _SectionHeader(
-                title: 'Ready to Assign',
-                subtitle: 'Paid and awaiting doer',
+                title: 'Ready to Assign'.tr(context),
+                subtitle: 'Paid and awaiting doer'.tr(context),
                 count: dashboardState.filteredPaidRequests.length,
                 icon: Icons.assignment_ind,
                 iconColor: AppColors.success,
               ),
             ),
             if (dashboardState.filteredPaidRequests.isEmpty)
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: _EmptySection(
-                  message: 'No requests ready for assignment',
+                  message: 'No requests ready for assignment'.tr(context),
                   icon: Icons.check_circle_outline,
                 ),
               )
@@ -184,7 +185,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     return RequestCard(
                       request: request,
                       onTap: () => _viewRequestDetails(request),
-                      actionLabel: 'Assign Doer',
+                      actionLabel: 'Assign Doer'.tr(context),
                       onAction: () => _showDoerSelection(request),
                     );
                   },
@@ -202,7 +203,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showQuickActions,
         icon: const Icon(Icons.add),
-        label: const Text('Quick Action'),
+        label: Text('Quick Action'.tr(context)),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
@@ -232,20 +233,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Subject: ${request.subject}'),
+              Text('${'Subject:'.tr(context)} ${request.subject}'),
               const SizedBox(height: 8),
-              Text('Budget: ₹${request.budget}'),
+              Text('${'Budget:'.tr(context)} ₹${request.budget}'),
               const SizedBox(height: 8),
-              Text('Deadline: ${request.deadline.toString().split(' ')[0]}'),
+              Text('${'Deadline:'.tr(context)} ${request.deadline.toString().split(' ')[0]}'),
               const SizedBox(height: 8),
-              Text('Status: ${request.status}'),
+              Text('${'Status:'.tr(context)} ${request.status}'),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text('Close'.tr(context)),
           ),
         ],
       ),
@@ -263,8 +264,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final result = await QuoteFormSheet.show(context, request);
     if (result == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Quote submitted successfully!'),
+        SnackBar(
+          content: Text('Quote submitted successfully!'.tr(context)),
           backgroundColor: Colors.green,
         ),
       );
@@ -283,7 +284,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (doer != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${doer.name} assigned to project!'),
+          content: Text('${doer.name} ${'assigned to project!'.tr(context)}'),
           backgroundColor: Colors.green,
         ),
       );
@@ -495,7 +496,7 @@ class _QuickActionsSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Quick Actions',
+            'Quick Actions'.tr(context),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -503,20 +504,20 @@ class _QuickActionsSheet extends StatelessWidget {
           const SizedBox(height: 20),
           _QuickActionTile(
             icon: Icons.search,
-            title: 'Search Doers',
-            subtitle: 'Find available writers',
+            title: 'Search Doers'.tr(context),
+            subtitle: 'Find available writers'.tr(context),
             onTap: () => Navigator.pop(context),
           ),
           _QuickActionTile(
             icon: Icons.analytics_outlined,
-            title: 'View Analytics',
-            subtitle: 'Check your performance',
+            title: 'View Analytics'.tr(context),
+            subtitle: 'Check your performance'.tr(context),
             onTap: () => Navigator.pop(context),
           ),
           _QuickActionTile(
             icon: Icons.history,
-            title: 'Recent Projects',
-            subtitle: 'View project history',
+            title: 'Recent Projects'.tr(context),
+            subtitle: 'View project history'.tr(context),
             onTap: () => Navigator.pop(context),
           ),
           const SizedBox(height: 20),
@@ -599,7 +600,7 @@ class _KpiCardsRow extends StatelessWidget {
               icon: Icons.fiber_new,
               iconColor: AppColors.info,
               value: newRequestsCount.toString(),
-              label: 'New Requests',
+              label: 'New Requests'.tr(context),
             ),
           ),
           const SizedBox(width: 8),
@@ -608,7 +609,7 @@ class _KpiCardsRow extends StatelessWidget {
               icon: Icons.assignment_ind,
               iconColor: AppColors.accent,
               value: paidRequestsCount.toString(),
-              label: 'Ready to Assign',
+              label: 'Ready to Assign'.tr(context),
             ),
           ),
           const SizedBox(width: 8),
@@ -617,7 +618,7 @@ class _KpiCardsRow extends StatelessWidget {
               icon: Icons.rate_review_outlined,
               iconColor: AppColors.warning,
               value: '--',
-              label: 'Pending QC',
+              label: 'Pending QC'.tr(context),
             ),
           ),
           const SizedBox(width: 8),
@@ -626,7 +627,7 @@ class _KpiCardsRow extends StatelessWidget {
               icon: Icons.currency_rupee,
               iconColor: AppColors.success,
               value: '--',
-              label: 'Earnings',
+              label: 'Earnings'.tr(context),
             ),
           ),
         ],
@@ -728,14 +729,14 @@ class _MiniChart extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Weekly Completions',
+                'Weekly Completions'.tr(context),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Tasks completed this week',
+                'Tasks completed this week'.tr(context),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondaryLight,
                     ),
@@ -751,7 +752,7 @@ class _MiniChart extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Analytics will appear once you complete projects',
+                      'Analytics will appear once you complete projects'.tr(context),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondaryLight,
                           ),

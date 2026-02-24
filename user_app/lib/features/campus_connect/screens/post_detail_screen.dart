@@ -7,6 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/marketplace_model.dart';
 import '../../../providers/marketplace_provider.dart';
 import '../widgets/comment_section.dart';
@@ -152,7 +153,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final user = supabase.auth.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login to like posts')),
+        SnackBar(content: Text('Please login to like posts'.tr(context))),
       );
       return;
     }
@@ -192,7 +193,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final user = supabase.auth.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login to save posts')),
+        SnackBar(content: Text('Please login to save posts'.tr(context))),
       );
       return;
     }
@@ -333,7 +334,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                       error: (e, _) => Padding(
                         padding: const EdgeInsets.all(20),
                         child: Text(
-                          'Failed to load comments',
+                          'Failed to load comments'.tr(context),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.error,
                           ),
@@ -453,7 +454,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                 _isSaved ? Icons.bookmark : Icons.bookmark_border,
                 color: _isSaved ? AppColors.primary : null,
               ),
-              title: Text(_isSaved ? 'Remove from saved' : 'Save post'),
+              title: Text(_isSaved ? 'Remove from saved'.tr(context) : 'Save post'.tr(context)),
               onTap: () {
                 Navigator.pop(context);
                 _toggleSave();
@@ -461,7 +462,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.flag_outlined),
-              title: const Text('Report post'),
+              title: Text('Report post'.tr(context)),
               onTap: () {
                 Navigator.pop(context);
                 // Show report dialog
@@ -470,7 +471,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
             ListTile(
               leading: Icon(Icons.block, color: AppColors.error),
               title: Text(
-                'Block user',
+                'Block user'.tr(context),
                 style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
               ),
               onTap: () => Navigator.pop(context),
@@ -496,12 +497,12 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Post not found',
+                'Post not found'.tr(context),
                 style: AppTextStyles.headingMedium,
               ),
               const SizedBox(height: 8),
               Text(
-                'This post may have been removed',
+                'This post may have been removed'.tr(context),
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -510,7 +511,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: () => context.pop(),
-                child: const Text('Go Back'),
+                child: Text('Go Back'.tr(context)),
               ),
             ],
           ),
@@ -534,7 +535,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Failed to load',
+                'Failed to load'.tr(context),
                 style: AppTextStyles.headingSmall,
               ),
               const SizedBox(height: 8),
@@ -550,7 +551,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                 onPressed: () {
                   ref.invalidate(listingDetailProvider(widget.postId));
                 },
-                child: const Text('Retry'),
+                child: Text('Retry'.tr(context)),
               ),
             ],
           ),
@@ -663,7 +664,7 @@ class _PostContent extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Negotiable',
+                        'Negotiable'.tr(context),
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.success,
                           fontWeight: FontWeight.w500,
@@ -848,7 +849,7 @@ class _AuthorCard extends StatelessWidget {
             onPressed: () {
               // Open chat or contact
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Opening chat...')),
+                SnackBar(content: Text('Opening chat...'.tr(context))),
               );
             },
             style: OutlinedButton.styleFrom(
@@ -857,7 +858,7 @@ class _AuthorCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            child: const Text('Contact'),
+            child: Text('Contact'.tr(context)),
           ),
         ],
       ),

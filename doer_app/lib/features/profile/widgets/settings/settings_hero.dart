@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../providers/profile_provider.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Hero section displayed at the top of the Settings screen.
 ///
@@ -44,10 +45,10 @@ class SettingsHero extends StatelessWidget {
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                 ),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Settings',
-                    style: TextStyle(
+                    'Settings'.tr(context),
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,

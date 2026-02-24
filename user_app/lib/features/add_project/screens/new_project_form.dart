@@ -12,6 +12,7 @@ import '../widgets/file_attachment.dart';
 import '../widgets/reference_style_dropdown.dart';
 import '../widgets/subject_dropdown.dart';
 import '../widgets/success_popup.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../widgets/word_count_input.dart';
 
 /// Multi-step form for creating new project with beautiful gradient design.
@@ -96,8 +97,8 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
 
       await SuccessPopup.show(
         context,
-        title: 'Project Submitted!',
-        message: 'Your project has been submitted successfully. We\'ll match you with an expert soon.',
+        title: 'Project Submitted!', // Translated at display
+        message: 'Your project has been submitted successfully. We\'ll match you with an expert soon.', // Translated at display
         projectId: projectId,
         onViewProject: () {
           context.go('/projects/$projectId');
@@ -129,7 +130,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          'New Project',
+          'New Project'.tr(context),
           style: AppTextStyles.headingSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.transparent,
@@ -164,7 +165,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
                 _StepIndicator(
                   currentStep: _currentStep,
                   totalSteps: 3,
-                  labels: const ['Details', 'Requirements', 'Review'],
+                  labels: ['Details'.tr(context), 'Requirements'.tr(context), 'Review'.tr(context)],
                 ),
 
                 // Form content with glass morphism
@@ -237,9 +238,9 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Project Details', style: AppTextStyles.headingSmall),
+                  Text('Project Details'.tr(context), style: AppTextStyles.headingSmall),
                   Text(
-                    'Tell us about your project',
+                    'Tell us about your project'.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -251,14 +252,14 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
           const SizedBox(height: 32),
 
           // Title
-          _buildLabel('Project Title', Icons.title),
+          _buildLabel('Project Title'.tr(context), Icons.title),
           const SizedBox(height: 8),
           _buildTextField(
             controller: _titleController,
-            hint: 'e.g., Research Paper on Climate Change',
+            hint: 'e.g., Research Paper on Climate Change'.tr(context),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter a project title';
+                return 'Please enter a project title'.tr(context);
               }
               return null;
             },
@@ -266,7 +267,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
           const SizedBox(height: 20),
 
           // Subject
-          _buildLabel('Subject Area', Icons.school_outlined),
+          _buildLabel('Subject Area'.tr(context), Icons.school_outlined),
           const SizedBox(height: 8),
           SubjectDropdown(
             value: _subject,
@@ -276,15 +277,15 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
           const SizedBox(height: 20),
 
           // Description
-          _buildLabel('Project Description', Icons.notes),
+          _buildLabel('Project Description'.tr(context), Icons.notes),
           const SizedBox(height: 8),
           _buildTextField(
             controller: _descriptionController,
-            hint: 'Describe your project requirements in detail...',
+            hint: 'Describe your project requirements in detail...'.tr(context),
             maxLines: 5,
             validator: (value) {
               if (value == null || value.length < 20) {
-                return 'Please provide more details (min 20 characters)';
+                return 'Please provide more details (min 20 characters)'.tr(context);
               }
               return null;
             },
@@ -292,7 +293,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
           const SizedBox(height: 20),
 
           // Deadline
-          _buildLabel('Deadline', Icons.calendar_today),
+          _buildLabel('Deadline'.tr(context), Icons.calendar_today),
           const SizedBox(height: 8),
           DeadlinePicker(
             value: _deadline,
@@ -330,9 +331,9 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Requirements', style: AppTextStyles.headingSmall),
+                  Text('Requirements'.tr(context), style: AppTextStyles.headingSmall),
                   Text(
-                    'Specify your project requirements',
+                    'Specify your project requirements'.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -344,7 +345,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
           const SizedBox(height: 32),
 
           // Word count
-          _buildLabel('Word Count', Icons.format_size),
+          _buildLabel('Word Count'.tr(context), Icons.format_size),
           const SizedBox(height: 8),
           WordCountInput(
             value: _wordCount,
@@ -353,7 +354,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
           const SizedBox(height: 24),
 
           // Reference style
-          _buildLabel('Reference Style', Icons.format_quote),
+          _buildLabel('Reference Style'.tr(context), Icons.format_quote),
           const SizedBox(height: 8),
           ReferenceStyleDropdown(
             value: _referenceStyle,
@@ -362,23 +363,23 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
           const SizedBox(height: 24),
 
           // Attachments
-          _buildLabel('Reference Materials', Icons.attach_file),
+          _buildLabel('Reference Materials'.tr(context), Icons.attach_file),
           const SizedBox(height: 8),
           FileAttachment(
             files: _attachments,
             onChanged: (files) => setState(() => _attachments = files),
-            label: 'Reference Materials',
-            hint: 'Upload any reference documents, guidelines, or examples',
+            label: 'Reference Materials'.tr(context),
+            hint: 'Upload any reference documents, guidelines, or examples'.tr(context),
             maxFiles: 5,
             maxSizeMB: 10,
           ),
           const SizedBox(height: 24),
 
           // Additional notes
-          _buildLabel('Additional Notes', Icons.notes),
+          _buildLabel('Additional Notes'.tr(context), Icons.notes),
           const SizedBox(height: 4),
           Text(
-            'Any specific instructions or preferences',
+            'Any specific instructions or preferences'.tr(context),
             style: AppTextStyles.caption.copyWith(
               color: AppColors.textTertiary,
             ),
@@ -386,7 +387,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
           const SizedBox(height: 8),
           _buildTextField(
             controller: _notesController,
-            hint: 'e.g., Prefer formal tone, avoid certain topics...',
+            hint: 'e.g., Prefer formal tone, avoid certain topics...'.tr(context),
             maxLines: 3,
           ),
         ],
@@ -423,9 +424,9 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Review & Submit', style: AppTextStyles.headingSmall),
+                  Text('Review & Submit'.tr(context), style: AppTextStyles.headingSmall),
                   Text(
-                    'Review your project details',
+                    'Review your project details'.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -438,34 +439,34 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
 
           // Project summary
           _SummaryCard(
-            title: 'Project Details',
+            title: 'Project Details'.tr(context),
             icon: Icons.description_outlined,
             items: [
-              _SummaryItem('Title', _titleController.text),
-              _SummaryItem('Subject', _subject?.displayName ?? 'Not selected'),
+              _SummaryItem('Title'.tr(context), _titleController.text),
+              _SummaryItem('Subject'.tr(context), _subject?.displayName ?? 'Not selected'.tr(context)),
               _SummaryItem(
-                'Deadline',
+                'Deadline'.tr(context),
                 _deadline != null
                     ? '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}'
-                    : 'Not set',
+                    : 'Not set'.tr(context),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
           _SummaryCard(
-            title: 'Requirements',
+            title: 'Requirements'.tr(context),
             icon: Icons.checklist_outlined,
             items: [
               _SummaryItem(
-                'Word Count',
-                _wordCount != null ? '$_wordCount words' : 'Not specified',
+                'Word Count'.tr(context),
+                _wordCount != null ? '$_wordCount ${'words'.tr(context)}' : 'Not specified'.tr(context),
               ),
               _SummaryItem(
-                'Reference Style',
-                _referenceStyle?.displayName ?? 'Not selected',
+                'Reference Style'.tr(context),
+                _referenceStyle?.displayName ?? 'Not selected'.tr(context),
               ),
-              _SummaryItem('Attachments', '${_attachments.length} file(s)'),
+              _SummaryItem('Attachments'.tr(context), '${_attachments.length} ${'file(s)'.tr(context)}'),
             ],
           ),
           const SizedBox(height: 24),
@@ -501,7 +502,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'By submitting, you agree to our Terms of Service and Privacy Policy.',
+                    'By submitting, you agree to our Terms of Service and Privacy Policy.'.tr(context),
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.info,
                     ),
@@ -547,7 +548,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
                   ),
                 ),
                 child: Text(
-                  'Back',
+                  'Back'.tr(context),
                   style: AppTextStyles.labelMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -595,7 +596,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
                         ),
                       )
                     : Text(
-                        _currentStep < 2 ? 'Continue' : 'Submit Project',
+                        _currentStep < 2 ? 'Continue'.tr(context) : 'Submit Project'.tr(context),
                         style: AppTextStyles.labelLarge.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,

@@ -4,6 +4,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Video player widget for training modules.
 ///
@@ -108,7 +109,7 @@ class _TrainingVideoPlayerState extends State<TrainingVideoPlayer> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Error loading video',
+                  'Error loading video'.tr(context),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -190,7 +191,7 @@ class _TrainingVideoPlayerState extends State<TrainingVideoPlayer> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Duration: ${widget.durationMinutes} minutes',
+                    'Duration: ${widget.durationMinutes} minutes'.tr(context),
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textTertiary,
@@ -220,8 +221,8 @@ class _TrainingVideoPlayerState extends State<TrainingVideoPlayer> {
                 size: 64,
               ),
               const SizedBox(height: AppSpacing.lg),
-              const Text(
-                'Failed to Load Video',
+              Text(
+                'Failed to Load Video'.tr(context),
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -247,7 +248,7 @@ class _TrainingVideoPlayerState extends State<TrainingVideoPlayer> {
                   _initializePlayer();
                 },
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text('Retry'.tr(context)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,

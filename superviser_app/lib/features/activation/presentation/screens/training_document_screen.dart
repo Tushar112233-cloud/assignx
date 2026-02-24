@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../providers/activation_provider.dart';
 import '../widgets/video_player_widget.dart';
 
@@ -51,7 +52,7 @@ class TrainingDocumentScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Completed',
+                    'Completed'.tr(context),
                     style: AppTypography.labelSmall.copyWith(
                       color: AppColors.success,
                     ),
@@ -83,7 +84,7 @@ class TrainingDocumentScreen extends ConsumerWidget {
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
-            const Text('Document marked as complete!'),
+            Text('Document marked as complete!'.tr(context)),
           ],
         ),
         backgroundColor: AppColors.success,

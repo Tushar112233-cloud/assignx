@@ -15,6 +15,7 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../widgets/home_app_bar.dart';
 
 /// Home screen with bento grid dashboard layout.
@@ -38,17 +39,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) {
-      return 'Good Morning,';
+      return 'Good Morning';
     } else if (hour < 17) {
-      return 'Good Afternoon,';
+      return 'Good Afternoon';
     } else {
-      return 'Good Evening,';
+      return 'Good Evening';
     }
   }
 
   /// Extracts first name from full name.
   String _getFirstName(String? fullName) {
-    if (fullName == null || fullName.isEmpty) return 'Student';
+    if (fullName == null || fullName.isEmpty) return 'Student'; // Translated at display
     final parts = fullName.split(' ');
     return parts.first;
   }
@@ -176,7 +177,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _getGreeting(),
+            '${_getGreeting().tr(context)},',
             style: AppTextStyles.displayMedium.copyWith(
               fontSize: 28,
               fontWeight: FontWeight.w300,
@@ -195,7 +196,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Ready to tackle your assignments?',
+            'Ready to tackle your assignments?'.tr(context),
             style: AppTextStyles.bodyMedium.copyWith(
               fontSize: 14,
               color: AppColors.textTertiary,
@@ -242,7 +243,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Needs Attention',
+                'Needs Attention'.tr(context),
                 style: AppTextStyles.labelLarge.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -363,7 +364,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Quick Actions',
+            'Quick Actions'.tr(context),
             style: AppTextStyles.labelLarge.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -467,7 +468,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const Spacer(),
                 Text(
-                  'New Assignment',
+                  'New Assignment'.tr(context),
                   style: AppTextStyles.labelLarge.copyWith(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -476,7 +477,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Submit your work',
+                  'Submit your work'.tr(context),
                   style: AppTextStyles.bodySmall.copyWith(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.8),
@@ -528,7 +529,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Active Projects',
+            'Active Projects'.tr(context),
             style: AppTextStyles.caption.copyWith(
               fontSize: 12,
               color: AppColors.textSecondary,
@@ -573,7 +574,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Wallet Balance',
+            'Wallet Balance'.tr(context),
             style: AppTextStyles.caption.copyWith(
               fontSize: 12,
               color: AppColors.textSecondary,
@@ -608,7 +609,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const Spacer(),
           Text(
-            'Quick Help',
+            'Quick Help'.tr(context),
             style: AppTextStyles.labelLarge.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -617,7 +618,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 2),
           Text(
-            'FAQs & Support',
+            'FAQs & Support'.tr(context),
             style: AppTextStyles.caption.copyWith(
               fontSize: 12,
               color: AppColors.textSecondary,
@@ -750,7 +751,7 @@ class HomeLoadingOverlay extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Loading...',
+                    'Loading...'.tr(context),
                     style: AppTextStyles.bodyMedium.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,

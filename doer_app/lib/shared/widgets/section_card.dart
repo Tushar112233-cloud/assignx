@@ -20,8 +20,8 @@
 ///   ),
 ///   child: Column(
 ///     children: [
-///       Text('Name: John Doe'),
-///       Text('Email: john@example.com'),
+///       Text('Name: John Doe'.tr(context)),
+///       Text('Email: john@example.com'.tr(context)),
 ///     ],
 ///   ),
 /// )

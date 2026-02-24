@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Date and time picker for project deadline.
 class DeadlinePicker extends StatelessWidget {
@@ -28,7 +29,7 @@ class DeadlinePicker extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Deadline',
+          'Deadline'.tr(context),
           style: AppTextStyles.labelMedium,
         ),
         const SizedBox(height: 8),
@@ -57,7 +58,7 @@ class DeadlinePicker extends StatelessWidget {
                   child: Text(
                     value != null
                         ? DateFormat('EEE, MMM d, y \u2022 h:mm a').format(value!)
-                        : 'Select deadline',
+                        : 'Select deadline'.tr(context),
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: value != null
                           ? AppColors.textPrimary
@@ -101,7 +102,7 @@ class DeadlinePicker extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'More time = Better price! Choose a flexible deadline for best rates.',
+                  'More time = Better price! Choose a flexible deadline for best rates.'.tr(context),
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.primary,
                   ),

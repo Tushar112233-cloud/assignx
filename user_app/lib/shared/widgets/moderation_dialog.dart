@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import '../../core/services/moderation_service.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/translation/translation_extensions.dart';
 import 'glass_container.dart';
 
 /// Dialog shown when content moderation blocks a message.
@@ -77,7 +78,7 @@ class ModerationDialog extends StatelessWidget {
 
               // Title
               Text(
-                _getTitle(),
+                _getTitle().tr(context),
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: _getSeverityColor(),
@@ -148,11 +149,11 @@ class ModerationDialog extends StatelessWidget {
   String _getTitle() {
     switch (result.severity) {
       case ModerationSeverity.high:
-        return 'Message Blocked';
+        return 'Message Blocked'; // Translated at display
       case ModerationSeverity.medium:
-        return 'Content Not Allowed';
+        return 'Content Not Allowed'; // Translated at display
       case ModerationSeverity.low:
-        return 'Personal Info Detected';
+        return 'Personal Info Detected'; // Translated at display
     }
   }
 
@@ -182,7 +183,7 @@ class ModerationDialog extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Detected:',
+            'Detected:'.tr(context),
             style: theme.textTheme.labelSmall?.copyWith(
               color: isDark ? Colors.white54 : Colors.black54,
               fontWeight: FontWeight.w600,
@@ -256,15 +257,15 @@ class ModerationDialog extends StatelessWidget {
     switch (summary.warningLevel) {
       case WarningLevel.none:
       case WarningLevel.first:
-        warningText = 'First Warning';
+        warningText = 'First Warning'; // Translated at display
         warningColor = Colors.amber;
         break;
       case WarningLevel.second:
-        warningText = 'Second Warning';
+        warningText = 'Second Warning'; // Translated at display
         warningColor = Colors.orange;
         break;
       case WarningLevel.final_:
-        warningText = 'Final Warning';
+        warningText = 'Final Warning'; // Translated at display
         warningColor = Colors.red;
         break;
     }
@@ -282,7 +283,7 @@ class ModerationDialog extends StatelessWidget {
           Icon(Icons.warning_rounded, size: 18, color: warningColor),
           const SizedBox(width: 8),
           Text(
-            warningText,
+            warningText.tr(context),
             style: theme.textTheme.labelMedium?.copyWith(
               color: warningColor,
               fontWeight: FontWeight.w600,
@@ -326,7 +327,7 @@ class ModerationDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Edit Message'),
+            child: Text('Edit Message'.tr(context)),
           ),
         ),
         const SizedBox(width: 12),
@@ -344,7 +345,7 @@ class ModerationDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('OK, Got it'),
+            child: Text('OK, Got it'.tr(context)),
           ),
         ),
       ],
@@ -387,7 +388,7 @@ class ModerationWarningBanner extends StatelessWidget {
             const SizedBox(width: 6),
             Flexible(
               child: Text(
-                'Contains ${result.violationTypes.map((t) => t.displayName).join(", ")}',
+                '${'Contains'.tr(context)} ${result.violationTypes.map((t) => t.displayName).join(", ")}',
                 style: theme.textTheme.labelSmall?.copyWith(color: color),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -414,7 +415,7 @@ class ModerationWarningBanner extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Personal info detected',
+                  'Personal info detected'.tr(context),
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: color,
                     fontWeight: FontWeight.w600,
@@ -491,7 +492,7 @@ class RateLimitedOverlay extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Temporarily Restricted',
+                  'Temporarily Restricted'.tr(context),
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.red,
@@ -500,13 +501,13 @@ class RateLimitedOverlay extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'You have been temporarily restricted from sending messages due to repeated policy violations.',
+                  'You have been temporarily restricted from sending messages due to repeated policy violations.'.tr(context),
                   style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Please try again later or contact support if you believe this is an error.',
+                  'Please try again later or contact support if you believe this is an error.'.tr(context),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.hintColor,
                     height: 1.5,
@@ -528,7 +529,7 @@ class RateLimitedOverlay extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('I Understand'),
+                    child: Text('I Understand'.tr(context)),
                   ),
                 ),
               ],

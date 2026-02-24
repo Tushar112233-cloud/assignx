@@ -7,7 +7,7 @@ import { AnimatePresence } from "framer-motion";
 import { StepSubject, StepRequirements, StepDeadline, StepDetails } from "./steps";
 import {
   projectStep1Schema,
-  projectStep2Schema,
+  createStep2Schema,
   projectStep3Schema,
   projectStep4Schema,
   urgencyLevels,
@@ -17,7 +17,10 @@ import {
   type ProjectStep3Schema,
   type ProjectStep4Schema,
 } from "@/lib/validations/project";
-import { createProject, uploadProjectFile } from "@/lib/actions/data";
+import type { ProjectType } from "@/types/add-project";
+import { createProject, createProjectFileRecord } from "@/lib/actions/data";
+import { createClient } from "@/lib/supabase/client";
+import { sanitizeFileName } from "@/lib/validations/file-upload";
 import type { UploadedFile } from "@/types/add-project";
 import { toast } from "sonner";
 
@@ -54,15 +57,27 @@ export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlle
 
   const step1Form = useForm<ProjectStep1Schema>({
     resolver: zodResolver(projectStep1Schema),
-    defaultValues: { subject: formData.subject || "", topic: formData.topic || "" },
+    defaultValues: {
+      projectType: formData.projectType ?? "assignment",
+      subject: formData.subject || "",
+      customSubject: formData.customSubject ?? "",
+      topic: formData.topic || "",
+    },
   });
 
+  // Get the projectType from step 1 data (set after step 1 is submitted)
+  const selectedProjectType = (formData.projectType ?? "assignment") as ProjectType;
+
   const step2Form = useForm<ProjectStep2Schema>({
-    resolver: zodResolver(projectStep2Schema),
+    resolver: (values, context, options) => {
+      const schema = createStep2Schema(selectedProjectType);
+      return zodResolver(schema)(values, context, options);
+    },
     defaultValues: {
-      wordCount: formData.wordCount || 1000,
-      referenceStyle: formData.referenceStyle || "apa7",
-      referenceCount: formData.referenceCount || 10,
+      wordCount: formData.wordCount ?? 1000,
+      referenceStyle: formData.referenceStyle ?? "apa7",
+      referenceCount: formData.referenceCount ?? 10,
+      websiteFeatures: [],
     },
   });
 
@@ -73,12 +88,41 @@ export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlle
 
   const step4Form = useForm<ProjectStep4Schema>({
     resolver: zodResolver(projectStep4Schema),
-    defaultValues: { instructions: formData.instructions || "" },
+    defaultValues: {
+      instructions: formData.instructions || "",
+      colorScheme: "",
+      targetAudience: "",
+      expertQualification: undefined,
+    },
   });
 
-  /** Handles step 1 submission */
+  /** Handles step 1 submission - resets step 2 if project type changed */
   const handleStep1Submit = step1Form.handleSubmit((data) => {
+    const previousType = formData.projectType;
     setFormData((prev) => ({ ...prev, ...data }));
+
+    // Reset step 2 form when project type changes
+    if (previousType && previousType !== data.projectType) {
+      step2Form.reset({
+        wordCount: undefined,
+        referenceStyle: undefined,
+        referenceCount: undefined,
+        documentType: undefined,
+        pageCount: undefined,
+        techStack: undefined,
+        websiteFeatures: [],
+        designReferenceUrl: "",
+        platform: undefined,
+        appFeatures: undefined,
+        appDesignUrl: "",
+        backendRequirements: undefined,
+        consultationDuration: undefined,
+        questionSummary: undefined,
+        preferredDate: undefined,
+        preferredTime: undefined,
+      });
+    }
+
     updateStep(1);
   });
 
@@ -98,17 +142,22 @@ export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlle
   const handleFinalSubmit = step4Form.handleSubmit(async (data) => {
     setIsSubmitting(true);
     try {
-      // Combine all form data
+      // Combine all form data including step 4 type-specific fields
       const allFormData = {
         ...formData,
         instructions: data.instructions,
+        colorScheme: data.colorScheme,
+        targetAudience: data.targetAudience,
+        expertQualification: data.expertQualification,
       };
 
-      // Create project in database
+      // Create project in database with all type-specific fields
       const result = await createProject({
         serviceType: "new_project",
+        projectType: allFormData.projectType,
         title: allFormData.topic || `Project - ${allFormData.subject}`,
         subjectId: allFormData.subject,
+        customSubject: allFormData.subject === "other" ? allFormData.customSubject : undefined,
         topic: allFormData.topic,
         wordCount: allFormData.wordCount,
         referenceStyleId: allFormData.referenceStyle,
@@ -117,6 +166,23 @@ export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlle
           : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         urgencyLevel: allFormData.urgency,
         instructions: allFormData.instructions,
+        // Type-specific fields from step 2
+        documentType: allFormData.documentType,
+        pageCount: allFormData.pageCount,
+        techStack: allFormData.techStack,
+        websiteFeatures: allFormData.websiteFeatures,
+        designReferenceUrl: allFormData.designReferenceUrl || allFormData.appDesignUrl,
+        platform: allFormData.platform,
+        appFeatures: allFormData.appFeatures,
+        backendRequirements: allFormData.backendRequirements,
+        consultationDuration: allFormData.consultationDuration,
+        questionSummary: allFormData.questionSummary,
+        preferredDate: allFormData.preferredDate,
+        preferredTime: allFormData.preferredTime,
+        // Type-specific fields from step 4
+        colorScheme: allFormData.colorScheme,
+        targetAudience: allFormData.targetAudience,
+        expertQualification: allFormData.expertQualification,
       });
 
       if (result.error) {
@@ -125,36 +191,76 @@ export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlle
         return;
       }
 
-      // Upload files if any
+      // Upload files directly to Supabase Storage (no base64 overhead)
       if (files.length > 0 && result.projectId) {
-        for (const uploadedFile of files) {
+        const supabase = createClient();
+        const projectId = result.projectId;
+
+        // Update file statuses to uploading
+        setFiles((prev) =>
+          prev.map((f) => ({ ...f, status: "uploading" as const, progress: 0 }))
+        );
+
+        for (let i = 0; i < files.length; i++) {
+          const uploadedFile = files[i];
           try {
-            // Convert File to base64
-            const fileData = uploadedFile.file;
-            const base64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => {
-                const result = reader.result as string;
-                // Remove data URL prefix to get just the base64 data
-                const base64Data = result.split(",")[1];
-                resolve(base64Data);
-              };
-              reader.onerror = reject;
-              reader.readAsDataURL(fileData);
-            });
+            const safeName = sanitizeFileName(uploadedFile.name);
+            const storagePath = `${projectId}/${Date.now()}_${safeName}`;
 
-            // Upload file to storage
-            const uploadResult = await uploadProjectFile(result.projectId, {
-              name: uploadedFile.name,
-              type: uploadedFile.type,
-              size: uploadedFile.size,
-              base64Data: base64,
-            });
+            // Upload directly to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+              .from("project-files")
+              .upload(storagePath, uploadedFile.file, {
+                contentType: uploadedFile.type,
+                upsert: false,
+              });
 
-            if (uploadResult.error) {
-              toast.error(`Failed to upload ${uploadedFile.name}: ${uploadResult.error}`);
+            if (uploadError) {
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === uploadedFile.id
+                    ? { ...f, status: "error" as const, errorMessage: uploadError.message }
+                    : f
+                )
+              );
+              toast.error(`Failed to upload ${uploadedFile.name}`);
+              continue;
             }
+
+            // Get public URL
+            const { data: urlData } = supabase.storage
+              .from("project-files")
+              .getPublicUrl(storagePath);
+
+            // Create DB record via server action
+            const recordResult = await createProjectFileRecord(projectId, {
+              fileName: safeName,
+              fileUrl: urlData.publicUrl,
+              fileType: uploadedFile.type,
+              fileSizeBytes: uploadedFile.size,
+              fileCategory: "user_upload",
+            });
+
+            if (recordResult.error) {
+              toast.error(`Failed to save record for ${uploadedFile.name}`);
+            }
+
+            // Mark file as complete
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === uploadedFile.id
+                  ? { ...f, status: "complete" as const, progress: 100 }
+                  : f
+              )
+            );
           } catch {
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === uploadedFile.id
+                  ? { ...f, status: "error" as const, errorMessage: "Upload failed" }
+                  : f
+              )
+            );
             toast.error(`Failed to upload ${uploadedFile.name}`);
           }
         }
@@ -175,14 +281,22 @@ export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlle
     <div className="flex flex-col">
       <AnimatePresence mode="wait">
         {currentStep === 0 && <StepSubject form={step1Form} onSubmit={handleStep1Submit} />}
-        {currentStep === 1 && <StepRequirements form={step2Form} onSubmit={handleStep2Submit} />}
-        {currentStep === 2 && <StepDeadline form={step3Form} wordCount={step2Form.getValues("wordCount") || 0} onSubmit={handleStep3Submit} />}
+        {currentStep === 1 && <StepRequirements form={step2Form} projectType={selectedProjectType} onSubmit={handleStep2Submit} />}
+        {currentStep === 2 && (
+          <StepDeadline
+            form={step3Form}
+            projectType={selectedProjectType}
+            requirements={step2Form.getValues()}
+            onSubmit={handleStep3Submit}
+          />
+        )}
         {currentStep === 3 && (
           <StepDetails
             form={step4Form}
             files={files}
             onFilesChange={setFiles}
-            wordCount={step2Form.getValues("wordCount") || 0}
+            projectType={selectedProjectType}
+            requirements={step2Form.getValues()}
             urgencyMultiplier={urgencyMultiplier}
             isSubmitting={isSubmitting}
             onSubmit={handleFinalSubmit}

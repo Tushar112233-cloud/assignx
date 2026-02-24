@@ -1,26 +1,32 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../providers/translation_provider.dart';
+import '../../../../shared/widgets/language_picker.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Display settings tab content.
 ///
-/// Provides theme selection (light/dark/system), font size control,
+/// Provides theme selection (light/dark/system), language selection,
 /// compact mode, and cache management.
-class DisplaySettings extends StatefulWidget {
+class DisplaySettings extends ConsumerStatefulWidget {
   const DisplaySettings({super.key});
 
   @override
-  State<DisplaySettings> createState() => _DisplaySettingsState();
+  ConsumerState<DisplaySettings> createState() => _DisplaySettingsState();
 }
 
-class _DisplaySettingsState extends State<DisplaySettings> {
+class _DisplaySettingsState extends ConsumerState<DisplaySettings> {
   String _selectedTheme = 'Light';
-  String _selectedLanguage = 'English';
   bool _compactMode = false;
 
   @override
   Widget build(BuildContext context) {
+    final translationState = ref.watch(translationProvider);
+
     return SingleChildScrollView(
       padding: AppSpacing.paddingMd,
       child: Column(
@@ -35,26 +41,28 @@ class _DisplaySettingsState extends State<DisplaySettings> {
 
           const SizedBox(height: AppSpacing.lg),
 
-          // Language & Layout
-          _buildSectionHeader('Language & Layout', Icons.translate_outlined),
-          const SizedBox(height: AppSpacing.sm),
-          _buildSettingsCard([
-            _buildSelectionItem(
-              'Language',
-              _selectedLanguage,
-              Icons.language,
-              onTap: () => _showLanguageSheet(context),
-            ),
-            _buildSwitchItem(
-              'Compact Mode',
-              'Use a denser layout with less spacing',
-              Icons.view_compact_outlined,
-              _compactMode,
-              (value) => setState(() => _compactMode = value),
-            ),
-          ]),
+          // Language & Layout (hidden on web)
+          if (!kIsWeb) ...[
+            _buildSectionHeader('Language & Layout', Icons.translate_outlined),
+            const SizedBox(height: AppSpacing.sm),
+            _buildSettingsCard([
+              _buildSelectionItem(
+                'Language',
+                translationState.selectedLanguageName,
+                Icons.language,
+                onTap: () => showLanguagePicker(context),
+              ),
+              _buildSwitchItem(
+                'Compact Mode',
+                'Use a denser layout with less spacing',
+                Icons.view_compact_outlined,
+                _compactMode,
+                (value) => setState(() => _compactMode = value),
+              ),
+            ]),
 
-          const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.lg),
+          ],
 
           // Storage
           _buildSectionHeader('Storage', Icons.storage_outlined),
@@ -124,8 +132,8 @@ class _DisplaySettingsState extends State<DisplaySettings> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Theme',
+          Text(
+            'Theme'.tr(context),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
@@ -133,8 +141,8 @@ class _DisplaySettingsState extends State<DisplaySettings> {
             ),
           ),
           const SizedBox(height: AppSpacing.xxs),
-          const Text(
-            'Select your preferred color theme',
+          Text(
+            'Select your preferred color theme'.tr(context),
             style: TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary,
@@ -360,54 +368,10 @@ class _DisplaySettingsState extends State<DisplaySettings> {
     );
   }
 
-  void _showLanguageSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: AppSpacing.paddingMd,
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Select Language',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            _buildLanguageOption('English'),
-            _buildLanguageOption('Hindi'),
-            const SizedBox(height: AppSpacing.md),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLanguageOption(String language) {
-    final isSelected = _selectedLanguage == language;
-    return ListTile(
-      leading: isSelected
-          ? const Icon(Icons.check, color: Color(0xFF5A7CFF))
-          : const SizedBox(width: 24),
-      title: Text(language),
-      onTap: () {
-        setState(() => _selectedLanguage = language);
-        Navigator.pop(context);
-      },
-    );
-  }
-
   void _clearCache(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Cache cleared successfully'),
+      SnackBar(
+        content: Text('Cache cleared successfully'.tr(context)),
         behavior: SnackBarBehavior.floating,
       ),
     );

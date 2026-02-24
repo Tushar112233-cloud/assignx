@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// A search bar with quick filter chips for projects.
 class ProjectFilterBar extends StatelessWidget {
@@ -36,7 +37,7 @@ class ProjectFilterBar extends StatelessWidget {
           child: TextField(
             onChanged: onSearchChanged,
             decoration: InputDecoration(
-              hintText: 'Search projects...',
+              hintText: 'Search projects...'.tr(context),
               hintStyle: const TextStyle(
                 color: AppColors.textTertiary,
                 fontSize: 14,

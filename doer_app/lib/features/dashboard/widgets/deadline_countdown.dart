@@ -42,6 +42,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Deadline countdown widget for project cards.
 ///
@@ -158,7 +159,7 @@ class _DeadlineCountdownState extends State<DeadlineCountdown> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                isOverdue ? 'Overdue' : 'Deadline',
+                isOverdue ? 'Overdue'.tr(context) : 'Deadline'.tr(context),
                 style: TextStyle(
                   fontSize: 11,
                   color: textColor.withValues(alpha: 0.8),
@@ -191,22 +192,22 @@ class _DeadlineCountdownState extends State<DeadlineCountdown> {
     if (_remaining.isNegative) {
       final overdue = _remaining.abs();
       if (overdue.inDays > 0) {
-        return '${overdue.inDays}d ${overdue.inHours % 24}h ago';
+        return '${overdue.inDays}d ${overdue.inHours % 24}h ${'ago'.tr(context)}';
       } else if (overdue.inHours > 0) {
-        return '${overdue.inHours}h ${overdue.inMinutes % 60}m ago';
+        return '${overdue.inHours}h ${overdue.inMinutes % 60}m ${'ago'.tr(context)}';
       } else {
-        return '${overdue.inMinutes}m ago';
+        return '${overdue.inMinutes}m ${'ago'.tr(context)}';
       }
     }
 
     if (_remaining.inDays > 0) {
-      return '${_remaining.inDays}d ${_remaining.inHours % 24}h left';
+      return '${_remaining.inDays}d ${_remaining.inHours % 24}h ${'left'.tr(context)}';
     } else if (_remaining.inHours > 0) {
-      return '${_remaining.inHours}h ${_remaining.inMinutes % 60}m left';
+      return '${_remaining.inHours}h ${_remaining.inMinutes % 60}m ${'left'.tr(context)}';
     } else if (_remaining.inMinutes > 0) {
-      return '${_remaining.inMinutes}m ${_remaining.inSeconds % 60}s left';
+      return '${_remaining.inMinutes}m ${_remaining.inSeconds % 60}s ${'left'.tr(context)}';
     } else {
-      return '${_remaining.inSeconds}s left';
+      return '${_remaining.inSeconds}s ${'left'.tr(context)}';
     }
   }
 
@@ -215,9 +216,9 @@ class _DeadlineCountdownState extends State<DeadlineCountdown> {
     final now = DateTime.now();
 
     if (date.day == now.day && date.month == now.month && date.year == now.year) {
-      return 'Today ${_formatTime(date)}';
+      return '${'Today'.tr(context)} ${_formatTime(date)}';
     } else if (date.day == now.day + 1 && date.month == now.month && date.year == now.year) {
-      return 'Tomorrow ${_formatTime(date)}';
+      return '${'Tomorrow'.tr(context)} ${_formatTime(date)}';
     } else {
       return '${date.day}/${date.month} ${_formatTime(date)}';
     }
@@ -306,8 +307,8 @@ class _LargeDeadlineTimerState extends State<LargeDeadlineTimer> {
     return Column(
       children: [
         if (isOverdue)
-          const Text(
-            'OVERDUE',
+          Text(
+            'OVERDUE'.tr(context),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -316,8 +317,8 @@ class _LargeDeadlineTimerState extends State<LargeDeadlineTimer> {
             ),
           )
         else
-          const Text(
-            'TIME REMAINING',
+          Text(
+            'TIME REMAINING'.tr(context),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
@@ -330,14 +331,14 @@ class _LargeDeadlineTimerState extends State<LargeDeadlineTimer> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (days > 0) ...[
-              _buildTimeUnit(days.toString(), 'DAYS', textColor),
+              _buildTimeUnit(days.toString(), 'DAYS'.tr(context), textColor),
               _buildSeparator(textColor),
             ],
-            _buildTimeUnit(hours.toString().padLeft(2, '0'), 'HRS', textColor),
+            _buildTimeUnit(hours.toString().padLeft(2, '0'), 'HRS'.tr(context), textColor),
             _buildSeparator(textColor),
-            _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'MIN', textColor),
+            _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'MIN'.tr(context), textColor),
             _buildSeparator(textColor),
-            _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'SEC', textColor),
+            _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'SEC'.tr(context), textColor),
           ],
         ),
       ],

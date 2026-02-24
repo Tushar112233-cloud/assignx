@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// PDF viewer widget for training modules.
 ///
@@ -151,7 +152,7 @@ class _TrainingPdfViewerState extends State<TrainingPdfViewer> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Estimated reading time: ${widget.durationMinutes} minutes',
+                      'Estimated reading time: ${widget.durationMinutes} minutes'.tr(context),
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textTertiary,
@@ -170,15 +171,15 @@ class _TrainingPdfViewerState extends State<TrainingPdfViewer> {
   /// Builds PDF content based on loading state.
   Widget _buildPdfContent() {
     if (_isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: AppColors.primary),
-            SizedBox(height: AppSpacing.md),
+            const CircularProgressIndicator(color: AppColors.primary),
+            const SizedBox(height: AppSpacing.md),
             Text(
-              'Loading PDF...',
-              style: TextStyle(
+              'Loading PDF...'.tr(context),
+              style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
               ),
@@ -201,8 +202,8 @@ class _TrainingPdfViewerState extends State<TrainingPdfViewer> {
                 size: 64,
               ),
               const SizedBox(height: AppSpacing.lg),
-              const Text(
-                'Failed to Load PDF',
+              Text(
+                'Failed to Load PDF'.tr(context),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
@@ -222,7 +223,7 @@ class _TrainingPdfViewerState extends State<TrainingPdfViewer> {
               ElevatedButton.icon(
                 onPressed: _downloadAndLoadPdf,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text('Retry'.tr(context)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -235,10 +236,10 @@ class _TrainingPdfViewerState extends State<TrainingPdfViewer> {
     }
 
     if (_localPath == null) {
-      return const Center(
+      return Center(
         child: Text(
-          'PDF file not available',
-          style: TextStyle(
+          'PDF file not available'.tr(context),
+          style: const TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
           ),
@@ -319,7 +320,7 @@ class _TrainingPdfViewerState extends State<TrainingPdfViewer> {
               borderRadius: AppSpacing.borderRadiusSm,
             ),
             child: Text(
-              'Page ${_currentPage + 1} of $_totalPages',
+              'Page ${_currentPage + 1} of $_totalPages'.tr(context),
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,

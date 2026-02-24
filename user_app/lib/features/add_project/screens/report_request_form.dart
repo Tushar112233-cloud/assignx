@@ -8,6 +8,7 @@ import '../../../data/models/project_model.dart';
 import '../../../providers/project_provider.dart';
 import '../widgets/budget_display.dart';
 import '../widgets/file_attachment.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../widgets/success_popup.dart';
 
 /// Report type options.
@@ -69,7 +70,7 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
     if (_reportType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please select a report type'),
+          content: Text('Please select a report type'.tr(context)),
           backgroundColor: AppColors.error,
         ),
       );
@@ -79,7 +80,7 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
     if (_attachments.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please upload at least one document'),
+          content: Text('Please upload at least one document'.tr(context)),
           backgroundColor: AppColors.error,
         ),
       );
@@ -147,7 +148,7 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          'Plag/AI Report',
+          'Plag/AI Report'.tr(context),
           style: AppTextStyles.headingSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.transparent,
@@ -236,7 +237,7 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Plagiarism & AI Detection',
+                                  'Plagiarism & AI Detection'.tr(context),
                                   style: AppTextStyles.labelLarge.copyWith(
                                     color: Colors.orange.shade700,
                                     fontWeight: FontWeight.bold,
@@ -244,7 +245,7 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Get comprehensive authenticity reports',
+                                  'Get comprehensive authenticity reports'.tr(context),
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
@@ -258,7 +259,7 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
                     const SizedBox(height: 28),
 
                     // Report type selection
-                    _buildSectionLabel('Select Report Type', Icons.analytics_outlined),
+                    _buildSectionLabel('Select Report Type'.tr(context), Icons.analytics_outlined),
                     const SizedBox(height: 12),
                     ...ReportType.values.map(
                       (type) => _ReportTypeCard(
@@ -270,13 +271,13 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
                     const SizedBox(height: 24),
 
                     // Upload document
-                    _buildSectionLabel('Upload Document', Icons.cloud_upload_outlined),
+                    _buildSectionLabel('Upload Document'.tr(context), Icons.cloud_upload_outlined),
                     const SizedBox(height: 8),
                     FileAttachment(
                       files: _attachments,
                       onChanged: (files) => setState(() => _attachments = files),
-                      label: 'Upload Document',
-                      hint: 'Upload the document to analyze',
+                      label: 'Upload Document'.tr(context),
+                      hint: 'Upload the document to analyze'.tr(context),
                       maxFiles: 1,
                       maxSizeMB: 50,
                       allowedExtensions: ['doc', 'docx', 'pdf', 'txt'],
@@ -284,7 +285,7 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
                     const SizedBox(height: 24),
 
                     // Report format
-                    _buildSectionLabel('Report Format', Icons.description_outlined),
+                    _buildSectionLabel('Report Format'.tr(context), Icons.description_outlined),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
@@ -392,15 +393,15 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Urgent Delivery',
+                                  'Urgent Delivery'.tr(context),
                                   style: AppTextStyles.labelMedium.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 Text(
                                   _urgentDelivery
-                                      ? 'Get report in 2 hours (+₹100)'
-                                      : 'Standard delivery (24 hours)',
+                                      ? 'Get report in 2 hours (+₹100)'.tr(context)
+                                      : 'Standard delivery (24 hours)'.tr(context),
                                   style: AppTextStyles.caption.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
@@ -419,7 +420,7 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
                     const SizedBox(height: 24),
 
                     // Email for delivery
-                    _buildSectionLabel('Email for Report Delivery', Icons.email_outlined),
+                    _buildSectionLabel('Email for Report Delivery'.tr(context), Icons.email_outlined),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _emailController,
@@ -450,10 +451,10 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
+                          return 'Please enter your email'.tr(context);
                         }
                         if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                          return 'Please enter a valid email';
+                          return 'Please enter a valid email'.tr(context);
                         }
                         return null;
                       },
@@ -463,7 +464,7 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
                     // Price summary
                     BudgetCard(
                       price: _calculateTotalPrice(),
-                      subtitle: 'Total Price',
+                      subtitle: 'Total Price'.tr(context),
                     ),
                     const SizedBox(height: 16),
 
@@ -502,7 +503,7 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
                                 ),
                               )
                             : Text(
-                                'Request Report',
+                                'Request Report'.tr(context),
                                 style: AppTextStyles.labelLarge.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,

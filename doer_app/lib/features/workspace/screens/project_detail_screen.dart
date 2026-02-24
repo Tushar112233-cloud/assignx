@@ -13,6 +13,7 @@ import '../../dashboard/widgets/app_header.dart';
 import '../../dashboard/widgets/deadline_countdown.dart';
 import '../../dashboard/widgets/urgency_badge.dart';
 import '../widgets/requirements_list.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Project detail screen showing comprehensive project information.
 ///
@@ -86,13 +87,13 @@ class ProjectDetailScreen extends ConsumerWidget {
                       color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: AppSpacing.borderRadiusSm,
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.warning, size: 14, color: AppColors.error),
                         SizedBox(width: 4),
                         Text(
-                          'Revision',
+                          'Revision'.tr(context),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -106,7 +107,7 @@ class ProjectDetailScreen extends ConsumerWidget {
             ),
             Expanded(
               child: project == null
-                  ? const Center(child: Text('Project not found'))
+                  ? Center(child: Text('Project not found'.tr(context)))
                   : SingleChildScrollView(
                       padding: AppSpacing.paddingMd,
                       child: Column(
@@ -184,7 +185,7 @@ class ProjectDetailScreen extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Row(
+                                  Row(
                                     children: [
                                       Icon(
                                         Icons.schedule,
@@ -193,7 +194,7 @@ class ProjectDetailScreen extends ConsumerWidget {
                                       ),
                                       SizedBox(width: 8),
                                       Text(
-                                        'Deadline',
+                                        'Deadline'.tr(context),
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
@@ -222,7 +223,7 @@ class ProjectDetailScreen extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Row(
+                                  Row(
                                     children: [
                                       Icon(
                                         Icons.description,
@@ -231,7 +232,7 @@ class ProjectDetailScreen extends ConsumerWidget {
                                       ),
                                       SizedBox(width: 8),
                                       Text(
-                                        'Description',
+                                        'Description'.tr(context),
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
@@ -302,8 +303,8 @@ class ProjectDetailScreen extends ConsumerWidget {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        const Text(
-                                          'Supervisor',
+                                        Text(
+                                          'Supervisor'.tr(context),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: AppColors.textSecondary,

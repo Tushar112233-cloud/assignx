@@ -14,6 +14,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../shared/widgets/buttons/primary_button.dart';
 import '../../../../shared/widgets/inputs/app_text_field.dart';
 import '../../data/models/quote_model.dart';
@@ -168,7 +169,7 @@ class _QuoteFormSheetState extends ConsumerState<QuoteFormSheet> {
                 child: Row(
                   children: [
                     Text(
-                      'Create Quote',
+                      'Create Quote'.tr(context),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -193,11 +194,11 @@ class _QuoteFormSheetState extends ConsumerState<QuoteFormSheet> {
                     const SizedBox(height: 24),
                     // Price breakdown section
                     _SectionHeader(
-                      title: 'Price Breakdown',
+                      title: 'Price Breakdown'.tr(context),
                       action: TextButton.icon(
                         onPressed: _showAddItemDialog,
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Add Item'),
+                        label: Text('Add Item'.tr(context)),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -218,11 +219,11 @@ class _QuoteFormSheetState extends ConsumerState<QuoteFormSheet> {
                     _TotalRow(total: formState.totalPrice),
                     const SizedBox(height: 24),
                     // Notes section
-                    const _SectionHeader(title: 'Notes (Optional)'),
+                    _SectionHeader(title: 'Notes (Optional)'.tr(context)),
                     const SizedBox(height: 12),
                     AppTextField(
                       controller: _notesController,
-                      hint: 'Add any notes for the client...',
+                      hint: 'Add any notes for the client...'.tr(context),
                       maxLines: 3,
                       onChanged: (value) {
                         ref.read(quoteFormProvider.notifier).updateNotes(value);
@@ -254,7 +255,7 @@ class _QuoteFormSheetState extends ConsumerState<QuoteFormSheet> {
                       ),
                     // Submit button
                     PrimaryButton(
-                      text: 'Submit Quote',
+                      text: 'Submit Quote'.tr(context),
                       isLoading: formState.isSubmitting,
                       onPressed: _submitQuote,
                     ),
@@ -281,19 +282,19 @@ class _QuoteFormSheetState extends ConsumerState<QuoteFormSheet> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Item'),
+        title: Text('Add Item'.tr(context)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AppTextField(
               controller: _descriptionController,
-              label: 'Description',
-              hint: 'e.g., Research work',
+              label: 'Description'.tr(context),
+              hint: 'e.g., Research work'.tr(context),
             ),
             const SizedBox(height: 16),
             AppTextField(
               controller: _amountController,
-              label: 'Amount (₹)',
+              label: 'Amount (₹)'.tr(context),
               hint: '0.00',
               keyboardType: TextInputType.number,
             ),
@@ -302,7 +303,7 @@ class _QuoteFormSheetState extends ConsumerState<QuoteFormSheet> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           FilledButton(
             onPressed: () {
@@ -316,7 +317,7 @@ class _QuoteFormSheetState extends ConsumerState<QuoteFormSheet> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('Add'),
+            child: Text('Add'.tr(context)),
           ),
         ],
       ),
@@ -399,12 +400,12 @@ class _RequestSummary extends StatelessWidget {
               if (request.wordCount != null)
                 _InfoChip(
                   icon: Icons.text_fields,
-                  label: '${request.wordCount} words',
+                  label: '${request.wordCount} ${'words'.tr(context)}',
                 ),
               if (request.pageCount != null)
                 _InfoChip(
                   icon: Icons.description_outlined,
-                  label: '${request.pageCount} pages',
+                  label: '${request.pageCount} ${'pages'.tr(context)}',
                 ),
             ],
           ),
@@ -602,7 +603,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'No items added yet',
+            'No items added yet'.tr(context),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondaryLight,
                 ),
@@ -611,7 +612,7 @@ class _EmptyState extends StatelessWidget {
           TextButton.icon(
             onPressed: onAddItem,
             icon: const Icon(Icons.add),
-            label: const Text('Add first item'),
+            label: Text('Add first item'.tr(context)),
           ),
         ],
       ),
@@ -644,7 +645,7 @@ class _TotalRow extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            'Total',
+            'Total'.tr(context),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),

@@ -12,6 +12,7 @@ import '../../../shared/widgets/loading_overlay.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/assigned_task_card.dart';
 import '../widgets/task_pool_card.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Main dashboard screen with Welcome, Stats, Assigned Tasks and Open Pool.
 ///
@@ -55,7 +56,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               // Assigned Tasks section
               SliverToBoxAdapter(
                 child: _buildSectionHeader(
-                  'Assigned Tasks',
+                  'Assigned Tasks'.tr(context),
                   Icons.assignment,
                   AppColors.primary,
                   dashboardState.assignedProjects.length,
@@ -80,7 +81,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               // Open Task Pool section
               SliverToBoxAdapter(
                 child: _buildSectionHeader(
-                  'Open Task Pool',
+                  'Open Task Pool'.tr(context),
                   Icons.explore,
                   AppColors.accent,
                   dashboardState.openPoolProjects.length,
@@ -163,7 +164,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     onPressed: () =>
                         _scaffoldKey.currentState?.openDrawer(),
                     icon: const Icon(Icons.menu, color: Colors.white),
-                    tooltip: 'Menu',
+                    tooltip: 'Menu'.tr(context),
                   ),
                   const Spacer(),
                   _buildNotificationButton(context),
@@ -259,8 +260,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   const SizedBox(width: 5),
                                   Text(
                                     isAvailable
-                                        ? 'Available'
-                                        : 'Unavailable',
+                                        ? 'Available'.tr(context)
+                                        : 'Unavailable'.tr(context),
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
@@ -295,7 +296,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           onPressed: () => context.push('/notifications'),
           icon: const Icon(Icons.notifications_outlined,
               color: Colors.white),
-          tooltip: 'Notifications',
+          tooltip: 'Notifications'.tr(context),
         ),
         Positioned(
           right: 8,
@@ -327,21 +328,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             _QuickStatCard(
               icon: Icons.assignment,
               value: stats.activeProjects.toString(),
-              label: 'Active Projects',
+              label: 'Active Projects'.tr(context),
               color: AppColors.info,
             ),
             const SizedBox(width: AppSpacing.sm),
             _QuickStatCard(
               icon: Icons.check_circle,
               value: stats.completedProjects.toString(),
-              label: 'Completed',
+              label: 'Completed'.tr(context),
               color: AppColors.success,
             ),
             const SizedBox(width: AppSpacing.sm),
             _QuickStatCard(
               icon: Icons.account_balance_wallet,
               value: _formatEarnings(dashboardState.pendingEarnings),
-              label: 'Pending Earnings',
+              label: 'Pending Earnings'.tr(context),
               color: AppColors.warning,
               prefix: '\u20B9',
             ),
@@ -351,7 +352,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               value: stats.rating > 0
                   ? stats.rating.toStringAsFixed(1)
                   : '--',
-              label: 'Rating',
+              label: 'Rating'.tr(context),
               color: AppColors.accent,
             ),
           ],
@@ -410,8 +411,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           if (onSeeAll != null)
             GestureDetector(
               onTap: onSeeAll,
-              child: const Text(
-                'See All',
+              child: Text(
+                'See All'.tr(context),
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -480,13 +481,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Accept Project'),
+        title: Text('Accept Project'.tr(context)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Are you sure you want to accept this project?',
+            Text(
+              'Are you sure you want to accept this project?'.tr(context),
               style: TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 12),
@@ -540,7 +541,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -551,7 +552,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Accept'),
+            child: Text('Accept'.tr(context)),
           ),
         ],
       ),
@@ -564,8 +565,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         .acceptProject(projectId);
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Project accepted successfully!'),
+        SnackBar(
+          content: Text('Project accepted successfully!'.tr(context)),
           backgroundColor: AppColors.success,
         ),
       );
@@ -575,13 +576,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String _formatDeadline(DateTime deadline) {
     final remaining = deadline.difference(DateTime.now());
     if (remaining.inDays > 0) {
-      return '${remaining.inDays}d ${remaining.inHours % 24}h left';
+      return '${remaining.inDays}d ${remaining.inHours % 24}h ${'left'.tr(context)}';
     } else if (remaining.inHours > 0) {
-      return '${remaining.inHours}h ${remaining.inMinutes % 60}m left';
+      return '${remaining.inHours}h ${remaining.inMinutes % 60}m ${'left'.tr(context)}';
     } else if (remaining.inMinutes > 0) {
-      return '${remaining.inMinutes}m left';
+      return '${remaining.inMinutes}m ${'left'.tr(context)}';
     } else {
-      return 'Due soon';
+      return 'Due soon'.tr(context);
     }
   }
 
@@ -596,9 +597,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return 'Good Morning'.tr(context);
+    if (hour < 17) return 'Good Afternoon'.tr(context);
+    return 'Good Evening'.tr(context);
   }
 }
 
@@ -702,7 +703,7 @@ class _EmptyAssignedTasks extends StatelessWidget {
         borderRadius: AppSpacing.borderRadiusMd,
         border: Border.all(color: AppColors.border),
       ),
-      child: const Column(
+      child: Column(
         children: [
           Icon(
             Icons.assignment_outlined,
@@ -711,7 +712,7 @@ class _EmptyAssignedTasks extends StatelessWidget {
           ),
           SizedBox(height: AppSpacing.sm),
           Text(
-            'No Active Projects',
+            'No Active Projects'.tr(context),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -720,7 +721,7 @@ class _EmptyAssignedTasks extends StatelessWidget {
           ),
           SizedBox(height: 4),
           Text(
-            'Accept tasks from the pool below to get started!',
+            'Accept tasks from the pool below to get started!'.tr(context),
             style: TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,
@@ -747,7 +748,7 @@ class _EmptyTaskPool extends StatelessWidget {
         borderRadius: AppSpacing.borderRadiusMd,
         border: Border.all(color: AppColors.border),
       ),
-      child: const Column(
+      child: Column(
         children: [
           Icon(
             Icons.explore_outlined,
@@ -756,7 +757,7 @@ class _EmptyTaskPool extends StatelessWidget {
           ),
           SizedBox(height: AppSpacing.sm),
           Text(
-            'No Projects Available',
+            'No Projects Available'.tr(context),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -765,7 +766,7 @@ class _EmptyTaskPool extends StatelessWidget {
           ),
           SizedBox(height: 4),
           Text(
-            'Check back later for new opportunities!',
+            'Check back later for new opportunities!'.tr(context),
             style: TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,

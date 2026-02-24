@@ -10,6 +10,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/request_model.dart';
 import 'field_filter.dart';
 
@@ -161,7 +162,7 @@ class RequestCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _formatRequirements(),
+                      _formatRequirements(context),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondaryLight,
                           ),
@@ -202,13 +203,13 @@ class RequestCard extends StatelessWidget {
   ///
   /// Returns a string like "2000 words / 10 pages" or just one
   /// if only one is specified.
-  String _formatRequirements() {
+  String _formatRequirements(BuildContext context) {
     final parts = <String>[];
     if (request.wordCount != null) {
-      parts.add('${request.wordCount} words');
+      parts.add('${request.wordCount} ${'words'.tr(context)}');
     }
     if (request.pageCount != null) {
-      parts.add('${request.pageCount} pages');
+      parts.add('${request.pageCount} ${'pages'.tr(context)}');
     }
     return parts.join(' / ');
   }

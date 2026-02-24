@@ -76,7 +76,7 @@ export async function getProjectById(id: string) {
       supabase
         .from("projects")
         .select(
-          "*, user:profiles!projects_user_id_fkey(id, full_name, email, avatar_url), supervisor:supervisors!projects_supervisor_id_fkey(id, profile:profiles!supervisors_profile_id_fkey(id, full_name, email, avatar_url)), doer:doers!projects_doer_id_fkey(id, profile:profiles!doers_profile_id_fkey(id, full_name, email, avatar_url))"
+          "*, subject_rel:subjects!projects_subject_id_fkey(id, name), user:profiles!projects_user_id_fkey(id, full_name, email, avatar_url), supervisor:supervisors!projects_supervisor_id_fkey(id, profile:profiles!supervisors_profile_id_fkey(id, full_name, email, avatar_url)), doer:doers!projects_doer_id_fkey(id, profile:profiles!doers_profile_id_fkey(id, full_name, email, avatar_url))"
         )
         .eq("id", id)
         .single(),
@@ -104,9 +104,12 @@ export async function getProjectById(id: string) {
   const supervisorRaw = raw.supervisor as { id: string; profile: Record<string, unknown> } | null;
   const doerRaw = raw.doer as { id: string; profile: Record<string, unknown> } | null;
 
+  const subjectRel = raw.subject_rel as { id: string; name: string } | null;
+
   const project = {
     ...raw,
-    price: raw.user_quote,
+    price: raw.final_quote ?? raw.user_quote,
+    subject: subjectRel?.name ?? null,
     supervisor: supervisorRaw?.profile ?? null,
     doer: doerRaw?.profile ?? null,
   };
@@ -174,6 +177,68 @@ export async function updateProjectStatus(
     target_type: "project",
     target_id: projectId,
     details: { old_status: oldStatus, new_status: newStatus, reason },
+  });
+
+  return { success: true };
+}
+
+export async function updateProjectQuote(
+  projectId: string,
+  userQuote: number,
+  doerPayout: number,
+  supervisorCommission?: number
+) {
+  const admin = await verifyAdmin();
+  const supabase = await createClient();
+
+  const { data: project, error: fetchError } = await supabase
+    .from("projects")
+    .select("status")
+    .eq("id", projectId)
+    .single();
+
+  if (fetchError) throw new Error(fetchError.message);
+
+  const oldStatus = project.status;
+  const platformFee = userQuote - doerPayout - (supervisorCommission || 0);
+
+  const { error: updateError } = await supabase
+    .from("projects")
+    .update({
+      user_quote: userQuote,
+      doer_payout: doerPayout,
+      supervisor_commission: supervisorCommission || 0,
+      platform_fee: platformFee,
+      status: "quoted",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", projectId);
+
+  if (updateError) throw new Error(updateError.message);
+
+  // Add status history record
+  await supabase.from("project_status_history").insert({
+    project_id: projectId,
+    from_status: oldStatus,
+    to_status: "quoted",
+    changed_by: admin.profileId,
+    notes: `Quote set: User ₹${userQuote}, Doer ₹${doerPayout}, Platform ₹${platformFee}`,
+  });
+
+  // Add audit log entry
+  await supabase.from("admin_audit_logs").insert({
+    admin_id: admin.id,
+    action: "set_project_quote",
+    target_type: "project",
+    target_id: projectId,
+    details: {
+      old_status: oldStatus,
+      new_status: "quoted",
+      user_quote: userQuote,
+      doer_payout: doerPayout,
+      supervisor_commission: supervisorCommission || 0,
+      platform_fee: platformFee,
+    },
   });
 
   return { success: true };

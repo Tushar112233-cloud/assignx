@@ -15,6 +15,7 @@ import '../../../data/models/project_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/dashboard_provider.dart';
 import 'availability_toggle.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Main navigation drawer with user info, quick stats, and menu items.
 ///
@@ -55,7 +56,7 @@ class AppDrawer extends ConsumerWidget {
                   _DrawerMenuItem(
                     icon: Icons.dashboard_outlined,
                     activeIcon: Icons.dashboard,
-                    label: 'Dashboard',
+                    label: 'Dashboard'.tr(context),
                     isActive: currentRoute == '/dashboard' ||
                         currentRoute == '/',
                     onTap: () {
@@ -66,7 +67,7 @@ class AppDrawer extends ConsumerWidget {
                   _DrawerMenuItem(
                     icon: Icons.assignment_outlined,
                     activeIcon: Icons.assignment,
-                    label: 'My Projects',
+                    label: 'My Projects'.tr(context),
                     isActive: currentRoute.startsWith('/dashboard/projects'),
                     onTap: () {
                       Navigator.pop(context);
@@ -74,9 +75,19 @@ class AppDrawer extends ConsumerWidget {
                     },
                   ),
                   _DrawerMenuItem(
+                    icon: Icons.forum_outlined,
+                    activeIcon: Icons.forum,
+                    label: 'Pro Network'.tr(context),
+                    isActive: currentRoute.startsWith('/community'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/community');
+                    },
+                  ),
+                  _DrawerMenuItem(
                     icon: Icons.library_books_outlined,
                     activeIcon: Icons.library_books,
-                    label: 'Resources',
+                    label: 'Resources'.tr(context),
                     isActive: currentRoute.startsWith('/resources'),
                     onTap: () {
                       Navigator.pop(context);
@@ -86,7 +97,7 @@ class AppDrawer extends ConsumerWidget {
                   _DrawerMenuItem(
                     icon: Icons.person_outline,
                     activeIcon: Icons.person,
-                    label: 'Profile',
+                    label: 'Profile'.tr(context),
                     isActive: currentRoute.startsWith('/profile'),
                     onTap: () {
                       Navigator.pop(context);
@@ -96,7 +107,7 @@ class AppDrawer extends ConsumerWidget {
                   _DrawerMenuItem(
                     icon: Icons.star_outline,
                     activeIcon: Icons.star,
-                    label: 'Reviews',
+                    label: 'Reviews'.tr(context),
                     badge: stats.rating > 0
                         ? stats.rating.toStringAsFixed(1)
                         : null,
@@ -111,7 +122,7 @@ class AppDrawer extends ConsumerWidget {
                   _DrawerMenuItem(
                     icon: Icons.bar_chart_outlined,
                     activeIcon: Icons.bar_chart,
-                    label: 'Statistics',
+                    label: 'Statistics'.tr(context),
                     isActive: currentRoute
                         .startsWith('/dashboard/statistics'),
                     onTap: () {
@@ -125,7 +136,7 @@ class AppDrawer extends ConsumerWidget {
                   _DrawerMenuItem(
                     icon: Icons.help_outline,
                     activeIcon: Icons.help,
-                    label: 'Help & Support',
+                    label: 'Help & Support'.tr(context),
                     isActive: currentRoute.startsWith('/support'),
                     onTap: () {
                       Navigator.pop(context);
@@ -135,7 +146,7 @@ class AppDrawer extends ConsumerWidget {
                   _DrawerMenuItem(
                     icon: Icons.settings_outlined,
                     activeIcon: Icons.settings,
-                    label: 'Settings',
+                    label: 'Settings'.tr(context),
                     isActive: currentRoute.startsWith('/settings'),
                     onTap: () {
                       Navigator.pop(context);
@@ -148,7 +159,7 @@ class AppDrawer extends ConsumerWidget {
                   _DrawerMenuItem(
                     icon: Icons.info_outline,
                     activeIcon: Icons.info,
-                    label: 'About',
+                    label: 'About'.tr(context),
                     isActive: false,
                     onTap: () {
                       Navigator.pop(context);
@@ -208,8 +219,8 @@ class AppDrawer extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              const Text(
-                'DOER',
+              Text(
+                'DOER'.tr(context),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -275,14 +286,14 @@ class AppDrawer extends ConsumerWidget {
               _DrawerQuickStat(
                 icon: Icons.assignment,
                 value: stats.activeProjects.toString(),
-                label: 'Active',
+                label: 'Active'.tr(context),
                 color: AppColors.info,
               ),
               const SizedBox(width: AppSpacing.md),
               _DrawerQuickStat(
                 icon: Icons.account_balance_wallet,
                 value: '\u20B9${_formatEarnings(stats.totalEarnings)}',
-                label: 'Earnings',
+                label: 'Earnings'.tr(context),
                 color: AppColors.success,
               ),
               const SizedBox(width: AppSpacing.md),
@@ -291,7 +302,7 @@ class AppDrawer extends ConsumerWidget {
                 value: stats.rating > 0
                     ? stats.rating.toStringAsFixed(1)
                     : '--',
-                label: 'Rating',
+                label: 'Rating'.tr(context),
                 color: AppColors.warning,
               ),
             ],
@@ -323,13 +334,13 @@ class AppDrawer extends ConsumerWidget {
             color: AppColors.error.withValues(alpha: 0.1),
             borderRadius: AppSpacing.borderRadiusMd,
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.logout, color: AppColors.error, size: 20),
               SizedBox(width: 8),
               Text(
-                'Logout',
+                'Logout'.tr(context),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -348,12 +359,12 @@ class AppDrawer extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: Text('Logout'.tr(context)),
+        content: Text('Are you sure you want to logout?'.tr(context)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           TextButton(
             onPressed: () {
@@ -363,7 +374,7 @@ class AppDrawer extends ConsumerWidget {
             style: TextButton.styleFrom(
               foregroundColor: AppColors.error,
             ),
-            child: const Text('Logout'),
+            child: Text('Logout'.tr(context)),
           ),
         ],
       ),
@@ -400,7 +411,7 @@ class AppDrawer extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Text('DOER'),
+            Text('DOER'.tr(context)),
           ],
         ),
         content: Column(
@@ -409,8 +420,8 @@ class AppDrawer extends ConsumerWidget {
           children: [
             Text(version),
             const SizedBox(height: 8),
-            const Text(
-              'DOER is a platform connecting talented individuals with academic projects.',
+            Text(
+              'DOER is a platform connecting talented individuals with academic projects.'.tr(context),
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -421,7 +432,7 @@ class AppDrawer extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text('Close'.tr(context)),
           ),
         ],
       ),

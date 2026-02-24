@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/chat_model.dart';
 import '../../../providers/workspace_provider.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Chat screen for real-time project communication with supervisor.
 ///
@@ -157,8 +158,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Project Chat',
+                  Text(
+                    'Project Chat'.tr(context),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -207,8 +208,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          const Text(
-            'No messages yet',
+          Text(
+            'No messages yet'.tr(context),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -216,8 +217,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          const Text(
-            'Start a conversation with your supervisor',
+          Text(
+            'Start a conversation with your supervisor'.tr(context),
             style: TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
@@ -286,9 +287,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
                 child: TextField(
                   controller: _messageController,
-                  decoration: const InputDecoration(
-                    hintText: 'Type a message...',
-                    hintStyle: TextStyle(color: AppColors.textTertiary),
+                  decoration: InputDecoration(
+                    hintText: 'Type a message...'.tr(context),
+                    hintStyle: const TextStyle(color: AppColors.textTertiary),
                     border: InputBorder.none,
                   ),
                   maxLines: null,

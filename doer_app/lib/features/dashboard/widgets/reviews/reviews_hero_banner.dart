@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../data/models/project_model.dart';
 
 /// Hero banner for reviews screen with overall rating, total reviews,
@@ -100,7 +101,7 @@ class ReviewsHeroBanner extends StatelessWidget {
                             _buildStars(stats.rating),
                             const SizedBox(height: 4),
                             Text(
-                              '${reviews.length} review${reviews.length != 1 ? 's' : ''}',
+                              '${reviews.length} ${reviews.length != 1 ? 'reviews'.tr(context) : 'review'.tr(context)}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.white.withValues(alpha: 0.8),
@@ -123,7 +124,7 @@ class ReviewsHeroBanner extends StatelessWidget {
                           children: [
                             _buildStatRow(
                               icon: Icons.star_rounded,
-                              label: '5-Star',
+                              label: '5-Star'.tr(context),
                               value: '${fiveStarPercent.toStringAsFixed(0)}%',
                               iconColor: const Color(0xFFFFD700),
                             ),
@@ -132,7 +133,7 @@ class ReviewsHeroBanner extends StatelessWidget {
                               icon: trending >= 0
                                   ? Icons.trending_up_rounded
                                   : Icons.trending_down_rounded,
-                              label: 'Trend',
+                              label: 'Trend'.tr(context),
                               value: trending >= 0
                                   ? '+${trending.toStringAsFixed(1)}'
                                   : trending.toStringAsFixed(1),
@@ -143,7 +144,7 @@ class ReviewsHeroBanner extends StatelessWidget {
                             const SizedBox(height: AppSpacing.sm),
                             _buildStatRow(
                               icon: Icons.verified_rounded,
-                              label: 'Success',
+                              label: 'Success'.tr(context),
                               value:
                                   '${stats.onTimeDeliveryRate > 1 ? stats.onTimeDeliveryRate.toStringAsFixed(0) : (stats.onTimeDeliveryRate * 100).toStringAsFixed(0)}%',
                               iconColor: const Color(0xFF4ADE80),
@@ -165,7 +166,7 @@ class ReviewsHeroBanner extends StatelessWidget {
                       Expanded(
                         child: _buildCTAButton(
                           icon: Icons.rate_review_outlined,
-                          label: 'Request Reviews',
+                          label: 'Request Reviews'.tr(context),
                           onTap: () {},
                         ),
                       ),
@@ -173,7 +174,7 @@ class ReviewsHeroBanner extends StatelessWidget {
                       Expanded(
                         child: _buildCTAButton(
                           icon: Icons.insights_rounded,
-                          label: 'View Insights',
+                          label: 'View Insights'.tr(context),
                           onTap: () {},
                           filled: true,
                         ),

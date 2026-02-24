@@ -26,6 +26,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/dashboard_provider.dart';
 
 /// A toggle widget for managing work availability status.
@@ -94,7 +95,7 @@ class AvailabilityToggle extends ConsumerWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          isAvailable ? 'Available' : 'Unavailable',
+          isAvailable ? 'Available'.tr(context) : 'Unavailable'.tr(context),
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
@@ -152,7 +153,7 @@ class AvailabilityToggle extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isAvailable ? 'Available for Work' : 'Currently Unavailable',
+                  isAvailable ? 'Available for Work'.tr(context) : 'Currently Unavailable'.tr(context),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -164,8 +165,8 @@ class AvailabilityToggle extends ConsumerWidget {
                 const SizedBox(height: 2),
                 Text(
                   isAvailable
-                      ? 'New projects will be shown to you'
-                      : 'You won\'t see new projects',
+                      ? 'New projects will be shown to you'.tr(context)
+                      : 'You won\'t see new projects'.tr(context),
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textTertiary,
@@ -256,7 +257,7 @@ class AvailabilityBadge extends StatelessWidget {
           if (showLabel) ...[
             const SizedBox(width: 6),
             Text(
-              isAvailable ? 'Available' : 'Unavailable',
+              isAvailable ? 'Available'.tr(context) : 'Unavailable'.tr(context),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,

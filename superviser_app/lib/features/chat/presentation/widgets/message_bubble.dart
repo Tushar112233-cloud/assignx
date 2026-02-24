@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/message_model.dart';
 
 /// Message bubble widget for chat.
@@ -93,7 +94,7 @@ class MessageBubble extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            message.senderName ?? 'Unknown',
+                            message.senderName ?? 'Unknown'.tr(context),
                             style:
                                 Theme.of(context).textTheme.labelSmall?.copyWith(
                                       color: _getSenderColor(),
@@ -220,7 +221,7 @@ class MessageBubble extends StatelessWidget {
                             if (message.isEdited) ...[
                               const SizedBox(width: 4),
                               Text(
-                                '(edited)',
+                                '(edited)'.tr(context),
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelSmall
@@ -336,7 +337,7 @@ class _FileAttachment extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    message.fileName ?? 'File',
+                    message.fileName ?? 'File'.tr(context),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: isMe ? Colors.white : AppColors.textPrimaryLight,
                           fontWeight: FontWeight.w500,

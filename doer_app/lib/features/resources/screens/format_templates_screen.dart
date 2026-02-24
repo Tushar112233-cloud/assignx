@@ -29,6 +29,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../../dashboard/widgets/app_header.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Template data model.
 class DocumentTemplate {
@@ -256,7 +257,7 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to download: $e'),
+            content: Text('Failed to download: $e'.tr(context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -335,8 +336,8 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
                 color: AppColors.warning,
               ),
               const SizedBox(width: 6),
-              const Text(
-                'Popular Templates',
+              Text(
+                'Popular Templates'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -480,15 +481,15 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
-        tabs: const [
-          Tab(text: 'All'),
+        tabs: [
+          const Tab(text: 'All'),
           Tab(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.description, size: 16),
-                SizedBox(width: 6),
-                Text('Word'),
+                const Icon(Icons.description, size: 16),
+                const SizedBox(width: 6),
+                Text('Word'.tr(context)),
               ],
             ),
           ),
@@ -496,9 +497,9 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.slideshow, size: 16),
-                SizedBox(width: 6),
-                Text('PowerPoint'),
+                const Icon(Icons.slideshow, size: 16),
+                const SizedBox(width: 6),
+                Text('PowerPoint'.tr(context)),
               ],
             ),
           ),
@@ -506,9 +507,9 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.table_chart, size: 16),
-                SizedBox(width: 6),
-                Text('Excel'),
+                const Icon(Icons.table_chart, size: 16),
+                const SizedBox(width: 6),
+                Text('Excel'.tr(context)),
               ],
             ),
           ),
@@ -613,7 +614,7 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
                               color: AppColors.warning.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
@@ -623,7 +624,7 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
                                 ),
                                 SizedBox(width: 2),
                                 Text(
-                                  'Popular',
+                                  'Popular'.tr(context),
                                   style: TextStyle(
                                     fontSize: 9,
                                     fontWeight: FontWeight.w600,

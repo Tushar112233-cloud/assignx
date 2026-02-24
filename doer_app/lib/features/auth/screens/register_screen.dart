@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/router/route_names.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Registration screen with Google OAuth only.
 ///
@@ -133,8 +134,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('An error occurred. Please try again.'),
+          SnackBar(
+            content: Text('An error occurred. Please try again.'.tr(context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -173,8 +174,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               const Spacer(flex: 1),
 
               // Header
-              const Text(
-                'Create Account',
+              Text(
+                'Create Account'.tr(context),
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -182,8 +183,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              const Text(
-                'Start your journey with DOER today',
+              Text(
+                'Start your journey with DOER today'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   color: AppColors.textSecondary,
@@ -222,8 +223,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   const Icon(Icons.g_mobiledata, size: 24),
                             ),
                             const SizedBox(width: AppSpacing.md),
-                            const Text(
-                              'Continue with Google',
+                            Text(
+                              'Continue with Google'.tr(context),
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -247,18 +248,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       color: AppColors.textSecondary,
                     ),
                     children: [
-                      const TextSpan(text: 'By signing up, you agree to our '),
+                      TextSpan(text: 'By signing up, you agree to our '.tr(context)),
                       TextSpan(
-                        text: 'Terms of Service',
+                        text: 'Terms of Service'.tr(context),
                         style: const TextStyle(
                           color: AppColors.accent,
                           fontWeight: FontWeight.w500,
                         ),
                         recognizer: _termsRecognizer,
                       ),
-                      const TextSpan(text: ' and '),
+                      TextSpan(text: ' and '.tr(context)),
                       TextSpan(
-                        text: 'Privacy Policy',
+                        text: 'Privacy Policy'.tr(context),
                         style: const TextStyle(
                           color: AppColors.accent,
                           fontWeight: FontWeight.w500,
@@ -276,16 +277,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Already have an account? ',
+                  Text(
+                    'Already have an account? '.tr(context),
                     style: TextStyle(
                       color: AppColors.textSecondary,
                     ),
                   ),
                   GestureDetector(
                     onTap: () => context.go(RouteNames.login),
-                    child: const Text(
-                      'Sign In',
+                    child: Text(
+                      'Sign In'.tr(context),
                       style: TextStyle(
                         color: AppColors.accent,
                         fontWeight: FontWeight.w600,

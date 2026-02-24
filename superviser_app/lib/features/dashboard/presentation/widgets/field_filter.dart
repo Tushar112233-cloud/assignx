@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/request_model.dart';
 
 /// Horizontal scrollable filter chips for subjects/fields.
@@ -40,7 +41,7 @@ class FieldFilter extends StatelessWidget {
           final isSelected = field == selectedField;
 
           return FilterChip(
-            label: Text(field),
+            label: Text(field.tr(context)),
             selected: isSelected,
             onSelected: (_) => onFieldSelected(field),
             backgroundColor: Colors.transparent,
@@ -102,7 +103,7 @@ class ExpertiseFilter extends StatelessWidget {
           final isSelected = expertise == selectedExpertise;
 
           return ChoiceChip(
-            label: Text(expertise),
+            label: Text(expertise.tr(context)),
             selected: isSelected,
             onSelected: (_) => onExpertiseSelected(expertise),
             backgroundColor: AppColors.surfaceLight,

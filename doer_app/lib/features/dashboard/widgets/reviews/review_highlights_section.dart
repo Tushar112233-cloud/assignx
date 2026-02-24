@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../data/models/project_model.dart';
 import 'review_card.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Bento-grid highlights section showing featured and recent reviews.
 class ReviewHighlightsSection extends StatelessWidget {
@@ -40,8 +41,8 @@ class ReviewHighlightsSection extends StatelessWidget {
                   size: 18, color: AppColors.warning),
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Text(
-              'Highlights',
+            Text(
+              'Highlights'.tr(context),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

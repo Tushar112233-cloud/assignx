@@ -7,6 +7,7 @@ import '../../../providers/profile_provider.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../../dashboard/widgets/app_header.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Payment history screen displaying all financial transactions.
 ///
@@ -76,7 +77,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Summary card
-                    _buildSummaryCard(profileState, profile),
+                    _buildSummaryCard(context, profileState, profile),
 
                     const SizedBox(height: AppSpacing.lg),
 
@@ -84,8 +85,8 @@ class PaymentHistoryScreen extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Recent Transactions',
+                        Text(
+                          'Recent Transactions'.tr(context),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -95,7 +96,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
                         TextButton.icon(
                           onPressed: () => _showFilterSheet(context),
                           icon: const Icon(Icons.filter_list, size: 18),
-                          label: const Text('Filter'),
+                          label: Text('Filter'.tr(context)),
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.primary,
                           ),
@@ -107,7 +108,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
 
                     // Transactions list
                     if (payments.isEmpty)
-                      _buildEmptyState()
+                      _buildEmptyState(context)
                     else
                       ...payments.map((payment) => _buildTransactionCard(payment)),
 
@@ -123,7 +124,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSummaryCard(ProfileState state, UserProfile? profile) {
+  Widget _buildSummaryCard(BuildContext context, ProfileState state, UserProfile? profile) {
     final thisMonth = state.totalEarningsThisMonth;
     final pending = state.paymentHistory
         .where((p) =>
@@ -153,8 +154,8 @@ class PaymentHistoryScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Total Earnings',
+            Text(
+              'Total Earnings'.tr(context),
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white70,
@@ -345,7 +346,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
         padding: AppSpacing.paddingLg,
@@ -365,8 +366,8 @@ class PaymentHistoryScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            const Text(
-              'No transactions yet',
+            Text(
+              'No transactions yet'.tr(context),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -374,8 +375,8 @@ class PaymentHistoryScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'Complete projects to start earning',
+            Text(
+              'Complete projects to start earning'.tr(context),
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -453,8 +454,8 @@ class PaymentHistoryScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const Text(
-              'Filter Transactions',
+            Text(
+              'Filter Transactions'.tr(context),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,

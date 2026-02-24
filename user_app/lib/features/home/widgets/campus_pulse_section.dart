@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Campus Pulse teaser section showing marketplace items.
 class CampusPulseSection extends StatelessWidget {
@@ -27,12 +28,12 @@ class CampusPulseSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Campus Pulse',
+                    'Campus Pulse'.tr(context),
                     style: AppTextStyles.headingSmall,
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Trending near you',
+                    'Trending near you'.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -41,7 +42,7 @@ class CampusPulseSection extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () => context.push('/marketplace'),
-                child: const Text('View All'),
+                child: Text('View All'.tr(context)),
               ),
             ],
           ),

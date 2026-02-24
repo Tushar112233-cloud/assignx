@@ -11,6 +11,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../widgets/training_module_card.dart';
 import '../widgets/training_pdf_viewer.dart';
 import '../widgets/training_video_player.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Training screen for completing training modules.
 ///
@@ -86,7 +87,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               : context.go(RouteNames.activationGate),
         ),
         title: Text(
-          _isViewing ? _selectedModule?.title ?? 'Module' : 'Training',
+          _isViewing ? _selectedModule?.title ?? 'Module'.tr(context) : 'Training'.tr(context),
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -123,8 +124,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Your Progress',
+                  Text(
+                    'Your Progress'.tr(context),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -132,7 +133,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                     ),
                   ),
                   Text(
-                    '${_getCompletedCount(modules, progress)}/${modules.length} modules',
+                    '${_getCompletedCount(modules, progress)}/${modules.length} ${'modules'.tr(context)}',
                     style: const TextStyle(
                       fontSize: 14,
                       color: AppColors.textSecondary,
@@ -163,8 +164,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Training Modules',
+                Text(
+                  'Training Modules'.tr(context),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -172,8 +173,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                const Text(
-                  'Complete all modules to proceed to the quiz',
+                Text(
+                  'Complete all modules to proceed to the quiz'.tr(context),
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -204,7 +205,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                           color: AppColors.success.withValues(alpha: 0.1),
                           borderRadius: AppSpacing.borderRadiusMd,
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(
                               Icons.check_circle,
@@ -214,7 +215,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                             SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: Text(
-                                'All training modules completed! You\'re ready for the quiz.',
+                                'All training modules completed! You\'re ready for the quiz.'.tr(context),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: AppColors.success,
@@ -227,7 +228,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       AppButton(
-                        text: 'Proceed to Quiz',
+                        text: 'Proceed to Quiz'.tr(context),
                         onPressed: () => context.go(RouteNames.quiz),
                         isFullWidth: true,
                         size: AppButtonSize.large,
@@ -284,7 +285,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                       color: AppColors.success.withValues(alpha: 0.1),
                       borderRadius: AppSpacing.borderRadiusMd,
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
@@ -294,7 +295,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                         ),
                         SizedBox(width: 8),
                         Text(
-                          'Module Completed',
+                          'Module Completed'.tr(context),
                           style: TextStyle(
                             color: AppColors.success,
                             fontWeight: FontWeight.w500,
@@ -305,7 +306,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                   )
                 else
                   AppButton(
-                    text: 'Mark as Complete',
+                    text: 'Mark as Complete'.tr(context),
                     onPressed: () => _markAsComplete(module.id),
                     isFullWidth: true,
                     size: AppButtonSize.large,
@@ -375,7 +376,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               ),
               const SizedBox(width: 4),
               Text(
-                '${module.durationMinutes} min read',
+                '${module.durationMinutes} ${'min read'.tr(context)}',
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.textTertiary,
@@ -401,11 +402,11 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               color: AppColors.surface,
               borderRadius: AppSpacing.borderRadiusMd,
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Article Content',
+                  'Article Content'.tr(context),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -414,13 +415,13 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 ),
                 SizedBox(height: AppSpacing.md),
                 Text(
-                  'This is where the full article content would be displayed. '
-                  'The content would be loaded from the contentUrl and rendered here.\n\n'
-                  'Key topics covered:\n'
-                  '• Introduction to the platform\n'
-                  '• Best practices\n'
-                  '• Common mistakes to avoid\n'
-                  '• Tips for success',
+                  '${'This is where the full article content would be displayed.'.tr(context)} '
+                  '${'The content would be loaded from the contentUrl and rendered here.'.tr(context)}\n\n'
+                  '${'Key topics covered:'.tr(context)}\n'
+                  '${'• Introduction to the platform'.tr(context)}\n'
+                  '${'• Best practices'.tr(context)}\n'
+                  '${'• Common mistakes to avoid'.tr(context)}\n'
+                  '${'• Tips for success'.tr(context)}',
                   style: TextStyle(
                     fontSize: 15,
                     color: AppColors.textSecondary,
@@ -444,8 +445,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     if (mounted) {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Module marked as complete!'),
+          SnackBar(
+            content: Text('Module marked as complete!'.tr(context)),
             backgroundColor: AppColors.success,
           ),
         );
@@ -455,8 +456,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to mark module as complete'),
+          SnackBar(
+            content: Text('Failed to mark module as complete'.tr(context)),
             backgroundColor: AppColors.error,
           ),
         );

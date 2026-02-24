@@ -728,18 +728,100 @@ function isUUID(str: string): boolean {
  * Handles project creation with server-side validation
  * Supports both UUID and slug identifiers for subjects and reference styles
  */
+/**
+ * Builds a structured metadata object from type-specific form fields.
+ * Stored as JSON in the `description` column for flexible schema support.
+ */
+function buildProjectMetadata(data: {
+  projectType?: string;
+  documentType?: string;
+  pageCount?: number;
+  techStack?: string;
+  websiteFeatures?: string[];
+  designReferenceUrl?: string;
+  platform?: string;
+  appFeatures?: string;
+  backendRequirements?: string;
+  consultationDuration?: string;
+  questionSummary?: string;
+  preferredDate?: string;
+  preferredTime?: string;
+  colorScheme?: string;
+  targetAudience?: string;
+  expertQualification?: string;
+  referenceCount?: number;
+}): Record<string, unknown> | null {
+  const metadata: Record<string, unknown> = {};
+
+  switch (data.projectType) {
+    case "assignment":
+      if (data.referenceCount != null) metadata.referenceCount = data.referenceCount;
+      break;
+
+    case "document":
+      if (data.documentType) metadata.documentType = data.documentType;
+      if (data.referenceCount != null) metadata.referenceCount = data.referenceCount;
+      break;
+
+    case "website":
+      if (data.pageCount != null) metadata.pageCount = data.pageCount;
+      if (data.techStack) metadata.techStack = data.techStack;
+      if (data.websiteFeatures?.length) metadata.websiteFeatures = data.websiteFeatures;
+      if (data.designReferenceUrl) metadata.designReferenceUrl = data.designReferenceUrl;
+      if (data.colorScheme) metadata.colorScheme = data.colorScheme;
+      break;
+
+    case "app":
+      if (data.platform) metadata.platform = data.platform;
+      if (data.appFeatures) metadata.appFeatures = data.appFeatures;
+      if (data.designReferenceUrl) metadata.designReferenceUrl = data.designReferenceUrl;
+      if (data.backendRequirements) metadata.backendRequirements = data.backendRequirements;
+      if (data.targetAudience) metadata.targetAudience = data.targetAudience;
+      break;
+
+    case "consultancy":
+      if (data.consultationDuration) metadata.consultationDuration = data.consultationDuration;
+      if (data.questionSummary) metadata.questionSummary = data.questionSummary;
+      if (data.preferredDate) metadata.preferredDate = data.preferredDate;
+      if (data.preferredTime) metadata.preferredTime = data.preferredTime;
+      if (data.expertQualification) metadata.expertQualification = data.expertQualification;
+      break;
+  }
+
+  return Object.keys(metadata).length > 0 ? metadata : null;
+}
+
 export async function createProject(data: {
   serviceType: "new_project" | "proofreading" | "plagiarism_check" | "ai_detection" | "expert_opinion";
+  projectType?: string;
   title: string;
   subjectId?: string;
+  customSubject?: string;
   topic?: string;
   wordCount?: number;
   referenceStyleId?: string;
   deadline: string;
   urgencyLevel?: string;
   instructions?: string;
+  // Type-specific fields (step 2)
+  documentType?: string;
+  pageCount?: number;
+  techStack?: string;
+  websiteFeatures?: string[];
+  designReferenceUrl?: string;
+  platform?: string;
+  appFeatures?: string;
+  backendRequirements?: string;
+  consultationDuration?: string;
+  questionSummary?: string;
+  preferredDate?: string;
+  preferredTime?: string;
+  // Type-specific fields (step 4)
+  colorScheme?: string;
+  targetAudience?: string;
+  expertQualification?: string;
 }) {
-  // Validate input data
+  // Validate core input data
   const validationResult = createProjectSchema.safeParse(data);
   if (!validationResult.success) {
     const errors = validationResult.error.issues.map((e) => e.message).join(", ");
@@ -795,6 +877,9 @@ export async function createProject(data: {
     }
   }
 
+  // Build type-specific metadata to store in the description column
+  const metadata = buildProjectMetadata(data);
+
   // Generate project number (format: AX-YYYYYY)
   // Note: The database trigger should handle this, but we provide a fallback
   const projectNumber = `AX-${Date.now().toString().slice(-6)}`;
@@ -806,12 +891,15 @@ export async function createProject(data: {
       user_id: userId,
       project_number: projectNumber,
       service_type: validatedData.serviceType,
+      project_type: data.projectType || null,
       title: validatedData.title,
       subject_id: resolvedSubjectId,
+      custom_subject: data.customSubject || null,
       topic: validatedData.topic || null,
       word_count: validatedData.wordCount || null,
       reference_style_id: resolvedReferenceStyleId,
       deadline: validatedData.deadline,
+      description: metadata ? JSON.stringify(metadata) : null,
       specific_instructions: validatedData.instructions || null,
       status: "submitted",
       source: "website",
@@ -931,6 +1019,154 @@ export async function uploadProjectFile(
     console.error("Cloudinary upload error:", uploadError);
     return { error: "Failed to upload file. Please try again." };
   }
+}
+
+/**
+ * Create a project_files DB record after client-side Supabase Storage upload.
+ * The actual file upload happens on the client directly to Supabase Storage,
+ * and this action only creates the database record.
+ */
+export async function createProjectFileRecord(
+  projectId: string,
+  file: {
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+    fileSizeBytes: number;
+    fileCategory?: string;
+  }
+) {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(projectId)) {
+    return { error: "Invalid project ID" };
+  }
+
+  const supabase = await createClient();
+  const userId = await getUserIdForDataFetch();
+
+  if (!userId) return { error: "Not authenticated" };
+
+  // Verify project belongs to user
+  const { data: projectOwner } = await supabase
+    .from("projects")
+    .select("user_id")
+    .eq("id", projectId)
+    .single();
+
+  if (!projectOwner || projectOwner.user_id !== userId) {
+    return { error: "Project not found or access denied" };
+  }
+
+  const { error: fileError } = await supabase
+    .from("project_files")
+    .insert({
+      project_id: projectId,
+      file_name: file.fileName,
+      file_url: file.fileUrl,
+      file_type: file.fileType,
+      file_size_bytes: file.fileSizeBytes,
+      file_category: file.fileCategory || "user_upload",
+      uploaded_by: userId,
+    });
+
+  if (fileError) {
+    console.error("[createProjectFileRecord] Database insert error:", fileError);
+    return { error: `Failed to save file record: ${fileError.message}` };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Purge files from completed projects.
+ * Deletes files from Supabase Storage and nullifies file_url in DB records.
+ * Only works for projects with status "completed".
+ */
+export async function purgeCompletedProjectFiles(projectId: string) {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(projectId)) {
+    return { error: "Invalid project ID" };
+  }
+
+  const supabase = await createClient();
+  const userId = await getUserIdForDataFetch();
+
+  if (!userId) return { error: "Not authenticated" };
+
+  // Verify project is completed
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("id, status, user_id")
+    .eq("id", projectId)
+    .single();
+
+  if (projectError || !project) {
+    return { error: "Project not found" };
+  }
+
+  if (project.user_id !== userId) {
+    return { error: "Access denied" };
+  }
+
+  if (project.status !== "completed") {
+    return { error: "Only completed projects can have files purged" };
+  }
+
+  // Get all files for this project
+  const { data: files, error: filesError } = await supabase
+    .from("project_files")
+    .select("id, file_url, file_name")
+    .eq("project_id", projectId)
+    .not("file_url", "is", null);
+
+  if (filesError) {
+    return { error: "Failed to fetch project files" };
+  }
+
+  if (!files || files.length === 0) {
+    return { success: true, message: "No files to purge" };
+  }
+
+  // Extract storage paths from file URLs and delete from Supabase Storage
+  const storagePaths: string[] = [];
+  for (const file of files) {
+    if (file.file_url) {
+      // Extract path from URL: .../storage/v1/object/public/project-files/{path}
+      const match = file.file_url.match(/project-files\/(.+)$/);
+      if (match) {
+        storagePaths.push(match[1]);
+      }
+    }
+  }
+
+  if (storagePaths.length > 0) {
+    const { error: deleteError } = await supabase.storage
+      .from("project-files")
+      .remove(storagePaths);
+
+    if (deleteError) {
+      console.error("[purgeCompletedProjectFiles] Storage delete error:", deleteError);
+      // Continue to update DB records even if storage delete partially fails
+    }
+  }
+
+  // Update DB records: set file_url to empty and mark as purged
+  const fileIds = files.map((f) => f.id);
+  const { error: updateError } = await supabase
+    .from("project_files")
+    .update({
+      file_url: "",
+      file_category: "purged",
+    })
+    .in("id", fileIds);
+
+  if (updateError) {
+    console.error("[purgeCompletedProjectFiles] DB update error:", updateError);
+    return { error: "Failed to update file records" };
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  return { success: true, purgedCount: files.length };
 }
 
 // =============================================================================

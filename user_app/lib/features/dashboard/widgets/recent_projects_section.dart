@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/project_model.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
@@ -75,7 +76,7 @@ class RecentProjectsSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Recent Projects',
+                    'Recent Projects'.tr(context),
                     style: AppTextStyles.headingSmall.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -110,7 +111,7 @@ class RecentProjectsSection extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      'View all',
+                      'View all'.tr(context),
                       style: AppTextStyles.bodySmall.copyWith(
                         fontSize: 12,
                         color: AppColors.textTertiary,
@@ -217,7 +218,7 @@ class _RecentProjectCard extends StatelessWidget {
     } else if (difference.inMinutes > 0) {
       return '${difference.inMinutes}m ago';
     } else {
-      return 'just now';
+      return 'just now';  // Translated at display site
     }
   }
 

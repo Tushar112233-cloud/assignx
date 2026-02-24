@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../providers/statistics_provider.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Heatmap grid showing 12 months of project completion data.
 class MonthlyPerformanceHeatmap extends ConsumerWidget {
@@ -42,12 +43,12 @@ class MonthlyPerformanceHeatmap extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          const Row(
+          Row(
             children: [
               Icon(Icons.calendar_month_rounded, size: 18, color: AppColors.success),
               SizedBox(width: 8),
               Text(
-                'Monthly Performance',
+                'Monthly Performance'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -60,12 +61,12 @@ class MonthlyPerformanceHeatmap extends ConsumerWidget {
 
           // Heatmap grid
           if (performance.isEmpty)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
+                padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Text(
-                  'No performance data available',
-                  style: TextStyle(
+                  'No performance data available'.tr(context),
+                  style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textTertiary,
                   ),
@@ -98,8 +99,8 @@ class MonthlyPerformanceHeatmap extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'Less',
+              Text(
+                'Less'.tr(context),
                 style: TextStyle(fontSize: 10, color: AppColors.textTertiary),
               ),
               const SizedBox(width: 6),
@@ -118,8 +119,8 @@ class MonthlyPerformanceHeatmap extends ConsumerWidget {
                 );
               }),
               const SizedBox(width: 6),
-              const Text(
-                'More',
+              Text(
+                'More'.tr(context),
                 style: TextStyle(fontSize: 10, color: AppColors.textTertiary),
               ),
             ],

@@ -12,6 +12,7 @@ import '../../../core/utils/validators.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../dashboard/widgets/app_header.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Edit profile screen for updating user information.
 ///
@@ -172,7 +173,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       controller: _skillsController,
                       hint: 'Enter skills separated by commas',
                       prefixIcon: Icons.psychology_outlined,
-                      helperText: 'e.g., Research Papers, Essays, APA Format',
+                      helperText: 'e.g., Research Papers, Essays, APA Format'.tr(context),
                       validator: Validators.skills,
                     ),
 
@@ -246,7 +247,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           const SizedBox(height: AppSpacing.sm),
           TextButton(
             onPressed: _changeAvatar,
-            child: const Text('Change Photo'),
+            child: Text('Change Photo'.tr(context)),
           ),
         ],
       ),
@@ -470,8 +471,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Choose Photo Source',
+              Text(
+                'Choose Photo Source'.tr(context),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -481,12 +482,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const SizedBox(height: AppSpacing.md),
               ListTile(
                 leading: const Icon(Icons.camera_alt, color: AppColors.primary),
-                title: const Text('Camera'),
+                title: Text('Camera'.tr(context)),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library, color: AppColors.primary),
-                title: const Text('Gallery'),
+                title: Text('Gallery'.tr(context)),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -513,16 +514,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
+        builder: (dialogContext) => Center(
           child: Card(
             child: Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: AppSpacing.md),
-                  Text('Uploading photo...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: AppSpacing.md),
+                  Text('Uploading photo...'.tr(dialogContext)),
                 ],
               ),
             ),
@@ -543,8 +544,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       // Show result message
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile photo updated successfully'),
+          SnackBar(
+            content: Text('Profile photo updated successfully'.tr(context)),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -564,7 +565,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: ${e.toString()}'),
+          content: Text('Error: ${e.toString()}'.tr(context)),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
@@ -592,12 +593,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (mounted) {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Row(
               children: [
                 Icon(Icons.check_circle, color: Colors.white),
                 SizedBox(width: 8),
-                Text('Profile updated successfully'),
+                Text('Profile updated successfully'.tr(context)),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -607,8 +608,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to update profile'),
+          SnackBar(
+            content: Text('Failed to update profile'.tr(context)),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),

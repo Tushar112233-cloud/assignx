@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -144,21 +145,21 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Hey $displayName! 👋',
+                        '${'Hey'.tr(context)} $displayName! 👋',
                         style: AppTextStyles.displaySmall.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Tell us about yourself',
+                        'Tell us about yourself'.tr(context),
                         style: AppTextStyles.bodyLarge.copyWith(
                           color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "This helps us personalize your experience.",
+                        'This helps us personalize your experience.'.tr(context),
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.textTertiary,
                         ),
@@ -180,8 +181,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                       // Student
                       RoleCard(
                         icon: Icons.school_outlined,
-                        title: RoleOption.student.displayName,
-                        description: RoleOption.student.description,
+                        title: RoleOption.student.displayName.tr(context),
+                        description: RoleOption.student.description.tr(context),
                         isSelected: _selectedRole == RoleOption.student,
                         onTap: () => _selectRole(RoleOption.student),
                       ).animate(delay: 200.ms).fadeIn(duration: 500.ms).slideX(
@@ -196,8 +197,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                       // Job Seeker
                       RoleCard(
                         icon: Icons.work_outline,
-                        title: RoleOption.jobSeeker.displayName,
-                        description: RoleOption.jobSeeker.description,
+                        title: RoleOption.jobSeeker.displayName.tr(context),
+                        description: RoleOption.jobSeeker.description.tr(context),
                         isSelected: _selectedRole == RoleOption.jobSeeker,
                         onTap: () => _selectRole(RoleOption.jobSeeker),
                       ).animate(delay: 350.ms).fadeIn(duration: 500.ms).slideX(
@@ -212,8 +213,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                       // Business/Creator
                       RoleCard(
                         icon: Icons.rocket_launch_outlined,
-                        title: RoleOption.business.displayName,
-                        description: RoleOption.business.description,
+                        title: RoleOption.business.displayName.tr(context),
+                        description: RoleOption.business.description.tr(context),
                         isSelected: _selectedRole == RoleOption.business,
                         onTap: () => _selectRole(RoleOption.business),
                       ).animate(delay: 500.ms).fadeIn(duration: 500.ms).slideX(
@@ -230,7 +231,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                 GlassContainer(
                   padding: const EdgeInsets.all(4),
                   child: AppButton(
-                    label: 'Continue',
+                    label: 'Continue'.tr(context),
                     onPressed: _selectedRole != null ? _continue : null,
                     icon: Icons.arrow_forward,
                   ),

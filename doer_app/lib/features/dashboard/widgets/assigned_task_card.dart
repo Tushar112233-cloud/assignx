@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/doer_project_model.dart';
 import 'deadline_countdown.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Enhanced project card for assigned tasks.
 ///
@@ -23,7 +24,7 @@ class AssignedTaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final urgencyColor = _getUrgencyColor();
-    final urgencyLabel = _getUrgencyLabel();
+    final urgencyLabel = _getUrgencyLabel(context);
 
     return Card(
       elevation: 2,
@@ -73,13 +74,13 @@ class AssignedTaskCard extends StatelessWidget {
                         color: AppColors.error.withValues(alpha: 0.1),
                         borderRadius: AppSpacing.borderRadiusSm,
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
                           Icon(Icons.warning_amber_rounded,
                               size: 14, color: AppColors.error),
                           SizedBox(width: 6),
                           Text(
-                            'Revision Requested',
+                            'Revision Requested'.tr(context),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -126,7 +127,7 @@ class AssignedTaskCard extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                urgencyLabel == 'Hot'
+                                project.hoursUntilDeadline >= 0 && project.hoursUntilDeadline < 24
                                     ? Icons.local_fire_department
                                     : Icons.schedule,
                                 size: 12,
@@ -162,7 +163,7 @@ class AssignedTaskCard extends StatelessWidget {
                         borderRadius: AppSpacing.borderRadiusSm,
                       ),
                       child: Text(
-                        project.topic ?? project.subject ?? 'General',
+                        project.topic ?? project.subject ?? 'General'.tr(context),
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -311,12 +312,12 @@ class AssignedTaskCard extends StatelessWidget {
     return AppColors.urgencyLow;
   }
 
-  String? _getUrgencyLabel() {
+  String? _getUrgencyLabel(BuildContext context) {
     if (project.hasRevision) return null; // revision banner shown instead
     final hours = project.hoursUntilDeadline;
-    if (hours < 0) return 'Overdue';
-    if (hours < 24) return 'Hot';
-    if (hours < 72) return 'Soon';
+    if (hours < 0) return 'Overdue'.tr(context);
+    if (hours < 24) return 'Hot'.tr(context);
+    if (hours < 72) return 'Soon'.tr(context);
     return null;
   }
 }

@@ -7,6 +7,7 @@ import '../../../providers/profile_provider.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../../dashboard/widgets/app_header.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Notifications screen displaying all user notifications.
 ///
@@ -65,13 +66,13 @@ class NotificationsScreen extends ConsumerWidget {
                   TextButton(
                     onPressed: () =>
                         ref.read(profileProvider.notifier).markAllNotificationsRead(),
-                    child: const Text('Mark all read'),
+                    child: Text('Mark all read'.tr(context)),
                   ),
               ],
             ),
             Expanded(
               child: notifications.isEmpty && !isLoading
-                  ? _buildEmptyState()
+                  ? _buildEmptyState(context)
                   : RefreshIndicator(
                       onRefresh: () => ref.read(profileProvider.notifier).refresh(),
                       child: ListView.builder(
@@ -100,7 +101,7 @@ class NotificationsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -118,8 +119,8 @@ class NotificationsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          const Text(
-            'No notifications',
+          Text(
+            'No notifications'.tr(context),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -127,8 +128,8 @@ class NotificationsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          const Text(
-            'You\'re all caught up!',
+          Text(
+            'You\'re all caught up!'.tr(context),
             style: TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,

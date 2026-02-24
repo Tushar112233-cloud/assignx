@@ -38,7 +38,26 @@ interface MessageWithSender extends ChatMessage {
  */
 type MessageCallback = (message: ChatMessage) => void
 
+/**
+ * Connection state for realtime
+ */
+type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'reconnecting'
+
+/**
+ * Connection state callback
+ */
+type ConnectionStateCallback = (state: ConnectionState) => void
+
 const supabase = createClient()
+
+/**
+ * Reconnection configuration
+ */
+const RECONNECT_CONFIG = {
+  maxRetries: 5,
+  baseDelay: 1000,
+  maxDelay: 30000,
+}
 
 /**
  * Chat service for real-time messaging.
@@ -49,6 +68,66 @@ export const chatService = {
    * Active subscriptions map
    */
   subscriptions: new Map<string, RealtimeChannel>(),
+
+  /**
+   * Reconnection retry counts per channel
+   */
+  _retryCounts: new Map<string, number>(),
+
+  /**
+   * Reconnection timeout handles
+   */
+  _reconnectTimers: new Map<string, ReturnType<typeof setTimeout>>(),
+
+  /**
+   * Connection state listeners
+   */
+  _connectionStateListeners: new Set<ConnectionStateCallback>(),
+
+  /**
+   * Current connection state
+   */
+  _connectionState: 'disconnected' as ConnectionState,
+
+  /**
+   * Cached user room IDs for efficient subscription filtering
+   */
+  _userRoomIds: new Map<string, string[]>(),
+
+  /**
+   * Subscribe to connection state changes.
+   * @param callback - Called when connection state changes
+   * @returns Cleanup function
+   */
+  onConnectionStateChange(callback: ConnectionStateCallback): () => void {
+    this._connectionStateListeners.add(callback)
+    // Immediately notify of current state
+    callback(this._connectionState)
+    return () => {
+      this._connectionStateListeners.delete(callback)
+    }
+  },
+
+  /**
+   * Updates connection state and notifies listeners
+   */
+  _setConnectionState(state: ConnectionState): void {
+    this._connectionState = state
+    this._connectionStateListeners.forEach((cb) => cb(state))
+  },
+
+  /**
+   * Calculate exponential backoff delay with jitter
+   */
+  _getReconnectDelay(channelKey: string): number {
+    const retries = this._retryCounts.get(channelKey) || 0
+    const delay = Math.min(
+      RECONNECT_CONFIG.baseDelay * Math.pow(2, retries),
+      RECONNECT_CONFIG.maxDelay
+    )
+    // Add jitter (0-25% of delay)
+    return delay + Math.random() * delay * 0.25
+  },
 
   /**
    * Gets or creates a chat room for a project.
@@ -155,6 +234,9 @@ export const chatService = {
 
     const roomIds = participations.map((p: any) => p.chat_room_id)
     if (roomIds.length === 0) return []
+
+    // Cache room IDs for this user
+    this._userRoomIds.set(userId, roomIds)
 
     // Get room details
     const { data: rooms, error: roomError } = await supabase
@@ -326,46 +408,159 @@ export const chatService = {
   },
 
   /**
-   * Subscribes to new messages in a chat room.
+   * Subscribes to new messages in a chat room with error handling and reconnection.
    * @param roomId - The chat room UUID
    * @param callback - Function to call when new message arrives
    * @returns Cleanup function
    */
   subscribeToRoom(roomId: string, callback: MessageCallback): () => void {
+    const channelKey = `room:${roomId}`
+
     // Unsubscribe from existing subscription if any
-    const existingChannel = this.subscriptions.get(roomId)
+    const existingChannel = this.subscriptions.get(channelKey)
     if (existingChannel) {
       existingChannel.unsubscribe()
+      this.subscriptions.delete(channelKey)
     }
 
-    // Create new subscription
-    const channel = supabase
-      .channel(`chat:${roomId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `chat_room_id=eq.${roomId}`,
-        },
-        (payload: any) => {
-          callback(payload.new as ChatMessage)
-        }
-      )
-      .subscribe()
+    // Clear any pending reconnect timer
+    const existingTimer = this._reconnectTimers.get(channelKey)
+    if (existingTimer) {
+      clearTimeout(existingTimer)
+      this._reconnectTimers.delete(channelKey)
+    }
 
-    this.subscriptions.set(roomId, channel)
+    // Reset retry count
+    this._retryCounts.set(channelKey, 0)
+
+    const subscribe = () => {
+      const channel = supabase
+        .channel(`chat:${roomId}`, {
+          config: { presence: { key: roomId } },
+        })
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chat_messages',
+            filter: `chat_room_id=eq.${roomId}`,
+          },
+          (payload: any) => {
+            callback(payload.new as ChatMessage)
+          }
+        )
+        .on('system', { event: '*' } as any, (payload: any) => {
+          // Handle system events for connection state tracking
+          if (payload?.type === 'error' || payload?.event === 'error') {
+            console.error(`[Chat] Channel error for room ${roomId}:`, payload)
+            this._setConnectionState('disconnected')
+            this._attemptReconnect(channelKey, callback, roomId)
+          }
+        })
+        .subscribe((status: string) => {
+          if (status === 'SUBSCRIBED') {
+            this._setConnectionState('connected')
+            this._retryCounts.set(channelKey, 0)
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error(`[Chat] Subscription error for room ${roomId}`)
+            this._setConnectionState('disconnected')
+            this._attemptReconnect(channelKey, callback, roomId)
+          } else if (status === 'TIMED_OUT') {
+            console.warn(`[Chat] Subscription timed out for room ${roomId}`)
+            this._setConnectionState('disconnected')
+            this._attemptReconnect(channelKey, callback, roomId)
+          } else if (status === 'CLOSED') {
+            this._setConnectionState('disconnected')
+          }
+        })
+
+      this.subscriptions.set(channelKey, channel)
+    }
+
+    subscribe()
 
     // Return cleanup function
     return () => {
-      channel.unsubscribe()
-      this.subscriptions.delete(roomId)
+      const channel = this.subscriptions.get(channelKey)
+      if (channel) {
+        channel.unsubscribe()
+        this.subscriptions.delete(channelKey)
+      }
+      const timer = this._reconnectTimers.get(channelKey)
+      if (timer) {
+        clearTimeout(timer)
+        this._reconnectTimers.delete(channelKey)
+      }
+      this._retryCounts.delete(channelKey)
     }
   },
 
   /**
-   * Subscribes to all chat rooms for unread count updates.
+   * Attempt to reconnect a channel with exponential backoff
+   */
+  _attemptReconnect(
+    channelKey: string,
+    callback: MessageCallback,
+    roomId: string
+  ): void {
+    const retries = this._retryCounts.get(channelKey) || 0
+
+    if (retries >= RECONNECT_CONFIG.maxRetries) {
+      console.error(`[Chat] Max reconnect attempts reached for ${channelKey}`)
+      this._setConnectionState('disconnected')
+      return
+    }
+
+    this._setConnectionState('reconnecting')
+    this._retryCounts.set(channelKey, retries + 1)
+
+    const delay = this._getReconnectDelay(channelKey)
+    console.log(`[Chat] Reconnecting ${channelKey} in ${Math.round(delay)}ms (attempt ${retries + 1}/${RECONNECT_CONFIG.maxRetries})`)
+
+    const timer = setTimeout(() => {
+      this._reconnectTimers.delete(channelKey)
+
+      // Clean up old channel
+      const oldChannel = this.subscriptions.get(channelKey)
+      if (oldChannel) {
+        oldChannel.unsubscribe()
+        this.subscriptions.delete(channelKey)
+      }
+
+      // Re-subscribe
+      const channel = supabase
+        .channel(`chat:${roomId}:${Date.now()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chat_messages',
+            filter: `chat_room_id=eq.${roomId}`,
+          },
+          (payload: any) => {
+            callback(payload.new as ChatMessage)
+          }
+        )
+        .subscribe((status: string) => {
+          if (status === 'SUBSCRIBED') {
+            this._setConnectionState('connected')
+            this._retryCounts.set(channelKey, 0)
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            this._attemptReconnect(channelKey, callback, roomId)
+          }
+        })
+
+      this.subscriptions.set(channelKey, channel)
+    }, delay)
+
+    this._reconnectTimers.set(channelKey, timer)
+  },
+
+  /**
+   * Subscribes to unread count updates for rooms the user is in.
+   * Only subscribes to rooms where the user is a participant.
    * @param userId - The user's profile ID
    * @param callback - Function to call when unread count changes
    * @returns Cleanup function
@@ -374,34 +569,84 @@ export const chatService = {
     userId: string,
     callback: (roomId: string, count: number) => void
   ): () => void {
-    const channel = supabase
-      .channel(`user_chats:${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-        },
-        async (payload: any) => {
-          const message = payload.new as ChatMessage
-          if (message.sender_id !== userId) {
-            // Get unread count for the room
-            const { count } = await supabase
-              .from('chat_messages')
-              .select('*', { count: 'exact', head: true })
-              .eq('chat_room_id', message.chat_room_id)
-              .neq('sender_id', userId)
-              .not('read_by', 'cs', `["${userId}"]`)
+    const channelKey = `unread:${userId}`
 
-            callback(message.chat_room_id, count || 0)
-          }
-        }
-      )
-      .subscribe()
+    // First, get the user's room IDs
+    const setupSubscription = async () => {
+      let roomIds: string[] = this._userRoomIds.get(userId) || []
+
+      if (roomIds.length === 0) {
+        const { data: participations } = await supabase
+          .from('chat_participants')
+          .select('chat_room_id')
+          .eq('profile_id', userId)
+
+        roomIds = participations?.map((p: any) => p.chat_room_id) || []
+        this._userRoomIds.set(userId, roomIds)
+      }
+
+      if (roomIds.length === 0) return
+
+      // Subscribe to each room individually for targeted updates
+      // This avoids listening to ALL chat_messages inserts globally
+      const channels: RealtimeChannel[] = []
+
+      for (const roomId of roomIds) {
+        const channel = supabase
+          .channel(`unread:${userId}:${roomId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'chat_messages',
+              filter: `chat_room_id=eq.${roomId}`,
+            },
+            async (payload: any) => {
+              const message = payload.new as ChatMessage
+              if (message.sender_id !== userId) {
+                // Get unread count for the room
+                const { count } = await supabase
+                  .from('chat_messages')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('chat_room_id', message.chat_room_id)
+                  .neq('sender_id', userId)
+                  .not('read_by', 'cs', `["${userId}"]`)
+
+                callback(message.chat_room_id, count || 0)
+              }
+            }
+          )
+          .subscribe((status: string) => {
+            if (status === 'CHANNEL_ERROR') {
+              console.error(`[Chat] Unread count subscription error for room ${roomId}`)
+            }
+          })
+
+        channels.push(channel)
+      }
+
+      // Store a composite cleanup reference
+      this.subscriptions.set(channelKey, channels[0])
+      // Store additional channels for cleanup
+      for (let i = 1; i < channels.length; i++) {
+        this.subscriptions.set(`${channelKey}:${i}`, channels[i])
+      }
+    }
+
+    setupSubscription()
 
     return () => {
-      channel.unsubscribe()
+      // Clean up all unread channels for this user
+      const keysToDelete: string[] = []
+      this.subscriptions.forEach((channel, key) => {
+        if (key.startsWith(`unread:${userId}`)) {
+          channel.unsubscribe()
+          keysToDelete.push(key)
+        }
+      })
+      keysToDelete.forEach((key) => this.subscriptions.delete(key))
+      this._userRoomIds.delete(userId)
     }
   },
 
@@ -421,6 +666,9 @@ export const chatService = {
 
     const roomIds = participations.map((p: any) => p.chat_room_id)
 
+    // Cache for unread subscriptions
+    this._userRoomIds.set(userId, roomIds)
+
     const { count, error } = await supabase
       .from('chat_messages')
       .select('*', { count: 'exact', head: true })
@@ -433,13 +681,24 @@ export const chatService = {
   },
 
   /**
-   * Cleans up all subscriptions.
+   * Cleans up all subscriptions and timers.
    */
   cleanup(): void {
+    // Clear all reconnect timers
+    this._reconnectTimers.forEach((timer) => clearTimeout(timer))
+    this._reconnectTimers.clear()
+
+    // Unsubscribe all channels
     this.subscriptions.forEach((channel) => {
       channel.unsubscribe()
     })
     this.subscriptions.clear()
+
+    // Clear state
+    this._retryCounts.clear()
+    this._userRoomIds.clear()
+    this._connectionStateListeners.clear()
+    this._setConnectionState('disconnected')
   },
 }
 
@@ -452,4 +711,6 @@ export type {
   ChatRoomWithDetails,
   MessageWithSender,
   MessageCallback,
+  ConnectionState,
+  ConnectionStateCallback,
 }

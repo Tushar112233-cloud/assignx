@@ -30,6 +30,7 @@ import '../../dashboard/widgets/app_header.dart';
 import '../widgets/quick_help_card.dart';
 import '../widgets/contact_form.dart';
 import '../widgets/faq_list.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// The main support screen widget.
 ///
@@ -62,7 +63,7 @@ class SupportScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Hero section
-                    _buildHeroSection()
+                    _buildHeroSection(context)
                         .animate()
                         .fadeIn(duration: 400.ms)
                         .slideY(begin: -0.1, end: 0, duration: 400.ms),
@@ -70,8 +71,8 @@ class SupportScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.lg),
 
                     // Quick help section
-                    const Text(
-                      'Quick Help',
+                    Text(
+                      'Quick Help'.tr(context),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -91,13 +92,13 @@ class SupportScreen extends ConsumerWidget {
                       onSubmitted: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Row(
+                            content: Row(
                               children: [
                                 Icon(Icons.check_circle, color: Colors.white, size: 20),
                                 SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'Support ticket submitted successfully! We\'ll get back to you within 24 hours.',
+                                    'Support ticket submitted successfully! We\'ll get back to you within 24 hours.'.tr(context),
                                   ),
                                 ),
                               ],
@@ -119,7 +120,7 @@ class SupportScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.lg),
 
                     // Contact information
-                    _buildContactInfo()
+                    _buildContactInfo(context)
                         .animate()
                         .fadeIn(duration: 400.ms, delay: 300.ms)
                         .slideY(begin: 0.05, end: 0, duration: 400.ms),
@@ -127,8 +128,8 @@ class SupportScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.lg),
 
                     // FAQ section
-                    const Text(
-                      'Frequently Asked Questions',
+                    Text(
+                      'Frequently Asked Questions'.tr(context),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -164,7 +165,7 @@ class SupportScreen extends ConsumerWidget {
   }
 
   /// Builds the hero banner section with gradient background.
-  Widget _buildHeroSection() {
+  Widget _buildHeroSection(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -200,8 +201,8 @@ class SupportScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          const Text(
-            'How can we help?',
+          Text(
+            'How can we help?'.tr(context),
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -210,7 +211,7 @@ class SupportScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Browse our help topics below or submit a support ticket and our team will get back to you.',
+            'Browse our help topics below or submit a support ticket and our team will get back to you.'.tr(context),
             style: TextStyle(
               fontSize: 14,
               color: Colors.white.withValues(alpha: 0.9),
@@ -261,7 +262,7 @@ class SupportScreen extends ConsumerWidget {
   }
 
   /// Builds the contact information card.
-  Widget _buildContactInfo() {
+  Widget _buildContactInfo(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -295,8 +296,8 @@ class SupportScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              const Text(
-                'Contact Information',
+              Text(
+                'Contact Information'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

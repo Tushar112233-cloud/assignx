@@ -29,6 +29,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Main application header widget with navigation controls.
 ///
@@ -103,7 +104,7 @@ class AppHeader extends ConsumerWidget {
               onPressed: onMenuTap,
               icon: const Icon(Icons.menu),
               color: AppColors.textPrimary,
-              tooltip: 'Menu',
+              tooltip: 'Menu'.tr(context),
             ),
 
             const SizedBox(width: AppSpacing.sm),
@@ -188,8 +189,8 @@ class AppLogo extends StatelessWidget {
         ),
         if (showText) ...[
           const SizedBox(width: 8),
-          const Text(
-            'DOER',
+          Text(
+            'DOER'.tr(context),
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -247,7 +248,7 @@ class NotificationBell extends StatelessWidget {
             count > 0 ? Icons.notifications : Icons.notifications_outlined,
             color: count > 0 ? AppColors.primary : AppColors.textSecondary,
           ),
-          tooltip: 'Notifications',
+          tooltip: 'Notifications'.tr(context),
         ),
         if (count > 0)
           Positioned(

@@ -9,6 +9,7 @@ import '../../../providers/project_provider.dart';
 import '../widgets/budget_display.dart';
 import '../widgets/file_attachment.dart';
 import '../widgets/subject_dropdown.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../widgets/success_popup.dart';
 
 /// Expertise level required.
@@ -71,7 +72,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
     if (_expertiseLevel == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please select an expertise level'),
+          content: Text('Please select an expertise level'.tr(context)),
           backgroundColor: AppColors.error,
         ),
       );
@@ -134,7 +135,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          'Ask Expert',
+          'Ask Expert'.tr(context),
           style: AppTextStyles.headingSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.transparent,
@@ -223,7 +224,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Expert Consultation',
+                                  'Expert Consultation'.tr(context),
                                   style: AppTextStyles.labelLarge.copyWith(
                                     color: Colors.purple.shade700,
                                     fontWeight: FontWeight.bold,
@@ -231,7 +232,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Get personalized guidance from subject experts',
+                                  'Get personalized guidance from subject experts'.tr(context),
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
@@ -245,7 +246,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
                     const SizedBox(height: 28),
 
                     // Subject
-                    _buildSectionLabel('Subject Area', Icons.school_outlined),
+                    _buildSectionLabel('Subject Area'.tr(context), Icons.school_outlined),
                     const SizedBox(height: 8),
                     SubjectDropdown(
                       value: _subject,
@@ -254,13 +255,13 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
                     const SizedBox(height: 24),
 
                     // Your question
-                    _buildSectionLabel('Your Question', Icons.help_outline),
+                    _buildSectionLabel('Your Question'.tr(context), Icons.help_outline),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _questionController,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        hintText: 'What would you like expert guidance on?',
+                        hintText: 'What would you like expert guidance on?'.tr(context),
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.textTertiary,
                         ),
@@ -281,7 +282,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
                       ),
                       validator: (value) {
                         if (value == null || value.length < 10) {
-                          return 'Please describe your question (min 10 characters)';
+                          return 'Please describe your question (min 10 characters)'.tr(context);
                         }
                         return null;
                       },
@@ -289,10 +290,10 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
                     const SizedBox(height: 24),
 
                     // Context/background
-                    _buildSectionLabel('Context & Background', Icons.notes),
+                    _buildSectionLabel('Context & Background'.tr(context), Icons.notes),
                     const SizedBox(height: 4),
                     Text(
-                      'Help the expert understand your situation better',
+                      'Help the expert understand your situation better'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -325,20 +326,20 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
                     const SizedBox(height: 24),
 
                     // Attachments
-                    _buildSectionLabel('Reference Documents', Icons.attach_file),
+                    _buildSectionLabel('Reference Documents'.tr(context), Icons.attach_file),
                     const SizedBox(height: 8),
                     FileAttachment(
                       files: _attachments,
                       onChanged: (files) => setState(() => _attachments = files),
-                      label: 'Reference Documents',
-                      hint: 'Upload relevant documents for the expert to review (optional)',
+                      label: 'Reference Documents'.tr(context),
+                      hint: 'Upload relevant documents for the expert to review (optional)'.tr(context),
                       maxFiles: 3,
                       maxSizeMB: 20,
                     ),
                     const SizedBox(height: 24),
 
                     // Expertise level
-                    _buildSectionLabel('Expertise Level', Icons.star_outline),
+                    _buildSectionLabel('Expertise Level'.tr(context), Icons.star_outline),
                     const SizedBox(height: 12),
                     ...ExpertiseLevel.values.map(
                       (level) => _ExpertiseLevelCard(
@@ -350,7 +351,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
                     const SizedBox(height: 24),
 
                     // Feedback type
-                    _buildSectionLabel('Preferred Feedback', Icons.message_outlined),
+                    _buildSectionLabel('Preferred Feedback'.tr(context), Icons.message_outlined),
                     const SizedBox(height: 12),
                     Row(
                       children: FeedbackType.values.map((type) {
@@ -410,7 +411,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
                     // Price summary
                     BudgetCard(
                       price: _calculateTotalPrice(),
-                      subtitle: 'Total Price',
+                      subtitle: 'Total Price'.tr(context),
                     ),
                     const SizedBox(height: 16),
 
@@ -449,7 +450,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
                                 ),
                               )
                             : Text(
-                                'Submit Request',
+                                'Submit Request'.tr(context),
                                 style: AppTextStyles.labelLarge.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -567,14 +568,14 @@ class _ExpertiseLevelCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    level.title,
+                    level.title.tr(context),
                     style: AppTextStyles.labelMedium.copyWith(
                       color: isSelected ? Colors.purple.shade700 : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
-                    level.description,
+                    level.description.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),

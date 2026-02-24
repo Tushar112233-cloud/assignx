@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../providers/profile_provider.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Profile hero section with gradient background, avatar, name, and key info.
 ///
@@ -103,7 +104,7 @@ class ProfileHero extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
 
               // Edit profile button
-              _buildEditButton(),
+              _buildEditButton(context),
             ],
           ),
         ),
@@ -122,8 +123,8 @@ class ProfileHero extends StatelessWidget {
             backgroundColor: Colors.white.withValues(alpha: 0.15),
           ),
         ),
-        const Text(
-          'My Profile',
+        Text(
+          'My Profile'.tr(context),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -323,15 +324,15 @@ class ProfileHero extends StatelessWidget {
     );
   }
 
-  Widget _buildEditButton() {
+  Widget _buildEditButton(BuildContext context) {
     return SizedBox(
       width: 180,
       height: 42,
       child: OutlinedButton.icon(
         onPressed: onEditProfile,
         icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.white),
-        label: const Text(
-          'Edit Profile',
+        label: Text(
+          'Edit Profile'.tr(context),
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,

@@ -247,6 +247,31 @@ class RouteNames {
   static const String formatTemplates = '/resources/templates';
 
   // ---------------------------------------------------------------------------
+  // Community (Pro Network) Routes
+  // ---------------------------------------------------------------------------
+
+  /// Community feed screen (Pro Network).
+  ///
+  /// Path: `/community`
+  static const String community = '/community';
+
+  /// Create community post screen.
+  ///
+  /// Path: `/community/create`
+  static const String communityCreate = '/community/create';
+
+  /// Saved community posts screen.
+  ///
+  /// Path: `/community/saved`
+  static const String communitySaved = '/community/saved';
+
+  /// Community post detail screen.
+  ///
+  /// Path: `/community/post/:id`
+  /// Parameter: `id` - Post identifier
+  static const String communityPost = '/community/post/:id';
+
+  // ---------------------------------------------------------------------------
   // Chat
   // ---------------------------------------------------------------------------
 

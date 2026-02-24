@@ -54,6 +54,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/extensions/context_extensions.dart';
 import '../../../../shared/widgets/buttons/primary_button.dart';
@@ -130,7 +131,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     // Check terms agreement
     if (!_agreedToTerms) {
-      context.showErrorSnackBar('Please agree to the Terms of Service');
+      context.showErrorSnackBar('Please agree to the Terms of Service'.tr(context));
       return;
     }
 
@@ -152,7 +153,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (success) {
       // Show success and navigate
       context.showSuccessSnackBar(
-        'Account created! Please check your email to verify.',
+        'Account created! Please check your email to verify.'.tr(context),
       );
       context.go('/login');
     } else {
@@ -171,7 +172,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Account'),
+        title: Text('Create Account'.tr(context)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -190,8 +191,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 AppTextField(
                   controller: _nameController,
                   focusNode: _nameFocusNode,
-                  label: 'Full Name',
-                  hint: 'Enter your full name',
+                  label: 'Full Name'.tr(context),
+                  hint: 'Enter your full name'.tr(context),
                   prefixIcon: Icons.person_outlined,
                   validator: Validators.name,
                   textInputAction: TextInputAction.next,
@@ -227,8 +228,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 PasswordTextField(
                   controller: _confirmPasswordController,
                   focusNode: _confirmPasswordFocusNode,
-                  label: 'Confirm Password',
-                  hint: 'Re-enter your password',
+                  label: 'Confirm Password'.tr(context),
+                  hint: 'Re-enter your password'.tr(context),
                   validator: (value) => Validators.confirmPassword(_passwordController.text)(value),
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _handleRegister(),
@@ -243,7 +244,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 // Register button
                 PrimaryButton(
-                  text: 'Create Account',
+                  text: 'Create Account'.tr(context),
                   onPressed: _handleRegister,
                   isLoading: isLoading,
                 ),
@@ -269,14 +270,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Join AdminX',
+          'Join AdminX'.tr(context),
           style: AppTypography.headlineMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Create your supervisor account to start managing projects',
+          'Create your supervisor account to start managing projects'.tr(context),
           style: AppTypography.bodyLarge.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -310,21 +311,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             onTap: () => setState(() => _agreedToTerms = !_agreedToTerms),
             child: Text.rich(
               TextSpan(
-                text: 'I agree to the ',
+                text: 'I agree to the '.tr(context),
                 style: AppTypography.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 children: [
                   TextSpan(
-                    text: 'Terms of Service',
+                    text: 'Terms of Service'.tr(context),
                     style: TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const TextSpan(text: ' and '),
+                  TextSpan(text: ' ${'and'.tr(context)} '),
                   TextSpan(
-                    text: 'Privacy Policy',
+                    text: 'Privacy Policy'.tr(context),
                     style: TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
@@ -348,13 +349,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          'Already have an account? ',
+          'Already have an account? '.tr(context),
           style: AppTypography.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         TertiaryButton(
-          text: 'Log In',
+          text: 'Log In'.tr(context),
           onPressed: () => context.go('/login'),
         ),
       ],

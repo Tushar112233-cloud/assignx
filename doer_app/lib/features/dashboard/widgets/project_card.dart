@@ -53,6 +53,7 @@ import '../../../data/models/doer_project_model.dart';
 import '../../../shared/widgets/app_button.dart';
 import 'urgency_badge.dart';
 import 'deadline_countdown.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Project card widget for dashboard lists.
 ///
@@ -114,7 +115,7 @@ class ProjectCard extends StatelessWidget {
                     color: AppColors.error.withValues(alpha: 0.1),
                     borderRadius: AppSpacing.borderRadiusSm,
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(
                         Icons.warning_amber_rounded,
@@ -124,7 +125,7 @@ class ProjectCard extends StatelessWidget {
                       SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'Revision Requested',
+                          'Revision Requested'.tr(context),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -173,7 +174,7 @@ class ProjectCard extends StatelessWidget {
                   borderRadius: AppSpacing.borderRadiusSm,
                 ),
                 child: Text(
-                  project.subject ?? 'General',
+                  project.subject ?? 'General'.tr(context),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -217,7 +218,7 @@ class ProjectCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${project.wordCount} words',
+                      '${project.wordCount} ${'words'.tr(context)}',
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -259,7 +260,7 @@ class ProjectCard extends StatelessWidget {
               if (showAcceptButton && onAccept != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
-                  text: 'Accept Task',
+                  text: 'Accept Task'.tr(context),
                   onPressed: onAccept,
                   isFullWidth: true,
                   size: AppButtonSize.medium,
@@ -404,7 +405,7 @@ class CompactProjectCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          project.subject ?? 'General',
+                          project.subject ?? 'General'.tr(context),
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,

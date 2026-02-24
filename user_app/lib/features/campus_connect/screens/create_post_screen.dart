@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/marketplace_model.dart';
 import '../../../providers/marketplace_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -156,13 +157,13 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Create Post',
+                        'Create Post'.tr(context),
                         style: AppTextStyles.labelLarge.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
-                        'Step ${_currentStep + 1} of 3',
+                        '${'Step'.tr(context)} ${_currentStep + 1} ${'of'.tr(context)} 3',
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -172,7 +173,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                 ),
                 if (_currentStep == 2)
                   GlassButton(
-                    label: 'Post',
+                    label: 'Post'.tr(context),
                     onPressed: _isSubmitting ? null : _handleSubmit,
                     isLoading: _isSubmitting,
                     blur: 10,
@@ -225,12 +226,12 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         children: [
           const SizedBox(height: 16),
           Text(
-            'What would you like to post?',
+            'What would you like to post?'.tr(context),
             style: AppTextStyles.headingSmall,
           ),
           const SizedBox(height: 8),
           Text(
-            'Choose a category for your post',
+            'Choose a category for your post'.tr(context),
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -289,7 +290,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              category.label,
+                              category.label.tr(context),
                               style: AppTextStyles.labelLarge.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: isSelected ? AppColors.primary : null,
@@ -297,7 +298,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              category.description,
+                              category.description.tr(context),
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: AppColors.textSecondary,
                               ),
@@ -337,7 +338,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         children: [
           const SizedBox(height: 16),
           Text(
-            'Tell us more',
+            'Tell us more'.tr(context),
             style: AppTextStyles.headingSmall,
           ),
           const SizedBox(height: 24),
@@ -345,15 +346,15 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           // Title
           _buildGlassTextField(
             controller: _titleController,
-            label: 'Title',
+            label: 'Title'.tr(context),
             hint: _getTitleHint(),
             icon: Icons.title,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter a title';
+                return 'Please enter a title'; // Translated by form
               }
               if (value.length < 5) {
-                return 'Title must be at least 5 characters';
+                return 'Title must be at least 5 characters'; // Translated by form
               }
               return null;
             },
@@ -363,8 +364,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           // Description
           _buildGlassTextField(
             controller: _descriptionController,
-            label: 'Description',
-            hint: 'Tell everyone more about your post...',
+            label: 'Description'.tr(context),
+            hint: 'Tell everyone more about your post...'.tr(context),
             icon: Icons.description_outlined,
             maxLines: 4,
           ),
@@ -385,8 +386,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           // Location
           _buildGlassTextField(
             controller: _locationController,
-            label: 'Location',
-            hint: 'e.g., North Campus, Delhi',
+            label: 'Location'.tr(context),
+            hint: 'e.g., North Campus, Delhi'.tr(context),
             icon: Icons.location_on_outlined,
           ),
           const SizedBox(height: 16),
@@ -394,8 +395,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           // Tags
           _buildGlassTextField(
             controller: _tagsController,
-            label: 'Tags (optional)',
-            hint: 'Add tags to help others find your post',
+            label: 'Tags (optional)'.tr(context),
+            hint: 'Add tags to help others find your post'.tr(context),
             icon: Icons.tag,
             onSubmitted: (value) {
               if (value.isNotEmpty && _tags.length < 5) {
@@ -468,7 +469,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Event Details',
+                'Event Details'.tr(context),
                 style: AppTextStyles.labelMedium.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -508,7 +509,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                   Text(
                     _eventDate != null
                         ? '${_eventDate!.day}/${_eventDate!.month}/${_eventDate!.year}'
-                        : 'Select date',
+                        : 'Select date'.tr(context),
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: _eventDate != null
                           ? AppColors.textPrimary
@@ -550,7 +551,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                   Text(
                     _eventTime != null
                         ? _eventTime!.format(context)
-                        : 'Select time',
+                        : 'Select time'.tr(context),
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: _eventTime != null
                           ? AppColors.textPrimary
@@ -583,7 +584,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Rent Details',
+                'Rent Details'.tr(context),
                 style: AppTextStyles.labelMedium.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -596,7 +597,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             keyboardType: TextInputType.number,
             style: AppTextStyles.bodyMedium,
             decoration: InputDecoration(
-              hintText: 'Monthly rent',
+              hintText: 'Monthly rent'.tr(context),
               prefixText: '\u20B9 ',
               filled: true,
               fillColor: AppColors.surface,
@@ -624,12 +625,12 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         children: [
           const SizedBox(height: 16),
           Text(
-            'Add photos',
+            'Add photos'.tr(context),
             style: AppTextStyles.headingSmall,
           ),
           const SizedBox(height: 8),
           Text(
-            'Upload up to 5 photos to make your post stand out',
+            'Upload up to 5 photos to make your post stand out'.tr(context),
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -675,7 +676,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Community Guidelines',
+                      'Community Guidelines'.tr(context),
                       style: AppTextStyles.labelMedium.copyWith(
                         fontWeight: FontWeight.w600,
                         color: AppColors.info,
@@ -684,10 +685,10 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _buildGuidelineItem('Be respectful and considerate'),
-                _buildGuidelineItem('No spam or misleading content'),
-                _buildGuidelineItem('Post only relevant content'),
-                _buildGuidelineItem('Follow campus rules and policies'),
+                _buildGuidelineItem('Be respectful and considerate'.tr(context)),
+                _buildGuidelineItem('No spam or misleading content'.tr(context)),
+                _buildGuidelineItem('Post only relevant content'.tr(context)),
+                _buildGuidelineItem('Follow campus rules and policies'.tr(context)),
               ],
             ),
           ),
@@ -767,7 +768,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Add Photo',
+            'Add Photo'.tr(context),
             style: AppTextStyles.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -860,7 +861,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           if (_currentStep > 0)
             Expanded(
               child: GlassButton(
-                label: 'Back',
+                label: 'Back'.tr(context),
                 icon: Icons.arrow_back,
                 onPressed: () {
                   setState(() => _currentStep--);
@@ -880,7 +881,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           if (_currentStep > 0) const SizedBox(width: 12),
           Expanded(
             child: GlassButton(
-              label: _currentStep < 2 ? 'Continue' : 'Post',
+              label: _currentStep < 2 ? 'Continue'.tr(context) : 'Post'.tr(context),
               icon: _currentStep < 2 ? Icons.arrow_forward : Icons.check,
               onPressed: _currentStep < 2 ? _handleNext : _handleSubmit,
               isLoading: _isSubmitting,
@@ -926,7 +927,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                   const SizedBox(height: 20),
                   ListTile(
                     leading: const Icon(Icons.camera_alt),
-                    title: const Text('Take Photo'),
+                    title: Text('Take Photo'.tr(context)),
                     onTap: () {
                       Navigator.pop(context);
                       _pickImage(ImageSource.camera);
@@ -934,7 +935,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                   ),
                   ListTile(
                     leading: const Icon(Icons.photo_library),
-                    title: const Text('Choose from Gallery'),
+                    title: Text('Choose from Gallery'.tr(context)),
                     onTap: () {
                       Navigator.pop(context);
                       _pickImage(ImageSource.gallery);
@@ -953,7 +954,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   Future<void> _pickImage(ImageSource source) async {
     if (_selectedImages.length >= 5) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Maximum 5 images allowed')),
+        SnackBar(content: Text('Maximum 5 images allowed'.tr(context))),
       );
       return;
     }
@@ -1015,7 +1016,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Post created successfully!'),
+            content: Text('Post created successfully!'.tr(context)),
             backgroundColor: AppColors.success,
           ),
         );
@@ -1026,7 +1027,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to create post: $e'),
+            content: Text('${'Failed to create post'.tr(context)}: $e'),
             backgroundColor: AppColors.error,
           ),
         );

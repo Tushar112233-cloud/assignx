@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../providers/statistics_provider.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Ranked list of top subjects by project count.
 class TopSubjectsRanking extends ConsumerWidget {
@@ -45,12 +46,12 @@ class TopSubjectsRanking extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          const Row(
+          Row(
             children: [
               Icon(Icons.emoji_events_rounded, size: 18, color: Color(0xFFFFD700)),
               SizedBox(width: 8),
               Text(
-                'Top Subjects',
+                'Top Subjects'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -62,11 +63,11 @@ class TopSubjectsRanking extends ConsumerWidget {
           const SizedBox(height: 16),
 
           if (subjects.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 20),
               child: Center(
                 child: Text(
-                  'Complete projects to see rankings',
+                  'Complete projects to see rankings'.tr(context),
                   style: TextStyle(
                     fontSize: 13,
                     color: AppColors.textTertiary,

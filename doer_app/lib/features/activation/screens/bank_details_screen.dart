@@ -12,6 +12,7 @@ import '../../../providers/auth_provider.dart' show BankDetailsFormData;
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../widgets/bank_verification_badge.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Bank details screen for completing activation.
 ///
@@ -164,8 +165,8 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
 
     if (_accountNumberController.text != _confirmAccountNumberController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account numbers do not match'),
+        SnackBar(
+          content: Text('Account numbers do not match'.tr(context)),
           backgroundColor: AppColors.error,
         ),
       );
@@ -193,8 +194,8 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
         _showSuccessDialog();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to save bank details. Please try again.'),
+          SnackBar(
+            content: Text('Failed to save bank details. Please try again.'.tr(context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -230,8 +231,8 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            const Text(
-              'Activation Complete!',
+            Text(
+              'Activation Complete!'.tr(context),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -239,8 +240,8 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'Congratulations! You can now access your dashboard and start accepting projects.',
+            Text(
+              'Congratulations! You can now access your dashboard and start accepting projects.'.tr(context),
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -282,8 +283,8 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
             icon: const Icon(Icons.arrow_back),
             onPressed: () => context.go(RouteNames.activationGate),
           ),
-          title: const Text(
-            'Bank Details',
+          title: Text(
+            'Bank Details'.tr(context),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -302,7 +303,7 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
                   color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: AppSpacing.borderRadiusMd,
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(
                       Icons.check_circle,
@@ -311,7 +312,7 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
                     SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Bank details submitted successfully!',
+                        'Bank details submitted successfully!'.tr(context),
                         style: TextStyle(
                           color: AppColors.success,
                           fontWeight: FontWeight.w500,
@@ -351,8 +352,8 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go(RouteNames.activationGate),
         ),
-        title: const Text(
-          'Bank Details',
+        title: Text(
+          'Bank Details'.tr(context),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -368,8 +369,8 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              const Text(
-                'Add Bank Account',
+              Text(
+                'Add Bank Account'.tr(context),
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -377,8 +378,8 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              const Text(
-                'Enter your bank details to receive payments for completed projects.',
+              Text(
+                'Enter your bank details to receive payments for completed projects.'.tr(context),
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
@@ -397,7 +398,7 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
                     color: AppColors.info.withValues(alpha: 0.3),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(
                       Icons.security,
@@ -407,7 +408,7 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
                     SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Your bank details are encrypted and securely stored.',
+                        'Your bank details are encrypted and securely stored.'.tr(context),
                         style: TextStyle(
                           fontSize: 13,
                           color: AppColors.info,
@@ -538,7 +539,7 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
                     color: AppColors.warning.withValues(alpha: 0.3),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
@@ -549,7 +550,7 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
                     SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Please ensure all details are accurate. Incorrect information may delay your payments.',
+                        'Please ensure all details are accurate. Incorrect information may delay your payments.'.tr(context),
                         style: TextStyle(
                           fontSize: 13,
                           color: AppColors.textPrimary,

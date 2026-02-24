@@ -8,6 +8,7 @@ import '../../../core/router/route_names.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Forgot Password screen for initiating password reset.
 ///
@@ -101,7 +102,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: ${e.toString()}'),
+          content: Text('Error: ${e.toString()}'.tr(context)),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
@@ -120,8 +121,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => context.go(RouteNames.login),
         ),
-        title: const Text(
-          'Reset Password',
+        title: Text(
+          'Reset Password'.tr(context),
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18,
@@ -138,8 +139,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               const SizedBox(height: AppSpacing.xl),
 
               // Header
-              const Text(
-                'Forgot your password?',
+              Text(
+                'Forgot your password?'.tr(context),
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -147,8 +148,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              const Text(
-                'Enter your email address and we\'ll send you a link to reset your password.',
+              Text(
+                'Enter your email address and we\'ll send you a link to reset your password.'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   color: AppColors.textSecondary,
@@ -192,8 +193,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             color: AppColors.success,
           ),
           const SizedBox(height: AppSpacing.lg),
-          const Text(
-            'Check your email',
+          Text(
+            'Check your email'.tr(context),
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -203,7 +204,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'We\'ve sent a password reset link to\n${_emailController.text}',
+            'We\'ve sent a password reset link to\n${_emailController.text}'.tr(context),
             style: const TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
@@ -212,8 +213,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),
-          const Text(
-            'Didn\'t receive the email? Check your spam folder or try again.',
+          Text(
+            'Didn\'t receive the email? Check your spam folder or try again.'.tr(context),
             style: TextStyle(
               fontSize: 13,
               color: AppColors.textTertiary,
@@ -246,8 +247,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             keyboardType: TextInputType.emailAddress,
             enabled: !_isLoading,
             decoration: InputDecoration(
-              labelText: 'Email',
-              hintText: 'Enter your email address',
+              labelText: 'Email'.tr(context),
+              hintText: 'Enter your email address'.tr(context),
               prefixIcon: const Icon(Icons.email_outlined),
               filled: true,
               fillColor: AppColors.surface,
@@ -296,8 +297,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Center(
             child: TextButton(
               onPressed: _isLoading ? null : () => context.go(RouteNames.login),
-              child: const Text(
-                'Back to Login',
+              child: Text(
+                'Back to Login'.tr(context),
                 style: TextStyle(
                   color: AppColors.accent,
                   fontWeight: FontWeight.w500,

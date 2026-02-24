@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/translation/translation_extensions.dart';
 
 /// Launches WhatsApp support with the given phone number and message.
 ///
@@ -25,8 +26,8 @@ Future<void> launchWhatsAppSupport(
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open WhatsApp. Please install WhatsApp.'),
+          SnackBar(
+            content: Text('Could not open WhatsApp. Please install WhatsApp.'.tr(context)),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -36,8 +37,8 @@ Future<void> launchWhatsAppSupport(
     debugPrint('Failed to launch WhatsApp: $e');
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to open support. Please try again.'),
+        SnackBar(
+          content: Text('Failed to open support. Please try again.'.tr(context)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -73,7 +74,7 @@ class SupportFAB extends StatelessWidget {
       foregroundColor: Colors.white,
       icon: const Icon(Icons.support_agent_outlined),
       label: Text(
-        'Get Support',
+        'Get Support'.tr(context),
         style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w600),
       ),
     );
@@ -103,7 +104,7 @@ class SupportButton extends StatelessWidget {
         message: message,
       ),
       icon: const Icon(Icons.support_agent_outlined, size: 20),
-      label: const Text('Need Help?'),
+      label: Text('Need Help?'.tr(context)),
       style: TextButton.styleFrom(
         foregroundColor: AppColors.success,
       ),

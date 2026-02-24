@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/external_actions_service.dart';
 import '../../../../core/services/snackbar_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/message_input.dart';
@@ -88,7 +89,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              state.room?.displayTitle ?? 'Chat',
+              state.room?.displayTitle ?? 'Chat'.tr(context),
               style: const TextStyle(fontSize: 16),
             ),
             if (state.room?.projectNumber != null)
@@ -119,18 +120,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                       const SizedBox(width: 12),
                       Text(state.room!.isSuspended
-                          ? 'Unsuspend Chat'
-                          : 'Suspend Chat'),
+                          ? 'Unsuspend Chat'.tr(context)
+                          : 'Suspend Chat'.tr(context)),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'info',
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, size: 20),
-                      SizedBox(width: 12),
-                      Text('Chat Info'),
+                      const Icon(Icons.info_outline, size: 20),
+                      const SizedBox(width: 12),
+                      Text('Chat Info'.tr(context)),
                     ],
                   ),
                 ),
@@ -197,7 +198,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             enabled: !state.isSuspended,
             isSending: state.isSending,
             disabledMessage:
-                state.isSuspended ? 'Chat is suspended' : null,
+                state.isSuspended ? 'Chat is suspended'.tr(context) : null,
           ),
         ],
       ),
@@ -210,22 +211,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Suspend Chat'),
-            content: const Text(
-              'Are you sure you want to suspend this chat? '
-              'Participants will not be able to send messages.',
+            title: Text('Suspend Chat'.tr(context)),
+            content: Text(
+              'Are you sure you want to suspend this chat? Participants will not be able to send messages.'.tr(context),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
+                child: Text('Cancel'.tr(context)),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.error,
                 ),
-                child: const Text('Suspend'),
+                child: Text('Suspend'.tr(context)),
               ),
             ],
           ),
@@ -238,8 +238,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
           if (success && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Chat suspended'),
+              SnackBar(
+                content: Text('Chat suspended'.tr(context)),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -252,8 +252,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
         if (success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Chat unsuspended'),
+            SnackBar(
+              content: Text('Chat unsuspended'.tr(context)),
               backgroundColor: Colors.green,
             ),
           );
@@ -282,13 +282,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
                 child: const Icon(Icons.image, color: Colors.blue),
               ),
-              title: const Text('Photo'),
+              title: Text('Photo'.tr(context)),
               onTap: () async {
                 Navigator.pop(context);
                 final picker = ImagePicker();
                 final image = await picker.pickImage(source: ImageSource.gallery);
                 if (image != null) {
-                  ref.read(snackbarServiceProvider).showInfo('Uploading image...');
+                  ref.read(snackbarServiceProvider).showInfo('Uploading image...'.tr(context));
                   // Image upload would be handled by chat provider
                   ref.read(activeChatProvider.notifier).sendAttachment(image.path, 'image');
                 }
@@ -303,14 +303,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
                 child: const Icon(Icons.insert_drive_file, color: Colors.purple),
               ),
-              title: const Text('Document'),
+              title: Text('Document'.tr(context)),
               onTap: () async {
                 Navigator.pop(context);
                 final files = await ref.read(externalActionsServiceProvider).pickFiles();
                 if (files != null && files.isNotEmpty) {
                   final file = files.first;
                   if (file.path != null) {
-                    ref.read(snackbarServiceProvider).showInfo('Uploading document...');
+                    ref.read(snackbarServiceProvider).showInfo('Uploading document...'.tr(context));
                     ref.read(activeChatProvider.notifier).sendAttachment(file.path!, 'file');
                   }
                 }
@@ -335,7 +335,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Chat Information',
+              'Chat Information'.tr(context),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -343,23 +343,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             const SizedBox(height: 20),
             _InfoRow(
               icon: Icons.folder_outlined,
-              label: 'Project',
-              value: room.projectTitle ?? 'Unknown',
+              label: 'Project'.tr(context),
+              value: room.projectTitle ?? 'Unknown'.tr(context),
             ),
             _InfoRow(
               icon: Icons.tag,
-              label: 'Project Number',
+              label: 'Project Number'.tr(context),
               value: room.projectNumber ?? 'N/A',
             ),
             _InfoRow(
               icon: Icons.group_outlined,
-              label: 'Type',
+              label: 'Type'.tr(context),
               value: room.type.displayName,
             ),
             _InfoRow(
               icon: Icons.people_outline,
-              label: 'Participants',
-              value: '${room.participants?.length ?? 0} people',
+              label: 'Participants'.tr(context),
+              value: '${room.participants?.length ?? 0} ${'people'.tr(context)}',
             ),
             if (room.isSuspended)
               Container(
@@ -377,8 +377,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Chat Suspended',
+                          Text(
+                            'Chat Suspended'.tr(context),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.orange,
@@ -487,14 +487,14 @@ class _EmptyChat extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No messages yet',
+              'No messages yet'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Start the conversation!',
+              'Start the conversation!'.tr(context),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),

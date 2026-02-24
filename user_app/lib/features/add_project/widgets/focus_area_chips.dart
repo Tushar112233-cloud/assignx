@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Focus areas for proofreading/editing.
 enum FocusArea {
@@ -41,7 +42,7 @@ class FocusAreaChips extends StatelessWidget {
         Row(
           children: [
             Text(
-              'Focus Areas',
+              'Focus Areas'.tr(context),
               style: AppTextStyles.labelMedium,
             ),
             const SizedBox(width: 8),
@@ -52,7 +53,7 @@ class FocusAreaChips extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                '${selectedAreas.length} selected',
+                '${selectedAreas.length} ${'selected'.tr(context)}',
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w500,
@@ -63,7 +64,7 @@ class FocusAreaChips extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'Select areas you want us to focus on',
+          'Select areas you want us to focus on'.tr(context),
           style: AppTextStyles.caption.copyWith(
             color: AppColors.textTertiary,
           ),
@@ -110,7 +111,7 @@ class FocusAreaChips extends StatelessWidget {
             GestureDetector(
               onTap: () => onChanged(FocusArea.values.toSet()),
               child: Text(
-                'Select All',
+                'Select All'.tr(context),
                 style: AppTextStyles.labelSmall.copyWith(
                   color: AppColors.primary,
                 ),
@@ -120,7 +121,7 @@ class FocusAreaChips extends StatelessWidget {
             GestureDetector(
               onTap: () => onChanged({}),
               child: Text(
-                'Clear',
+                'Clear'.tr(context),
                 style: AppTextStyles.labelSmall.copyWith(
                   color: AppColors.textTertiary,
                 ),

@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../providers/resources_provider.dart';
 import '../../dashboard/widgets/app_header.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Resources hub screen - central navigation for all resource tools.
 ///
@@ -69,8 +70,8 @@ class ResourcesHubScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Main tools section
-                  const Text(
-                    'Writing Tools',
+                  Text(
+                    'Writing Tools'.tr(context),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -112,8 +113,8 @@ class ResourcesHubScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Learning section
-                  const Text(
-                    'Learning & Development',
+                  Text(
+                    'Learning & Development'.tr(context),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -135,8 +136,8 @@ class ResourcesHubScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Additional resources
-                  const Text(
-                    'Additional Resources',
+                  Text(
+                    'Additional Resources'.tr(context),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

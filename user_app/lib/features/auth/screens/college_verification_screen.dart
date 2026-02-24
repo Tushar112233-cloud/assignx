@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Supported college email domain suffixes.
@@ -315,7 +316,7 @@ class _CollegeVerificationScreenState
           ),
           const SizedBox(width: 16),
           Text(
-            'College Verification',
+            'College Verification'.tr(context),
             style: AppTextStyles.headingSmall,
           ),
         ],
@@ -356,7 +357,7 @@ class _CollegeVerificationScreenState
 
         // Title
         Text(
-          'Verify Your College Email',
+          'Verify Your College Email'.tr(context),
           style: AppTextStyles.headingMedium.copyWith(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
@@ -367,7 +368,7 @@ class _CollegeVerificationScreenState
 
         // Subtitle
         Text(
-          'Confirm your student status to unlock exclusive benefits, discounts, and Campus Connect access.',
+          'Confirm your student status to unlock exclusive benefits, discounts, and Campus Connect access.'.tr(context),
           style: AppTextStyles.bodySmall.copyWith(
             color: AppColors.textSecondary,
             height: 1.5,
@@ -418,7 +419,7 @@ class _CollegeVerificationScreenState
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'College Email',
+                    'College Email'.tr(context),
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -483,7 +484,7 @@ class _CollegeVerificationScreenState
 
               // Supported domains chips
               Text(
-                'Supported domains:',
+                'Supported domains:'.tr(context),
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.textTertiary,
                 ),
@@ -578,7 +579,7 @@ class _CollegeVerificationScreenState
                             const Icon(Icons.send_rounded, size: 20),
                             const SizedBox(width: 8),
                             Text(
-                              'Send Verification Email',
+                              'Send Verification Email'.tr(context),
                               style: AppTextStyles.buttonMedium.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -634,7 +635,7 @@ class _CollegeVerificationScreenState
 
               // Confirmation text
               Text(
-                'Check Your Inbox',
+                'Check Your Inbox'.tr(context),
                 style: AppTextStyles.headingSmall.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
@@ -649,8 +650,8 @@ class _CollegeVerificationScreenState
                     height: 1.5,
                   ),
                   children: [
-                    const TextSpan(
-                      text: 'We sent a verification code to\n',
+                    TextSpan(
+                      text: '${'We sent a verification code to'.tr(context)}\n',
                     ),
                     TextSpan(
                       text: _emailController.text.trim().toLowerCase(),
@@ -822,7 +823,7 @@ class _CollegeVerificationScreenState
                           ),
                         )
                       : Text(
-                          'Verify',
+                          'Verify'.tr(context),
                           style: AppTextStyles.buttonMedium.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -842,8 +843,8 @@ class _CollegeVerificationScreenState
                         : _sendVerificationEmail,
                     child: Text(
                       _resendCountdown > 0
-                          ? 'Resend in ${_resendCountdown}s'
-                          : 'Resend Code',
+                          ? '${'Resend in'.tr(context)} ${_resendCountdown}s'
+                          : 'Resend Code'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         color: _resendCountdown > 0
                             ? AppColors.textTertiary
@@ -857,7 +858,7 @@ class _CollegeVerificationScreenState
                   GestureDetector(
                     onTap: _resetToEmailInput,
                     child: Text(
-                      'Change Email',
+                      'Change Email'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
@@ -940,7 +941,7 @@ class _CollegeVerificationScreenState
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Verification Benefits',
+                    'Verification Benefits'.tr(context),
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -974,14 +975,14 @@ class _CollegeVerificationScreenState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              benefit.title,
+                              benefit.title.tr(context),
                               style: AppTextStyles.labelMedium.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              benefit.subtitle,
+                              benefit.subtitle.tr(context),
                               style: AppTextStyles.caption.copyWith(
                                 color: AppColors.textSecondary,
                                 fontSize: 11,

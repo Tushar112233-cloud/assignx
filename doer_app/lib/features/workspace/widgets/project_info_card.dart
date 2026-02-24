@@ -44,6 +44,7 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/doer_project_model.dart';
 import '../../dashboard/widgets/deadline_countdown.dart';
 import '../../dashboard/widgets/urgency_badge.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Expandable project information card.
 ///
@@ -167,8 +168,8 @@ class ProjectInfoCard extends StatelessWidget {
                 children: [
                   // Description
                   if (project.description != null && project.description!.isNotEmpty) ...[
-                    const Text(
-                      'Description',
+                    Text(
+                      'Description'.tr(context),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,

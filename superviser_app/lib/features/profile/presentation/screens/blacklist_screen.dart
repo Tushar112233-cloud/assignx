@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/profile_model.dart';
 import '../providers/profile_provider.dart';
 
@@ -14,7 +15,7 @@ class BlacklistScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Doer Blacklist'),
+        title: Text('Doer Blacklist'.tr(context)),
       ),
       body: blacklistState.isLoading && blacklistState.blacklistedDoers.isEmpty
           ? const Center(child: CircularProgressIndicator())
@@ -42,15 +43,15 @@ class BlacklistScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove from Blacklist'),
+        title: Text('Remove from Blacklist'.tr(context)),
         content: Text(
-          'Are you sure you want to remove ${doer.name} from your blacklist? '
-          'This will allow them to be assigned to your projects again.',
+          '${'Are you sure you want to remove'.tr(context)} ${doer.name} ${'from your blacklist?'.tr(context)} '
+          '${'This will allow them to be assigned to your projects again.'.tr(context)}',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           FilledButton(
             onPressed: () async {
@@ -62,13 +63,13 @@ class BlacklistScreen extends ConsumerWidget {
               if (context.mounted && success) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('${doer.name} removed from blacklist'),
+                    content: Text('${doer.name} ${'removed from blacklist'.tr(context)}'),
                     backgroundColor: Colors.green,
                   ),
                 );
               }
             },
-            child: const Text('Remove'),
+            child: Text('Remove'.tr(context)),
           ),
         ],
       ),
@@ -152,7 +153,7 @@ class _BlacklistCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${doer.completedProjects} projects',
+                            '${doer.completedProjects} ${'projects'.tr(context)}',
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: AppColors.textSecondaryLight,
@@ -168,7 +169,7 @@ class _BlacklistCard extends StatelessWidget {
                   onPressed: onRemove,
                   icon: const Icon(Icons.remove_circle_outline),
                   color: AppColors.error,
-                  tooltip: 'Remove from blacklist',
+                  tooltip: 'Remove from blacklist'.tr(context),
                 ),
               ],
             ),
@@ -197,7 +198,7 @@ class _BlacklistCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Reason for blacklisting',
+                            'Reason for blacklisting'.tr(context),
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: AppColors.error,
@@ -233,7 +234,7 @@ class _BlacklistCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Blacklisted on ${_formatDate(doer.blacklistedAt!)}',
+                    '${'Blacklisted on'.tr(context)} ${_formatDate(doer.blacklistedAt!)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondaryLight,
                           fontSize: 10,
@@ -272,14 +273,14 @@ class _EmptyBlacklist extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No blacklisted doers',
+              'No blacklisted doers'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Doers you flag will appear here\nYou can blacklist doers from project details',
+              'Doers you flag will appear here\nYou can blacklist doers from project details'.tr(context),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),

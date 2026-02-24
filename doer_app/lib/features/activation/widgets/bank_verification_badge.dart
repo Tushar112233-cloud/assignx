@@ -51,6 +51,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Bank account verification status badge.
 ///
@@ -227,7 +228,7 @@ class BankAccountCard extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: onEdit,
                 icon: const Icon(Icons.edit, size: 18),
-                label: const Text('Edit Details'),
+                label: Text('Edit Details'.tr(context)),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   side: const BorderSide(color: AppColors.primary),
@@ -300,7 +301,7 @@ class IfscValidationResult extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Row(
+      return Row(
         children: [
           SizedBox(
             width: 16,
@@ -312,7 +313,7 @@ class IfscValidationResult extends StatelessWidget {
           ),
           SizedBox(width: 8),
           Text(
-            'Verifying IFSC code...',
+            'Verifying IFSC code...'.tr(context),
             style: TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary,

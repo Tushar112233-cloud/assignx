@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../dashboard/data/models/doer_model.dart';
 import '../providers/doers_provider.dart';
 
@@ -20,14 +21,14 @@ class DoerDetailScreen extends ConsumerWidget {
 
     if (doer == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Doer Profile')),
-        body: const Center(
+        appBar: AppBar(title: Text('Doer Profile'.tr(context))),
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.person_off, size: 64, color: AppColors.textSecondaryLight),
-              SizedBox(height: 16),
-              Text('Doer not found'),
+              const Icon(Icons.person_off, size: 64, color: AppColors.textSecondaryLight),
+              const SizedBox(height: 16),
+              Text('Doer not found'.tr(context)),
             ],
           ),
         ),
@@ -36,12 +37,12 @@ class DoerDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Doer Profile'),
+        title: Text('Doer Profile'.tr(context)),
         actions: [
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline),
             onPressed: () {},
-            tooltip: 'Message',
+            tooltip: 'Message'.tr(context),
           ),
         ],
       ),
@@ -122,7 +123,7 @@ class DoerDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '(${doer.totalReviews} reviews)',
+                        '(${doer.totalReviews} ${'reviews'.tr(context)})',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.textSecondaryLight,
                             ),
@@ -137,7 +138,7 @@ class DoerDetailScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          doer.isAvailable ? 'Available' : 'Busy',
+                          doer.isAvailable ? 'Available'.tr(context) : 'Busy'.tr(context),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -158,21 +159,21 @@ class DoerDetailScreen extends ConsumerWidget {
                 children: [
                   _StatCard(
                     icon: Icons.folder_copy,
-                    label: 'Completed',
+                    label: 'Completed'.tr(context),
                     value: doer.completedProjects.toString(),
                     color: AppColors.primary,
                   ),
                   const SizedBox(width: 8),
                   _StatCard(
                     icon: Icons.check_circle,
-                    label: 'Success Rate',
+                    label: 'Success Rate'.tr(context),
                     value: '${doer.successRate.toStringAsFixed(0)}%',
                     color: AppColors.success,
                   ),
                   const SizedBox(width: 8),
                   _StatCard(
                     icon: Icons.timer,
-                    label: 'On Time',
+                    label: 'On Time'.tr(context),
                     value: '${doer.onTimeDeliveryRate.toStringAsFixed(0)}%',
                     color: AppColors.accent,
                   ),
@@ -182,7 +183,7 @@ class DoerDetailScreen extends ConsumerWidget {
 
             // Details section
             _DetailSection(
-              title: 'About',
+              title: 'About'.tr(context),
               children: [
                 if (doer.bio != null && doer.bio!.isNotEmpty)
                   Padding(
@@ -194,16 +195,16 @@ class DoerDetailScreen extends ConsumerWidget {
                           ),
                     ),
                   ),
-                _DetailRow(label: 'Qualification', value: doer.qualificationDisplay),
-                _DetailRow(label: 'Experience', value: doer.experienceLevelDisplay),
-                _DetailRow(label: 'Years of Experience', value: '${doer.yearsOfExperience} years'),
+                _DetailRow(label: 'Qualification'.tr(context), value: doer.qualificationDisplay),
+                _DetailRow(label: 'Experience'.tr(context), value: doer.experienceLevelDisplay),
+                _DetailRow(label: 'Years of Experience'.tr(context), value: '${doer.yearsOfExperience} ${'years'.tr(context)}'),
               ],
             ),
 
             // Expertise section
             if (doer.expertise.isNotEmpty)
               _DetailSection(
-                title: 'Expertise',
+                title: 'Expertise'.tr(context),
                 children: [
                   Wrap(
                     spacing: 8,
@@ -232,7 +233,7 @@ class DoerDetailScreen extends ConsumerWidget {
                     child: FilledButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.assignment_ind, size: 18),
-                      label: const Text('Assign to Project'),
+                      label: Text('Assign to Project'.tr(context)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -240,7 +241,7 @@ class DoerDetailScreen extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                      label: const Text('Send Message'),
+                      label: Text('Send Message'.tr(context)),
                     ),
                   ),
                 ],

@@ -38,6 +38,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Urgency badge widget with fire icon.
 ///
@@ -96,7 +97,7 @@ class UrgencyBadge extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            label ?? 'Urgent',
+            label ?? 'Urgent'.tr(context),
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -135,19 +136,19 @@ class PriorityIndicator extends StatelessWidget {
     switch (priority) {
       case 4:
         color = AppColors.urgent;
-        label = 'Critical';
+        label = 'Critical'.tr(context);
         break;
       case 3:
         color = AppColors.error;
-        label = 'High';
+        label = 'High'.tr(context);
         break;
       case 2:
         color = AppColors.warning;
-        label = 'Medium';
+        label = 'Medium'.tr(context);
         break;
       default:
         color = AppColors.success;
-        label = 'Low';
+        label = 'Low'.tr(context);
     }
 
     return Row(
@@ -205,7 +206,7 @@ class TimeRemainingBadge extends StatelessWidget {
     if (isOverdue) {
       bgColor = AppColors.error.withValues(alpha: 0.1);
       textColor = AppColors.error;
-      text = 'Overdue';
+      text = 'Overdue'.tr(context);
     } else if (isUrgent) {
       bgColor = AppColors.urgentBg;
       textColor = AppColors.urgent;

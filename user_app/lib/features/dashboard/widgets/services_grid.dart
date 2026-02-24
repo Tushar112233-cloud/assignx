@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
 /// Services grid component matching web dashboard.
@@ -69,7 +70,7 @@ class ServicesGrid extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Quick Actions',
+                    'Quick Actions'.tr(context),
                     style: AppTextStyles.headingSmall.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -77,7 +78,7 @@ class ServicesGrid extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Choose what you need help with',
+                    'Choose what you need help with'.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       fontSize: 12,
                       color: AppColors.textTertiary,
@@ -94,8 +95,8 @@ class ServicesGrid extends StatelessWidget {
               Expanded(
                 child: _ServiceCard(
                   icon: Icons.description_outlined,
-                  title: 'Project Support',
-                  subtitle: 'Get expert help with your projects',
+                  title: 'Project Support'.tr(context),
+                  subtitle: 'Get expert help with your projects'.tr(context),
                   color: AppColors.primary,
                   onTap: onNewProject,
                   animationDelay: 0,
@@ -105,8 +106,8 @@ class ServicesGrid extends StatelessWidget {
               Expanded(
                 child: _ServiceCard(
                   icon: Icons.search_outlined,
-                  title: 'AI/Plag Report',
-                  subtitle: 'Check originality & AI detection',
+                  title: 'AI/Plag Report'.tr(context),
+                  subtitle: 'Check originality & AI detection'.tr(context),
                   color: AppColors.accent,
                   onTap: onAiPlagReport,
                   animationDelay: 50,
@@ -120,10 +121,10 @@ class ServicesGrid extends StatelessWidget {
               Expanded(
                 child: _ServiceCard(
                   icon: Icons.medical_services_outlined,
-                  title: 'Consult Doctor',
-                  subtitle: 'Medical consultation service',
+                  title: 'Consult Doctor'.tr(context),
+                  subtitle: 'Medical consultation service'.tr(context),
                   color: const Color(0xFF16A34A), // Emerald
-                  badge: 'Coming Soon',
+                  badge: 'Coming Soon'.tr(context),
                   isDisabled: true,
                   onTap: null,
                   animationDelay: 100,
@@ -133,10 +134,10 @@ class ServicesGrid extends StatelessWidget {
               Expanded(
                 child: _ServiceCard(
                   icon: Icons.menu_book_outlined,
-                  title: 'Ref. Generator',
-                  subtitle: 'Generate citations for free',
+                  title: 'Ref. Generator'.tr(context),
+                  subtitle: 'Generate citations for free'.tr(context),
                   color: const Color(0xFFB45309), // Amber-800
-                  badge: 'Free',
+                  badge: 'Free'.tr(context),
                   onTap: onRefGenerator,
                   animationDelay: 150,
                 ),
