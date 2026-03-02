@@ -47,7 +47,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { APP_NAME } from "@/lib/constants"
 import { cn } from "@/lib/utils"
-import { createClient } from "@/lib/supabase/client"
 
 const mainNavItems = [
   {

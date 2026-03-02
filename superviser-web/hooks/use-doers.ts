@@ -1,13 +1,15 @@
 /**
  * @fileoverview Custom hooks for doer/expert data management.
+ * Uses Express API instead of Supabase.
  * @module hooks/use-doers
  */
 
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { createClient, getAuthUser } from "@/lib/supabase/client"
-import type { Doer, DoerWithProfile, Subject } from "@/types/database"
+import { apiFetch } from "@/lib/api/client"
+import { getStoredUser } from "@/lib/api/auth"
+import type { DoerWithProfile, Subject } from "@/types/database"
 
 interface UseDoersOptions {
   subjectId?: string
@@ -33,65 +35,25 @@ export function useDoers(options: UseDoersOptions = {}): UseDoersReturn {
   const [totalCount, setTotalCount] = useState(0)
 
   const fetchDoers = useCallback(async () => {
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
       setError(null)
 
-      // Build the query based on whether we need to filter by subject
-      let query
+      const params = new URLSearchParams()
+      params.set("limit", String(limit))
+      params.set("offset", String(offset))
+      params.set("activated", "true")
 
-      if (subjectId) {
-        // When filtering by subject, use inner join with doer_subjects
-        query = supabase
-          .from("doers")
-          .select(`
-            *,
-            profiles!profile_id (*),
-            doer_subjects!inner (
-              subject_id,
-              subjects (*)
-            )
-          `, { count: "exact" })
-          .eq("is_activated", true)
-          .eq("doer_subjects.subject_id", subjectId)
-          .order("average_rating", { ascending: false, nullsFirst: false })
-          .range(offset, offset + limit - 1)
-      } else {
-        // Without subject filter, use regular query
-        query = supabase
-          .from("doers")
-          .select(`
-            *,
-            profiles!profile_id (*)
-          `, { count: "exact" })
-          .eq("is_activated", true)
-          .order("average_rating", { ascending: false, nullsFirst: false })
-          .range(offset, offset + limit - 1)
-      }
+      if (subjectId) params.set("subjectId", subjectId)
+      if (isAvailable !== undefined) params.set("available", String(isAvailable))
+      if (searchQuery) params.set("search", searchQuery)
 
-      // Filter by availability
-      if (isAvailable !== undefined) {
-        query = query.eq("is_available", isAvailable)
-      }
+      const data = await apiFetch<{ doers: DoerWithProfile[]; total: number }>(
+        `/api/doers?${params.toString()}`
+      )
 
-      const { data, error: queryError, count } = await query
-
-      if (queryError) throw queryError
-
-      // Filter by search query on the client side (for name search)
-      let filteredData = data || []
-      if (searchQuery) {
-        const lowerQuery = searchQuery.toLowerCase()
-        filteredData = filteredData.filter((doer) =>
-          doer.profiles?.full_name?.toLowerCase().includes(lowerQuery) ||
-          doer.profiles?.email?.toLowerCase().includes(lowerQuery)
-        )
-      }
-
-      setDoers(filteredData as DoerWithProfile[])
-      setTotalCount(count || 0)
+      setDoers(data.doers || [])
+      setTotalCount(data.total || 0)
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch doers"))
     } finally {
@@ -131,36 +93,16 @@ export function useDoer(doerId: string): UseDoerReturn {
   const fetchDoer = useCallback(async () => {
     if (!doerId) return
 
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
       setError(null)
 
-      // Fetch doer with profile
-      const { data: doerData, error: doerError } = await supabase
-        .from("doers")
-        .select(`
-          *,
-          profiles!profile_id (*)
-        `)
-        .eq("id", doerId)
-        .single()
+      const data = await apiFetch<{ doer: DoerWithProfile; subjects: Subject[] }>(
+        `/api/doers/${doerId}`
+      )
 
-      if (doerError) throw doerError
-      setDoer(doerData)
-
-      // Fetch doer's subjects
-      const { data: doerSubjects, error: subjectsError } = await supabase
-        .from("doer_subjects")
-        .select(`
-          subjects (*)
-        `)
-        .eq("doer_id", doerId)
-
-      if (!subjectsError && doerSubjects) {
-        setSubjects(doerSubjects.map(ds => ds.subjects).filter(Boolean) as Subject[])
-      }
+      setDoer(data.doer)
+      setSubjects(data.subjects || [])
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch doer"))
     } finally {
@@ -171,56 +113,21 @@ export function useDoer(doerId: string): UseDoerReturn {
   const blacklistDoer = useCallback(async (reason: string) => {
     if (!doerId) return
 
-    const supabase = createClient()
-    const user = await getAuthUser()
-    if (!user) throw new Error("Not authenticated")
+    await apiFetch("/api/supervisors/me/blacklist", {
+      method: "POST",
+      body: JSON.stringify({ doerId, reason }),
+    })
 
-    // Get supervisor ID
-    const { data: supervisor } = await supabase
-      .from("supervisors")
-      .select("id")
-      .eq("profile_id", user.id)
-      .single()
-
-    if (!supervisor) throw new Error("Supervisor not found")
-
-    // Add to blacklist
-    const { error: blacklistError } = await supabase
-      .from("supervisor_blacklisted_doers")
-      .insert({
-        supervisor_id: supervisor.id,
-        doer_id: doerId,
-        reason,
-      })
-
-    if (blacklistError) throw blacklistError
     await fetchDoer()
   }, [doerId, fetchDoer])
 
   const unblacklistDoer = useCallback(async () => {
     if (!doerId) return
 
-    const supabase = createClient()
-    const user = await getAuthUser()
-    if (!user) throw new Error("Not authenticated")
+    await apiFetch(`/api/supervisors/me/blacklist/${doerId}`, {
+      method: "DELETE",
+    })
 
-    // Get supervisor ID
-    const { data: supervisor } = await supabase
-      .from("supervisors")
-      .select("id")
-      .eq("profile_id", user.id)
-      .single()
-
-    if (!supervisor) throw new Error("Supervisor not found")
-
-    // Remove from blacklist
-    const { error: unblacklistError } = await supabase
-      .from("supervisor_blacklisted_doers")
-      .delete()
-      .eq("supervisor_id", supervisor.id)
-      .eq("doer_id", doerId)
-
-    if (unblacklistError) throw unblacklistError
     await fetchDoer()
   }, [doerId, fetchDoer])
 
@@ -259,45 +166,11 @@ export function useDoerStats(doerId: string): UseDoerStatsReturn {
     if (!doerId) return
 
     async function fetchStats() {
-      const supabase = createClient()
-
       try {
-        // Get doer data
-        const { data: doer } = await supabase
-          .from("doers")
-          .select("total_projects_completed, average_rating")
-          .eq("id", doerId)
-          .single()
-
-        if (!doer) return
-
-        // Get project stats
-        const { data: projects } = await supabase
-          .from("projects")
-          .select("id, status, deadline, delivered_at")
-          .eq("doer_id", doerId)
-
-        const completedStatuses = ["completed", "auto_approved", "delivered", "qc_approved"]
-        const completedProjects = projects?.filter(p =>
-          completedStatuses.includes(p.status)
-        ) || []
-
-        // Calculate on-time delivery rate
-        const onTimeProjects = completedProjects.filter(p => {
-          if (!p.deadline || !p.delivered_at) return true
-          return new Date(p.delivered_at) <= new Date(p.deadline)
-        })
-
-        const onTimeRate = completedProjects.length > 0
-          ? (onTimeProjects.length / completedProjects.length) * 100
-          : 100
-
-        setStats({
-          totalProjects: projects?.length || 0,
-          completedProjects: completedProjects.length,
-          averageRating: doer.average_rating || 0,
-          onTimeDeliveryRate: Math.round(onTimeRate),
-        })
+        const data = await apiFetch<UseDoerStatsReturn["stats"]>(
+          `/api/doers/${doerId}/stats`
+        )
+        setStats(data)
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Failed to fetch doer stats"))
       } finally {
@@ -317,47 +190,20 @@ export function useBlacklistedDoers() {
   const [error, setError] = useState<Error | null>(null)
 
   const fetchBlacklistedDoers = useCallback(async () => {
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
 
-      const user = await getAuthUser()
-      if (!user) throw new Error("Not authenticated")
-
-      // Get supervisor ID
-      const { data: supervisor } = await supabase
-        .from("supervisors")
-        .select("id")
-        .eq("profile_id", user.id)
-        .single()
-
-      if (!supervisor) {
+      const user = getStoredUser()
+      if (!user) {
         setDoers([])
         return
       }
 
-      // Get blacklisted doers
-      const { data: blacklist, error: blacklistError } = await supabase
-        .from("supervisor_blacklisted_doers")
-        .select(`
-          reason,
-          doers (
-            *,
-            profiles!profile_id (*)
-          )
-        `)
-        .eq("supervisor_id", supervisor.id)
+      const data = await apiFetch<{ doers: (DoerWithProfile & { blacklistReason?: string })[] }>(
+        "/api/supervisors/me/blacklist"
+      )
 
-      if (blacklistError) throw blacklistError
-
-      const blacklistedDoers = blacklist?.map(item => ({
-        ...item.doers,
-        profiles: item.doers?.profiles || undefined,
-        blacklistReason: item.reason,
-      })).filter(Boolean) as (DoerWithProfile & { blacklistReason?: string })[]
-
-      setDoers(blacklistedDoers || [])
+      setDoers(data.doers || [])
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch blacklisted doers"))
     } finally {

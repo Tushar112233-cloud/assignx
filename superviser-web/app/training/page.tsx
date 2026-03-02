@@ -1,5 +1,5 @@
 /**
- * @fileoverview Training page — displays modules and handles auto-creation of supervisor record.
+ * @fileoverview Training page -- displays modules and handles auto-creation of supervisor record.
  * @module app/training/page
  */
 
@@ -17,7 +17,9 @@ import {
   ArrowRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
+import { getAccessToken } from "@/lib/api/client"
+import { getStoredUser } from "@/lib/api/auth"
+import { apiFetch } from "@/lib/api/client"
 import {
   getTrainingModules,
   getTrainingProgress,
@@ -73,12 +75,10 @@ export default function TrainingPage() {
   useEffect(() => {
     const init = async () => {
       try {
-        const supabase = createClient()
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        const token = getAccessToken()
+        const user = getStoredUser()
 
-        if (!user) {
+        if (!token || !user) {
           router.replace("/login")
           return
         }
@@ -86,15 +86,10 @@ export default function TrainingPage() {
         setUserId(user.id)
 
         // Check if supervisor record exists; if not, auto-create via server API
-        const { data: supervisor } = await supabase
-          .from("supervisors")
-          .select("id")
-          .eq("profile_id", user.id)
-          .maybeSingle()
-
-        if (!supervisor) {
+        try {
+          await apiFetch("/api/supervisors/me")
+        } catch {
           // Call server API to create supervisor from approved access request metadata
-          // This uses the service role key to bypass RLS
           const res = await fetch("/api/auth/setup-supervisor", { method: "POST" })
           const result = await res.json()
 

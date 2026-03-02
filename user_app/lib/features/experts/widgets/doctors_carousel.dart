@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/expert_model.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/experts_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
@@ -138,7 +139,7 @@ class DoctorsCarousel extends ConsumerWidget {
                 TextButton(
                   onPressed: onSeeAllTap,
                   child: Text(
-                    'See All',
+                    'See All'.tr(context),
                     style: AppTextStyles.labelMedium.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
@@ -158,7 +159,7 @@ class DoctorsCarousel extends ConsumerWidget {
               final medicalExperts = _filterMedicalExperts(experts);
 
               if (medicalExperts.isEmpty) {
-                return _buildEmptyState();
+                return _buildEmptyState(context);
               }
 
               return ListView.separated(
@@ -178,14 +179,14 @@ class DoctorsCarousel extends ConsumerWidget {
               );
             },
             loading: () => _buildLoadingSkeleton(),
-            error: (_, __) => _buildErrorState(ref),
+            error: (_, __) => _buildErrorState(context, ref),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -197,7 +198,7 @@ class DoctorsCarousel extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'No medical experts available',
+            'No medical experts available'.tr(context),
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textTertiary,
             ),
@@ -221,7 +222,7 @@ class DoctorsCarousel extends ConsumerWidget {
     );
   }
 
-  Widget _buildErrorState(WidgetRef ref) {
+  Widget _buildErrorState(BuildContext context, WidgetRef ref) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -233,7 +234,7 @@ class DoctorsCarousel extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Failed to load experts',
+            'Failed to load experts'.tr(context),
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textTertiary,
             ),
@@ -241,7 +242,7 @@ class DoctorsCarousel extends ConsumerWidget {
           const SizedBox(height: 8),
           TextButton(
             onPressed: () => ref.invalidate(expertsProvider),
-            child: const Text('Retry'),
+            child: Text('Retry'.tr(context)),
           ),
         ],
       ),
@@ -428,7 +429,7 @@ class _DoctorCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     alignment: Alignment.center,
                     child: Text(
-                      'Book',
+                      'Book'.tr(context),
                       style: AppTextStyles.labelSmall.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,

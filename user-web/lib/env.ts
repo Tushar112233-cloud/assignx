@@ -18,17 +18,10 @@ import { z } from "zod"
  * These are only available on the server (not exposed to client)
  */
 const serverEnvSchema = z.object({
-  // Supabase
-  NEXT_PUBLIC_SUPABASE_URL: z
+  // Express API URL
+  NEXT_PUBLIC_API_URL: z
     .string()
-    .url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL")
-    .min(1, "NEXT_PUBLIC_SUPABASE_URL is required"),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z
-    .string()
-    .min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required"),
-  SUPABASE_SERVICE_ROLE_KEY: z
-    .string()
-    .min(1, "SUPABASE_SERVICE_ROLE_KEY is required")
+    .url("NEXT_PUBLIC_API_URL must be a valid URL")
     .optional(),
 
   // Razorpay (optional - payments disabled when not configured)
@@ -77,8 +70,7 @@ const serverEnvSchema = z.object({
  * These are exposed to the browser (NEXT_PUBLIC_ prefix)
  */
 const clientEnvSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url().min(1),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  NEXT_PUBLIC_API_URL: z.string().url().optional(),
   NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
@@ -102,7 +94,7 @@ function validateServerEnv(): ServerEnv {
 
   if (!parsed.success) {
     console.error(
-      "❌ Invalid environment variables:",
+      "Invalid environment variables:",
       parsed.error.flatten().fieldErrors
     )
 
@@ -116,7 +108,7 @@ function validateServerEnv(): ServerEnv {
     }
 
     // In development, warn but continue with fallback
-    console.warn("⚠️ Continuing with missing environment variables in development")
+    console.warn("Continuing with missing environment variables in development")
     return process.env as unknown as ServerEnv
   }
 
@@ -129,8 +121,7 @@ function validateServerEnv(): ServerEnv {
  */
 function validateClientEnv(): ClientEnv {
   const clientEnvValues = {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
@@ -142,7 +133,7 @@ function validateClientEnv(): ClientEnv {
 
   if (!parsed.success) {
     console.error(
-      "❌ Invalid client environment variables:",
+      "Invalid client environment variables:",
       parsed.error.flatten().fieldErrors
     )
     return clientEnvValues as unknown as ClientEnv
@@ -169,7 +160,7 @@ export const env: ServerEnv = typeof window === "undefined"
  *
  * @example
  * import { clientEnv } from "@/lib/env"
- * const url = clientEnv.NEXT_PUBLIC_SUPABASE_URL
+ * const apiUrl = clientEnv.NEXT_PUBLIC_API_URL
  */
 export const clientEnv: ClientEnv = validateClientEnv()
 

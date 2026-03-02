@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_shadows.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/marketplace_model.dart';
 import '../../../shared/animations/common_animations.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -138,7 +139,7 @@ class _ItemCardState extends State<ItemCard> {
                               boxShadow: AppShadows.xs,
                             ),
                             child: Text(
-                              'Negotiable',
+                              'Negotiable'.tr(context),
                               style: AppTextStyles.caption.copyWith(
                                 color: Colors.white,
                                 fontSize: 9,

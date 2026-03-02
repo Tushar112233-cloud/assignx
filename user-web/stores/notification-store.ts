@@ -6,7 +6,7 @@ import {
 } from "@/lib/actions/data";
 
 /**
- * Notification interface matching Supabase schema
+ * Notification interface matching API schema
  */
 export interface Notification {
   id: string;
@@ -105,7 +105,7 @@ function transformNotification(n: Notification): Notification {
 
 /**
  * Notification state store
- * Manages user notifications with Supabase integration
+ * Manages user notifications with API integration
  */
 export const useNotificationStore = create<NotificationState>((set) => ({
   notifications: [],
@@ -114,14 +114,14 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   error: null,
 
   /**
-   * Fetches notifications from Supabase
+   * Fetches notifications from API
    */
   fetchNotifications: async (limit = 20) => {
     set({ isLoading: true, error: null });
     try {
       const data = await getNotifications(limit);
       const notifications = data.map(transformNotification);
-      const unreadCount = notifications.filter((n) => !n.is_read).length;
+      const unreadCount = notifications.filter((n: any) => !n.is_read).length;
       set({ notifications, unreadCount, isLoading: false });
     } catch (error) {
       set({

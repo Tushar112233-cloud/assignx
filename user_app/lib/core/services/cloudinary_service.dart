@@ -4,9 +4,9 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
+import '../storage/token_storage.dart';
 
 /// Result of a Cloudinary upload operation.
 class CloudinaryUploadResult {
@@ -79,7 +79,6 @@ class CloudinaryService {
   final ImagePicker _picker;
   final http.Client _httpClient;
   final Logger _logger;
-  final SupabaseClient _supabase;
 
   /// Maximum image dimension for compression.
   static const int maxImageDimension = 1024;
@@ -90,18 +89,20 @@ class CloudinaryService {
   /// Maximum file size in bytes (5MB).
   static const int maxFileSizeBytes = 5 * 1024 * 1024;
 
+  /// Cached user ID (set externally).
+  String? currentUserId;
+
   CloudinaryService({
     ImagePicker? picker,
     http.Client? httpClient,
     Logger? logger,
-    SupabaseClient? supabase,
+    this.currentUserId,
   })  : _picker = picker ?? ImagePicker(),
         _httpClient = httpClient ?? http.Client(),
-        _logger = logger ?? Logger(printer: PrettyPrinter(methodCount: 0)),
-        _supabase = supabase ?? Supabase.instance.client;
+        _logger = logger ?? Logger(printer: PrettyPrinter(methodCount: 0));
 
   /// Get the current authenticated user ID.
-  String? get _currentUserId => _supabase.auth.currentUser?.id;
+  String? get _currentUserId => currentUserId;
 
   /// Generates the folder path for Cloudinary based on folder type and entity ID.
   ///
@@ -204,9 +205,9 @@ class CloudinaryService {
       // Notify initial progress
       onProgress?.call(0.1);
 
-      // Get auth token for API request
-      final session = _supabase.auth.currentSession;
-      if (session == null) {
+      // Get auth token from secure storage
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
         _logger.e('User not authenticated');
         throw Exception('User not authenticated');
       }
@@ -226,7 +227,7 @@ class CloudinaryService {
         Uri.parse('${ApiConfig.baseUrl}/api/cloudinary/upload'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${session.accessToken}',
+          'Authorization': 'Bearer $token',
         },
         body: body,
       );
@@ -393,8 +394,8 @@ class CloudinaryService {
     }
 
     try {
-      final session = _supabase.auth.currentSession;
-      if (session == null) {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
         _logger.e('User not authenticated');
         return false;
       }
@@ -403,7 +404,7 @@ class CloudinaryService {
         Uri.parse('${ApiConfig.baseUrl}/api/cloudinary/delete'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${session.accessToken}',
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'publicId': publicId,

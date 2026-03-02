@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/tutor_model.dart';
 import '../../../providers/connect_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -15,7 +16,9 @@ import '../../marketplace/widgets/tutor_card.dart';
 import '../../marketplace/widgets/tutor_profile_sheet.dart';
 import '../../marketplace/widgets/book_session_sheet.dart';
 import '../widgets/advanced_filter_sheet.dart';
+import '../widgets/ask_question_sheet.dart';
 import '../widgets/connect_search.dart';
+import '../widgets/qa_section.dart';
 import '../widgets/resource_cards.dart';
 import '../widgets/study_group_card.dart';
 
@@ -37,7 +40,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         // Clear search when switching tabs
@@ -105,6 +108,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
               _TutorsTab(),
               _StudyGroupsTab(),
               _ResourcesTab(),
+              const QaSection(),
             ],
           ),
         ),
@@ -147,7 +151,7 @@ class _CurvedDomeHero extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Connect',
+                          'Connect'.tr(context),
                           style: AppTextStyles.headingLarge.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -155,7 +159,7 @@ class _CurvedDomeHero extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Learn together, grow together',
+                          'Learn together, grow together'.tr(context),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: Colors.white.withAlpha(200),
                           ),
@@ -217,6 +221,8 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
       color: AppColors.background.withAlpha(240),
       child: TabBar(
         controller: tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
         labelColor: AppColors.primary,
         unselectedLabelColor: AppColors.textSecondary,
         indicatorColor: AppColors.primary,
@@ -225,10 +231,11 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
           fontWeight: FontWeight.w600,
         ),
         unselectedLabelStyle: AppTextStyles.labelLarge,
-        tabs: const [
-          Tab(text: 'Tutors'),
-          Tab(text: 'Study Groups'),
-          Tab(text: 'Resources'),
+        tabs: [
+          Tab(text: 'Tutors'.tr(context)),
+          Tab(text: 'Study Groups'.tr(context)),
+          Tab(text: 'Resources'.tr(context)),
+          Tab(text: 'Q&A'.tr(context)),
         ],
       ),
     );
@@ -260,8 +267,8 @@ class _TutorsTab extends ConsumerWidget {
         // Featured section header
         SliverToBoxAdapter(
           child: _SectionHeader(
-            title: 'Expert Tutors',
-            subtitle: 'Book 1-on-1 sessions',
+            title: 'Expert Tutors'.tr(context),
+            subtitle: 'Book 1-on-1 sessions'.tr(context),
             icon: Icons.school_rounded,
           ),
         ),
@@ -275,10 +282,10 @@ class _TutorsTab extends ConsumerWidget {
                 return SliverToBoxAdapter(
                   child: _EmptyState(
                     icon: Icons.person_search,
-                    title: 'No tutors found',
+                    title: 'No tutors found'.tr(context),
                     subtitle: filters.hasFilters
-                        ? 'Try adjusting your filters'
-                        : 'Check back later for new tutors',
+                        ? 'Try adjusting your filters'.tr(context)
+                        : 'Check back later for new tutors'.tr(context),
                     showClearButton: filters.hasFilters,
                     onClear: () =>
                         ref.read(connectFilterProvider.notifier).clearFilters(),
@@ -337,8 +344,11 @@ class _TutorsTab extends ConsumerWidget {
       },
       onAskQuestion: () {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ask question feature coming soon!')),
+        AskQuestionSheet.show(
+          context: context,
+          onQuestionPosted: () {
+            ref.invalidate(connectQuestionsProvider);
+          },
         );
       },
     );
@@ -351,7 +361,7 @@ class _TutorsTab extends ConsumerWidget {
       onBookingComplete: (session) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Session booked with ${tutor.name}!'),
+            content: Text('${'Session booked with'.tr(context)} ${tutor.name}!'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -387,7 +397,7 @@ class _StudyGroupsTab extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _SectionHeader(
-                    title: 'My Groups',
+                    title: 'My Groups'.tr(context),
                     icon: Icons.group,
                     onSeeAll: () => context.push('/connect/groups'),
                   ),
@@ -419,8 +429,8 @@ class _StudyGroupsTab extends ConsumerWidget {
         // Available groups header
         SliverToBoxAdapter(
           child: _SectionHeader(
-            title: 'Available Groups',
-            subtitle: 'Join a group to study together',
+            title: 'Available Groups'.tr(context),
+            subtitle: 'Join a group to study together'.tr(context),
             icon: Icons.groups_rounded,
             onSeeAll: () => context.push('/connect/groups'),
           ),
@@ -435,10 +445,10 @@ class _StudyGroupsTab extends ConsumerWidget {
                 return SliverToBoxAdapter(
                   child: _EmptyState(
                     icon: Icons.group_add,
-                    title: 'No groups found',
+                    title: 'No groups found'.tr(context),
                     subtitle: filters.hasFilters
-                        ? 'Try adjusting your filters'
-                        : 'Be the first to create a study group!',
+                        ? 'Try adjusting your filters'.tr(context)
+                        : 'Be the first to create a study group!'.tr(context),
                     showClearButton: filters.hasFilters,
                     onClear: () =>
                         ref.read(connectFilterProvider.notifier).clearFilters(),
@@ -462,8 +472,8 @@ class _StudyGroupsTab extends ConsumerWidget {
                         onTap: () {},
                         onJoinLeave: () {
                           final message = isJoined
-                              ? 'Left ${group.name}'
-                              : 'Joined ${group.name}!';
+                              ? '${'Left'.tr(context)} ${group.name}'
+                              : '${'Joined'.tr(context)} ${group.name}!';
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(message),
@@ -539,8 +549,8 @@ class _ResourcesTab extends ConsumerWidget {
         // Featured section header
         SliverToBoxAdapter(
           child: _SectionHeader(
-            title: 'Study Materials',
-            subtitle: 'Notes, videos, and more',
+            title: 'Study Materials'.tr(context),
+            subtitle: 'Notes, videos, and more'.tr(context),
             icon: Icons.folder_open_rounded,
             onSeeAll: () => context.push('/connect/resources'),
           ),
@@ -555,10 +565,10 @@ class _ResourcesTab extends ConsumerWidget {
                 return SliverToBoxAdapter(
                   child: _EmptyState(
                     icon: Icons.folder_off_outlined,
-                    title: 'No resources found',
+                    title: 'No resources found'.tr(context),
                     subtitle: filters.hasFilters
-                        ? 'Try adjusting your filters'
-                        : 'Be the first to share study materials!',
+                        ? 'Try adjusting your filters'.tr(context)
+                        : 'Be the first to share study materials!'.tr(context),
                     showClearButton: filters.hasFilters,
                     onClear: () =>
                         ref.read(connectFilterProvider.notifier).clearFilters(),
@@ -579,7 +589,7 @@ class _ResourcesTab extends ConsumerWidget {
                         onSave: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Saved ${resource.title}'),
+                              content: Text('${'Saved'.tr(context)} ${resource.title}'),
                               backgroundColor: AppColors.success,
                             ),
                           );
@@ -587,7 +597,7 @@ class _ResourcesTab extends ConsumerWidget {
                         onDownload: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Downloading ${resource.title}...'),
+                              content: Text('${'Downloading'.tr(context)} ${resource.title}...'),
                             ),
                           );
                         },
@@ -696,7 +706,7 @@ class _SectionHeader extends StatelessWidget {
               child: Row(
                 children: [
                   Text(
-                    'See all',
+                    'See all'.tr(context),
                     style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w500,
@@ -741,7 +751,7 @@ class _ActiveFiltersDisplay extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              'Filtered results',
+              'Filtered results'.tr(context),
               style: AppTextStyles.bodySmall.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -756,7 +766,7 @@ class _ActiveFiltersDisplay extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  'Clear all',
+                  'Clear all'.tr(context),
                   style: AppTextStyles.labelSmall.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600,
@@ -825,7 +835,7 @@ class _EmptyState extends StatelessWidget {
           if (showClearButton && onClear != null) ...[
             const SizedBox(height: 16),
             GlassButton(
-              label: 'Clear Filters',
+              label: 'Clear Filters'.tr(context),
               icon: Icons.filter_alt_off,
               onPressed: onClear,
               backgroundColor: AppColors.primary,
@@ -873,7 +883,7 @@ class _ErrorState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Something went wrong',
+            'Something went wrong'.tr(context),
             style: AppTextStyles.headingSmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -888,7 +898,7 @@ class _ErrorState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           GlassButton(
-            label: 'Retry',
+            label: 'Retry'.tr(context),
             icon: Icons.refresh,
             onPressed: onRetry,
             backgroundColor: AppColors.primary,

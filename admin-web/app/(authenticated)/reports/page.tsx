@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { serverFetch } from "@/lib/admin/auth";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -15,56 +15,45 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default async function ReportsPage() {
-  const supabase = await createClient();
-
   const [
-    { count: totalUsers },
-    { count: totalProjects },
-    { count: totalSupervisors },
-    { count: totalDoers },
-    { count: totalExperts },
-    { data: projectsByStatus },
-    { data: recentProjects },
-    { data: topSupervisors },
+    countsData,
+    projectsByStatusData,
+    recentProjectsData,
+    topSupervisorsData,
   ] = await Promise.all([
-    supabase.from("profiles").select("id", { count: "exact", head: true }),
-    supabase.from("projects").select("id", { count: "exact", head: true }),
-    supabase.from("supervisors").select("id", { count: "exact", head: true }),
-    supabase.from("doers").select("id", { count: "exact", head: true }),
-    supabase.from("experts").select("id", { count: "exact", head: true }),
-    supabase.rpc("admin_projects_by_status").then((r) => {
-      if (r.error) {
-        // fallback: manual group
-        return supabase.from("projects").select("status");
-      }
-      return r;
-    }),
-    supabase
-      .from("projects")
-      .select("id, title, status, created_at, profiles!user_id(full_name)")
-      .order("created_at", { ascending: false })
-      .limit(10),
-    supabase
-      .from("supervisors")
-      .select("id, profiles!profile_id(full_name, email)")
-      .limit(5),
+    serverFetch("/api/admin/analytics/overview?period=all").catch(() => ({
+      totalUsers: 0,
+      totalProjects: 0,
+      totalSupervisors: 0,
+      totalDoers: 0,
+      totalExperts: 0,
+      projectStatusBreakdown: {},
+    })),
+    serverFetch("/api/admin/analytics/projects-by-status").catch(() => []),
+    serverFetch("/api/admin/projects?perPage=10&sort=-createdAt").catch(() => ({ data: [] })),
+    serverFetch("/api/supervisors?perPage=5").catch(() => ({ data: [] })),
   ]);
 
-  // Compute project status breakdown from raw data
+  // Build status counts from projectsByStatus or countsData
   const statusCounts: Record<string, number> = {};
-  if (Array.isArray(projectsByStatus)) {
-    for (const p of projectsByStatus as any[]) {
-      const s = p.status || "unknown";
-      statusCounts[s] = (statusCounts[s] || 0) + 1;
+  if (Array.isArray(projectsByStatusData)) {
+    for (const p of projectsByStatusData as any[]) {
+      const s = p.status || p._id || "unknown";
+      statusCounts[s] = (statusCounts[s] || 0) + (p.count || 1);
     }
+  } else if (countsData.projectStatusBreakdown) {
+    Object.assign(statusCounts, countsData.projectStatusBreakdown);
   }
 
+  const recentProjects = recentProjectsData?.projects || recentProjectsData?.data || [];
+  const topSupervisors = topSupervisorsData?.supervisors || topSupervisorsData?.data || [];
+
   const summaryCards = [
-    { label: "Total Users", value: totalUsers ?? 0 },
-    { label: "Total Projects", value: totalProjects ?? 0 },
-    { label: "Supervisors", value: totalSupervisors ?? 0 },
-    { label: "Doers", value: totalDoers ?? 0 },
-    { label: "Experts", value: totalExperts ?? 0 },
+    { label: "Total Users", value: countsData.totalUsers ?? 0 },
+    { label: "Total Projects", value: countsData.totalProjects ?? 0 },
+    { label: "Supervisors", value: countsData.totalSupervisors ?? 0 },
+    { label: "Doers", value: countsData.totalDoers ?? 0 },
+    { label: "Experts", value: countsData.totalExperts ?? 0 },
   ];
 
   return (
@@ -124,11 +113,13 @@ export default async function ReportsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {(recentProjects || []).slice(0, 8).map((p: any) => (
-                <div key={p.id} className="flex items-start justify-between gap-2">
+              {recentProjects.slice(0, 8).map((p: any) => (
+                <div key={p._id || p.id} className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{p.title}</p>
-                    <p className="text-xs text-muted-foreground">{p.profiles?.full_name || "—"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {p.user?.full_name || p.user?.fullName || p.userName || "-"}
+                    </p>
                   </div>
                   <Badge
                     variant="outline"
@@ -138,7 +129,7 @@ export default async function ReportsPage() {
                   </Badge>
                 </div>
               ))}
-              {(recentProjects || []).length === 0 && (
+              {recentProjects.length === 0 && (
                 <p className="text-sm text-muted-foreground">No projects yet.</p>
               )}
             </div>
@@ -152,18 +143,22 @@ export default async function ReportsPage() {
           <CardTitle className="text-base">Registered Supervisors</CardTitle>
         </CardHeader>
         <CardContent>
-          {(topSupervisors || []).length === 0 ? (
+          {topSupervisors.length === 0 ? (
             <p className="text-sm text-muted-foreground">No supervisors yet.</p>
           ) : (
             <div className="divide-y">
-              {(topSupervisors as any[]).map((s) => (
-                <div key={s.id} className="py-2 flex items-center gap-3">
+              {topSupervisors.map((s: any) => (
+                <div key={s._id || s.id} className="py-2 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                    {(s.profiles?.full_name || "?")[0].toUpperCase()}
+                    {(s.full_name || s.fullName || s.profile?.full_name || "?")[0].toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{s.profiles?.full_name || "—"}</p>
-                    <p className="text-xs text-muted-foreground">{s.profiles?.email || ""}</p>
+                    <p className="text-sm font-medium">
+                      {s.full_name || s.fullName || s.profile?.full_name || "-"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {s.email || s.profile?.email || ""}
+                    </p>
                   </div>
                 </div>
               ))}

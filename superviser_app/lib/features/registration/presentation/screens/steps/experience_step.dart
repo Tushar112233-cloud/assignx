@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/translation/translation_extensions.dart';
 import '../../../../../shared/widgets/buttons/primary_button.dart';
 import '../../../../../shared/widgets/inputs/app_text_field.dart';
 import '../../../data/models/registration_model.dart';
@@ -68,8 +69,8 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
           _selectedExpertise.add(expertise);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('You can select up to 5 expertise areas'),
+            SnackBar(
+              content: Text('You can select up to 5 expertise areas'.tr(context)),
               duration: Duration(seconds: 2),
             ),
           );
@@ -110,8 +111,8 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
     if (_formKey.currentState!.validate()) {
       if (_selectedExpertise.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select at least one expertise area'),
+          SnackBar(
+            content: Text('Please select at least one expertise area'.tr(context)),
           ),
         );
         return;
@@ -139,14 +140,14 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Education & Experience',
+              'Education & Experience'.tr(context),
               style: AppTypography.headlineSmall.copyWith(
                 color: AppColors.textPrimaryLight,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Share your academic background and expertise',
+              'Share your academic background and expertise'.tr(context),
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.textSecondaryLight,
               ),
@@ -157,7 +158,7 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
             DropdownButtonFormField<String>(
               initialValue: _selectedEducation,
               decoration: InputDecoration(
-                labelText: 'Highest Education *',
+                labelText: 'Highest Education *'.tr(context),
                 prefixIcon: const Icon(Icons.school_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -176,7 +177,7 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
               },
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please select your education level';
+                  return 'Please select your education level'.tr(context);
                 }
                 return null;
               },
@@ -186,7 +187,7 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
             // Field of Study
             AppTextField(
               controller: _fieldOfStudyController,
-              label: 'Field of Study',
+              label: 'Field of Study'.tr(context),
               hint: 'e.g., Computer Science, Business Administration',
               prefixIcon: Icons.menu_book_outlined,
             ),
@@ -195,7 +196,7 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
             // Years of Experience
             AppTextField(
               controller: _yearsExpController,
-              label: 'Years of Experience',
+              label: 'Years of Experience'.tr(context),
               hint: '5',
               keyboardType: TextInputType.number,
               prefixIcon: Icons.work_history_outlined,
@@ -203,7 +204,7 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
                 if (value != null && value.isNotEmpty) {
                   final years = int.tryParse(value);
                   if (years == null || years < 0 || years > 50) {
-                    return 'Enter valid years (0-50)';
+                    return 'Enter valid years (0-50)'.tr(context);
                   }
                 }
                 return null;
@@ -213,14 +214,14 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
 
             // Expertise Areas
             Text(
-              'Areas of Expertise *',
+              'Areas of Expertise *'.tr(context),
               style: AppTypography.titleSmall.copyWith(
                 color: AppColors.textPrimaryLight,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Select up to 5 areas (${_selectedExpertise.length}/5 selected)',
+              '${'Select up to 5 areas'.tr(context)} (${_selectedExpertise.length}/5 ${'selected'.tr(context)})',
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textSecondaryLight,
               ),
@@ -250,7 +251,7 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
 
             // CV Upload
             Text(
-              'Upload CV (Optional)',
+              'Upload CV (Optional)'.tr(context),
               style: AppTypography.titleSmall.copyWith(
                 color: AppColors.textPrimaryLight,
               ),
@@ -258,8 +259,8 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
             const SizedBox(height: 12),
 
             FileUploadCard(
-              title: 'Upload your CV',
-              subtitle: 'Help us understand your background better',
+              title: 'Upload your CV'.tr(context),
+              subtitle: 'Help us understand your background better'.tr(context),
               onTap: _uploadCV,
               isLoading: _isUploadingCv,
               isUploaded: _uploadedCvName != null,
@@ -274,7 +275,7 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
               children: [
                 Expanded(
                   child: SecondaryButton(
-                    text: 'Back',
+                    text: 'Back'.tr(context),
                     onPressed: widget.onBack,
                   ),
                 ),
@@ -282,7 +283,7 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
                 Expanded(
                   flex: 2,
                   child: PrimaryButton(
-                    text: 'Continue',
+                    text: 'Continue'.tr(context),
                     onPressed: _saveAndContinue,
                   ),
                 ),

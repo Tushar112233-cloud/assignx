@@ -192,6 +192,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   childCount: dashboardState.filteredPaidRequests.length,
                 ),
               ),
+            // Recent Activity Feed
+            SliverToBoxAdapter(
+              child: _RecentActivitySection(),
+            ),
             // Bottom padding
             const SliverToBoxAdapter(
               child: SizedBox(height: 100),
@@ -409,21 +413,24 @@ class _EmptySection extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
       ),
       child: Column(
         children: [
           Icon(
             icon,
             size: 48,
-            color: AppColors.textSecondaryLight.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 12),
           Text(
             message,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondaryLight,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
         ],
@@ -665,9 +672,18 @@ class _KpiCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -720,8 +736,8 @@ class _MiniChart extends StatelessWidget {
       child: Card(
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: AppColors.borderLight),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -738,7 +754,7 @@ class _MiniChart extends StatelessWidget {
               Text(
                 'Tasks completed this week'.tr(context),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondaryLight,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
               const SizedBox(height: 24),
@@ -748,13 +764,13 @@ class _MiniChart extends StatelessWidget {
                     Icon(
                       Icons.bar_chart,
                       size: 48,
-                      color: AppColors.textSecondaryLight.withValues(alpha: 0.3),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Analytics will appear once you complete projects'.tr(context),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondaryLight,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -765,6 +781,234 @@ class _MiniChart extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Recent activity feed section showing the last few events.
+///
+/// Displays a list of recent supervisor activities such as project
+/// assignments, quotes sent, payments received, and reviews completed.
+/// Uses mock data for now with the right structure for future backend integration.
+class _RecentActivitySection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.history,
+                  color: AppColors.info,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Recent Activity'.tr(context),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    Text(
+                      'Your latest events'.tr(context),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Activity items
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
+            child: Column(
+              children: [
+                _ActivityItem(
+                  icon: Icons.assignment_outlined,
+                  iconColor: AppColors.info,
+                  title: 'New project assigned'.tr(context),
+                  subtitle: 'Computer Science - Data Structures'.tr(context),
+                  time: '2m ago'.tr(context),
+                  isFirst: true,
+                ),
+                Divider(
+                  height: 1,
+                  indent: 60,
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+                _ActivityItem(
+                  icon: Icons.send_outlined,
+                  iconColor: AppColors.accent,
+                  title: 'Quote sent to client'.tr(context),
+                  subtitle: 'Project #1842 - ₹3,500'.tr(context),
+                  time: '15m ago'.tr(context),
+                ),
+                Divider(
+                  height: 1,
+                  indent: 60,
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+                _ActivityItem(
+                  icon: Icons.payment_outlined,
+                  iconColor: AppColors.success,
+                  title: 'Payment received'.tr(context),
+                  subtitle: 'Project #1838 - ₹5,200'.tr(context),
+                  time: '1h ago'.tr(context),
+                ),
+                Divider(
+                  height: 1,
+                  indent: 60,
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+                _ActivityItem(
+                  icon: Icons.person_add_outlined,
+                  iconColor: Colors.purple,
+                  title: 'Doer assigned'.tr(context),
+                  subtitle: 'Rahul S. assigned to Project #1840'.tr(context),
+                  time: '2h ago'.tr(context),
+                ),
+                Divider(
+                  height: 1,
+                  indent: 60,
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+                _ActivityItem(
+                  icon: Icons.check_circle_outline,
+                  iconColor: AppColors.success,
+                  title: 'Deliverable approved'.tr(context),
+                  subtitle: 'Project #1835 - Mathematics'.tr(context),
+                  time: '3h ago'.tr(context),
+                ),
+                Divider(
+                  height: 1,
+                  indent: 60,
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+                _ActivityItem(
+                  icon: Icons.rate_review_outlined,
+                  iconColor: AppColors.warning,
+                  title: 'Revision requested'.tr(context),
+                  subtitle: 'Project #1830 - English Essay'.tr(context),
+                  time: '5h ago'.tr(context),
+                ),
+                Divider(
+                  height: 1,
+                  indent: 60,
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+                _ActivityItem(
+                  icon: Icons.chat_outlined,
+                  iconColor: AppColors.info,
+                  title: 'New message from client'.tr(context),
+                  subtitle: 'Project #1837 - "When can I expect..."'.tr(context),
+                  time: '6h ago'.tr(context),
+                  isLast: true,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A single activity item in the recent activity feed.
+class _ActivityItem extends StatelessWidget {
+  const _ActivityItem({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.time,
+    this.isFirst = false,
+    this.isLast = false,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final String time;
+  final bool isFirst;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        isFirst ? 16 : 12,
+        16,
+        isLast ? 16 : 12,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: iconColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            time,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ],
       ),
     );
   }

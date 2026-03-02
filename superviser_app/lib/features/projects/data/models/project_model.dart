@@ -136,66 +136,154 @@ class ProjectModel {
   final DateTime? completedAt;
 
   /// Creates a ProjectModel from JSON data.
+  ///
+  /// Handles both flat Supabase-style and nested MongoDB/Mongoose-style responses.
+  /// MongoDB may return populated objects for userId/supervisorId/doerId and
+  /// nested sub-documents for pricing, payment, delivery, qualityCheck.
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
+    // Helper to extract ID from a field that may be a string or populated object.
+    String _extractId(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return (value['_id'] ?? value['id'] ?? '').toString();
+      }
+      return value.toString();
+    }
+
+    // Helper to extract string ID or null from a possibly populated field.
+    String? _extractIdOrNull(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        final id = value['_id'] ?? value['id'];
+        return id?.toString();
+      }
+      return value.toString();
+    }
+
+    // Helper to extract a display name from a populated object.
+    String? _extractName(dynamic value) {
+      if (value == null) return null;
+      if (value is Map<String, dynamic>) {
+        return (value['fullName'] ?? value['full_name'] ?? value['name']) as String?;
+      }
+      return null;
+    }
+
+    // Helper to safely parse a double from various types.
+    double? _parseDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
+    // Helper to safely parse DateTime.
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Extract nested sub-documents (MongoDB Mongoose style).
+    final pricing = json['pricing'] as Map<String, dynamic>? ?? {};
+    final payment = json['payment'] as Map<String, dynamic>? ?? {};
+    final delivery = json['delivery'] as Map<String, dynamic>? ?? {};
+
+    // Handle subject - could be a string, Map from Supabase join, or populated MongoDB object.
+    String subject = 'General';
+    final subjectRaw = json['subject'] ?? json['subjectId'] ?? json['subject_id'];
+    if (subjectRaw is Map<String, dynamic>) {
+      subject = (subjectRaw['name'] as String?) ?? 'General';
+    } else if (subjectRaw is String) {
+      subject = subjectRaw;
+    }
+
+    // Handle userId - may be a populated object.
+    final userRaw = json['user_id'] ?? json['userId'] ?? json['user'];
+
+    // Handle supervisorId - may be a populated object.
+    final supervisorRaw = json['supervisor_id'] ?? json['supervisorId'];
+
+    // Handle doerId - may be a populated object.
+    final doerRaw = json['doer_id'] ?? json['doerId'] ?? json['doer'];
+
+    // Extract client name: try populated user object, then explicit fields.
+    String? clientName;
+    if (json['user'] is Map) {
+      clientName = (json['user']['fullName'] ?? json['user']['full_name']) as String?;
+    }
+    clientName ??= _extractName(json['user_id'] ?? json['userId']);
+    clientName ??= json['client_name'] as String?;
+    clientName ??= json['clientName'] as String?;
+
+    // Extract client email.
+    String? clientEmail;
+    if (json['user'] is Map) {
+      clientEmail = json['user']['email'] as String?;
+    }
+    final userIdPopulated = json['user_id'] ?? json['userId'];
+    if (userIdPopulated is Map<String, dynamic>) {
+      clientEmail ??= userIdPopulated['email'] as String?;
+    }
+    clientEmail ??= json['client_email'] as String?;
+
+    // Extract doer name: try populated doer object, then explicit fields.
+    String? doerName;
+    if (json['doer'] is Map) {
+      final doerObj = json['doer'] as Map<String, dynamic>;
+      if (doerObj['profile'] is Map) {
+        doerName = doerObj['profile']['full_name'] as String?;
+      }
+      doerName ??= (doerObj['fullName'] ?? doerObj['full_name']) as String?;
+    }
+    doerName ??= _extractName(json['doer_id'] ?? json['doerId']);
+    doerName ??= json['doer_name'] as String?;
+    doerName ??= json['doerName'] as String?;
+
     return ProjectModel(
-      id: json['id'] as String,
-      projectNumber: json['project_number'] as String? ?? '',
-      title: json['title'] as String,
-      description: json['description'] as String? ?? '',
-      subject: json['subject'] is Map
-          ? json['subject']['name'] as String
-          : json['subject'] as String? ?? 'General',
-      status: ProjectStatus.fromString(json['status'] as String?),
-      userId: json['user_id'] as String,
-      supervisorId: json['supervisor_id'] as String,
-      doerId: json['doer_id'] as String?,
-      deadline: json['deadline'] != null
-          ? DateTime.parse(json['deadline'] as String)
-          : null,
-      wordCount: json['word_count'] as int?,
-      pageCount: json['page_count'] as int?,
-      userQuote: (json['user_quote'] as num?)?.toDouble(),
-      doerAmount: (json['doer_payout'] as num?)?.toDouble() ?? (json['doer_amount'] as num?)?.toDouble(),
-      supervisorAmount: (json['supervisor_commission'] as num?)?.toDouble() ?? (json['supervisor_amount'] as num?)?.toDouble(),
-      platformAmount: (json['platform_fee'] as num?)?.toDouble() ?? (json['platform_amount'] as num?)?.toDouble(),
-      clientName: json['user'] is Map
-          ? json['user']['full_name'] as String?
-          : json['client_name'] as String?,
-      clientEmail: json['user'] is Map
-          ? json['user']['email'] as String?
-          : json['client_email'] as String?,
-      doerName: json['doer'] is Map
-          ? (json['doer']['profile'] is Map
-              ? json['doer']['profile']['full_name'] as String?
-              : json['doer']['full_name'] as String?)
-          : json['doer_name'] as String?,
-      attachments: (json['attachments'] as List?)?.cast<String>(),
-      chatRoomId: json['chat_room_id'] as String?,
-      instructions: json['instructions'] as String?,
-      revisionCount: json['revision_count'] as int? ?? 0,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      projectNumber: (json['project_number'] ?? json['projectNumber'] ?? '').toString(),
+      title: (json['title'] as String?) ?? '',
+      description: (json['description'] as String?) ?? '',
+      subject: subject,
+      status: ProjectStatus.fromString((json['status'] ?? '').toString()),
+      // Extract IDs from potentially populated objects.
+      userId: _extractId(userRaw),
+      supervisorId: _extractId(supervisorRaw),
+      doerId: _extractIdOrNull(doerRaw),
+      deadline: _parseDate(json['deadline']),
+      wordCount: (json['word_count'] ?? json['wordCount']) as int?,
+      pageCount: (json['page_count'] ?? json['pageCount']) as int?,
+      // Pricing: check nested pricing object, then flat fields.
+      userQuote: _parseDouble(json['user_quote'] ?? json['userQuote']
+          ?? pricing['userQuote']),
+      doerAmount: _parseDouble(json['doer_payout'] ?? json['doerPayout']
+          ?? pricing['doerPayout']),
+      supervisorAmount: _parseDouble(json['supervisor_commission']
+          ?? json['supervisorCommission'] ?? pricing['supervisorCommission']),
+      platformAmount: _parseDouble(json['platform_fee'] ?? json['platformFee']
+          ?? pricing['platformFee']),
+      clientName: clientName,
+      clientEmail: clientEmail,
+      doerName: doerName,
+      attachments: null,
+      chatRoomId: null,
+      instructions: (json['specific_instructions'] ?? json['specificInstructions']) as String?,
+      revisionCount: (json['revision_count'] ?? json['revisionCount']) as int? ?? 0,
       isUrgent: json['is_urgent'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
-      submittedAt: json['submitted_at'] != null
-          ? DateTime.parse(json['submitted_at'] as String)
-          : null,
-      paidAt: json['paid_at'] != null
-          ? DateTime.parse(json['paid_at'] as String)
-          : null,
-      assignedAt: json['assigned_at'] != null
-          ? DateTime.parse(json['assigned_at'] as String)
-          : null,
-      startedAt: json['started_at'] != null
-          ? DateTime.parse(json['started_at'] as String)
-          : null,
-      deliveredAt: json['delivered_at'] != null
-          ? DateTime.parse(json['delivered_at'] as String)
-          : null,
-      completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'] as String)
-          : null,
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDate(json['updated_at'] ?? json['updatedAt']),
+      submittedAt: _parseDate(json['submitted_at'] ?? json['submittedAt']),
+      // Payment: check nested payment object, then flat fields.
+      paidAt: _parseDate(json['paid_at'] ?? json['paidAt'] ?? payment['paidAt']),
+      assignedAt: _parseDate(json['doer_assigned_at'] ?? json['doerAssignedAt']),
+      startedAt: _parseDate(json['started_at'] ?? json['startedAt']),
+      // Delivery: check nested delivery object, then flat fields.
+      deliveredAt: _parseDate(json['delivered_at'] ?? json['deliveredAt']
+          ?? delivery['deliveredAt']),
+      completedAt: _parseDate(json['completed_at'] ?? json['completedAt']
+          ?? delivery['completedAt']),
     );
   }
 
@@ -215,23 +303,14 @@ class ProjectModel {
       'word_count': wordCount,
       'page_count': pageCount,
       'user_quote': userQuote,
-      'doer_amount': doerAmount,
-      'supervisor_amount': supervisorAmount,
-      'platform_amount': platformAmount,
-      'client_name': clientName,
-      'client_email': clientEmail,
-      'doer_name': doerName,
-      'attachments': attachments,
-      'chat_room_id': chatRoomId,
-      'instructions': instructions,
-      'revision_count': revisionCount,
-      'is_urgent': isUrgent,
+      'doer_payout': doerAmount,
+      'supervisor_commission': supervisorAmount,
+      'platform_fee': platformAmount,
+      'specific_instructions': instructions,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
-      'submitted_at': submittedAt?.toIso8601String(),
       'paid_at': paidAt?.toIso8601String(),
-      'assigned_at': assignedAt?.toIso8601String(),
-      'started_at': startedAt?.toIso8601String(),
+      'doer_assigned_at': assignedAt?.toIso8601String(),
       'delivered_at': deliveredAt?.toIso8601String(),
       'completed_at': completedAt?.toIso8601String(),
     };

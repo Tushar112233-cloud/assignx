@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../shared/widgets/glass_container.dart';
 
 /// Expert review form widget with 5-star rating and tag chips.
@@ -112,8 +113,8 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
   Future<void> _submitReview() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a rating'),
+        SnackBar(
+          content: Text('Please select a rating'.tr(context)),
           backgroundColor: AppColors.error,
         ),
       );
@@ -127,16 +128,12 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
     setState(() => _isSubmitting = true);
 
     try {
-      // TODO: Save review to Supabase expert_reviews table
-      // final supabase = Supabase.instance.client;
-      // await supabase.from('expert_reviews').insert({
-      //   'expert_id': widget.expertId,
-      //   'booking_id': widget.bookingId,
-      //   'user_id': supabase.auth.currentUser!.id,
+      // TODO: Implement expert review API endpoint
+      // await ApiClient.post('/experts/${widget.expertId}/reviews', {
+      //   'bookingId': widget.bookingId,
       //   'rating': _rating,
       //   'comment': _reviewController.text.trim(),
       //   'tags': _selectedTags.toList(),
-      //   'created_at': DateTime.now().toIso8601String(),
       // });
 
       // Simulate API call
@@ -144,8 +141,8 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Review submitted successfully!'),
+          SnackBar(
+            content: Text('Review submitted successfully!'.tr(context)),
             backgroundColor: AppColors.success,
           ),
         );
@@ -186,7 +183,7 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Rate Your Experience',
+                        'Rate Your Experience'.tr(context),
                         style: AppTextStyles.headingSmall.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -194,7 +191,7 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'How was your session with ${widget.expertName}?',
+                        '${'How was your session with'.tr(context)} ${widget.expertName}?',
                         style: AppTextStyles.bodySmall.copyWith(
                           color: Colors.white70,
                         ),
@@ -238,7 +235,7 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Rating',
+          'Rating'.tr(context),
           style: AppTextStyles.labelMedium.copyWith(
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -283,7 +280,7 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
             padding: const EdgeInsets.only(top: 8),
             child: Center(
               child: Text(
-                _getRatingText(),
+                _getRatingText(context),
                 style: AppTextStyles.labelMedium.copyWith(
                   color: AppColors.warning,
                   fontWeight: FontWeight.w600,
@@ -295,18 +292,18 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
     );
   }
 
-  String _getRatingText() {
+  String _getRatingText(BuildContext context) {
     switch (_rating) {
       case 1:
-        return 'Poor';
+        return 'Poor'.tr(context);
       case 2:
-        return 'Fair';
+        return 'Fair'.tr(context);
       case 3:
-        return 'Good';
+        return 'Good'.tr(context);
       case 4:
-        return 'Very Good';
+        return 'Very Good'.tr(context);
       case 5:
-        return 'Excellent!';
+        return 'Excellent!'.tr(context);
       default:
         return '';
     }
@@ -317,7 +314,7 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'What did you like?',
+          'What did you like?'.tr(context),
           style: AppTextStyles.labelMedium.copyWith(
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -350,7 +347,7 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
                   ),
                 ),
                 child: Text(
-                  tag,
+                  tag.tr(context),
                   style: AppTextStyles.labelSmall.copyWith(
                     color: isSelected ? Colors.white : Colors.white70,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -372,7 +369,7 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Your Review (Optional)',
+              'Your Review (Optional)'.tr(context),
               style: AppTextStyles.labelMedium.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -403,7 +400,7 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
               color: Colors.white,
             ),
             decoration: InputDecoration(
-              hintText: 'Share your experience with this expert...',
+              hintText: 'Share your experience with this expert...'.tr(context),
               hintStyle: AppTextStyles.bodyMedium.copyWith(
                 color: Colors.white38,
               ),
@@ -414,7 +411,7 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
             onChanged: (_) => setState(() {}),
             validator: (value) {
               if (value != null && value.length > 500) {
-                return 'Review must be 500 characters or less';
+                return 'Review must be 500 characters or less'.tr(context);
               }
               return null;
             },
@@ -448,7 +445,7 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
                     ),
                   )
                 : Text(
-                    'Submit Review',
+                    'Submit Review'.tr(context),
                     style: AppTextStyles.buttonMedium.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,

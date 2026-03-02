@@ -3,8 +3,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/dashboard_app_bar.dart';
@@ -29,16 +28,7 @@ class _ProSavedPostsScreenState extends ConsumerState<ProSavedPostsScreen> {
     });
 
     try {
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
-
-      if (user == null) return;
-
-      await supabase
-          .from('saved_listings')
-          .delete()
-          .eq('listing_id', postId)
-          .eq('user_id', user.id);
+      await ApiClient.delete('/community/pro-network/$postId/save');
 
       ref.invalidate(savedProNetworkPostsProvider);
     } catch (e) {

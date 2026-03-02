@@ -18,7 +18,7 @@
 /// ```dart
 /// void main() async {
 ///   WidgetsFlutterBinding.ensureInitialized();
-///   await SupabaseConfig.initialize();
+///   await ApiConfig.initialize();
 ///   runApp(const ProviderScope(child: DoerApp()));
 /// }
 /// ```
@@ -27,7 +27,7 @@
 /// - `flutter/material.dart` - Material Design widgets
 /// - `flutter/services.dart` - Platform channel services
 /// - `flutter_riverpod` - State management
-/// - `supabase_flutter` - Backend as a service (via SupabaseConfig)
+/// - `http` - Backend as a service (via ApiConfig)
 library;
 
 import 'package:flutter/material.dart';
@@ -35,7 +35,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
-import 'core/config/supabase_config.dart';
 
 /// Entry point of the DOER app.
 ///
@@ -47,7 +46,7 @@ import 'core/config/supabase_config.dart';
 /// 5. Runs the application with Riverpod state management
 ///
 /// ## Throws
-/// - [StateError] if Supabase configuration is missing (via [SupabaseConfig.initialize])
+/// - [StateError] if Supabase configuration is missing (via [ApiConfig.initialize])
 ///
 /// ## Note
 /// This function is marked `async` because it awaits platform channel
@@ -70,9 +69,6 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-
-  // Initialize Supabase
-  await SupabaseConfig.initialize();
 
   // Run the app with Riverpod
   runApp(

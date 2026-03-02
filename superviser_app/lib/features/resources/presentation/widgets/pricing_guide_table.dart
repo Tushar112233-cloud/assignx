@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/pricing_model.dart';
 
 /// Widget for displaying the pricing guide table.
@@ -37,7 +38,7 @@ class PricingGuideTable extends StatelessWidget {
               Icon(Icons.monetization_on, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
-                'Pricing Guide',
+                'Pricing Guide'.tr(context),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -45,7 +46,7 @@ class PricingGuideTable extends StatelessWidget {
               const Spacer(),
               if (guide.lastUpdated != null)
                 Text(
-                  'Updated ${_formatDate(guide.lastUpdated!)}',
+                  '${'Updated'.tr(context)} ${_formatDate(guide.lastUpdated!)}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondaryLight,
                       ),
@@ -185,11 +186,11 @@ class _WorkTypeSection extends StatelessWidget {
                     ),
                     children: [
                       _TableCell(
-                        text: 'Academic Level',
+                        text: 'Academic Level'.tr(context),
                         isHeader: true,
                       ),
                       _TableCell(
-                        text: 'Per Page',
+                        text: 'Per Page'.tr(context),
                         isHeader: true,
                         alignment: TextAlign.right,
                       ),
@@ -348,7 +349,7 @@ class PricingCalculator extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Price Calculator',
+              'Price Calculator'.tr(context),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -357,8 +358,8 @@ class PricingCalculator extends StatelessWidget {
             // Work Type Dropdown
             DropdownButtonFormField<WorkType>(
               value: selectedWorkType,
-              decoration: const InputDecoration(
-                labelText: 'Work Type',
+              decoration: InputDecoration(
+                labelText: 'Work Type'.tr(context),
                 prefixIcon: Icon(Icons.work_outline),
               ),
               items: WorkType.values.map((type) {
@@ -379,8 +380,8 @@ class PricingCalculator extends StatelessWidget {
             // Academic Level Dropdown
             DropdownButtonFormField<AcademicLevel>(
               value: selectedLevel,
-              decoration: const InputDecoration(
-                labelText: 'Academic Level',
+              decoration: InputDecoration(
+                labelText: 'Academic Level'.tr(context),
                 prefixIcon: Icon(Icons.school_outlined),
               ),
               items: AcademicLevel.values.map((level) {
@@ -397,8 +398,8 @@ class PricingCalculator extends StatelessWidget {
             // Urgency Dropdown
             DropdownButtonFormField<UrgencyLevel>(
               value: selectedUrgency,
-              decoration: const InputDecoration(
-                labelText: 'Urgency',
+              decoration: InputDecoration(
+                labelText: 'Urgency'.tr(context),
                 prefixIcon: Icon(Icons.schedule_outlined),
               ),
               items: UrgencyLevel.values.map((urgency) {
@@ -429,7 +430,7 @@ class PricingCalculator extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Number of Pages',
+                    'Number of Pages'.tr(context),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
@@ -475,7 +476,7 @@ class PricingCalculator extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    'Estimated Price',
+                    'Estimated Price'.tr(context),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
                         ),

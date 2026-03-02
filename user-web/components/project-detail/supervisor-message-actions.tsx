@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
+import { apiClient } from "@/lib/api/client"
 
 /**
  * Props for SupervisorMessageActions component
@@ -43,17 +43,6 @@ interface SupervisorMessageActionsProps {
  * SupervisorMessageActions component
  *
  * Provides approve and reject buttons for supervisors to moderate messages.
- * Includes a dialog for entering rejection reasons.
- *
- * @example
- * ```tsx
- * <SupervisorMessageActions
- *   messageId="msg-123"
- *   supervisorId="sup-456"
- *   onApprove={(id) => console.log("Approved:", id)}
- *   onReject={(id, reason) => console.log("Rejected:", id, reason)}
- * />
- * ```
  */
 export function SupervisorMessageActions({
   messageId,
@@ -68,8 +57,6 @@ export function SupervisorMessageActions({
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const [rejectReason, setRejectReason] = useState("")
 
-  const supabase = createClient()
-
   /**
    * Handle message approval
    */
@@ -79,16 +66,10 @@ export function SupervisorMessageActions({
     setIsApproving(true)
 
     try {
-      const { error } = await supabase
-        .from("chat_messages")
-        .update({
-          approval_status: "approved",
-          approved_by: supervisorId,
-          approved_at: new Date().toISOString(),
-        })
-        .eq("id", messageId)
-
-      if (error) throw error
+      await apiClient(`/api/chat/messages/${messageId}/approve`, {
+        method: "POST",
+        body: JSON.stringify({ supervisorId }),
+      })
 
       toast.success("Message approved")
       onApprove?.(messageId)
@@ -98,7 +79,7 @@ export function SupervisorMessageActions({
     } finally {
       setIsApproving(false)
     }
-  }, [messageId, supervisorId, disabled, isApproving, onApprove, supabase])
+  }, [messageId, supervisorId, disabled, isApproving, onApprove])
 
   /**
    * Handle message rejection
@@ -109,17 +90,13 @@ export function SupervisorMessageActions({
     setIsRejecting(true)
 
     try {
-      const { error } = await supabase
-        .from("chat_messages")
-        .update({
-          approval_status: "rejected",
-          approved_by: supervisorId,
-          approved_at: new Date().toISOString(),
-          rejection_reason: rejectReason.trim(),
-        })
-        .eq("id", messageId)
-
-      if (error) throw error
+      await apiClient(`/api/chat/messages/${messageId}/reject`, {
+        method: "POST",
+        body: JSON.stringify({
+          supervisorId,
+          reason: rejectReason.trim(),
+        }),
+      })
 
       toast.success("Message rejected")
       onReject?.(messageId, rejectReason.trim())
@@ -131,18 +108,12 @@ export function SupervisorMessageActions({
     } finally {
       setIsRejecting(false)
     }
-  }, [messageId, supervisorId, rejectReason, disabled, isRejecting, onReject, supabase])
+  }, [messageId, supervisorId, rejectReason, disabled, isRejecting, onReject])
 
-  /**
-   * Open rejection dialog
-   */
   const openRejectDialog = useCallback(() => {
     setShowRejectDialog(true)
   }, [])
 
-  /**
-   * Close rejection dialog and reset state
-   */
   const closeRejectDialog = useCallback(() => {
     setShowRejectDialog(false)
     setRejectReason("")
@@ -151,7 +122,6 @@ export function SupervisorMessageActions({
   return (
     <>
       <div className={cn("flex items-center gap-1", className)}>
-        {/* Approve Button */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -178,7 +148,6 @@ export function SupervisorMessageActions({
           </TooltipContent>
         </Tooltip>
 
-        {/* Reject Button */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -202,7 +171,6 @@ export function SupervisorMessageActions({
         </Tooltip>
       </div>
 
-      {/* Rejection Reason Dialog */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -257,9 +225,7 @@ export function SupervisorMessageActions({
 
 /**
  * SupervisorMessageActionsCompact component
- *
  * Compact version for inline use within message bubbles.
- * Shows actions as small icons without labels.
  */
 export function SupervisorMessageActionsCompact({
   messageId,
@@ -274,23 +240,16 @@ export function SupervisorMessageActionsCompact({
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const [rejectReason, setRejectReason] = useState("")
 
-  const supabase = createClient()
-
   const handleApprove = async () => {
     if (disabled || isApproving) return
     setIsApproving(true)
 
     try {
-      const { error } = await supabase
-        .from("chat_messages")
-        .update({
-          approval_status: "approved",
-          approved_by: supervisorId,
-          approved_at: new Date().toISOString(),
-        })
-        .eq("id", messageId)
+      await apiClient(`/api/chat/messages/${messageId}/approve`, {
+        method: "POST",
+        body: JSON.stringify({ supervisorId }),
+      })
 
-      if (error) throw error
       toast.success("Message approved")
       onApprove?.(messageId)
     } catch (error: any) {
@@ -305,17 +264,14 @@ export function SupervisorMessageActionsCompact({
     setIsRejecting(true)
 
     try {
-      const { error } = await supabase
-        .from("chat_messages")
-        .update({
-          approval_status: "rejected",
-          approved_by: supervisorId,
-          approved_at: new Date().toISOString(),
-          rejection_reason: rejectReason.trim(),
-        })
-        .eq("id", messageId)
+      await apiClient(`/api/chat/messages/${messageId}/reject`, {
+        method: "POST",
+        body: JSON.stringify({
+          supervisorId,
+          reason: rejectReason.trim(),
+        }),
+      })
 
-      if (error) throw error
       toast.success("Message rejected")
       onReject?.(messageId, rejectReason.trim())
       setShowRejectDialog(false)

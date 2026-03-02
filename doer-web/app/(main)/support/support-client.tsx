@@ -34,7 +34,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
+import { apiClient, getAccessToken } from '@/lib/api/client'
 import { getFAQs } from '@/services/support.service'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -55,7 +55,6 @@ interface FAQItem {
  */
 export function SupportClient({ userEmail }: SupportClientProps) {
   const { user } = useAuth()
-  const supabase = createClient()
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -64,7 +63,7 @@ export function SupportClient({ userEmail }: SupportClientProps) {
   const [priority, setPriority] = useState('medium')
   const [projectId, setProjectId] = useState('')
   const [projects, setProjects] = useState<Array<{ id: string; project_number: string; subject: string }>>([])
-  const [tickets, setTickets] = useState<Array<{ id: string; subject: string; status: string; category: string; priority: string; created_at: string }>>([])
+  const [tickets, setTickets] = useState<Array<{ id: string; subject: string; status: string; category: string; priority: string; created_at?: string; createdAt?: string }>>([])
   const [ticketsLoading, setTicketsLoading] = useState(true)
 
   /** Load FAQs from database */
@@ -88,57 +87,47 @@ export function SupportClient({ userEmail }: SupportClientProps) {
   useEffect(() => {
     if (!user?.id) return
     const loadProjects = async () => {
-      // First get the doer's ID (doers.id, not profile_id)
-      const { data: doerData } = await supabase
-        .from('doers')
-        .select('id')
-        .eq('profile_id', user.id)
-        .single()
-      if (!doerData) return
-      const { data } = await supabase
-        .from('projects')
-        .select('id, project_number, title')
-        .eq('doer_id', doerData.id)
-        .order('created_at', { ascending: false })
-      if (data) setProjects(data.map((p: any) => ({ ...p, subject: p.title })) as any)
+      try {
+        // First get the doer's ID (doers.id, not profile_id)
+        const doerData = await apiClient<{ id: string }>(`/api/doers/by-profile/${user.id}`)
+        if (!doerData) return
+        const data = await apiClient<Array<{ id: string; project_number: string; title: string }>>(
+          `/api/projects?doer_id=${doerData.id}&fields=id,project_number,title&sort=-created_at`
+        )
+        if (data) setProjects(data.map((p: any) => ({ ...p, subject: p.title })) as any)
+      } catch (error) {
+        console.error('Error loading projects:', error)
+      }
     }
     loadProjects()
-  }, [user?.id, supabase])
+  }, [user?.id])
 
   /** Load doer's support tickets */
   const loadTickets = useCallback(async () => {
     if (!user?.id) return
     setTicketsLoading(true)
-    const { data } = await supabase
-      .from('support_tickets')
-      .select('id, subject, status, category, priority, created_at')
-      .eq('requester_id', user.id)
-      .order('created_at', { ascending: false })
-    if (data) setTickets(data as any)
+    try {
+      const data = await apiClient<any>(
+        `/api/support/tickets?requester_id=${user.id}&sort=-created_at`
+      )
+      if (data) {
+        const ticketsList = Array.isArray(data) ? data : (data.tickets || [])
+        setTickets(ticketsList)
+      }
+    } catch (error) {
+      console.error('Error loading tickets:', error)
+    }
     setTicketsLoading(false)
-  }, [user?.id, supabase])
+  }, [user?.id])
 
   useEffect(() => {
     if (!user?.id) return
     loadTickets()
 
-    // Real-time subscription for ticket updates
-    const channel = supabase
-      .channel('doer_tickets')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'support_tickets',
-          filter: `requester_id=eq.${user.id}`,
-        },
-        loadTickets
-      )
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [user?.id, supabase, loadTickets])
+    // Poll for ticket updates every 30 seconds
+    const interval = setInterval(loadTickets, 30000)
+    return () => clearInterval(interval)
+  }, [user?.id, loadTickets])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -151,9 +140,9 @@ export function SupportClient({ userEmail }: SupportClientProps) {
     setIsSubmitting(true)
 
     try {
-      const { error } = await supabase
-        .from('support_tickets')
-        .insert({
+      await apiClient('/api/support/tickets', {
+        method: 'POST',
+        body: JSON.stringify({
           requester_id: user?.id,
           subject: subject.trim(),
           description: message.trim(),
@@ -162,9 +151,8 @@ export function SupportClient({ userEmail }: SupportClientProps) {
           project_id: projectId || null,
           status: 'open',
           source_role: 'doer',
-        })
-
-      if (error) throw error
+        }),
+      })
 
       toast.success('Support ticket submitted successfully!')
       setSubject('')
@@ -531,10 +519,10 @@ export function SupportClient({ userEmail }: SupportClientProps) {
                             'border-slate-200 text-slate-700': ticket.status === 'closed',
                           })}
                         >
-                          {ticket.status.replace('_', ' ')}
+                          {(ticket.status || '').replace('_', ' ')}
                         </Badge>
                         <span className="text-xs text-slate-400">
-                          {new Date(ticket.created_at).toLocaleDateString()}
+                          {new Date(ticket.createdAt || ticket.created_at || '').toLocaleDateString()}
                         </span>
                       </div>
                     </div>

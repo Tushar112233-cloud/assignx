@@ -53,10 +53,9 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
       final authState = ref.read(authStateProvider);
       final user = authState.valueOrNull?.user;
       if (user != null) {
-        // Try to get name from user metadata (from Google)
-        final fullName = user.userMetadata?['full_name'] as String? ??
-            user.userMetadata?['name'] as String? ??
-            '';
+        // Try to get name from profile
+        final profile = ref.read(currentProfileProvider);
+        final fullName = profile?.fullName ?? '';
         if (fullName.isNotEmpty) {
           _nameController.text = fullName;
         }

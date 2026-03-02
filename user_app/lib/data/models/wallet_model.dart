@@ -153,19 +153,23 @@ class Wallet {
   }
 
   factory Wallet.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDate(String snakeKey, String camelKey) {
+      final value = json[snakeKey] ?? json[camelKey];
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
     return Wallet(
-      id: json['id'] as String? ?? '',
-      profileId: json['profile_id'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      profileId: (json['profile_id'] ?? json['profileId'] ?? '').toString(),
       balance: _parseDouble(json['balance']),
       currency: json['currency'] as String? ?? 'INR',
-      totalCredited: _parseDouble(json['total_credited']),
-      totalDebited: _parseDouble(json['total_debited']),
-      totalWithdrawn: _parseDouble(json['total_withdrawn']),
-      lockedAmount: _parseDouble(json['locked_amount']),
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      totalCredited: _parseDouble(json['total_credited'] ?? json['totalCredited']),
+      totalDebited: _parseDouble(json['total_debited'] ?? json['totalDebited']),
+      totalWithdrawn: _parseDouble(json['total_withdrawn'] ?? json['totalWithdrawn']),
+      lockedAmount: _parseDouble(json['locked_amount'] ?? json['lockedAmount']),
+      createdAt: parseDate('created_at', 'createdAt'),
+      updatedAt: parseDate('updated_at', 'updatedAt') ?? DateTime.now(),
     );
   }
 
@@ -288,19 +292,20 @@ class WalletTransaction {
   String get dateTimeString => '$dateString at $timeString';
 
   factory WalletTransaction.fromJson(Map<String, dynamic> json) {
+    final dateStr = (json['created_at'] ?? json['createdAt'] ?? '').toString();
     return WalletTransaction(
-      id: json['id'] as String,
-      walletId: json['wallet_id'] as String,
-      type: TransactionType.fromDbValue(json['transaction_type'] as String?),
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      walletId: (json['wallet_id'] ?? json['walletId'] ?? '').toString(),
+      type: TransactionType.fromDbValue((json['transaction_type'] ?? json['transactionType']) as String?),
       amount: Wallet._parseDouble(json['amount']),
-      balanceBefore: Wallet._parseDouble(json['balance_before']),
-      balanceAfter: Wallet._parseDouble(json['balance_after']),
-      referenceType: json['reference_type'] as String?,
-      referenceId: json['reference_id'] as String?,
+      balanceBefore: Wallet._parseDouble(json['balance_before'] ?? json['balanceBefore']),
+      balanceAfter: Wallet._parseDouble(json['balance_after'] ?? json['balanceAfter']),
+      referenceType: (json['reference_type'] ?? json['referenceType']) as String?,
+      referenceId: (json['reference_id'] ?? json['referenceId']) as String?,
       description: json['description'] as String? ?? '',
       notes: json['notes'] as String?,
       status: TransactionStatus.fromDbValue(json['status'] as String?),
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.tryParse(dateStr) ?? DateTime.now(),
     );
   }
 
@@ -435,16 +440,17 @@ class PaymentMethod {
   }
 
   factory PaymentMethod.fromJson(Map<String, dynamic> json) {
+    final dateStr = (json['created_at'] ?? json['createdAt'] ?? '').toString();
     return PaymentMethod(
-      id: json['id'] as String,
-      userId: (json['profile_id'] ?? json['user_id']) as String,
-      type: PaymentMethodType.fromDbString(json['method_type'] as String?),
-      displayName: json['display_name'] as String? ?? 'Payment Method',
-      lastFourDigits: json['card_last_four'] as String?,
-      upiId: json['upi_id'] as String?,
-      bankName: json['bank_name'] as String?,
-      isDefault: json['is_default'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: (json['profile_id'] ?? json['profileId'] ?? json['user_id'] ?? json['userId'] ?? '').toString(),
+      type: PaymentMethodType.fromDbString((json['method_type'] ?? json['methodType']) as String?),
+      displayName: (json['display_name'] ?? json['displayName']) as String? ?? 'Payment Method',
+      lastFourDigits: (json['card_last_four'] ?? json['cardLastFour']) as String?,
+      upiId: (json['upi_id'] ?? json['upiId']) as String?,
+      bankName: (json['bank_name'] ?? json['bankName']) as String?,
+      isDefault: (json['is_default'] ?? json['isDefault']) as bool? ?? false,
+      createdAt: DateTime.tryParse(dateStr) ?? DateTime.now(),
     );
   }
 
@@ -485,12 +491,12 @@ class Referral {
 
   factory Referral.fromJson(Map<String, dynamic> json) {
     return Referral(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      code: json['code'] as String,
-      totalReferrals: json['total_referrals'] as int? ?? 0,
-      totalEarnings: (json['total_earnings'] as num?)?.toDouble() ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
+      code: (json['code'] ?? '').toString(),
+      totalReferrals: (json['total_referrals'] ?? json['totalReferrals']) as int? ?? 0,
+      totalEarnings: ((json['total_earnings'] ?? json['totalEarnings']) as num?)?.toDouble() ?? 0,
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 

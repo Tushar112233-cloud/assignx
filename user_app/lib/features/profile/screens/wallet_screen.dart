@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import '../../../core/api/api_client.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -49,6 +50,7 @@ class WalletScreen extends ConsumerWidget {
                     wallet: wallet,
                     userName: userName,
                     onTopUp: () => _showTopUpSheet(context, ref),
+                    onSendMoney: () => _showSendMoneySheet(context, ref),
                     onBack: () => context.pop(),
                   ),
                   loading: () => _CurvedDomeHero(
@@ -104,26 +106,50 @@ class WalletScreen extends ConsumerWidget {
               // Transaction history header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 28, 16, 14),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Payment History',
-                        style: AppTextStyles.labelLarge.copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.receipt_long_rounded,
+                              size: 18,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Payment History',
+                            style: AppTextStyles.labelLarge.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.78),
-                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.71),
+                            color: AppColors.border.withValues(alpha: 0.15),
                             width: 1,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Icon(
                           Icons.search_rounded,
@@ -469,6 +495,323 @@ class WalletScreen extends ConsumerWidget {
       }
     });
   }
+
+  /// Shows the send money bottom sheet with recipient search and amount selection.
+  void _showSendMoneySheet(BuildContext context, WidgetRef ref) {
+    final emailController = TextEditingController();
+    final amountController = TextEditingController();
+    final noteController = TextEditingController();
+    final amounts = [50, 100, 200, 500, 1000];
+    int? selectedAmount;
+    String? recipientName;
+    String? recipientId;
+    bool isSearching = false;
+    String? searchError;
+    int currentStep = 0; // 0: search, 1: amount, 2: confirm
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 12,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Send Money',
+                  style: AppTextStyles.headingSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  currentStep == 0
+                      ? 'Enter recipient email to find them'
+                      : currentStep == 1
+                          ? 'Select or enter amount'
+                          : 'Confirm your transfer',
+                  style: AppTextStyles.bodySmall,
+                ),
+                const SizedBox(height: 24),
+
+                // Step 0: Search recipient
+                if (currentStep == 0) ...[
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      hintText: 'Enter email address',
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      errorText: searchError,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isSearching
+                          ? null
+                          : () async {
+                              final email = emailController.text.trim();
+                              if (email.isEmpty || !email.contains('@')) {
+                                setState(() => searchError = 'Enter a valid email');
+                                return;
+                              }
+                              setState(() {
+                                isSearching = true;
+                                searchError = null;
+                              });
+                              try {
+                                final result = await ApiClient.get(
+                                  '/profiles/search?email=${Uri.encodeComponent(email)}',
+                                );
+                                if (result != null && result is Map<String, dynamic>) {
+                                  setState(() {
+                                    recipientName = result['full_name'] as String?;
+                                    recipientId = result['id'] as String?;
+                                    currentStep = 1;
+                                    isSearching = false;
+                                  });
+                                } else {
+                                  setState(() {
+                                    searchError = 'User not found';
+                                    isSearching = false;
+                                  });
+                                }
+                              } catch (e) {
+                                setState(() {
+                                  searchError = 'Error searching user';
+                                  isSearching = false;
+                                });
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: isSearching
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Find User'),
+                    ),
+                  ),
+                ],
+
+                // Step 1: Select amount
+                if (currentStep == 1) ...[
+                  // Recipient info
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                          child: Icon(Icons.person, color: AppColors.primary),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                recipientName ?? 'Unknown',
+                                style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              Text(
+                                emailController.text.trim(),
+                                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: amounts.map((amount) {
+                      final isSelected = selectedAmount == amount;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedAmount = amount;
+                            amountController.text = amount.toString();
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                          decoration: BoxDecoration(
+                            gradient: isSelected
+                                ? LinearGradient(
+                                    colors: [
+                                      const Color(0xFF8B5CF6),
+                                      const Color(0xFF7C3AED),
+                                    ],
+                                  )
+                                : null,
+                            color: isSelected ? null : AppColors.surfaceVariant,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF8B5CF6) : AppColors.border,
+                            ),
+                          ),
+                          child: Text(
+                            '\u20B9$amount',
+                            style: AppTextStyles.labelMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: isSelected ? Colors.white : AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: InputDecoration(
+                      hintText: 'Or enter custom amount',
+                      prefixText: '\u20B9 ',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onChanged: (val) {
+                      final parsed = int.tryParse(val);
+                      setState(() => selectedAmount = parsed);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: noteController,
+                    decoration: InputDecoration(
+                      hintText: 'Add a note (optional)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => setState(() => currentStep = 0),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text('Back'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: selectedAmount != null && selectedAmount! > 0
+                              ? () async {
+                                  Navigator.pop(context);
+                                  // Execute send money via API
+                                  try {
+                                    if (recipientId == null) return;
+
+                                    await ApiClient.post('/wallet/transfer', {
+                                      'recipient_id': recipientId,
+                                      'amount': selectedAmount,
+                                      'note': noteController.text.trim(),
+                                    });
+
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('\u20B9$selectedAmount sent to ${recipientName ?? 'user'}'),
+                                          backgroundColor: AppColors.success,
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                      );
+                                    }
+                                    ref.invalidate(walletProvider);
+                                    ref.invalidate(walletTransactionsProvider);
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Failed to send money: ${e.toString()}'),
+                                          backgroundColor: AppColors.error,
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text('Send'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Custom clipper for curved bottom edge on the dome hero.
@@ -501,6 +844,7 @@ class _CurvedDomeHero extends StatelessWidget {
   final bool isLoading;
   final bool hasError;
   final VoidCallback? onTopUp;
+  final VoidCallback? onSendMoney;
   final VoidCallback? onBack;
   final String? userName;
 
@@ -509,6 +853,7 @@ class _CurvedDomeHero extends StatelessWidget {
     this.isLoading = false,
     this.hasError = false,
     this.onTopUp,
+    this.onSendMoney,
     this.onBack,
     this.userName,
   });
@@ -637,9 +982,7 @@ class _CurvedDomeHero extends StatelessWidget {
                               Color(0xFF8B5CF6), // violet-500
                               Color(0xFF7C3AED), // violet-600
                             ],
-                            onTap: () {
-                              // TODO: Implement send money
-                            },
+                            onTap: onSendMoney,
                           ),
                         ),
                       ],
@@ -675,50 +1018,58 @@ class _QuickActionButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(14),
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: Colors.white.withValues(alpha: 0.12),
               width: 1,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: gradientColors,
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: gradientColors.first.withValues(alpha: 0.24),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: gradientColors.first.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
                 child: Icon(
                   icon,
                   color: Colors.white,
-                  size: 16,
+                  size: 18,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Text(
                 label,
                 style: AppTextStyles.labelSmall.copyWith(
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
+                  letterSpacing: 0.2,
                 ),
               ),
             ],
@@ -749,24 +1100,30 @@ class _CreditCardWidget extends StatelessWidget {
     final validYear = ((now.year % 100) + 5).toString().padLeft(2, '0');
 
     return Container(
-      height: 220,
+      height: 225,
       decoration: BoxDecoration(
         // Premium brown gradient matching web
         gradient: const LinearGradient(
           colors: [
-            Color(0xFF44403C), // stone-700
-            Color(0xFF292524), // stone-800
-            Color(0xFF1C1917), // stone-900
+            Color(0xFF4A403A), // warm stone-700
+            Color(0xFF2E2520), // warm stone-800
+            Color(0xFF1A1512), // warm stone-900
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          stops: [0.0, 0.5, 1.0],
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: Colors.black.withValues(alpha: 0.45),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.06),
+            blurRadius: 40,
+            offset: const Offset(0, -4),
           ),
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
@@ -1238,7 +1595,7 @@ class _GlassmorphicStatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // Card with gradient tint integrated into decoration
     final cardContent = Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         // Gradient background with subtle color tint
         gradient: LinearGradient(
@@ -1249,16 +1606,21 @@ class _GlassmorphicStatCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.8),
+          color: Colors.white.withValues(alpha: 0.85),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: gradientColors.first.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -1455,20 +1817,25 @@ class _GlassmorphicOfferCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 110,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      width: 115,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.6),
+          color: AppColors.border.withValues(alpha: 0.12),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: offer.gradientColors.first.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -1476,19 +1843,19 @@ class _GlassmorphicOfferCard extends StatelessWidget {
         children: [
           // Icon
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: offer.gradientColors,
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: offer.gradientColors.first.withValues(alpha: 0.25),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+                  color: offer.gradientColors.first.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -1509,7 +1876,7 @@ class _GlassmorphicOfferCard extends StatelessWidget {
                   offer.title,
                   style: AppTextStyles.labelSmall.copyWith(
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1564,17 +1931,26 @@ class _GlassTransactionTile extends StatelessWidget {
         : const [Color(0xFF6B7280), Color(0xFF4B5563)]; // gray
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: AppColors.border.withValues(alpha: 0.1),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.01),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -1582,7 +1958,7 @@ class _GlassTransactionTile extends StatelessWidget {
           children: [
             // Transaction type icon with gradient
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: gradientColors,
@@ -1592,9 +1968,9 @@ class _GlassTransactionTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: gradientColors.first.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: gradientColors.first.withValues(alpha: 0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
@@ -1620,7 +1996,7 @@ class _GlassTransactionTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Text(
                     '${transaction.dateString} \u2022 ${transaction.timeString}',
                     style: AppTextStyles.caption.copyWith(
@@ -1637,29 +2013,29 @@ class _GlassTransactionTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${isCredit ? '+' : '−'} ${transaction.amountString}',
+                  '${isCredit ? '+' : '\u2212'} ${transaction.amountString}',
                   style: AppTextStyles.labelMedium.copyWith(
-                    fontSize: 14,
+                    fontSize: 15,
                     color: isCredit ? const Color(0xFF10B981) : AppColors.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (transaction.status != 'completed')
+                if (transaction.status != TransactionStatus.completed)
                   Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    margin: const EdgeInsets.only(top: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                     decoration: BoxDecoration(
-                      color: transaction.status == 'pending'
+                      color: transaction.status == TransactionStatus.pending
                           ? Colors.amber.withValues(alpha: 0.12)
                           : Colors.red.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      transaction.status == 'pending' ? 'Pending' : 'Failed',
+                      transaction.status == TransactionStatus.pending ? 'Pending' : 'Failed',
                       style: AppTextStyles.caption.copyWith(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: transaction.status == 'pending'
+                        color: transaction.status == TransactionStatus.pending
                             ? Colors.amber.shade700
                             : Colors.red.shade700,
                       ),
@@ -1680,87 +2056,65 @@ class _EmptyTransactions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 28),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.78),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.71),
+          color: AppColors.border.withValues(alpha: 0.12),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Stack(
+      child: Column(
         children: [
-          // Gradient overlay
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF8B5CF6).withValues(alpha: 0.06),
-                    const Color(0xFF7C3AED).withValues(alpha: 0.03),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+                  const Color(0xFF7C3AED).withValues(alpha: 0.04),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                width: 1,
               ),
             ),
-          ),
-          // Content
-          Center(
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.78),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.71),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.credit_card_rounded,
-                    size: 32,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'No transactions yet',
-                  style: AppTextStyles.labelLarge.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Your transaction history will appear here',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    fontSize: 12,
-                    color: AppColors.textTertiary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+            child: Icon(
+              Icons.credit_card_rounded,
+              size: 32,
+              color: AppColors.textTertiary,
             ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No transactions yet',
+            style: AppTextStyles.labelLarge.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your transaction history will appear here',
+            style: AppTextStyles.bodySmall.copyWith(
+              fontSize: 13,
+              color: AppColors.textTertiary,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../shared/widgets/buttons/primary_button.dart';
 import '../providers/registration_provider.dart';
 
@@ -86,7 +87,7 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 32),
         Text(
-          'Application Submitted!',
+          'Application Submitted!'.tr(context),
           style: AppTypography.headlineSmall.copyWith(
             color: AppColors.textPrimaryLight,
             fontWeight: FontWeight.bold,
@@ -95,7 +96,7 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 16),
         Text(
-          'Thank you for applying to become a supervisor at AssignX.',
+          'Thank you for applying to become a supervisor at AssignX.'.tr(context),
           style: AppTypography.bodyLarge.copyWith(
             color: AppColors.textSecondaryLight,
           ),
@@ -104,20 +105,20 @@ class _ApplicationPendingScreenState
         const SizedBox(height: 24),
         _buildStatusCard(
           icon: Icons.schedule,
-          title: 'Under Review',
+          title: 'Under Review'.tr(context),
           description:
-              'Your application is in the queue. Our team reviews applications within 2-3 business days.',
+              'Your application is in the queue. Our team reviews applications within 2-3 business days.'.tr(context),
           color: AppColors.info,
         ),
         const SizedBox(height: 16),
         _buildInfoRow(
           icon: Icons.email_outlined,
-          text: 'We\'ll notify you via email once reviewed',
+          text: 'We\'ll notify you via email once reviewed'.tr(context),
         ),
         const SizedBox(height: 8),
         _buildInfoRow(
           icon: Icons.notifications_outlined,
-          text: 'You\'ll also receive an in-app notification',
+          text: 'You\'ll also receive an in-app notification'.tr(context),
         ),
       ],
     );
@@ -142,7 +143,7 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 32),
         Text(
-          'Under Review',
+          'Under Review'.tr(context),
           style: AppTypography.headlineSmall.copyWith(
             color: AppColors.textPrimaryLight,
             fontWeight: FontWeight.bold,
@@ -151,7 +152,7 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 16),
         Text(
-          'Our team is currently reviewing your application.',
+          'Our team is currently reviewing your application.'.tr(context),
           style: AppTypography.bodyLarge.copyWith(
             color: AppColors.textSecondaryLight,
           ),
@@ -160,9 +161,9 @@ class _ApplicationPendingScreenState
         const SizedBox(height: 24),
         _buildStatusCard(
           icon: Icons.person_search_outlined,
-          title: 'Being Reviewed',
+          title: 'Being Reviewed'.tr(context),
           description:
-              'A team member is actively reviewing your qualifications and experience.',
+              'A team member is actively reviewing your qualifications and experience.'.tr(context),
           color: AppColors.info,
         ),
       ],
@@ -188,7 +189,7 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 32),
         Text(
-          'Congratulations!',
+          'Congratulations!'.tr(context),
           style: AppTypography.headlineSmall.copyWith(
             color: AppColors.success,
             fontWeight: FontWeight.bold,
@@ -197,7 +198,7 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 16),
         Text(
-          'Your application has been approved. Welcome to the AssignX supervisor team!',
+          'Your application has been approved. Welcome to the AssignX supervisor team!'.tr(context),
           style: AppTypography.bodyLarge.copyWith(
             color: AppColors.textSecondaryLight,
           ),
@@ -206,9 +207,9 @@ class _ApplicationPendingScreenState
         const SizedBox(height: 24),
         _buildStatusCard(
           icon: Icons.celebration_outlined,
-          title: 'You\'re In!',
+          title: 'You\'re In!'.tr(context),
           description:
-              'You can now access the supervisor dashboard and start accepting assignments.',
+              'You can now access the supervisor dashboard and start accepting assignments.'.tr(context),
           color: AppColors.success,
         ),
       ],
@@ -234,7 +235,7 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 32),
         Text(
-          'Application Not Approved',
+          'Application Not Approved'.tr(context),
           style: AppTypography.headlineSmall.copyWith(
             color: AppColors.textPrimaryLight,
             fontWeight: FontWeight.bold,
@@ -243,7 +244,7 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 16),
         Text(
-          'Unfortunately, your application was not approved at this time.',
+          'Unfortunately, your application was not approved at this time.'.tr(context),
           style: AppTypography.bodyLarge.copyWith(
             color: AppColors.textSecondaryLight,
           ),
@@ -252,9 +253,9 @@ class _ApplicationPendingScreenState
         const SizedBox(height: 24),
         _buildStatusCard(
           icon: Icons.info_outline,
-          title: 'What\'s Next?',
+          title: 'What\'s Next?'.tr(context),
           description:
-              'You may reapply after 30 days. Consider enhancing your qualifications or expertise areas.',
+              'You may reapply after 30 days. Consider enhancing your qualifications or expertise areas.'.tr(context),
           color: AppColors.error,
         ),
       ],
@@ -280,7 +281,7 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 32),
         Text(
-          'Revision Needed',
+          'Revision Needed'.tr(context),
           style: AppTypography.headlineSmall.copyWith(
             color: AppColors.textPrimaryLight,
             fontWeight: FontWeight.bold,
@@ -289,7 +290,7 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 16),
         Text(
-          'Your application needs some updates before we can proceed.',
+          'Your application needs some updates before we can proceed.'.tr(context),
           style: AppTypography.bodyLarge.copyWith(
             color: AppColors.textSecondaryLight,
           ),
@@ -298,9 +299,9 @@ class _ApplicationPendingScreenState
         const SizedBox(height: 24),
         _buildStatusCard(
           icon: Icons.assignment_outlined,
-          title: 'Action Required',
+          title: 'Action Required'.tr(context),
           description:
-              'Please review the feedback and update your application accordingly.',
+              'Please review the feedback and update your application accordingly.'.tr(context),
           color: AppColors.warning,
         ),
       ],
@@ -370,13 +371,13 @@ class _ApplicationPendingScreenState
     switch (status) {
       case ApplicationStatus.approved:
         return PrimaryButton(
-          text: 'Go to Dashboard',
+          text: 'Go to Dashboard'.tr(context),
           onPressed: () => context.go('/dashboard'),
           icon: Icons.dashboard_outlined,
         );
       case ApplicationStatus.needsRevision:
         return PrimaryButton(
-          text: 'Edit Application',
+          text: 'Edit Application'.tr(context),
           onPressed: () => context.go('/registration'),
           icon: Icons.edit_outlined,
         );
@@ -384,7 +385,7 @@ class _ApplicationPendingScreenState
         return Column(
           children: [
             PrimaryButton(
-              text: 'Contact Support',
+              text: 'Contact Support'.tr(context),
               onPressed: () {
                 // Open support dialog or email
               },
@@ -393,7 +394,7 @@ class _ApplicationPendingScreenState
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => context.go('/login'),
-              child: const Text('Back to Login'),
+              child: Text('Back to Login'.tr(context)),
             ),
           ],
         );
@@ -401,7 +402,7 @@ class _ApplicationPendingScreenState
         return Column(
           children: [
             SecondaryButton(
-              text: 'Refresh Status',
+              text: 'Refresh Status'.tr(context),
               onPressed: () {
                 ref.read(registrationProvider.notifier).checkApplicationStatus();
               },
@@ -410,7 +411,7 @@ class _ApplicationPendingScreenState
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => context.go('/login'),
-              child: const Text('Sign Out'),
+              child: Text('Sign Out'.tr(context)),
             ),
           ],
         );

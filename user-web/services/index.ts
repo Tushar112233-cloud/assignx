@@ -3,7 +3,6 @@
  * Central export point for all service modules
  *
  * Note: Auth operations use server actions in lib/actions/auth.ts
- * Profile types are defined in types/database.ts
  */
 
 export { projectService } from './project.service'

@@ -41,11 +41,11 @@ class QuestionAuthor {
   /// Create from JSON.
   factory QuestionAuthor.fromJson(Map<String, dynamic> json) {
     return QuestionAuthor(
-      id: json['id'] as String,
-      name: json['full_name'] as String? ?? json['name'] as String? ?? 'Anonymous',
-      avatarUrl: json['avatar_url'] as String?,
-      isExpert: json['is_expert'] as bool? ?? false,
-      isVerified: json['is_verified'] as bool? ?? false,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      name: (json['full_name'] ?? json['fullName']) as String? ?? json['name'] as String? ?? 'Anonymous',
+      avatarUrl: (json['avatar_url'] ?? json['avatarUrl']) as String?,
+      isExpert: (json['is_expert'] ?? json['isExpert']) as bool? ?? false,
+      isVerified: (json['is_verified'] ?? json['isVerified']) as bool? ?? false,
     );
   }
 
@@ -107,23 +107,23 @@ class Answer {
     final authorData = json['author'] as Map<String, dynamic>?;
 
     return Answer(
-      id: json['id'] as String,
-      questionId: json['question_id'] as String,
-      content: json['content'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      questionId: (json['question_id'] ?? json['questionId'] ?? '').toString(),
+      content: (json['content'] as String?) ?? '',
       author: authorData != null
           ? QuestionAuthor.fromJson(authorData)
           : QuestionAuthor(
-              id: json['author_id'] as String? ?? '',
+              id: (json['author_id'] ?? json['authorId'] ?? '').toString(),
               name: 'Anonymous',
             ),
       upvotes: json['upvotes'] as int? ?? 0,
       downvotes: json['downvotes'] as int? ?? 0,
-      isAccepted: json['is_accepted'] as bool? ?? false,
-      isUpvoted: json['is_upvoted'] as bool? ?? false,
-      isDownvoted: json['is_downvoted'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+      isAccepted: (json['is_accepted'] ?? json['isAccepted']) as bool? ?? false,
+      isUpvoted: (json['is_upvoted'] ?? json['isUpvoted']) as bool? ?? false,
+      isDownvoted: (json['is_downvoted'] ?? json['isDownvoted']) as bool? ?? false,
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      updatedAt: (json['updated_at'] ?? json['updatedAt']) != null
+          ? DateTime.tryParse((json['updated_at'] ?? json['updatedAt']).toString())
           : null,
     );
   }
@@ -270,32 +270,32 @@ class Question {
   factory Question.fromJson(Map<String, dynamic> json) {
     final authorData = json['author'] as Map<String, dynamic>?;
     final answersData = json['answers'] as List<dynamic>?;
-    final acceptedAnswerData = json['accepted_answer'] as Map<String, dynamic>?;
+    final acceptedAnswerData = (json['accepted_answer'] ?? json['acceptedAnswer']) as Map<String, dynamic>?;
 
     return Question(
-      id: json['id'] as String,
-      title: json['title'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      title: (json['title'] as String?) ?? '',
       content: json['content'] as String?,
       subject: ProjectSubject.fromString(json['subject'] as String?),
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       author: authorData != null
           ? QuestionAuthor.fromJson(authorData)
           : QuestionAuthor(
-              id: json['author_id'] as String? ?? '',
+              id: (json['author_id'] ?? json['authorId'] ?? '').toString(),
               name: 'Anonymous',
             ),
-      isAnonymous: json['is_anonymous'] as bool? ?? false,
+      isAnonymous: (json['is_anonymous'] ?? json['isAnonymous']) as bool? ?? false,
       upvotes: json['upvotes'] as int? ?? 0,
       downvotes: json['downvotes'] as int? ?? 0,
-      answerCount: json['answer_count'] as int? ?? 0,
-      viewCount: json['view_count'] as int? ?? 0,
-      isAnswered: json['is_answered'] as bool? ?? false,
-      isUpvoted: json['is_upvoted'] as bool? ?? false,
-      isDownvoted: json['is_downvoted'] as bool? ?? false,
+      answerCount: (json['answer_count'] ?? json['answerCount']) as int? ?? 0,
+      viewCount: (json['view_count'] ?? json['viewCount']) as int? ?? 0,
+      isAnswered: (json['is_answered'] ?? json['isAnswered']) as bool? ?? false,
+      isUpvoted: (json['is_upvoted'] ?? json['isUpvoted']) as bool? ?? false,
+      isDownvoted: (json['is_downvoted'] ?? json['isDownvoted']) as bool? ?? false,
       status: _parseStatus(json['status'] as String?),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      updatedAt: (json['updated_at'] ?? json['updatedAt']) != null
+          ? DateTime.tryParse((json['updated_at'] ?? json['updatedAt']).toString())
           : null,
       acceptedAnswer: acceptedAnswerData != null
           ? Answer.fromJson(acceptedAnswerData)

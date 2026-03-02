@@ -1,67 +1,133 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Shield, Eye, Lock, Database } from 'lucide-react'
+import { Shield, Eye, Database, Save, Loader2 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { apiClient } from '@/lib/api/client'
+import { toast } from 'sonner'
+
+type PrivacySettingsProps = {
+  userId: string
+}
+
+/** Privacy preferences matching user_preferences table columns */
+interface PrivacyPrefs {
+  show_online_status: boolean
+  analytics_opt_out: boolean
+}
 
 /**
  * PrivacySettings - Manage privacy and security preferences
+ * Loads and persists settings to the user_preferences table
  */
-export function PrivacySettings() {
-  const [privacy, setPrivacy] = useState({
-    profileVisibility: true,
-    showEmail: false,
-    showPhone: false,
-    allowAnalytics: true,
-    twoFactorAuth: false,
+export function PrivacySettings({ userId }: PrivacySettingsProps) {
+  const [prefs, setPrefs] = useState<PrivacyPrefs>({
+    show_online_status: true,
+    analytics_opt_out: false,
   })
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
+  const [savedPrefs, setSavedPrefs] = useState<PrivacyPrefs | null>(null)
 
-  const handleToggle = (key: keyof typeof privacy) => {
-    setPrivacy(prev => ({ ...prev, [key]: !prev[key] }))
+  /**
+   * Load privacy preferences from user_preferences table
+   */
+  const loadPreferences = useCallback(async () => {
+    if (!userId) {
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const data = await apiClient<PrivacyPrefs>('/api/profiles/me/preferences')
+      if (data) {
+        const loaded: PrivacyPrefs = {
+          show_online_status: data.show_online_status ?? true,
+          analytics_opt_out: data.analytics_opt_out ?? false,
+        }
+        setPrefs(loaded)
+        setSavedPrefs(loaded)
+      }
+    } catch {
+      console.error('Failed to load privacy preferences')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [userId])
+
+  useEffect(() => {
+    loadPreferences()
+  }, [loadPreferences])
+
+  /**
+   * Toggle a privacy preference
+   */
+  const handleToggle = (key: keyof PrivacyPrefs) => {
+    setPrefs(prev => {
+      const updated = { ...prev, [key]: !prev[key] }
+      setHasChanges(
+        savedPrefs === null ||
+        Object.keys(updated).some(
+          (k) => updated[k as keyof PrivacyPrefs] !== savedPrefs[k as keyof PrivacyPrefs]
+        )
+      )
+      return updated
+    })
   }
 
-  const privacyItems = [
+  /**
+   * Save privacy preferences to user_preferences table
+   */
+  const handleSave = async () => {
+    if (!userId) return
+
+    setIsSaving(true)
+    try {
+      await apiClient('/api/profiles/me/preferences', {
+        method: 'PUT',
+        body: JSON.stringify({
+          show_online_status: prefs.show_online_status,
+          analytics_opt_out: prefs.analytics_opt_out,
+        }),
+      })
+
+      setSavedPrefs({ ...prefs })
+      setHasChanges(false)
+      toast.success('Privacy settings saved')
+    } catch {
+      toast.error('Failed to save privacy settings')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const privacyItems: {
+    key: keyof PrivacyPrefs
+    icon: typeof Shield
+    title: string
+    description: string
+    iconBg: string
+    iconColor: string
+  }[] = [
     {
-      key: 'profileVisibility' as const,
+      key: 'show_online_status',
       icon: Eye,
-      title: 'Public Profile',
-      description: 'Make your profile visible to other users',
+      title: 'Show Online Status',
+      description: 'Let others see when you are online',
       iconBg: 'bg-[#E3E9FF]',
       iconColor: 'text-[#4F6CF7]',
     },
     {
-      key: 'showEmail' as const,
-      icon: Shield,
-      title: 'Show Email Address',
-      description: 'Display your email on your public profile',
-      iconBg: 'bg-[#E6F4FF]',
-      iconColor: 'text-[#4B9BFF]',
-    },
-    {
-      key: 'showPhone' as const,
-      icon: Shield,
-      title: 'Show Phone Number',
-      description: 'Display your phone number on your profile',
-      iconBg: 'bg-[#ECE9FF]',
-      iconColor: 'text-[#6B5BFF]',
-    },
-    {
-      key: 'allowAnalytics' as const,
+      key: 'analytics_opt_out',
       icon: Database,
-      title: 'Analytics & Usage Data',
-      description: 'Help us improve by sharing anonymous usage data',
+      title: 'Opt Out of Analytics',
+      description: 'Disable anonymous usage data collection',
       iconBg: 'bg-[#FFE7E1]',
       iconColor: 'text-[#FF8B6A]',
-    },
-    {
-      key: 'twoFactorAuth' as const,
-      icon: Lock,
-      title: 'Two-Factor Authentication',
-      description: 'Add an extra layer of security to your account',
-      iconBg: 'bg-[#E3E9FF]',
-      iconColor: 'text-[#4F6CF7]',
     },
   ]
 
@@ -80,31 +146,61 @@ export function PrivacySettings() {
           </p>
         </div>
 
-        <div className="space-y-4">
-          {privacyItems.map((item) => (
-            <div
-              key={item.key}
-              className="flex items-center justify-between rounded-2xl bg-slate-50/80 p-5 transition hover:bg-slate-50"
-            >
-              <div className="flex items-center gap-4">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${item.iconBg}`}>
-                  <item.icon className={`h-5 w-5 ${item.iconColor}`} />
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-[#5A7CFF]" />
+            <span className="ml-2 text-sm text-slate-500">Loading preferences...</span>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-4">
+              {privacyItems.map((item) => (
+                <div
+                  key={item.key}
+                  className="flex items-center justify-between rounded-2xl bg-slate-50/80 p-5 transition hover:bg-slate-50"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${item.iconBg}`}>
+                      <item.icon className={`h-5 w-5 ${item.iconColor}`} />
+                    </div>
+                    <div>
+                      <Label htmlFor={item.key} className="text-sm font-semibold text-slate-900 cursor-pointer">
+                        {item.title}
+                      </Label>
+                      <p className="text-xs text-slate-500">{item.description}</p>
+                    </div>
+                  </div>
+                  <Switch
+                    id={item.key}
+                    checked={prefs[item.key]}
+                    onCheckedChange={() => handleToggle(item.key)}
+                  />
                 </div>
-                <div>
-                  <Label htmlFor={item.key} className="text-sm font-semibold text-slate-900 cursor-pointer">
-                    {item.title}
-                  </Label>
-                  <p className="text-xs text-slate-500">{item.description}</p>
-                </div>
-              </div>
-              <Switch
-                id={item.key}
-                checked={privacy[item.key]}
-                onCheckedChange={() => handleToggle(item.key)}
-              />
+              ))}
             </div>
-          ))}
-        </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || !hasChanges}
+                className="h-12 rounded-2xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] px-8 text-white shadow-[0_12px_28px_rgba(90,124,255,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_35px_rgba(90,124,255,0.45)] disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-5 w-5" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </motion.div>
   )

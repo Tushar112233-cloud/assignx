@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Tab bar for project categories.
 ///
@@ -54,18 +55,18 @@ class ProjectTabs extends StatelessWidget {
         padding: const EdgeInsets.all(4),
         tabs: [
           _TabItem(
-            label: 'Active',
+            label: 'Active'.tr(context),
             count: activeCount,
             isSelected: tabController.index == 0,
           ),
           _TabItem(
-            label: 'Review',
+            label: 'Review'.tr(context),
             count: forReviewCount,
             isSelected: tabController.index == 1,
             hasNotification: forReviewCount > 0,
           ),
           _TabItem(
-            label: 'History',
+            label: 'History'.tr(context),
             count: completedCount,
             isSelected: tabController.index == 2,
           ),
@@ -159,7 +160,7 @@ class ProjectSegmentedTabs extends StatelessWidget {
               children: [
                 const Icon(Icons.pending, size: 18),
                 const SizedBox(width: 4),
-                Text('Active ($activeCount)'),
+                Text('${'Active'.tr(context)} ($activeCount)'),
               ],
             ),
           ),
@@ -170,7 +171,7 @@ class ProjectSegmentedTabs extends StatelessWidget {
               children: [
                 const Icon(Icons.rate_review, size: 18),
                 const SizedBox(width: 4),
-                Text('Review ($forReviewCount)'),
+                Text('${'Review'.tr(context)} ($forReviewCount)'),
               ],
             ),
           ),
@@ -181,7 +182,7 @@ class ProjectSegmentedTabs extends StatelessWidget {
               children: [
                 const Icon(Icons.history, size: 18),
                 const SizedBox(width: 4),
-                Text('Done ($completedCount)'),
+                Text('${'Done'.tr(context)} ($completedCount)'),
               ],
             ),
           ),

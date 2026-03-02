@@ -105,24 +105,24 @@ class SupervisorProfile {
 
   factory SupervisorProfile.fromJson(Map<String, dynamic> json) {
     return SupervisorProfile(
-      id: json['id'] as String,
-      userId: json['user_id'] as String? ?? json['id'] as String,
-      fullName: json['full_name'] as String? ?? 'Unknown',
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: (json['userId'] ?? json['user_id'] ?? json['id'] ?? json['_id'] ?? '').toString(),
+      fullName: (json['fullName'] ?? json['full_name']) as String? ?? 'Unknown',
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
+      avatarUrl: (json['avatarUrl'] ?? json['avatar_url']) as String?,
       bio: json['bio'] as String?,
       specializations: (json['specializations'] as List?)
-              ?.map((e) => e as String)
+              ?.map((e) => e.toString())
               .toList() ??
           [],
       languages:
-          (json['languages'] as List?)?.map((e) => e as String).toList() ?? [],
+          (json['languages'] as List?)?.map((e) => e.toString()).toList() ?? [],
       timezone: json['timezone'] as String?,
-      isAvailable: json['is_available'] as bool? ?? true,
-      maxConcurrentProjects: json['max_concurrent_projects'] as int? ?? 5,
-      preferredSubjects: (json['preferred_subjects'] as List?)
-              ?.map((e) => e as String)
+      isAvailable: (json['isAvailable'] ?? json['is_available']) as bool? ?? true,
+      maxConcurrentProjects: (json['maxConcurrentProjects'] ?? json['max_concurrent_projects']) as int? ?? 5,
+      preferredSubjects: ((json['preferredSubjects'] ?? json['preferred_subjects']) as List?)
+              ?.map((e) => e.toString())
               .toList() ??
           [],
       qualifications: (json['qualifications'] as List?)
@@ -130,17 +130,20 @@ class SupervisorProfile {
               .toList() ??
           [],
       experience: json['experience'] as int?,
-      joinedAt: json['joined_at'] != null
-          ? DateTime.parse(json['joined_at'] as String)
-          : null,
-      lastActiveAt: json['last_active_at'] != null
-          ? DateTime.parse(json['last_active_at'] as String)
-          : null,
-      isVerified: json['is_verified'] as bool? ?? false,
+      joinedAt: _tryParseDate(json['joinedAt'] ?? json['joined_at']),
+      lastActiveAt: _tryParseDate(json['lastActiveAt'] ?? json['last_active_at']),
+      isVerified: (json['isVerified'] ?? json['is_verified']) as bool? ?? false,
       rating: (json['rating'] as num?)?.toDouble(),
-      totalProjects: json['total_projects'] as int? ?? 0,
-      completedProjects: json['completed_projects'] as int? ?? 0,
+      totalProjects: (json['totalProjects'] ?? json['total_projects']) as int? ?? 0,
+      completedProjects: (json['completedProjects'] ?? json['completed_projects']) as int? ?? 0,
     );
+  }
+
+  /// Safely parse a DateTime from dynamic value.
+  static DateTime? _tryParseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   Map<String, dynamic> toJson() {
@@ -241,7 +244,7 @@ class Qualification {
       field: json['field'] as String? ?? '',
       institution: json['institution'] as String?,
       year: json['year'] as int?,
-      isVerified: json['is_verified'] as bool? ?? false,
+      isVerified: (json['isVerified'] ?? json['is_verified']) as bool? ?? false,
     );
   }
 
@@ -282,18 +285,22 @@ class DoerInfo {
 
   factory DoerInfo.fromJson(Map<String, dynamic> json) {
     return DoerInfo(
-      id: json['id'] as String,
-      name: json['name'] as String? ?? 'Unknown',
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      name: (json['fullName'] ?? json['full_name'] ?? json['name']) as String? ?? 'Unknown',
       email: json['email'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
+      avatarUrl: (json['avatarUrl'] ?? json['avatar_url']) as String?,
       rating: (json['rating'] as num?)?.toDouble(),
-      completedProjects: json['completed_projects'] as int? ?? 0,
-      isBlacklisted: json['is_blacklisted'] as bool? ?? false,
-      blacklistReason: json['blacklist_reason'] as String?,
-      blacklistedAt: json['blacklisted_at'] != null
-          ? DateTime.parse(json['blacklisted_at'] as String)
-          : null,
+      completedProjects: (json['completedProjects'] ?? json['completed_projects']) as int? ?? 0,
+      isBlacklisted: (json['isBlacklisted'] ?? json['is_blacklisted']) as bool? ?? false,
+      blacklistReason: (json['blacklistReason'] ?? json['blacklist_reason']) as String?,
+      blacklistedAt: _tryParseDateStatic(json['blacklistedAt'] ?? json['blacklisted_at']),
     );
+  }
+
+  static DateTime? _tryParseDateStatic(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   DoerInfo copyWith({

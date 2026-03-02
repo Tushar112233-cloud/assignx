@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
-import '../../../data/models/marketplace_model.dart';
-import '../../../providers/marketplace_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/mesh_gradient_background.dart';
 
@@ -991,27 +989,26 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final repository = ref.read(marketplaceRepositoryProvider);
+      // Build the tags list from the tags controller and any manually added tags.
+      final tagsList = [
+        ..._tags,
+        if (_tagsController.text.trim().isNotEmpty)
+          ..._tagsController.text
+              .trim()
+              .split(',')
+              .map((t) => t.trim())
+              .where((t) => t.isNotEmpty),
+      ];
 
-      // Map PostCategory to marketplace types
-      final (category, type) = _mapCategoryToMarketplace();
-
-      await repository.createListing(
-        category: category,
-        type: type,
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim().isNotEmpty
+      await ApiClient.post('/community/campus', {
+        'title': _titleController.text.trim(),
+        'content': _descriptionController.text.trim().isNotEmpty
             ? _descriptionController.text.trim()
             : null,
-        price: _priceController.text.isNotEmpty
-            ? double.parse(_priceController.text)
-            : null,
-        isNegotiable: false,
-        images: _selectedImages,
-        location: _locationController.text.trim().isNotEmpty
-            ? _locationController.text.trim()
-            : null,
-      );
+        'category': _selectedCategory.name,
+        'tags': tagsList,
+        'images': _selectedImages,
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1020,7 +1017,6 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             backgroundColor: AppColors.success,
           ),
         );
-        ref.invalidate(marketplaceListingsProvider);
         context.pop();
       }
     } catch (e) {
@@ -1039,20 +1035,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     }
   }
 
-  (MarketplaceCategory, ListingType) _mapCategoryToMarketplace() {
-    switch (_selectedCategory) {
-      case PostCategory.discussion:
-        return (MarketplaceCategory.community, ListingType.communityPost);
-      case PostCategory.event:
-        return (MarketplaceCategory.community, ListingType.event);
-      case PostCategory.housing:
-        return (MarketplaceCategory.housing, ListingType.housing);
-      case PostCategory.resource:
-        return (MarketplaceCategory.hardGoods, ListingType.product);
-    }
-  }
-
-  String _getTitleHint() {
+String _getTitleHint() {
     switch (_selectedCategory) {
       case PostCategory.discussion:
         return 'e.g., Best study spots on campus?';

@@ -59,9 +59,8 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../core/config/supabase_config.dart';
+import '../core/api/api_client.dart';
 import '../data/models/activation_model.dart';
 import '../data/models/bank_details_model.dart' hide BankDetailsFormData;
 import '../data/models/quiz_model.dart';
@@ -132,7 +131,7 @@ class ActivationNotifier extends Notifier<ActivationState> {
   ActivationState build() {
     final user = ref.watch(currentUserProvider);
     if (user != null && user.doerId != null) {
-      _loadActivationData(user.doerId!);
+      Future.microtask(() => _loadActivationData(user.doerId!));
     }
     return ActivationState(
       status: _createEmptyStatus(user?.doerId ?? ''),
@@ -158,10 +157,7 @@ class ActivationNotifier extends Notifier<ActivationState> {
     );
   }
 
-  /// The Supabase client instance for database operations.
-  SupabaseClient get _client => SupabaseConfig.client;
-
-  /// Loads all activation-related data from the database.
+  /// Loads all activation-related data from the API.
   ///
   /// This method orchestrates loading of:
   /// - Activation status
@@ -219,13 +215,9 @@ class ActivationNotifier extends Notifier<ActivationState> {
   /// Updates [ActivationState.status] with the loaded or created status.
   Future<void> _loadActivationStatus(String doerId) async {
     try {
-      final response = await _client
-          .from('doer_activation')
-          .select()
-          .eq('doer_id', doerId)
-          .maybeSingle();
+      final response = await ApiClient.get('/doer/activation/$doerId');
 
-      if (response != null) {
+      if (response != null && response is Map<String, dynamic>) {
         state = state.copyWith(
           status: ActivationStatus.fromJson(response),
         );
@@ -253,17 +245,19 @@ class ActivationNotifier extends Notifier<ActivationState> {
   /// Updates [ActivationState.status] with the newly created status.
   Future<void> _createInitialActivationStatus(String doerId) async {
     try {
-      final response = await _client.from('doer_activation').insert({
-        'doer_id': doerId,
-        'training_completed': false,
-        'quiz_passed': false,
-        'bank_details_added': false,
-        'is_fully_activated': false,
-      }).select().single();
+      final response = await ApiClient.post('/doer/activation', {
+        'doerId': doerId,
+      });
 
-      state = state.copyWith(
-        status: ActivationStatus.fromJson(response),
-      );
+      if (response != null && response is Map<String, dynamic>) {
+        state = state.copyWith(
+          status: ActivationStatus.fromJson(response),
+        );
+      } else {
+        state = state.copyWith(
+          status: _createEmptyStatus(doerId),
+        );
+      }
     } catch (e) {
       // Ignore duplicate key errors, use empty status
       state = state.copyWith(
@@ -287,24 +281,24 @@ class ActivationNotifier extends Notifier<ActivationState> {
   /// [ActivationState.trainingProgress].
   Future<void> _loadTrainingModules(String doerId) async {
     try {
-      final modulesResponse = await _client
-          .from('training_modules')
-          .select()
-          .order('order_index');
+      final modulesResponse = await ApiClient.get('/training/modules');
+      final modulesList = modulesResponse is List
+          ? modulesResponse
+          : (modulesResponse as Map<String, dynamic>)['modules'] as List? ?? [];
 
-      final modules = (modulesResponse as List)
-          .map((e) => TrainingModule.fromJson(e))
+      final modules = modulesList
+          .map((e) => TrainingModule.fromJson(e as Map<String, dynamic>))
           .toList();
 
       // Load progress for each module
-      final progressResponse = await _client
-          .from('training_progress')
-          .select()
-          .eq('doer_id', doerId);
+      final progressResponse = await ApiClient.get('/training/progress/$doerId');
+      final progressList = progressResponse is List
+          ? progressResponse
+          : (progressResponse as Map<String, dynamic>)['progress'] as List? ?? [];
 
       final progressMap = <String, TrainingProgress>{};
-      for (final p in progressResponse) {
-        final progress = TrainingProgress.fromJson(p);
+      for (final p in progressList) {
+        final progress = TrainingProgress.fromJson(p as Map<String, dynamic>);
         progressMap[progress.moduleId] = progress;
       }
 
@@ -313,7 +307,6 @@ class ActivationNotifier extends Notifier<ActivationState> {
         trainingProgress: progressMap,
       );
     } catch (e) {
-      // Log error and set empty state - do not use mock data in production
       state = state.copyWith(
         trainingModules: [],
         trainingProgress: {},
@@ -332,18 +325,17 @@ class ActivationNotifier extends Notifier<ActivationState> {
   /// or empty list and error message on failure.
   Future<void> _loadQuizQuestions() async {
     try {
-      final response = await _client
-          .from('quiz_questions')
-          .select()
-          .order('order_index');
+      final response = await ApiClient.get('/training/quiz/questions');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['questions'] as List? ?? [];
 
-      final questions = (response as List)
-          .map((e) => QuizQuestion.fromJson(e))
+      final questions = list
+          .map((e) => QuizQuestion.fromJson(e as Map<String, dynamic>))
           .toList();
 
       state = state.copyWith(quizQuestions: questions);
     } catch (e) {
-      // Log error and set empty state - do not use mock data in production
       state = state.copyWith(
         quizQuestions: [],
         errorMessage: 'Failed to load quiz questions. Please try again.',
@@ -365,15 +357,9 @@ class ActivationNotifier extends Notifier<ActivationState> {
   /// Updates [ActivationState.lastQuizAttempt] if a previous attempt exists.
   Future<void> _loadLastQuizAttempt(String doerId) async {
     try {
-      final response = await _client
-          .from('quiz_attempts')
-          .select()
-          .eq('doer_id', doerId)
-          .order('attempted_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
+      final response = await ApiClient.get('/training/quiz/attempts/$doerId/latest');
 
-      if (response != null) {
+      if (response != null && response is Map<String, dynamic>) {
         state = state.copyWith(
           lastQuizAttempt: QuizAttempt.fromJson(response),
         );
@@ -383,9 +369,9 @@ class ActivationNotifier extends Notifier<ActivationState> {
     }
   }
 
-  /// Loads the doer's bank details.
+  /// Loads the doer's bank details from the doers table.
   ///
-  /// Fetches saved bank account information if it exists.
+  /// Bank details are stored directly on the doers table.
   ///
   /// ## Parameters
   ///
@@ -396,13 +382,9 @@ class ActivationNotifier extends Notifier<ActivationState> {
   /// Updates [ActivationState.bankDetails] if bank details exist.
   Future<void> _loadBankDetails(String doerId) async {
     try {
-      final response = await _client
-          .from('bank_details')
-          .select()
-          .eq('doer_id', doerId)
-          .maybeSingle();
+      final response = await ApiClient.get('/doer/bank-details');
 
-      if (response != null) {
+      if (response != null && response is Map<String, dynamic> && response['account_number'] != null) {
         state = state.copyWith(
           bankDetails: BankDetails.fromJson(response),
         );
@@ -450,25 +432,10 @@ class ActivationNotifier extends Notifier<ActivationState> {
       // Check if progress exists
       final existing = state.trainingProgress[moduleId];
 
-      if (existing != null) {
-        await _client
-            .from('training_progress')
-            .update({
-              'is_completed': true,
-              'progress_percent': 100,
-              'completed_at': now.toIso8601String(),
-            })
-            .eq('id', existing.id);
-      } else {
-        await _client.from('training_progress').insert({
-          'profile_id': user.id,
-          'module_id': moduleId,
-          'status': 'completed',
-          'progress_percentage': 100,
-          'started_at': now.toIso8601String(),
-          'completed_at': now.toIso8601String(),
-        });
-      }
+      await ApiClient.post('/training/progress/complete', {
+        'moduleId': moduleId,
+        if (existing != null) 'progressId': existing.id,
+      });
 
       // Update local state
       final updatedProgress = Map<String, TrainingProgress>.from(state.trainingProgress);
@@ -582,14 +549,16 @@ class ActivationNotifier extends Notifier<ActivationState> {
         attemptedAt: DateTime.now(),
       );
 
-      // Save to database
-      await _client.from('quiz_attempts').insert({
-        'doer_id': user.id,
-        'score': score,
-        'total_questions': totalQuestions,
-        'passed': passed,
-        'attempt_number': attemptNumber,
-        'attempted_at': DateTime.now().toIso8601String(),
+      // Save to API
+      await ApiClient.post('/training/quiz/submit', {
+        'correctAnswers': score,
+        'totalQuestions': totalQuestions,
+        'isPassed': passed,
+        'scorePercentage': totalQuestions > 0
+            ? (score / totalQuestions * 100).round()
+            : 0,
+        'targetRole': 'doer',
+        'attemptNumber': attemptNumber,
       });
 
       state = state.copyWith(lastQuizAttempt: attempt);
@@ -659,7 +628,13 @@ class ActivationNotifier extends Notifier<ActivationState> {
         createdAt: now,
       );
 
-      await _client.from('bank_details').insert(bankDetails.toJson());
+      await ApiClient.put('/doer/bank-details', {
+        'accountHolderName': bankDetails.accountHolderName,
+        'accountNumber': bankDetails.accountNumber,
+        'ifscCode': bankDetails.ifscCode,
+        'bankName': bankDetails.bankName,
+        'upiId': bankDetails.upiId,
+      });
 
       state = state.copyWith(bankDetails: bankDetails);
       await _updateActivationStatus(bankDetailsAdded: true);
@@ -704,14 +679,12 @@ class ActivationNotifier extends Notifier<ActivationState> {
     );
 
     try {
-      await _client
-          .from('doer_activation')
-          .update({
-            'training_completed': updatedStatus.trainingCompleted,
-            'quiz_passed': updatedStatus.quizPassed,
-            'bank_details_added': updatedStatus.bankDetailsAdded,
-          })
-          .eq('doer_id', user.id);
+      final doerId = user.doerId ?? state.status.doerId;
+      await ApiClient.put('/doer/activation/$doerId', {
+        'trainingCompleted': updatedStatus.trainingCompleted,
+        'quizPassed': updatedStatus.quizPassed,
+        'bankDetailsAdded': updatedStatus.bankDetailsAdded,
+      });
     } catch (e) {
       // Continue with local state update
     }
@@ -740,19 +713,16 @@ class ActivationNotifier extends Notifier<ActivationState> {
       final now = DateTime.now();
 
       try {
-        await _client
-            .from('doer_activation')
-            .update({
-              'is_fully_activated': true,
-              'activated_at': now.toIso8601String(),
-            })
-            .eq('doer_id', user.id);
+        final doerId = user.doerId ?? state.status.doerId;
+        await ApiClient.put('/doer/activation/$doerId', {
+          'isFullyActivated': true,
+          'activatedAt': now.toIso8601String(),
+        });
 
         // Update doer table as well
-        await _client
-            .from('doers')
-            .update({'is_activated': true})
-            .eq('id', user.id);
+        await ApiClient.put('/profiles/me/activation', {
+          'isActivated': true,
+        });
       } catch (e) {
         // Continue with local state update
       }

@@ -2,8 +2,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 
@@ -98,40 +98,11 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
     });
 
     try {
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
+      final details = _detailsController.text.trim();
 
-      if (user == null) {
-        setState(() {
-          _error = 'Please log in to report posts';
-          _isSubmitting = false;
-        });
-        return;
-      }
-
-      final existing = await supabase
-          .from('community_reports')
-          .select('id')
-          .eq('post_id', widget.postId)
-          .eq('reporter_id', user.id)
-          .maybeSingle();
-
-      if (existing != null) {
-        setState(() {
-          _error = 'You have already reported this post';
-          _isSubmitting = false;
-        });
-        return;
-      }
-
-      await supabase.from('community_reports').insert({
-        'post_id': widget.postId,
-        'reporter_id': user.id,
+      await ApiClient.post('/community/business-hub/${widget.postId}/report', {
         'reason': _selectedReason!.value,
-        'details': _detailsController.text.trim().isNotEmpty
-            ? _detailsController.text.trim()
-            : null,
-        'status': 'pending',
+        if (details.isNotEmpty) 'details': details,
       });
 
       setState(() {

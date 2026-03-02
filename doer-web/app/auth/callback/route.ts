@@ -1,180 +1,111 @@
-import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+
+/**
+ * Auth callback route handler.
+ * Receives code or token_hash from the magic link / PKCE flow,
+ * exchanges it for JWT tokens via the Express API, sets httpOnly
+ * cookies for SSR middleware, then redirects based on doer status.
+ */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
-  const type = searchParams.get('type') as any
+  const type = searchParams.get('type')
 
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // Ignore - middleware handles session refresh
-          }
-        },
-      },
+  if (!code && !token_hash) {
+    return NextResponse.redirect(`${origin}/login?error=auth_callback_error`)
+  }
+
+  try {
+    // Exchange code/token_hash for JWT tokens via Express API
+    const verifyPayload: Record<string, string> = {}
+    if (code) {
+      verifyPayload.code = code
+    } else if (token_hash && type) {
+      verifyPayload.token_hash = token_hash
+      verifyPayload.type = type
     }
-  )
 
-  let authError = false
+    const verifyRes = await fetch(`${API_URL}/api/auth/verify-callback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(verifyPayload),
+    })
 
-  // Handle PKCE code exchange
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (error) authError = true
-  }
-  // Handle token_hash verification (magic link)
-  else if (token_hash && type) {
-    const { error } = await supabase.auth.verifyOtp({ token_hash, type })
-    if (error) authError = true
-  }
-  else {
-    authError = true
-  }
+    if (!verifyRes.ok) {
+      console.error('[Auth Callback] Verification failed:', verifyRes.status)
+      return NextResponse.redirect(`${origin}/login?error=auth_callback_error`)
+    }
 
-  if (authError) {
-    return NextResponse.redirect(`${origin}/login?error=auth_callback_error`)
-  }
+    const authData = await verifyRes.json()
+    const { accessToken, refreshToken } = authData
 
-  // Get authenticated user
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.redirect(`${origin}/login?error=auth_callback_error`)
-  }
+    if (!accessToken) {
+      return NextResponse.redirect(`${origin}/login?error=auth_callback_error`)
+    }
 
-  // Create profile if not exists
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', user.id)
-    .maybeSingle()
+    // Check doer status via the Express API
+    const statusRes = await fetch(`${API_URL}/api/auth/callback-status`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    })
 
-  if (!profile) {
-    await supabase
-      .from('profiles')
-      .insert({
-        id: user.id,
-        email: user.email!,
-        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-        phone: user.phone || null,
-        phone_verified: false,
-        avatar_url: user.user_metadata?.avatar_url || null,
-        user_type: 'doer',
+    let redirectPath = '/training'
+
+    if (statusRes.ok) {
+      const status = await statusRes.json()
+      // The Express API callback-status endpoint returns the appropriate redirect path
+      // based on: doer existence, access grant, training completion
+      redirectPath = status.redirectPath || '/training'
+    }
+
+    // Build the redirect response
+    const redirectUrl = new URL(redirectPath, origin)
+    const response = NextResponse.redirect(redirectUrl)
+
+    // Set httpOnly cookies for SSR middleware access
+    const cookieStore = await cookies()
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    }
+
+    cookieStore.set('access_token', accessToken, cookieOptions)
+    if (refreshToken) {
+      cookieStore.set('refresh_token', refreshToken, {
+        ...cookieOptions,
+        maxAge: 60 * 60 * 24 * 30, // 30 days
       })
-  }
-
-  // Check for doer record
-  const { data: doer } = await supabase
-    .from('doers')
-    .select('id, is_access_granted')
-    .eq('profile_id', user.id)
-    .maybeSingle()
-
-  if (!doer) {
-    // Check for approved email_access_request with metadata
-    const { data: accessRequest } = await supabase
-      .from('email_access_requests')
-      .select('full_name, metadata, status')
-      .eq('email', (user.email || '').toLowerCase())
-      .eq('role', 'doer')
-      .eq('status', 'approved')
-      .maybeSingle()
-
-    if (accessRequest?.metadata) {
-      const meta = accessRequest.metadata as any
-
-      // Update profile full_name if available from the access request
-      if (accessRequest.full_name) {
-        await supabase
-          .from('profiles')
-          .update({ full_name: accessRequest.full_name })
-          .eq('id', user.id)
-      }
-
-      // Create doer record from metadata
-      await supabase
-        .from('doers')
-        .insert({
-          profile_id: user.id,
-          qualification: meta.qualification || 'undergraduate',
-          experience_level: meta.experienceLevel || 'beginner',
-          bio: meta.bio || null,
-          bank_name: meta.bankName || null,
-          bank_account_number: meta.accountNumber || null,
-          bank_ifsc_code: meta.ifscCode || null,
-          upi_id: meta.upiId || null,
-          is_access_granted: true,
-          is_activated: false,
-        })
-
-      // Create training_progress records for all active mandatory doer modules
-      const { data: modules } = await supabase
-        .from('training_modules')
-        .select('id')
-        .eq('target_role', 'doer')
-        .eq('is_mandatory', true)
-        .eq('is_active', true)
-
-      if (modules && modules.length > 0) {
-        const progressRecords = modules.map(m => ({
-          profile_id: user.id,
-          module_id: m.id,
-          status: 'not_started',
-          progress_percentage: 0,
-        }))
-
-        await supabase
-          .from('training_progress')
-          .upsert(progressRecords, { onConflict: 'profile_id,module_id' })
-      }
-
-      return NextResponse.redirect(`${origin}/training`)
     }
 
-    // No approved request with metadata — send to training anyway
-    return NextResponse.redirect(`${origin}/training`)
+    // Also pass tokens to client via redirect URL so the session page can store them
+    // in localStorage for client-side API calls
+    const sessionUrl = new URL('/auth/session', origin)
+    sessionUrl.searchParams.set('next', redirectPath)
+    sessionUrl.searchParams.set('access_token', accessToken)
+    if (refreshToken) {
+      sessionUrl.searchParams.set('refresh_token', refreshToken)
+    }
+
+    const sessionResponse = NextResponse.redirect(sessionUrl)
+
+    // Set cookies on the response as well
+    sessionResponse.cookies.set('access_token', accessToken, cookieOptions)
+    if (refreshToken) {
+      sessionResponse.cookies.set('refresh_token', refreshToken, {
+        ...cookieOptions,
+        maxAge: 60 * 60 * 24 * 30,
+      })
+    }
+
+    return sessionResponse
+  } catch (error) {
+    console.error('[Auth Callback] Error:', error)
+    return NextResponse.redirect(`${origin}/login?error=auth_callback_error`)
   }
-
-  // Doer exists but not approved
-  if (!doer.is_access_granted) {
-    return NextResponse.redirect(`${origin}/pending-approval`)
-  }
-
-  // Doer approved — check training completion
-  const { data: modules } = await supabase
-    .from('training_modules')
-    .select('id')
-    .eq('target_role', 'doer')
-    .eq('is_mandatory', true)
-    .eq('is_active', true)
-
-  const { data: progress } = await supabase
-    .from('training_progress')
-    .select('module_id, status')
-    .eq('profile_id', user.id)
-
-  const completedIds = new Set(
-    (progress || []).filter(p => p.status === 'completed').map(p => p.module_id)
-  )
-  const allComplete = (modules || []).every(m => completedIds.has(m.id))
-
-  if (!allComplete) {
-    return NextResponse.redirect(`${origin}/training`)
-  }
-
-  return NextResponse.redirect(`${origin}/dashboard`)
 }

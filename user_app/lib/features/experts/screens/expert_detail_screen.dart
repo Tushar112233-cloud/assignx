@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/expert_model.dart';
 import '../../../providers/experts_provider.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/subtle_gradient_scaffold.dart';
@@ -32,7 +33,7 @@ class ExpertDetailScreen extends ConsumerWidget {
       body: expertAsync.when(
         data: (expert) {
           if (expert == null) {
-            return const Center(child: Text('Expert not found'));
+            return Center(child: Text('Expert not found'.tr(context)));
           }
 
           return CustomScrollView(
@@ -135,7 +136,7 @@ class ExpertDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Failed to load expert details',
+                'Failed to load expert details'.tr(context),
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -143,7 +144,7 @@ class ExpertDetailScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.invalidate(expertDetailProvider(expertId)),
-                child: const Text('Retry'),
+                child: Text('Retry'.tr(context)),
               ),
             ],
           ),
@@ -302,7 +303,7 @@ class _ExpertHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  expert.availability.label,
+                  expert.availability.label.tr(context),
                   style: AppTextStyles.labelSmall.copyWith(
                     color: _getAvailabilityColor(expert.availability),
                     fontWeight: FontWeight.w600,
@@ -349,21 +350,21 @@ class _StatsSection extends StatelessWidget {
             _StatItem(
               icon: Icons.star,
               value: expert.ratingString,
-              label: '${expert.reviewCount} reviews',
+              label: '${expert.reviewCount} ${'reviews'.tr(context)}',
               iconColor: AppColors.warning,
             ),
             _StatDivider(),
             _StatItem(
               icon: Icons.video_call,
               value: '${expert.totalSessions}',
-              label: 'Sessions',
+              label: 'Sessions'.tr(context),
               iconColor: AppColors.primary,
             ),
             _StatDivider(),
             _StatItem(
               icon: Icons.work_history,
               value: '${expert.experienceYears}+',
-              label: 'Years exp.',
+              label: 'Years exp.'.tr(context),
               iconColor: AppColors.success,
             ),
           ],
@@ -444,7 +445,7 @@ class _AboutSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'About',
+            'About'.tr(context),
             style: AppTextStyles.labelLarge.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -487,7 +488,7 @@ class _SpecializationsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Specializations',
+            'Specializations'.tr(context),
             style: AppTextStyles.labelLarge.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -510,7 +511,7 @@ class _SpecializationsSection extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  spec.label,
+                  spec.label.tr(context),
                   style: AppTextStyles.labelSmall.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w500,
@@ -543,7 +544,7 @@ class _QualificationsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Qualifications',
+            'Qualifications'.tr(context),
             style: AppTextStyles.labelLarge.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -616,7 +617,7 @@ class _ReviewsSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Reviews',
+                'Reviews'.tr(context),
                 style: AppTextStyles.labelLarge.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -627,7 +628,7 @@ class _ReviewsSection extends StatelessWidget {
                     // See all reviews
                   },
                   child: Text(
-                    'See all ($totalReviews)',
+                    '${'See all'.tr(context)} ($totalReviews)',
                     style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.primary,
                     ),
@@ -645,7 +646,7 @@ class _ReviewsSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               child: Center(
                 child: Text(
-                  'No reviews yet',
+                  'No reviews yet'.tr(context),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -721,7 +722,7 @@ class _ReviewCard extends StatelessWidget {
                 ),
               ),
               Text(
-                _formatDate(review.createdAt),
+                _formatDate(context, review.createdAt),
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.textTertiary,
                 ),
@@ -743,10 +744,10 @@ class _ReviewCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(BuildContext context, DateTime date) {
     final diff = DateTime.now().difference(date).inDays;
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
+    if (diff == 0) return 'Today'.tr(context);
+    if (diff == 1) return 'Yesterday'.tr(context);
     if (diff < 7) return '${diff}d ago';
     if (diff < 30) return '${diff ~/ 7}w ago';
     return '${diff ~/ 30}mo ago';
@@ -813,7 +814,7 @@ class _BookingBar extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'per session',
+                  'per session'.tr(context),
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -832,7 +833,7 @@ class _BookingBar extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     alignment: Alignment.center,
                     child: Text(
-                      'Book Session',
+                      'Book Session'.tr(context),
                       style: AppTextStyles.buttonMedium.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,

@@ -106,7 +106,7 @@ class ServicesGrid extends StatelessWidget {
               Expanded(
                 child: _ServiceCard(
                   icon: Icons.search_outlined,
-                  title: 'AI/Plag Report'.tr(context),
+                  title: 'Turnitin Check'.tr(context),
                   subtitle: 'Check originality & AI detection'.tr(context),
                   color: AppColors.accent,
                   onTap: onAiPlagReport,

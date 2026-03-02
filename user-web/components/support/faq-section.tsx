@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { getFAQs } from "@/lib/actions/data";
 
 /**
- * FAQ interface matching Supabase schema
+ * FAQ interface matching API schema
  */
 interface FAQ {
   id: string;
@@ -22,7 +22,7 @@ interface FAQ {
 
 /**
  * FAQ accordion section with category filters
- * Fetches FAQs from Supabase
+ * Fetches FAQs from API
  */
 export function FAQSection() {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
@@ -38,7 +38,7 @@ export function FAQSection() {
         setFaqs(data);
 
         // Extract unique categories
-        const uniqueCategories = [...new Set(data.map((f: FAQ) => f.category))];
+        const uniqueCategories = [...new Set(data.map((f: FAQ) => f.category))] as string[];
         setCategories(uniqueCategories);
       } catch {
         // Silently handle fetch error - FAQs will remain empty

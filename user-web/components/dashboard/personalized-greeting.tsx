@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Personalized greeting component
- * Fetches user from Supabase and shows name with contextual greeting based on time
+ * Fetches user from API and shows name with contextual greeting based on time
  * Only renders on the home page to avoid redundancy across dashboard pages
  */
 export function PersonalizedGreeting() {

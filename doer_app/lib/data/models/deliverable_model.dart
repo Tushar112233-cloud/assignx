@@ -66,33 +66,55 @@ class DeliverableModel {
   });
 
   factory DeliverableModel.fromJson(Map<String, dynamic> json) {
-    // Handle nested uploader
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Handle nested uploader (may be a populated Mongoose object).
     String? uploaderName;
     String? uploaderAvatarUrl;
-    if (json['uploader'] != null && json['uploader'] is Map) {
-      uploaderName = json['uploader']['full_name'] as String?;
-      uploaderAvatarUrl = json['uploader']['avatar_url'] as String?;
+    final uploaderRaw = json['uploader'] ?? json['uploadedBy'];
+    if (uploaderRaw != null && uploaderRaw is Map) {
+      uploaderName = (uploaderRaw['full_name'] ?? uploaderRaw['fullName']) as String?;
+      uploaderAvatarUrl = (uploaderRaw['avatar_url'] ?? uploaderRaw['avatarUrl']) as String?;
+    }
+
+    // Handle projectId which may be a populated Mongoose object.
+    String projectId = '';
+    final rawProjectId = json['project_id'] ?? json['projectId'];
+    if (rawProjectId is String) {
+      projectId = rawProjectId;
+    } else if (rawProjectId is Map<String, dynamic>) {
+      projectId = (rawProjectId['_id'] ?? rawProjectId['id'] ?? '').toString();
+    }
+
+    // Handle uploadedBy which may be a populated Mongoose object.
+    String uploadedBy = '';
+    final rawUploadedBy = json['uploaded_by'] ?? json['uploadedBy'];
+    if (rawUploadedBy is String) {
+      uploadedBy = rawUploadedBy;
+    } else if (rawUploadedBy is Map<String, dynamic>) {
+      uploadedBy = (rawUploadedBy['_id'] ?? rawUploadedBy['id'] ?? '').toString();
     }
 
     return DeliverableModel(
-      id: json['id'] as String,
-      projectId: json['project_id'] as String,
-      fileUrl: json['file_url'] as String,
-      fileName: json['file_name'] as String,
-      fileType: json['file_type'] as String? ?? 'application/octet-stream',
-      fileSizeBytes: json['file_size_bytes'] as int? ?? 0,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      projectId: projectId,
+      fileUrl: (json['file_url'] ?? json['fileUrl'] ?? '').toString(),
+      fileName: (json['file_name'] ?? json['fileName'] ?? '').toString(),
+      fileType: (json['file_type'] ?? json['fileType'] ?? 'application/octet-stream').toString(),
+      fileSizeBytes: (json['file_size_bytes'] ?? json['fileSizeBytes']) as int? ?? 0,
       version: json['version'] as int? ?? 1,
-      isFinal: json['is_final'] as bool? ?? false,
-      qcStatus: QCStatus.fromString(json['qc_status'] as String? ?? 'pending'),
-      qcNotes: json['qc_notes'] as String?,
-      qcBy: json['qc_by'] as String?,
-      qcAt: json['qc_at'] != null
-          ? DateTime.parse(json['qc_at'] as String)
-          : null,
-      uploadedBy: json['uploaded_by'] as String,
+      isFinal: json['is_final'] as bool? ?? json['isFinal'] as bool? ?? false,
+      qcStatus: QCStatus.fromString((json['qc_status'] ?? json['qcStatus'] ?? 'pending').toString()),
+      qcNotes: json['qc_notes'] as String? ?? json['qcNotes'] as String?,
+      qcBy: json['qc_by'] as String? ?? json['qcBy'] as String?,
+      qcAt: _parseDate(json['qc_at'] ?? json['qcAt']),
+      uploadedBy: uploadedBy,
       uploaderName: uploaderName,
       uploaderAvatarUrl: uploaderAvatarUrl,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
     );
   }
 
@@ -194,30 +216,52 @@ class RevisionRequest {
   });
 
   factory RevisionRequest.fromJson(Map<String, dynamic> json) {
-    // Handle nested requester
-    String? requesterName;
-    if (json['requester'] != null && json['requester'] is Map) {
-      requesterName = json['requester']['full_name'] as String?;
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
     }
 
-    // Handle issues array
+    // Handle nested requester (may be a populated Mongoose object).
+    String? requesterName;
+    final requesterRaw = json['requester'] ?? json['requestedBy'];
+    if (requesterRaw != null && requesterRaw is Map) {
+      requesterName = (requesterRaw['full_name'] ?? requesterRaw['fullName']) as String?;
+    }
+
+    // Handle issues array.
     List<String> issues = [];
     if (json['issues'] != null && json['issues'] is List) {
-      issues = (json['issues'] as List).cast<String>();
+      issues = (json['issues'] as List).map((e) => e.toString()).toList();
+    }
+
+    // Handle projectId which may be a populated Mongoose object.
+    String projectId = '';
+    final rawProjectId = json['project_id'] ?? json['projectId'];
+    if (rawProjectId is String) {
+      projectId = rawProjectId;
+    } else if (rawProjectId is Map<String, dynamic>) {
+      projectId = (rawProjectId['_id'] ?? rawProjectId['id'] ?? '').toString();
+    }
+
+    // Handle requestedBy which may be a populated Mongoose object.
+    String requestedBy = '';
+    final rawRequestedBy = json['requested_by'] ?? json['requestedBy'];
+    if (rawRequestedBy is String) {
+      requestedBy = rawRequestedBy;
+    } else if (rawRequestedBy is Map<String, dynamic>) {
+      requestedBy = (rawRequestedBy['_id'] ?? rawRequestedBy['id'] ?? '').toString();
     }
 
     return RevisionRequest(
-      id: json['id'] as String,
-      projectId: json['project_id'] as String,
-      requestedBy: json['requested_by'] as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      projectId: projectId,
+      requestedBy: requestedBy,
       requesterName: requesterName,
       feedback: json['feedback'] as String? ?? '',
       issues: issues,
-      isResolved: json['is_resolved'] as bool? ?? false,
-      resolvedAt: json['resolved_at'] != null
-          ? DateTime.parse(json['resolved_at'] as String)
-          : null,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      isResolved: json['is_resolved'] as bool? ?? json['isResolved'] as bool? ?? false,
+      resolvedAt: _parseDate(json['resolved_at'] ?? json['resolvedAt']),
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
     );
   }
 }

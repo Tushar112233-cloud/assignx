@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/training_video_model.dart';
 import 'video_thumbnail_card.dart';
 
@@ -54,7 +55,7 @@ class TrainingLibrary extends StatelessWidget {
             child: TextField(
               onChanged: onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Search videos...',
+                hintText: 'Search videos...'.tr(context),
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: searchQuery.isNotEmpty
                     ? IconButton(
@@ -83,7 +84,7 @@ class TrainingLibrary extends StatelessWidget {
                 FilterChip(
                   selected: selectedCategory == null,
                   onSelected: (_) => onCategorySelected!(null),
-                  label: const Text('All'),
+                  label: Text('All'.tr(context)),
                   selectedColor: AppColors.primary.withValues(alpha: 0.2),
                   showCheckmark: false,
                 ),
@@ -177,7 +178,7 @@ class _ProgressOverview extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Training Progress',
+                'Training Progress'.tr(context),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -201,12 +202,12 @@ class _ProgressOverview extends StatelessWidget {
           Row(
             children: [
               _StatItem(
-                label: 'Required',
+                label: 'Required'.tr(context),
                 value: '$completedRequired/${required.length}',
               ),
               const SizedBox(width: 24),
               _StatItem(
-                label: 'Completed',
+                label: 'Completed'.tr(context),
                 value: '$totalCompleted/${videos.length}',
               ),
               const Spacer(),
@@ -293,7 +294,7 @@ class _FilteredVideoGrid extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'No videos found',
+                'No videos found'.tr(context),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: AppColors.textSecondaryLight,
                     ),
@@ -472,7 +473,7 @@ class ContinueWatching extends StatelessWidget {
               Icon(Icons.play_circle, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
-                'Continue Watching',
+                'Continue Watching'.tr(context),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -589,7 +590,7 @@ class _ContinueWatchingItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${video.watchProgressPercent}% completed',
+                      '${video.watchProgressPercent}% ${'completed'.tr(context)}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondaryLight,
                           ),

@@ -40,7 +40,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 import { professionalProfileSchema, bankingSchema } from "@/lib/validations/auth"
 import { QUALIFICATIONS, EXPERTISE_AREAS, INDIAN_BANKS } from "@/lib/constants"
 
@@ -167,19 +167,15 @@ export function RegisterForm() {
     setError(null)
     setIsLoading(true)
     try {
-      const supabase = createClient()
       const trimmed = data.email.trim().toLowerCase()
 
       // Check if email already has a request
-      const { data: existing } = await supabase
-        .from("email_access_requests" as any)
-        .select("id, status")
-        .eq("email", trimmed)
-        .eq("role", "supervisor")
-        .maybeSingle()
+      const existing = await apiFetch<{ id?: string; status?: string } | null>(
+        `/api/access-requests/check?email=${encodeURIComponent(trimmed)}&role=supervisor`
+      ).catch(() => null)
 
-      if (existing) {
-        const s = (existing as any).status
+      if (existing && existing.id) {
+        const s = existing.status
         if (s === "approved") {
           router.push("/login")
           return
@@ -216,7 +212,6 @@ export function RegisterForm() {
     setError(null)
     setIsLoading(true)
     try {
-      const supabase = createClient()
       const trimmed = emailData.email.trim().toLowerCase()
 
       const metadata = {
@@ -230,17 +225,15 @@ export function RegisterForm() {
         upiId: bankingData.upiId || "",
       }
 
-      const { error: insertError } = await supabase
-        .from("email_access_requests" as any)
-        .insert({
+      await apiFetch("/api/access-requests", {
+        method: "POST",
+        body: JSON.stringify({
           email: trimmed,
           role: "supervisor",
-          status: "pending",
           full_name: emailData.fullName,
           metadata,
-        })
-
-      if (insertError) throw insertError
+        }),
+      })
 
       // Fire-and-forget confirmation email
       fetch("/api/email/send", {

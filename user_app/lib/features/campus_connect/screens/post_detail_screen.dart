@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
@@ -19,62 +19,39 @@ import '../widgets/report_button.dart';
 final postCommentsProvider =
     FutureProvider.autoDispose.family<List<CampusComment>, String>(
   (ref, postId) async {
-    final supabase = Supabase.instance.client;
+    final response = await ApiClient.get('/community/campus/$postId/comments');
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['comments'] as List? ?? [];
 
-    final response = await supabase
-        .from('campus_comments')
-        .select('''
-          *,
-          author:profiles (
-            id,
-            full_name,
-            avatar_url,
-            is_college_verified
-          )
-        ''')
-        .eq('post_id', postId)
-        .isFilter('parent_id', null)
-        .order('created_at', ascending: false);
-
-    // Fetch replies for each comment
     final comments = <CampusComment>[];
-    for (final data in response as List) {
-      final replies = await supabase
-          .from('campus_comments')
-          .select('''
-            *,
-            author:profiles (
-              id,
-              full_name,
-              avatar_url,
-              is_college_verified
-            )
-          ''')
-          .eq('parent_id', data['id'])
-          .order('created_at', ascending: true);
+    for (final data in list) {
+      final d = data as Map<String, dynamic>;
+      final repliesList = d['replies'] as List? ?? [];
 
       comments.add(CampusComment(
-        id: data['id'],
-        content: data['content'] ?? '',
-        authorId: data['author_id'] ?? '',
-        authorName: data['author']?['full_name'] ?? 'Anonymous',
-        authorAvatar: data['author']?['avatar_url'],
-        isAuthorVerified: data['author']?['is_college_verified'] ?? false,
-        createdAt: DateTime.parse(data['created_at']),
-        likeCount: data['likes_count'] ?? 0,
-        isLiked: false, // TODO: Check if user liked
-        replies: (replies as List).map((r) {
+        id: (d['_id'] ?? d['id'] ?? '') as String,
+        content: (d['content'] ?? '') as String,
+        authorId: (d['user_id'] ?? '') as String,
+        authorName: (d['author']?['full_name'] ?? 'Anonymous') as String,
+        authorAvatar: d['author']?['avatar_url'] as String?,
+        isAuthorVerified: (d['author']?['is_college_verified'] ?? false) as bool,
+        createdAt: DateTime.parse((d['created_at'] ?? d['createdAt'] ?? DateTime.now().toIso8601String()) as String),
+        likeCount: (d['likes_count'] ?? d['likeCount'] ?? 0) as int,
+        isLiked: (d['is_liked'] ?? false) as bool,
+        replies: repliesList.map((r) {
+          final reply = r as Map<String, dynamic>;
           return CampusComment(
-            id: r['id'],
-            content: r['content'] ?? '',
-            authorId: r['author_id'] ?? '',
-            authorName: r['author']?['full_name'] ?? 'Anonymous',
-            authorAvatar: r['author']?['avatar_url'],
-            isAuthorVerified: r['author']?['is_college_verified'] ?? false,
-            createdAt: DateTime.parse(r['created_at']),
-            likeCount: r['likes_count'] ?? 0,
-            isLiked: false,
-            parentId: data['id'],
+            id: (reply['_id'] ?? reply['id'] ?? '') as String,
+            content: (reply['content'] ?? '') as String,
+            authorId: (reply['user_id'] ?? '') as String,
+            authorName: (reply['author']?['full_name'] ?? 'Anonymous') as String,
+            authorAvatar: reply['author']?['avatar_url'] as String?,
+            isAuthorVerified: (reply['author']?['is_college_verified'] ?? false) as bool,
+            createdAt: DateTime.parse((reply['created_at'] ?? reply['createdAt'] ?? DateTime.now().toIso8601String()) as String),
+            likeCount: (reply['likes_count'] ?? reply['likeCount'] ?? 0) as int,
+            isLiked: (reply['is_liked'] ?? false) as bool,
+            parentId: (d['_id'] ?? d['id'] ?? '') as String,
           );
         }).toList(),
       ));
@@ -116,31 +93,15 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   Future<void> _checkUserInteractions() async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
     try {
-      // Check if liked
-      final likeResponse = await supabase
-          .from('campus_post_likes')
-          .select('id')
-          .eq('post_id', widget.postId)
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-      // Check if saved
-      final savedResponse = await supabase
-          .from('saved_listings')
-          .select('id')
-          .eq('listing_id', widget.postId)
-          .eq('user_id', user.id)
-          .maybeSingle();
+      final response = await ApiClient.get('/community/campus/${widget.postId}/interactions');
+      if (response == null) return;
+      final data = response as Map<String, dynamic>;
 
       if (mounted) {
         setState(() {
-          _isLiked = likeResponse != null;
-          _isSaved = savedResponse != null;
+          _isLiked = data['liked'] as bool? ?? false;
+          _isSaved = data['saved'] as bool? ?? false;
         });
       }
     } catch (e) {
@@ -149,15 +110,6 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   Future<void> _toggleLike(MarketplaceListing listing) async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please login to like posts'.tr(context))),
-      );
-      return;
-    }
-
     final wasLiked = _isLiked;
     setState(() {
       _isLiked = !_isLiked;
@@ -165,18 +117,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     });
 
     try {
-      if (_isLiked) {
-        await supabase.from('campus_post_likes').insert({
-          'post_id': widget.postId,
-          'user_id': user.id,
-        });
-      } else {
-        await supabase
-            .from('campus_post_likes')
-            .delete()
-            .eq('post_id', widget.postId)
-            .eq('user_id', user.id);
-      }
+      await ApiClient.post('/community/campus/${widget.postId}/like', {});
     } catch (e) {
       // Revert on error
       if (mounted) {
@@ -189,33 +130,13 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   Future<void> _toggleSave() async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please login to save posts'.tr(context))),
-      );
-      return;
-    }
-
     final wasSaved = _isSaved;
     setState(() {
       _isSaved = !_isSaved;
     });
 
     try {
-      if (_isSaved) {
-        await supabase.from('saved_listings').insert({
-          'listing_id': widget.postId,
-          'user_id': user.id,
-        });
-      } else {
-        await supabase
-            .from('saved_listings')
-            .delete()
-            .eq('listing_id', widget.postId)
-            .eq('user_id', user.id);
-      }
+      await ApiClient.post('/community/campus/${widget.postId}/save', {});
     } catch (e) {
       // Revert on error
       if (mounted) {
@@ -227,13 +148,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   Future<void> _addComment(String content, String? parentId) async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    await supabase.from('campus_comments').insert({
-      'post_id': widget.postId,
-      'author_id': user.id,
+    await ApiClient.post('/community/campus/${widget.postId}/comments', {
       'content': content,
       'parent_id': parentId,
     });
@@ -243,37 +158,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   void _likeComment(String commentId) async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    try {
-      // Toggle comment like
-      final existing = await supabase
-          .from('campus_comment_likes')
-          .select('id')
-          .eq('comment_id', commentId)
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-      if (existing != null) {
-        await supabase
-            .from('campus_comment_likes')
-            .delete()
-            .eq('comment_id', commentId)
-            .eq('user_id', user.id);
-      } else {
-        await supabase.from('campus_comment_likes').insert({
-          'comment_id': commentId,
-          'user_id': user.id,
-        });
-      }
-
-      // Refresh comments
-      ref.invalidate(postCommentsProvider(widget.postId));
-    } catch (e) {
-      debugPrint('Error toggling comment like: $e');
-    }
+    // Comment liking is not yet supported (no campus_comment_likes table).
+    // This is a no-op placeholder that logs the attempt.
+    debugPrint('Comment like toggled for $commentId (not persisted - no table)');
   }
 
   @override

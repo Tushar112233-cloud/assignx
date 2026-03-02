@@ -30,7 +30,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 import type { Doer } from "./assign-doer-modal"
 
 interface Review {
@@ -56,55 +56,28 @@ export function DoerReviews({ doer, onViewProfile }: DoerReviewsProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
 
-  // Fetch reviews from Supabase
+  // Fetch reviews from API
   const fetchReviews = useCallback(async () => {
     if (!doer.id) return
 
     setIsLoading(true)
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from("doer_reviews")
-        .select(`
-          id,
-          overall_rating,
-          review_text,
-          reviewer_type,
-          created_at,
-          project_id,
-          projects (
-            project_number,
-            title
-          ),
-          profiles:reviewer_id (
-            full_name
-          )
-        `)
-        .eq("doer_id", doer.id)
-        .eq("is_public", true)
-        .order("created_at", { ascending: false })
-        .limit(20)
+      const data = await apiFetch<{ reviews: Review[] }>(
+        `/api/doers/${doer.id}/reviews?is_public=true&sort=-created_at&limit=20`
+      )
 
-      if (error) throw error
-
-      // Transform data to Review interface
-      const formattedReviews: Review[] = (data || []).map((review) => {
-        const project = review.projects as { project_number?: string; title?: string } | null
-        const reviewer = review.profiles as { full_name?: string } | null
-
-        return {
-          id: review.id,
-          project_id: review.project_id || "",
-          project_title: project?.title || project?.project_number || "Project",
-          reviewer_name: reviewer?.full_name || (review.reviewer_type === "supervisor" ? "Supervisor" : "Client"),
-          reviewer_type: review.reviewer_type === "supervisor" ? "supervisor" : "user",
-          rating: review.overall_rating || 0,
-          comment: review.review_text || "",
-          created_at: review.created_at || new Date().toISOString(),
-          helpful_count: 0,
-          tags: [],
-        }
-      })
+      const formattedReviews: Review[] = (data.reviews || []).map((review: any) => ({
+        id: review.id,
+        project_id: review.project_id || "",
+        project_title: review.project_title || review.projects?.title || "Project",
+        reviewer_name: review.reviewer_name || review.profiles?.full_name || (review.reviewer_type === "supervisor" ? "Supervisor" : "Client"),
+        reviewer_type: review.reviewer_type === "supervisor" ? "supervisor" : "user",
+        rating: review.overall_rating || review.rating || 0,
+        comment: review.review_text || review.comment || "",
+        created_at: review.created_at || new Date().toISOString(),
+        helpful_count: 0,
+        tags: [],
+      }))
 
       setReviews(formattedReviews)
     } catch (error) {

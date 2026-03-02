@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Type of presence event.
 enum PresenceEventType {
@@ -213,8 +214,8 @@ class _ChatPresenceBannerState extends State<ChatPresenceBanner>
                             ],
                             TextSpan(
                               text: isJoin
-                                  ? ' joined the chat'
-                                  : ' left the chat',
+                                  ? ' ${'joined the chat'.tr(context)}'
+                                  : ' ${'left the chat'.tr(context)}',
                             ),
                           ],
                         ),
@@ -435,7 +436,7 @@ class OnlineUsersIndicator extends StatelessWidget {
 
               // Label
               Text(
-                users.length == 1 ? '1 online' : '${users.length} online',
+                '${users.length} ${'online'.tr(context)}',
                 style: AppTextStyles.caption.copyWith(
                   color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 10,

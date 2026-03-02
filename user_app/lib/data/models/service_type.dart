@@ -24,10 +24,18 @@ extension ServiceTypeX on ServiceType {
   /// Mapping from DB string to enum.
   static const _fromDbMap = {
     'new_project': ServiceType.newProject,
+    'assignment': ServiceType.newProject,
+    'essay': ServiceType.newProject,
+    'research': ServiceType.newProject,
+    'thesis': ServiceType.newProject,
+    'dissertation': ServiceType.newProject,
+    'case_study': ServiceType.newProject,
+    'report': ServiceType.newProject,
     'proofreading': ServiceType.proofreading,
     'plagiarism_check': ServiceType.plagiarismCheck,
     'ai_detection': ServiceType.aiDetection,
     'expert_opinion': ServiceType.expertOpinion,
+    'consultation': ServiceType.expertOpinion,
   };
 
   /// Mapping from enum to DB string.

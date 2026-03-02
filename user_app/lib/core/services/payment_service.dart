@@ -5,9 +5,20 @@ import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
+import '../api/api_client.dart';
 import '../config/api_config.dart';
 import '../config/razorpay_config.dart';
-import '../config/supabase_config.dart';
+import '../storage/token_storage.dart';
+
+/// Cached user info for payment prefill.
+class _PaymentUser {
+  final String id;
+  final String? email;
+  final String? phone;
+  final String? fullName;
+
+  _PaymentUser({required this.id, this.email, this.phone, this.fullName});
+}
 
 /// Payment result model containing payment response data.
 class PaymentResult {
@@ -128,19 +139,33 @@ class PaymentService {
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
   }
 
-  /// Get authorization headers with Supabase access token.
-  ///
-  /// @returns Map of headers including Authorization bearer token.
-  /// @throws Exception if user is not authenticated.
+  /// Get current user info from the API for payment prefill.
+  Future<_PaymentUser?> _getCurrentUser() async {
+    try {
+      final data = await ApiClient.get('/auth/me');
+      if (data == null) return null;
+      final map = data as Map<String, dynamic>;
+      return _PaymentUser(
+        id: (map['_id'] ?? map['id'] ?? '') as String,
+        email: map['email'] as String?,
+        phone: map['phone'] as String?,
+        fullName: map['full_name'] as String?,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Get authorization headers with JWT access token.
   Future<Map<String, String>> _getAuthHeaders() async {
-    final session = SupabaseConfig.currentSession;
-    if (session == null) {
+    final token = await TokenStorage.getAccessToken();
+    if (token == null) {
       throw Exception('User not authenticated');
     }
 
     return {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ${session.accessToken}',
+      'Authorization': 'Bearer $token',
     };
   }
 
@@ -156,11 +181,6 @@ class PaymentService {
     required String type,
     String? projectId,
   }) async {
-    final userId = SupabaseConfig.currentUser?.id;
-    if (userId == null) {
-      throw Exception('User not authenticated');
-    }
-
     final headers = await _getAuthHeaders();
     final amountInPaise = amountInRupees * 100;
 
@@ -170,7 +190,6 @@ class PaymentService {
       'receipt': '${type}_${DateTime.now().millisecondsSinceEpoch}',
       'notes': {
         'type': type,
-        'profile_id': userId,
         if (projectId != null) 'project_id': projectId,
       },
     };
@@ -211,18 +230,12 @@ class PaymentService {
     required int amountInRupees,
     String? projectId,
   }) async {
-    final userId = SupabaseConfig.currentUser?.id;
-    if (userId == null) {
-      throw Exception('User not authenticated');
-    }
-
     final headers = await _getAuthHeaders();
 
     final body = {
       'razorpay_order_id': orderId,
       'razorpay_payment_id': paymentId,
       'razorpay_signature': signature,
-      'profile_id': userId,
       'amount': amountInRupees,
       if (projectId != null) 'project_id': projectId,
     };
@@ -283,25 +296,16 @@ class PaymentService {
         projectId: projectId,
       );
 
-      // Get user details for prefill
-      final user = SupabaseConfig.currentUser;
-      String? userName;
-      if (user != null) {
-        final profile = await SupabaseConfig.client
-            .from('profiles')
-            .select('full_name')
-            .eq('id', user.id)
-            .maybeSingle();
-        userName = profile?['full_name'] as String?;
-      }
+      // Get user details for prefill via API
+      final paymentUser = await _getCurrentUser();
 
       // Step 2: Open Razorpay checkout with server order ID
       final options = RazorpayConfig.createCheckoutOptions(
         amountInPaise: order.amount,
         orderId: order.id,
-        name: userName,
-        email: user?.email,
-        phone: user?.phone,
+        name: paymentUser?.fullName,
+        email: paymentUser?.email,
+        phone: paymentUser?.phone,
         description: 'Payment for: $projectTitle',
       );
 
@@ -348,25 +352,16 @@ class PaymentService {
         type: 'wallet_topup',
       );
 
-      // Get user details for prefill
-      final user = SupabaseConfig.currentUser;
-      String? userName;
-      if (user != null) {
-        final profile = await SupabaseConfig.client
-            .from('profiles')
-            .select('full_name')
-            .eq('id', user.id)
-            .maybeSingle();
-        userName = profile?['full_name'] as String?;
-      }
+      // Get user details for prefill via API
+      final paymentUser = await _getCurrentUser();
 
       // Step 2: Open Razorpay checkout with server order ID
       final options = RazorpayConfig.createCheckoutOptions(
         amountInPaise: order.amount,
         orderId: order.id,
-        name: userName,
-        email: user?.email,
-        phone: user?.phone,
+        name: paymentUser?.fullName,
+        email: paymentUser?.email,
+        phone: paymentUser?.phone,
         description: 'Wallet Top-up: \u20B9$amountInRupees',
       );
 

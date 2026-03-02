@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Animated 3-dot typing indicator widget.
 ///
@@ -195,7 +196,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
               // Typer name
               if (widget.typerName != null)
                 Text(
-                  '${widget.typerName} is typing...',
+                  '${widget.typerName} ${'is typing...'.tr(context)}',
                   style: AppTextStyles.caption.copyWith(
                     color: Colors.white.withValues(alpha: 0.7),
                   ),

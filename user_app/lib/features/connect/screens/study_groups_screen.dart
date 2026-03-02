@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/connect_models.dart';
 import '../../../providers/connect_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -88,8 +89,8 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
               // Available groups header
               SliverToBoxAdapter(
                 child: _buildSectionHeader(
-                  'Available Groups',
-                  subtitle: 'Join a group to study together',
+                  'Available Groups'.tr(context),
+                  subtitle: 'Join a group to study together'.tr(context),
                 ),
               ),
 
@@ -189,11 +190,11 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Study Groups',
+                  'Study Groups'.tr(context),
                   style: AppTextStyles.headingMedium,
                 ),
                 Text(
-                  'Learn together with peers',
+                  'Learn together with peers'.tr(context),
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -213,7 +214,7 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
       child: Row(
         children: [
           _buildFilterChip(
-            label: 'All',
+            label: 'All'.tr(context),
             isSelected: _selectedSubject == null,
             onTap: () => setState(() => _selectedSubject = null),
           ),
@@ -265,7 +266,7 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('My Groups', showSeeAll: true),
+        _buildSectionHeader('My Groups'.tr(context), showSeeAll: true),
         SizedBox(
           height: 140,
           child: ListView.separated(
@@ -319,7 +320,7 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
             TextButton(
               onPressed: () {},
               child: Text(
-                'See all',
+                'See all'.tr(context),
                 style: AppTextStyles.labelSmall.copyWith(
                   color: AppColors.primary,
                 ),
@@ -390,7 +391,7 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'No groups found',
+            'No groups found'.tr(context),
             style: AppTextStyles.headingSmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -398,8 +399,8 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
           const SizedBox(height: 8),
           Text(
             _selectedSubject != null
-                ? 'Try selecting a different subject'
-                : 'Be the first to create a study group!',
+                ? 'Try selecting a different subject'.tr(context)
+                : 'Be the first to create a study group!'.tr(context),
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textTertiary,
             ),
@@ -410,7 +411,7 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
             TextButton(
               onPressed: () => setState(() => _selectedSubject = null),
               child: Text(
-                'Clear filter',
+                'Clear filter'.tr(context),
                 style: AppTextStyles.labelMedium.copyWith(
                   color: AppColors.primary,
                 ),
@@ -443,7 +444,7 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Something went wrong',
+            'Something went wrong'.tr(context),
             style: AppTextStyles.headingSmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -458,7 +459,7 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
           ),
           const SizedBox(height: 16),
           GlassButton(
-            label: 'Retry',
+            label: 'Retry'.tr(context),
             icon: Icons.refresh,
             onPressed: () {
               ref.invalidate(studyGroupsProvider);
@@ -480,7 +481,7 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
       backgroundColor: AppColors.primary,
       icon: const Icon(Icons.add, color: Colors.white),
       label: Text(
-        'Create Group',
+        'Create Group'.tr(context),
         style: AppTextStyles.buttonSmall.copyWith(color: Colors.white),
       ),
     );
@@ -497,8 +498,8 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
 
   void _handleJoinLeave(StudyGroup group, bool isJoined) {
     final message = isJoined
-        ? 'Left ${group.name}'
-        : 'Joined ${group.name}!';
+        ? '${'Left'.tr(context)} ${group.name}'
+        : '${'Joined'.tr(context)} ${group.name}!';
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -514,8 +515,8 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
 
   void _showCreateGroupSheet() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Create group feature coming soon!'),
+      SnackBar(
+        content: Text('Create group feature coming soon!'.tr(context)),
         duration: Duration(seconds: 2),
       ),
     );
@@ -635,15 +636,15 @@ class _GroupDetailsSheet extends StatelessWidget {
                     children: [
                       _buildStatItem(
                         icon: Icons.people,
-                        label: 'Members',
+                        label: 'Members'.tr(context),
                         value: '${group.memberCount}/${group.maxMembers}',
                       ),
                       const SizedBox(width: 24),
                       if (group.nextSessionTime != null)
                         _buildStatItem(
                           icon: Icons.schedule,
-                          label: 'Next Session',
-                          value: group.nextSessionString ?? 'TBD',
+                          label: 'Next Session'.tr(context),
+                          value: group.nextSessionString ?? 'TBD'.tr(context),
                           valueColor: AppColors.success,
                         ),
                     ],
@@ -653,7 +654,7 @@ class _GroupDetailsSheet extends StatelessWidget {
 
                   // Creator info
                   Text(
-                    'Created by',
+                    'Created by'.tr(context),
                     style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -685,7 +686,7 @@ class _GroupDetailsSheet extends StatelessWidget {
 
                   // Join button
                   GlassButton(
-                    label: group.isFull ? 'Group is Full' : 'Join Group',
+                    label: group.isFull ? 'Group is Full'.tr(context) : 'Join Group'.tr(context),
                     icon: group.isFull ? Icons.block : Icons.add,
                     onPressed: group.isFull
                         ? null
@@ -693,7 +694,7 @@ class _GroupDetailsSheet extends StatelessWidget {
                             Navigator.of(context).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Joined ${group.name}!'),
+                                content: Text('${'Joined'.tr(context)} ${group.name}!'),
                                 backgroundColor: AppColors.success,
                               ),
                             );

@@ -232,7 +232,7 @@ export default function ResourcesPage() {
       if (existing) {
         return prev.map((p) =>
           p.module_id === moduleId
-            ? { ...p, is_completed: true, progress_percentage: 100, completed_at: new Date().toISOString() }
+            ? { ...p, status: 'completed', progress_percentage: 100, completed_at: new Date().toISOString() }
             : p
         )
       }
@@ -245,7 +245,7 @@ export default function ResourcesPage() {
           started_at: new Date().toISOString(),
           completed_at: new Date().toISOString(),
           progress_percentage: 100,
-          is_completed: true,
+          status: 'completed',
         },
       ]
     })
@@ -268,7 +268,7 @@ export default function ResourcesPage() {
   }
 
   // Calculate training progress
-  const completedModules = trainingProgress.filter((p) => p.is_completed).length
+  const completedModules = trainingProgress.filter((p) => p.status === 'completed').length
   const totalMandatory = trainingModules.filter((m) => m.is_mandatory).length
 
   // Skeleton gate removed — show page content immediately while loading

@@ -1,6 +1,7 @@
 /**
  * @fileoverview API route for sending emails via Resend.
  * POST-only, server-side endpoint. Accepts template type, recipient, and data.
+ * Auth validated via JWT from cookie.
  * @module app/api/email/send/route
  */
 
@@ -10,6 +11,8 @@ import { AccessRequestConfirmedEmail } from "@/lib/email/templates/access-reques
 import { AccessApprovedEmail } from "@/lib/email/templates/access-approved"
 import { AccessRejectedEmail } from "@/lib/email/templates/access-rejected"
 import { NotificationEmail } from "@/lib/email/templates/notification"
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
 
 type TemplateType =
   | "access-request-confirmed"
@@ -60,6 +63,20 @@ function getTemplateAndSubject(
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate JWT from cookie
+    const token = request.cookies.get("supervisor_token")?.value
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Validate token with API
+    const authRes = await fetch(`${API_BASE}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!authRes.ok) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = (await request.json()) as EmailRequestBody
 
     if (!body.template || !body.to) {

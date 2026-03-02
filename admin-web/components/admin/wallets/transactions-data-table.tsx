@@ -76,7 +76,7 @@ function getStatusVariant(status: string) {
 
 interface TransactionListItem {
   id: string;
-  type: string;
+  transaction_type: string;
   amount: number | string;
   status: string;
   description: string | null;
@@ -176,8 +176,8 @@ export function TransactionsDataTable({
                 return (
                   <TableRow key={txn.id}>
                     <TableCell>
-                      <Badge variant={getTypeVariant(txn.type)}>
-                        {txn.type?.replace(/_/g, " ")}
+                      <Badge variant={getTypeVariant(txn.transaction_type)}>
+                        {txn.transaction_type?.replace(/_/g, " ")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-medium tabular-nums">

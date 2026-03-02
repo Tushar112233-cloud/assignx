@@ -1,12 +1,14 @@
 /**
  * @fileoverview Custom hook for supervisor reviews management.
+ * Uses Express API instead of Supabase.
  * @module hooks/use-supervisor-reviews
  */
 
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { createClient, getAuthUser } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
+import { getStoredUser } from "@/lib/api/auth"
 
 interface SupervisorReviewData {
   id: string
@@ -49,89 +51,20 @@ export function useSupervisorReviews(): UseSupervisorReviewsReturn {
 
   useEffect(() => {
     async function fetchReviews() {
-      const supabase = createClient()
-
       try {
-        const user = await getAuthUser()
+        const user = getStoredUser()
         if (!user) {
           setIsLoading(false)
           return
         }
 
-        // Get supervisor ID
-        const { data: supervisor } = await supabase
-          .from("supervisors")
-          .select("id, average_rating, total_reviews")
-          .eq("profile_id", user.id)
-          .single()
+        const data = await apiFetch<{
+          reviews: SupervisorReviewData[]
+          stats: ReviewStatsData
+        }>("/api/supervisors/me/reviews")
 
-        if (!supervisor) {
-          setIsLoading(false)
-          return
-        }
-
-        // Fetch reviews with project and reviewer info
-        const { data: reviewsData, error: reviewsError } = await supabase
-          .from("supervisor_reviews")
-          .select(`
-            id,
-            project_id,
-            overall_rating,
-            review_text,
-            created_at,
-            reviewer_id,
-            projects (
-              id,
-              title
-            ),
-            profiles:reviewer_id (
-              id,
-              full_name,
-              avatar_url
-            )
-          `)
-          .eq("supervisor_id", supervisor.id)
-          .eq("is_public", true)
-          .order("created_at", { ascending: false })
-
-        if (reviewsError) throw reviewsError
-
-        // Transform reviews data
-        type ReviewRow = {
-          id: string
-          project_id: string | null
-          overall_rating: number
-          review_text: string | null
-          created_at: string | null
-          projects: { id: string; title: string } | null
-          profiles: { id: string; full_name: string; avatar_url: string | null } | null
-        }
-
-        const formattedReviews: SupervisorReviewData[] = (reviewsData || []).map((review: ReviewRow) => ({
-          id: review.id,
-          project_id: review.project_id || "",
-          project_title: review.projects?.title || "Unknown Project",
-          client_name: review.profiles?.full_name || "Anonymous",
-          client_avatar: review.profiles?.avatar_url || undefined,
-          rating: review.overall_rating,
-          comment: review.review_text || "",
-          created_at: review.created_at || new Date().toISOString(),
-        }))
-
-        setReviews(formattedReviews)
-
-        // Calculate rating distribution
-        const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-        formattedReviews.forEach(r => {
-          const rating = Math.min(5, Math.max(1, Math.round(r.rating))) as 1 | 2 | 3 | 4 | 5
-          distribution[rating]++
-        })
-
-        setStats({
-          average_rating: supervisor.average_rating || 0,
-          total_reviews: supervisor.total_reviews || formattedReviews.length,
-          rating_distribution: distribution,
-        })
+        setReviews(data.reviews || [])
+        setStats(data.stats || null)
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Failed to fetch reviews"))
       } finally {
@@ -143,8 +76,8 @@ export function useSupervisorReviews(): UseSupervisorReviewsReturn {
   }, [])
 
   const respondToReview = useCallback(async (reviewId: string, response: string) => {
-    // Note: This would require a supervisor_review_responses table or a response column
-    // For now, we update local state as a placeholder
+    // TODO: DB persistence requires adding response columns to supervisor_reviews table.
+    // Until then, this only updates local React state.
     setReviews(prev =>
       prev.map(r =>
         r.id === reviewId

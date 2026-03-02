@@ -15,8 +15,8 @@ dependencies:
   riverpod_annotation: ^3.0.3
 
   # Backend & Auth
-  supabase_flutter: ^2.3.0
   google_sign_in: ^6.2.0
+  socket_io_client: ^3.0.2
 
   # Navigation
   go_router: ^17.0.1
@@ -36,7 +36,7 @@ dependencies:
   form_builder_validators: ^11.2.0
 
   # Translation
-  google_mlkit_translation: ^0.13.0
+  # google_mlkit_translation: ^0.13.0  # Disabled - vendored frameworks don't support arm64 simulator on Xcode 26
 
   # Storage
   shared_preferences: ^2.2.2

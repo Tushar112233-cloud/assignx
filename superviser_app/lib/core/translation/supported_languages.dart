@@ -1,4 +1,4 @@
-import 'package:google_mlkit_translation/google_mlkit_translation.dart';
+import 'mlkit_stub.dart';
 
 /// Represents a language supported by ML Kit on-device translation.
 class SupportedLanguage {

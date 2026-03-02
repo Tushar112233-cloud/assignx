@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
@@ -131,7 +130,7 @@ class _CollegeVerificationScreenState
     });
 
     try {
-      await Supabase.instance.client.auth.signInWithOtp(email: email);
+      await ApiClient.post('/auth/college-verify/send', {'email': email});
 
       if (mounted) {
         setState(() {
@@ -192,18 +191,10 @@ class _CollegeVerificationScreenState
     final email = _emailController.text.trim().toLowerCase();
 
     try {
-      await Supabase.instance.client.auth.verifyOTP(
-        email: email,
-        token: code,
-        type: OtpType.email,
-      );
-
-      // Update user profile with verified college email
-      await Supabase.instance.client.auth.updateUser(
-        UserAttributes(
-          data: {'college_email': email, 'college_verified': true},
-        ),
-      );
+      await ApiClient.post('/auth/college-verify/confirm', {
+        'email': email,
+        'token': code,
+      });
 
       if (mounted) {
         setState(() {

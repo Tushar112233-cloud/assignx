@@ -3,7 +3,7 @@
  * Handles push notification subscription, permissions, and sending
  */
 
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 
 export interface PushSubscriptionData {
   endpoint: string
@@ -157,62 +157,30 @@ export async function getPushSubscription(): Promise<PushSubscription | null> {
 }
 
 /**
- * Save push subscription to the database
+ * Save push subscription to the database via Express API
  */
 export async function savePushSubscription(
   subscriptionData: PushSubscriptionData
 ): Promise<void> {
-  const supabase = createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    throw new Error("User not authenticated")
-  }
-
-  // Save to supervisor_push_subscriptions table
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any).from("supervisor_push_subscriptions").upsert(
-    {
-      supervisor_id: user.id,
+  await apiFetch("/api/push-subscriptions", {
+    method: "POST",
+    body: JSON.stringify({
       endpoint: subscriptionData.endpoint,
       p256dh_key: subscriptionData.keys.p256dh,
       auth_key: subscriptionData.keys.auth,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "supervisor_id",
-    }
-  )
-
-  if (error) {
-    console.error("[Push] Failed to save subscription:", error)
-    throw error
-  }
+    }),
+  })
 
   console.log("[Push] Subscription saved to database")
 }
 
 /**
- * Remove push subscription from the database
+ * Remove push subscription from the database via Express API
  */
 export async function removePushSubscription(): Promise<void> {
-  const supabase = createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    throw new Error("User not authenticated")
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
-    .from("supervisor_push_subscriptions")
-    .delete()
-    .eq("supervisor_id", user.id)
-
-  if (error) {
-    console.error("[Push] Failed to remove subscription:", error)
-    throw error
-  }
+  await apiFetch("/api/push-subscriptions", {
+    method: "DELETE",
+  })
 
   console.log("[Push] Subscription removed from database")
 }

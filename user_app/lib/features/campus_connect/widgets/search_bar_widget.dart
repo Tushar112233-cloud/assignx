@@ -6,8 +6,8 @@ import '../../../core/translation/translation_extensions.dart';
 
 /// Production-grade search bar for Campus Connect.
 ///
-/// Features a flat, integrated design that blends with the page.
-/// Clean, minimal styling inspired by modern search experiences.
+/// Features an elevated design with rounded corners, smooth focus animations,
+/// and a prominent filter icon button.
 class SearchBarWidget extends StatefulWidget {
   final Function(String)? onChanged;
   final String? initialValue;
@@ -55,33 +55,52 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Search input row
-          Container(
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
               color: _isFocused
                   ? Colors.white
                   : AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _isFocused
+                    ? AppColors.primary.withValues(alpha: 0.3)
+                    : AppColors.border.withValues(alpha: 0.4),
+                width: _isFocused ? 1.5 : 1,
+              ),
               boxShadow: _isFocused
                   ? [
                       BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.08),
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                        spreadRadius: -2,
+                      ),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(6),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
-                    ]
-                  : null,
+                    ],
             ),
             child: Row(
               children: [
-                // Search icon
+                // Search icon with animated color
                 Padding(
-                  padding: const EdgeInsets.only(left: 14),
-                  child: Icon(
-                    Icons.search_rounded,
-                    size: 20,
-                    color: _isFocused
-                        ? AppColors.primary
-                        : AppColors.textTertiary,
+                  padding: const EdgeInsets.only(left: 16),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.search_rounded,
+                      key: ValueKey(_isFocused),
+                      size: 22,
+                      color: _isFocused
+                          ? AppColors.primary
+                          : AppColors.textTertiary,
+                    ),
                   ),
                 ),
 
@@ -97,7 +116,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                     decoration: InputDecoration(
                       hintText: widget.placeholder ?? 'Search events, housing, resources...'.tr(context),
                       hintStyle: AppTextStyles.bodyMedium.copyWith(
-                        fontSize: 15,
+                        fontSize: 14,
                         color: AppColors.textTertiary,
                       ),
                       border: InputBorder.none,
@@ -125,9 +144,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Container(
-                        padding: const EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
-                          color: AppColors.textTertiary.withValues(alpha: 0.15),
+                          color: AppColors.textTertiary.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -139,18 +158,18 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                     ),
                   ),
 
-                // Filter button
+                // Filter button with styled container
                 GestureDetector(
                   onTap: widget.onFilterTap,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(
-                          color: AppColors.border.withValues(alpha: 0.5),
-                          width: 1,
-                        ),
-                      ),
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -158,15 +177,15 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                         Icon(
                           Icons.tune_rounded,
                           size: 18,
-                          color: AppColors.textSecondary,
+                          color: AppColors.primary,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           'Filter'.tr(context),
                           style: AppTextStyles.labelMedium.copyWith(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -221,15 +240,22 @@ class _CompactSearchInputState extends State<CompactSearchInput> {
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        height: 42,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.5),
+            color: AppColors.border.withValues(alpha: 0.4),
             width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(4),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -238,7 +264,7 @@ class _CompactSearchInputState extends State<CompactSearchInput> {
               size: 18,
               color: AppColors.textTertiary,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 widget.placeholder ?? 'Search...'.tr(context),

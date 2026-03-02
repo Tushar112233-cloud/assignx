@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/marketplace_model.dart';
 import '../../../data/models/tutor_model.dart';
 import '../../../providers/marketplace_provider.dart';
@@ -92,7 +93,7 @@ class MarketplaceScreen extends ConsumerWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Filtered results',
+                            'Filtered results'.tr(context),
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -114,7 +115,7 @@ class MarketplaceScreen extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Text(
-                                'Clear all',
+                                'Clear all'.tr(context),
                                 style: AppTextStyles.labelSmall.copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w600,
@@ -215,7 +216,7 @@ class _CurvedDomeHero extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Connect',
+                          'Connect'.tr(context),
                           style: AppTextStyles.headingLarge.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -223,7 +224,7 @@ class _CurvedDomeHero extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Discover students & services',
+                          'Discover students & services'.tr(context),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: Colors.white.withAlpha(200),
                           ),
@@ -339,7 +340,7 @@ class _GlassSearchBarState extends ConsumerState<_GlassSearchBar> {
                     color: Colors.white,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Search items, tutors, events...',
+                    hintText: 'Search items, tutors, events...'.tr(context),
                     hintStyle: AppTextStyles.bodyMedium.copyWith(
                       color: Colors.white.withAlpha(153),
                     ),
@@ -400,7 +401,7 @@ class _GlassFilterPills extends ConsumerWidget {
             children: [
               // All filter pill
               _GlassFilterPill(
-                label: 'All',
+                label: 'All'.tr(context),
                 icon: Icons.apps_rounded,
                 isSelected: filters.category == null,
                 onTap: () {
@@ -413,7 +414,7 @@ class _GlassFilterPills extends ConsumerWidget {
                 (category) => Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: _GlassFilterPill(
-                    label: category.label,
+                    label: category.label.tr(context),
                     icon: category.icon,
                     isSelected: filters.category == category,
                     onTap: () {
@@ -578,7 +579,7 @@ class _GlassCityDropdown extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Select City',
+                'Select City'.tr(context),
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -604,7 +605,7 @@ class _GlassCityDropdown extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'All Cities',
+                    'All Cities'.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
@@ -704,7 +705,7 @@ class _GlassSortOptionsSheet extends StatelessWidget {
 
                   // Title
                   Text(
-                    'Sort & Filter',
+                    'Sort & Filter'.tr(context),
                     style: AppTextStyles.headingSmall,
                   ),
                   const SizedBox(height: 20),
@@ -712,31 +713,31 @@ class _GlassSortOptionsSheet extends StatelessWidget {
                   // Sort options
                   _GlassSortOption(
                     icon: Icons.access_time_rounded,
-                    label: 'Most Recent',
+                    label: 'Most Recent'.tr(context),
                     isSelected: true,
                     onTap: () => Navigator.pop(context),
                   ),
                   _GlassSortOption(
                     icon: Icons.trending_up_rounded,
-                    label: 'Most Popular',
+                    label: 'Most Popular'.tr(context),
                     isSelected: false,
                     onTap: () => Navigator.pop(context),
                   ),
                   _GlassSortOption(
                     icon: Icons.arrow_downward_rounded,
-                    label: 'Price: Low to High',
+                    label: 'Price: Low to High'.tr(context),
                     isSelected: false,
                     onTap: () => Navigator.pop(context),
                   ),
                   _GlassSortOption(
                     icon: Icons.arrow_upward_rounded,
-                    label: 'Price: High to Low',
+                    label: 'Price: High to Low'.tr(context),
                     isSelected: false,
                     onTap: () => Navigator.pop(context),
                   ),
                   _GlassSortOption(
                     icon: Icons.near_me_rounded,
-                    label: 'Nearest First',
+                    label: 'Nearest First'.tr(context),
                     isSelected: false,
                     onTap: () => Navigator.pop(context),
                   ),
@@ -1108,7 +1109,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            hasFilters ? 'No results found' : 'No listings yet',
+            hasFilters ? 'No results found'.tr(context) : 'No listings yet'.tr(context),
             style: AppTextStyles.headingSmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -1116,8 +1117,8 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             hasFilters
-                ? 'Try adjusting your filters or search query'
-                : 'Be the first to post something!',
+                ? 'Try adjusting your filters or search query'.tr(context)
+                : 'Be the first to post something!'.tr(context),
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textTertiary,
             ),
@@ -1126,7 +1127,7 @@ class _EmptyState extends StatelessWidget {
           if (hasFilters) ...[
             const SizedBox(height: 24),
             GlassButton(
-              label: 'Clear Filters',
+              label: 'Clear Filters'.tr(context),
               icon: Icons.filter_alt_off,
               onPressed: onClearFilters,
               backgroundColor: AppColors.primary,
@@ -1175,7 +1176,7 @@ class _ErrorState extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            'Something went wrong',
+            'Something went wrong'.tr(context),
             style: AppTextStyles.headingSmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -1192,7 +1193,7 @@ class _ErrorState extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           GlassButton(
-            label: 'Try Again',
+            label: 'Try Again'.tr(context),
             icon: Icons.refresh_rounded,
             onPressed: onRetry,
             backgroundColor: AppColors.primary,
@@ -1242,11 +1243,11 @@ class CategoryHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  category.label,
+                  category.label.tr(context),
                   style: AppTextStyles.labelLarge,
                 ),
                 Text(
-                  category.description,
+                  category.description.tr(context),
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -1258,7 +1259,7 @@ class CategoryHeader extends StatelessWidget {
             TextButton(
               onPressed: onSeeAll,
               child: Text(
-                'See all',
+                'See all'.tr(context),
                 style: AppTextStyles.labelSmall.copyWith(
                   color: AppColors.primary,
                 ),
@@ -1309,13 +1310,13 @@ class _FeaturedTutorsSection extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Expert Tutors',
+                        'Expert Tutors'.tr(context),
                         style: AppTextStyles.labelLarge.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
-                        'Book 1-on-1 sessions',
+                        'Book 1-on-1 sessions'.tr(context),
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -1338,7 +1339,7 @@ class _FeaturedTutorsSection extends ConsumerWidget {
                 child: Row(
                   children: [
                     Text(
-                      'See all',
+                      'See all'.tr(context),
                       style: AppTextStyles.labelSmall.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w500,
@@ -1365,7 +1366,7 @@ class _FeaturedTutorsSection extends ConsumerWidget {
               if (tutors.isEmpty) {
                 return Center(
                   child: Text(
-                    'No tutors available',
+                    'No tutors available'.tr(context),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -1400,7 +1401,7 @@ class _FeaturedTutorsSection extends ConsumerWidget {
             ),
             error: (error, stack) => Center(
               child: Text(
-                'Failed to load tutors',
+                'Failed to load tutors'.tr(context),
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.error,
                 ),
@@ -1426,8 +1427,8 @@ class _FeaturedTutorsSection extends ConsumerWidget {
       onAskQuestion: () {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ask question feature coming soon!'),
+          SnackBar(
+            content: Text('Ask question feature coming soon!'.tr(context)),
           ),
         );
       },
@@ -1443,7 +1444,7 @@ class _FeaturedTutorsSection extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Session booked with ${tutor.name}!',
+              '${'Session booked with'.tr(context)} ${tutor.name}!',
             ),
             backgroundColor: AppColors.success,
           ),

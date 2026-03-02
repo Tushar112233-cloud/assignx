@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../core/config/supabase_config.dart';
 import '../data/models/chat_model.dart';
 import '../data/repositories/chat_repository.dart';
+import 'auth_provider.dart';
 
 /// Provider for chat repository instance.
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {
@@ -17,13 +17,13 @@ final chatRepositoryProvider = Provider<ChatRepository>((ref) {
 final projectChatRoomProvider =
     FutureProvider.autoDispose.family<ChatRoom, String>((ref, projectId) async {
   final repository = ref.watch(chatRepositoryProvider);
-  final userId = SupabaseConfig.currentUser?.id;
+  final user = ref.watch(currentUserProvider);
 
-  if (userId == null) {
+  if (user == null) {
     throw Exception('User not authenticated');
   }
 
-  return repository.getOrCreateProjectChatRoom(projectId, userId);
+  return repository.getOrCreateProjectChatRoom(projectId, user.id);
 });
 
 /// Provider for chat messages in a room.
@@ -43,11 +43,11 @@ final chatMessageStreamProvider =
 /// Provider for total unread message count.
 final totalUnreadCountProvider = FutureProvider<int>((ref) async {
   final repository = ref.watch(chatRepositoryProvider);
-  final userId = SupabaseConfig.currentUser?.id;
+  final user = ref.watch(currentUserProvider);
 
-  if (userId == null) return 0;
+  if (user == null) return 0;
 
-  return repository.getTotalUnreadCount(userId);
+  return repository.getTotalUnreadCount(user.id);
 });
 
 /// Notifier for managing chat state and actions.
@@ -241,15 +241,15 @@ final chatNotifierProvider =
     StateNotifierProvider.autoDispose.family<ChatNotifier, ChatState, String>(
         (ref, roomId) {
   final repository = ref.watch(chatRepositoryProvider);
-  final userId = SupabaseConfig.currentUser?.id;
+  final user = ref.watch(currentUserProvider);
 
-  if (userId == null) {
+  if (user == null) {
     throw Exception('User not authenticated');
   }
 
   return ChatNotifier(
     repository: repository,
     roomId: roomId,
-    userId: userId,
+    userId: user.id,
   );
 });

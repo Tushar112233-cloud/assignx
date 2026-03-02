@@ -1,7 +1,7 @@
 /**
  * Profile module static options data
  * Contains UI options for profile forms (not mock user data)
- * User data is fetched from Supabase via lib/actions/data.ts
+ * User data is fetched from the Express API via lib/actions/data.ts
  */
 
 import type {

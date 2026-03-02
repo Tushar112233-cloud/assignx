@@ -27,7 +27,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 import { CommissionBreakdown } from "./types"
 
 /**
@@ -226,61 +226,25 @@ export function CommissionTracking() {
     setError(null)
 
     try {
-      const supabase = createClient()
-
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError || !user) {
-        throw new Error("Not authenticated")
-      }
-
-      // Get supervisor ID from supervisors table
-      const { data: supervisor, error: supervisorError } = await supabase
-        .from("supervisors")
-        .select("id")
-        .eq("profile_id", user.id)
-        .single()
-
-      if (supervisorError || !supervisor) {
-        // User might not be a supervisor yet
-        setCommissions([])
-        setIsLoading(false)
-        return
-      }
-
       // Fetch completed projects with commission breakdown
-      const { data: projects, error: projectsError } = await supabase
-        .from("projects")
-        .select(`
-          project_number,
-          title,
-          user_quote,
-          doer_payout,
-          supervisor_commission,
-          platform_fee,
-          completed_at,
-          status
-        `)
-        .eq("supervisor_id", supervisor.id)
-        .in("status", ["completed", "auto_approved", "delivered"])
-        .not("completed_at", "is", null)
-        .order("completed_at", { ascending: false })
-        .limit(50)
+      const data = await apiFetch<{ projects: any[] }>(
+        "/api/projects?supervisorId=me&status=completed,auto_approved,delivered&sort=-completed_at&limit=50"
+      )
 
-      if (projectsError) {
-        throw projectsError
-      }
+      const projects = data.projects || []
 
       // Transform to CommissionBreakdown format
-      const transformedCommissions: CommissionBreakdown[] = (projects || []).map((project) => ({
-        project_id: project.project_number || "N/A",
-        project_title: project.title || "Untitled Project",
-        user_amount: project.user_quote || 0,
-        doer_payout: project.doer_payout || 0,
-        supervisor_commission: project.supervisor_commission || 0,
-        platform_fee: project.platform_fee || 0,
-        completed_at: project.completed_at || new Date().toISOString(),
-      }))
+      const transformedCommissions: CommissionBreakdown[] = projects
+        .filter((p: any) => p.completed_at)
+        .map((project: any) => ({
+          project_id: project.project_number || "N/A",
+          project_title: project.title || "Untitled Project",
+          user_amount: project.user_quote || 0,
+          doer_payout: project.doer_payout || 0,
+          supervisor_commission: project.supervisor_commission || 0,
+          platform_fee: project.platform_fee || 0,
+          completed_at: project.completed_at || new Date().toISOString(),
+        }))
 
       setCommissions(transformedCommissions)
     } catch (err) {

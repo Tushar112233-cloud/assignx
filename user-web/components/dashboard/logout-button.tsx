@@ -3,37 +3,48 @@
 import { useState } from "react";
 import { LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { signOut } from "@/lib/actions/auth";
+import { logout } from "@/lib/api/auth";
 import { useUserStore } from "@/stores/user-store";
 import { useAuthStore } from "@/stores/auth-store";
 
 /**
- * Clears all Supabase auth tokens from localStorage
- * Tokens are stored as sb-<project-ref>-auth-token
+ * Clears all auth tokens and persisted stores from localStorage
  */
-function clearSupabaseAuthTokens() {
+function clearAuthTokens() {
   if (typeof window === "undefined") return;
 
-  const keysToRemove: string[] = [];
+  const keysToRemove: string[] = [
+    "accessToken",
+    "refreshToken",
+    "user",
+    // Also clear zustand persisted stores
+    "user-storage",
+    "auth-storage",
+    "wallet-storage",
+    "notification-storage",
+    "project-storage",
+  ];
 
+  // Remove any legacy sb-* keys that may still exist
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && (key.startsWith("sb-") && key.includes("-auth-token"))) {
+    if (key && key.startsWith("sb-") && key.includes("-auth-token")) {
       keysToRemove.push(key);
     }
   }
 
-  // Also clear zustand persisted stores
-  keysToRemove.push("user-storage", "auth-storage", "wallet-storage", "notification-storage", "project-storage");
-
   keysToRemove.forEach((key) => {
     localStorage.removeItem(key);
   });
+
+  // Clear the loggedIn cookie
+  document.cookie = "loggedIn=; path=/; max-age=0";
+  document.cookie = "accessToken=; path=/; max-age=0";
 }
 
 /**
- * Logout button with client-side signOut action
- * Clears localStorage tokens and zustand stores before signing out
+ * Logout button with client-side signOut action.
+ * Clears localStorage tokens and zustand stores before signing out.
  */
 export function LogoutButton() {
   const [isLoading, setIsLoading] = useState(false);
@@ -47,14 +58,16 @@ export function LogoutButton() {
       clearUser();
       clearAuth();
 
-      // Clear localStorage tokens
-      clearSupabaseAuthTokens();
+      // Clear localStorage tokens and cookies
+      clearAuthTokens();
 
-      // Sign out from Supabase (server action)
-      await signOut();
+      // Call the Express API logout endpoint
+      await logout();
+
+      // Redirect to login page
+      window.location.href = "/login";
     } catch (error) {
-      // Even if server action fails, the localStorage is cleared
-      // Redirect manually if needed
+      // Even if API call fails, localStorage is already cleared
       window.location.href = "/login";
     }
   };

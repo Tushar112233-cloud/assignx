@@ -19,7 +19,7 @@ function isLoginRequired(): boolean {
 
 /**
  * Data provider component
- * Fetches initial data from Supabase when the app loads
+ * Fetches initial data from API when the app loads
  *
  * DEV MODE: When NEXT_PUBLIC_REQUIRE_LOGIN=false, automatically loads
  * default user data without requiring authentication

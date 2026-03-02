@@ -53,7 +53,7 @@ interface DoerTask {
   id: string;
   title: string;
   status: string;
-  price: number | null;
+  user_quote: number | null;
   created_at: string;
 }
 
@@ -195,7 +195,7 @@ export function DoerDetailView({
                               {t.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>{formatCurrency(t.price)}</TableCell>
+                          <TableCell>{formatCurrency(t.user_quote)}</TableCell>
                           <TableCell>{formatDate(t.created_at)}</TableCell>
                         </TableRow>
                       ))}

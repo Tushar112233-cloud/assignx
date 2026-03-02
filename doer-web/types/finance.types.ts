@@ -55,7 +55,9 @@ export interface Wallet {
 
 /**
  * Wallet transaction interface
- * Individual financial transaction - matches database schema
+ * Individual financial transaction - matches database schema.
+ * DB columns: id, wallet_id, transaction_type, amount, status, description,
+ * reference_id, reference_type, notes, balance_before, balance_after, created_at
  */
 export interface WalletTransaction {
   /** Unique identifier */
@@ -66,26 +68,22 @@ export interface WalletTransaction {
   transaction_type: TransactionType
   /** Transaction amount */
   amount: number
-  /** Balance before transaction */
-  balance_before: number
-  /** Balance after transaction */
-  balance_after: number
+  /** Transaction status */
+  status: 'pending' | 'completed' | 'failed' | 'reversed'
   /** Transaction description */
   description: string | null
   /** External reference ID */
   reference_id: string | null
   /** Reference type */
   reference_type: 'project' | 'payout' | 'bonus' | 'adjustment' | null
-  /** Related project ID */
-  project_id: string | null
-  /** Related project title (for display) */
-  project_title?: string | null
-  /** Transaction status */
-  status: 'pending' | 'completed' | 'failed' | 'reversed'
+  /** Additional notes */
+  notes: string | null
+  /** Balance before transaction */
+  balance_before: number
+  /** Balance after transaction */
+  balance_after: number
   /** Creation timestamp */
   created_at: string
-  /** Completion timestamp */
-  completed_at: string | null
 }
 
 /**
@@ -95,18 +93,14 @@ export interface WalletTransaction {
 export interface Payout {
   /** Unique identifier */
   id: string
-  /** Owner profile ID */
-  profile_id: string
-  /** Source wallet ID */
-  wallet_id: string
+  /** Recipient profile ID */
+  recipient_id: string
+  /** Recipient type (doer, supervisor, etc.) */
+  recipient_type: string
   /** Requested amount */
   amount: number
-  /** Processing fee */
-  fee: number
-  /** Net amount after fee */
-  net_amount: number
-  /** Payment method */
-  payment_method: 'bank_transfer' | 'upi'
+  /** Currency code */
+  currency: string
   /** Bank account holder name */
   bank_account_name: string | null
   /** Bank account number */
@@ -117,18 +111,34 @@ export interface Payout {
   bank_name: string | null
   /** UPI ID */
   upi_id: string | null
+  /** Payout method */
+  payout_method: string | null
+  /** Payment gateway */
+  gateway: string | null
+  /** Gateway payout ID */
+  gateway_payout_id: string | null
+  /** Gateway reference */
+  gateway_reference: string | null
   /** Payout status */
   status: PayoutStatus
-  /** Bank transaction ID */
-  transaction_id: string | null
   /** Failure reason */
   failure_reason: string | null
+  /** Retry count */
+  retry_count: number
+  /** Reference type */
+  reference_type: string | null
+  /** Reference IDs */
+  reference_ids: string[] | null
   /** Request timestamp */
   requested_at: string
   /** Processing timestamp */
   processed_at: string | null
   /** Completion timestamp */
   completed_at: string | null
+  /** Creation timestamp */
+  created_at: string
+  /** Last update timestamp */
+  updated_at: string
 }
 
 /**
@@ -138,12 +148,12 @@ export interface Payout {
 export interface PayoutRequest {
   /** Unique identifier */
   id: string
-  /** Owner profile ID */
-  profile_id: string
+  /** Recipient profile ID */
+  recipient_id: string
   /** Requested amount */
   amount: number
-  /** Payment method */
-  payment_method: 'bank_transfer' | 'upi'
+  /** Payout method */
+  payout_method: 'bank_transfer' | 'upi'
   /** Request status */
   status: 'pending' | 'approved' | 'rejected' | 'processing' | 'completed'
   /** Rejection reason */

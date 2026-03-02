@@ -9,11 +9,14 @@ import '../../../data/models/marketplace_model.dart';
 import '../../../data/models/user_type.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/marketplace_provider.dart';
-import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../widgets/campus_connect_hero.dart';
 import '../widgets/college_filter.dart';
+import '../widgets/feature_carousel.dart';
+import '../widgets/feature_cards_grid.dart';
 import '../widgets/filter_tabs_bar.dart';
+import '../widgets/live_feed_preview.dart';
 import '../widgets/post_card.dart';
+import '../widgets/quick_access_row.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/housing_filters.dart';
 import '../widgets/event_filters.dart';
@@ -23,8 +26,9 @@ import '../widgets/campus_connect_filter_sheet.dart';
 
 /// Campus Connect screen with staggered feed of community content.
 ///
-/// Features a header bar, gradient hero section with chat icon, search functionality,
-/// filter tabs, listings count, and a Pinterest-style staggered grid of various post types.
+/// Features an enhanced hero section, live feed preview, feature carousel,
+/// feature cards grid, quick access row, search, filter tabs, and a
+/// Pinterest-style staggered grid of various post types.
 class CampusConnectScreen extends ConsumerStatefulWidget {
   const CampusConnectScreen({super.key});
 
@@ -49,6 +53,13 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     return profile?.userType == UserType.student;
   }
 
+  /// Set category filter from child widgets (feature cards, quick access).
+  void _selectCategory(CampusConnectCategory category) {
+    setState(() {
+      _selectedCategory = category;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final listingsAsync = ref.watch(marketplaceListingsProvider);
@@ -69,33 +80,58 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
             },
             child: CustomScrollView(
               slivers: [
-                // Unified Dashboard App Bar (dark theme)
-                const SliverToBoxAdapter(
-                  child: DashboardAppBar(),
-                ),
-
-                // Gradient hero section with chat icon
-                const SliverToBoxAdapter(
-                  child: CampusConnectHero(),
-                ),
-
-                // Search bar
+                // 1. Enhanced Hero Section with gradient, animated text, live stats
                 SliverToBoxAdapter(
-                  child: SearchBarWidget(
-                    initialValue: _searchQuery,
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
-                    onFilterTap: () {
-                      // Show unified filter sheet (web-style with tabs)
-                      _showUnifiedFilterSheet(context);
+                  child: CampusConnectHero(
+                    onVerifyCollege: () {
+                      context.push('/settings/college-verification');
                     },
                   ),
                 ),
 
-                // Filter tabs with college filter - pass isStudent to conditionally show housing
+                // 2. Live Feed Preview - recent posts from connected cities
+                const SliverToBoxAdapter(
+                  child: LiveFeedPreview(),
+                ),
+
+                // 3. Feature Carousel - auto-scrolling feature highlights
+                const SliverToBoxAdapter(
+                  child: FeatureCarousel(),
+                ),
+
+                // 4. Feature Cards Grid - "What is Campus Connect?"
+                SliverToBoxAdapter(
+                  child: FeatureCardsGrid(
+                    onCategorySelected: _selectCategory,
+                  ),
+                ),
+
+                // 5. Quick Access Row - circular action shortcuts
+                SliverToBoxAdapter(
+                  child: QuickAccessRow(
+                    onCategorySelected: _selectCategory,
+                  ),
+                ),
+
+                // 6. Search bar + College filter
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: SearchBarWidget(
+                      initialValue: _searchQuery,
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value;
+                        });
+                      },
+                      onFilterTap: () {
+                        _showUnifiedFilterSheet(context);
+                      },
+                    ),
+                  ),
+                ),
+
+                // 7. Filter tabs with college filter (all 12 categories)
                 SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,8 +162,10 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                               const SizedBox(width: 8),
                               _InternalFilterChip(
                                 category: _selectedCategory!,
-                                filterCount: _getFilterCountForCategory(_selectedCategory!),
-                                onTap: () => _showInternalFilters(context, _selectedCategory!),
+                                filterCount: _getFilterCountForCategory(
+                                    _selectedCategory!),
+                                onTap: () => _showInternalFilters(
+                                    context, _selectedCategory!),
                               ),
                             ],
                           ],
@@ -137,7 +175,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                   ),
                 ),
 
-                // Listings count
+                // 8. Listings count
                 SliverToBoxAdapter(
                   child: listingsAsync.when(
                     data: (listings) {
@@ -149,7 +187,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                   ),
                 ),
 
-                // Staggered posts grid
+                // 9. Staggered posts grid (existing feed)
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   sliver: isHousingRestricted
@@ -164,45 +202,46 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                           ),
                         )
                       : listingsAsync.when(
-                    data: (listings) {
-                      // Filter listings based on selected category and search
-                      // Also filter out housing for non-students
-                      var filteredListings = _filterListings(listings);
-                      if (!isStudent) {
-                        filteredListings = filteredListings
-                            .where((l) => l.type != ListingType.housing)
-                            .toList();
-                      }
+                          data: (listings) {
+                            // Filter listings based on selected category and search
+                            // Also filter out housing for non-students
+                            var filteredListings = _filterListings(listings);
+                            if (!isStudent) {
+                              filteredListings = filteredListings
+                                  .where((l) => l.type != ListingType.housing)
+                                  .toList();
+                            }
 
-                      if (filteredListings.isEmpty) {
-                        return SliverToBoxAdapter(
-                          child: _EmptyState(
-                            hasFilters: _selectedCategory != null ||
-                                _searchQuery.isNotEmpty,
-                            onClearFilters: () {
-                              setState(() {
-                                _selectedCategory = null;
-                                _searchQuery = '';
-                              });
-                            },
+                            if (filteredListings.isEmpty) {
+                              return SliverToBoxAdapter(
+                                child: _EmptyState(
+                                  hasFilters: _selectedCategory != null ||
+                                      _searchQuery.isNotEmpty,
+                                  onClearFilters: () {
+                                    setState(() {
+                                      _selectedCategory = null;
+                                      _searchQuery = '';
+                                    });
+                                  },
+                                ),
+                              );
+                            }
+
+                            return _StaggeredPostsGrid(
+                                listings: filteredListings);
+                          },
+                          loading: () => const SliverToBoxAdapter(
+                            child: _LoadingGrid(),
                           ),
-                        );
-                      }
-
-                      return _StaggeredPostsGrid(listings: filteredListings);
-                    },
-                    loading: () => const SliverToBoxAdapter(
-                      child: _LoadingGrid(),
-                    ),
-                    error: (error, stack) => SliverToBoxAdapter(
-                      child: _ErrorState(
-                        error: error.toString(),
-                        onRetry: () {
-                          ref.invalidate(marketplaceListingsProvider);
-                        },
-                      ),
-                    ),
-                  ),
+                          error: (error, stack) => SliverToBoxAdapter(
+                            child: _ErrorState(
+                              error: error.toString(),
+                              onRetry: () {
+                                ref.invalidate(marketplaceListingsProvider);
+                              },
+                            ),
+                          ),
+                        ),
                 ),
 
                 // Bottom padding for navigation
@@ -230,7 +269,6 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
   }
 
   /// Filter listings based on category, search query, college filter, and internal filters.
-  /// Updated to match web categories: All, Events, Housing, Resources, Discussions
   List<MarketplaceListing> _filterListings(List<MarketplaceListing> listings) {
     var filtered = listings;
 
@@ -242,18 +280,20 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
         // Match by collegeName or userUniversity field
         final listingCollege = listing.collegeName ?? listing.userUniversity;
         if (listingCollege == null) return false;
-        return listingCollege.toLowerCase().contains(filterCollege.toLowerCase());
+        return listingCollege
+            .toLowerCase()
+            .contains(filterCollege.toLowerCase());
       }).toList();
     }
 
     // Filter by category (web-style categories)
-    if (_selectedCategory != null && _selectedCategory != CampusConnectCategory.all) {
+    if (_selectedCategory != null &&
+        _selectedCategory != CampusConnectCategory.all) {
       filtered = filtered.where((listing) {
         switch (_selectedCategory!) {
           case CampusConnectCategory.all:
-            return true; // Show all
+            return true;
           case CampusConnectCategory.questions:
-            // Questions/academic doubts
             final title = listing.title.toLowerCase();
             return listing.type == ListingType.communityPost &&
                 (title.contains('?') ||
@@ -270,41 +310,35 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
           case CampusConnectCategory.marketplace:
             return listing.type == ListingType.product;
           case CampusConnectCategory.resources:
-            // Study materials/resources
             return listing.type == ListingType.product &&
                 (listing.metadata?['resource_type'] != null ||
                     listing.title.toLowerCase().contains('notes') ||
                     listing.title.toLowerCase().contains('book'));
           case CampusConnectCategory.lostFound:
-            // Lost & Found items
             final title = listing.title.toLowerCase();
             return listing.type == ListingType.communityPost &&
                 (title.contains('lost') ||
                     title.contains('found') ||
                     title.contains('missing'));
           case CampusConnectCategory.rides:
-            // Carpool/rides
             final title = listing.title.toLowerCase();
             return listing.type == ListingType.communityPost &&
                 (title.contains('ride') ||
                     title.contains('carpool') ||
                     title.contains('lift'));
           case CampusConnectCategory.studyGroups:
-            // Study groups
             final title = listing.title.toLowerCase();
             return listing.type == ListingType.communityPost &&
                 (title.contains('study group') ||
                     title.contains('study buddy') ||
                     title.contains('group study'));
           case CampusConnectCategory.clubs:
-            // Clubs and societies
             final title = listing.title.toLowerCase();
             return listing.type == ListingType.communityPost &&
                 (title.contains('club') ||
                     title.contains('society') ||
                     title.contains('team'));
           case CampusConnectCategory.announcements:
-            // Official announcements
             return listing.type == ListingType.poll ||
                 (listing.metadata?['is_announcement'] == true);
           case CampusConnectCategory.discussions:
@@ -362,7 +396,8 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
   }
 
   /// Apply housing-specific filters.
-  List<MarketplaceListing> _applyHousingFilters(List<MarketplaceListing> listings) {
+  List<MarketplaceListing> _applyHousingFilters(
+      List<MarketplaceListing> listings) {
     if (!_housingFilters.hasActiveFilters) return listings;
 
     return listings.where((listing) {
@@ -373,31 +408,39 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
       }
 
       // Filter by location
-      if (_housingFilters.location != null && _housingFilters.location!.isNotEmpty) {
+      if (_housingFilters.location != null &&
+          _housingFilters.location!.isNotEmpty) {
         if (listing.location == null) return false;
-        if (!listing.location!.toLowerCase().contains(_housingFilters.location!.toLowerCase())) {
+        if (!listing.location!
+            .toLowerCase()
+            .contains(_housingFilters.location!.toLowerCase())) {
           return false;
         }
       }
 
       // Filter by distance from campus
-      if (_housingFilters.distanceFromCampus != null && listing.distanceKm != null) {
-        final maxDistanceKm = _getDistanceInKm(_housingFilters.distanceFromCampus!);
+      if (_housingFilters.distanceFromCampus != null &&
+          listing.distanceKm != null) {
+        final maxDistanceKm =
+            _getDistanceInKm(_housingFilters.distanceFromCampus!);
         if (listing.distanceKm! > maxDistanceKm) return false;
       }
 
       // Filter by property type (from metadata)
       if (_housingFilters.propertyType.isNotEmpty) {
         final propertyType = listing.metadata?['property_type'] as String?;
-        if (propertyType == null || !_housingFilters.propertyType.contains(propertyType)) {
+        if (propertyType == null ||
+            !_housingFilters.propertyType.contains(propertyType)) {
           return false;
         }
       }
 
       // Filter by amenities (from metadata)
       if (_housingFilters.amenities.isNotEmpty) {
-        final listingAmenities = (listing.metadata?['amenities'] as List<dynamic>?)
-            ?.cast<String>() ?? [];
+        final listingAmenities =
+            (listing.metadata?['amenities'] as List<dynamic>?)
+                    ?.cast<String>() ??
+                [];
         final hasAllAmenities = _housingFilters.amenities.every(
           (amenity) => listingAmenities.contains(amenity),
         );
@@ -427,14 +470,16 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
   }
 
   /// Apply event-specific filters.
-  List<MarketplaceListing> _applyEventFilters(List<MarketplaceListing> listings) {
+  List<MarketplaceListing> _applyEventFilters(
+      List<MarketplaceListing> listings) {
     if (!_eventFilters.hasActiveFilters) return listings;
 
     return listings.where((listing) {
       // Filter by event type
       if (_eventFilters.eventType.isNotEmpty) {
         final eventType = listing.metadata?['event_type'] as String?;
-        if (eventType == null || !_eventFilters.eventType.contains(eventType)) {
+        if (eventType == null ||
+            !_eventFilters.eventType.contains(eventType)) {
           return false;
         }
       }
@@ -446,7 +491,8 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
             : null;
         if (eventDate != null) {
           if (eventDate.isBefore(_eventFilters.dateFrom!)) return false;
-          if (_eventFilters.dateTo != null && eventDate.isAfter(_eventFilters.dateTo!)) {
+          if (_eventFilters.dateTo != null &&
+              eventDate.isAfter(_eventFilters.dateTo!)) {
             return false;
           }
         }
@@ -460,9 +506,12 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
       }
 
       // Filter by location
-      if (_eventFilters.location != null && _eventFilters.location!.isNotEmpty) {
+      if (_eventFilters.location != null &&
+          _eventFilters.location!.isNotEmpty) {
         if (listing.location == null) return false;
-        if (!listing.location!.toLowerCase().contains(_eventFilters.location!.toLowerCase())) {
+        if (!listing.location!
+            .toLowerCase()
+            .contains(_eventFilters.location!.toLowerCase())) {
           return false;
         }
       }
@@ -472,14 +521,16 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
   }
 
   /// Apply resource-specific filters.
-  List<MarketplaceListing> _applyResourceFilters(List<MarketplaceListing> listings) {
+  List<MarketplaceListing> _applyResourceFilters(
+      List<MarketplaceListing> listings) {
     if (!_resourceFilters.hasActiveFilters) return listings;
 
     return listings.where((listing) {
       // Filter by subject
       if (_resourceFilters.subject.isNotEmpty) {
         final subject = listing.metadata?['subject'] as String?;
-        if (subject == null || !_resourceFilters.subject.contains(subject)) {
+        if (subject == null ||
+            !_resourceFilters.subject.contains(subject)) {
           return false;
         }
       }
@@ -487,7 +538,8 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
       // Filter by resource type
       if (_resourceFilters.resourceType.isNotEmpty) {
         final resourceType = listing.metadata?['resource_type'] as String?;
-        if (resourceType == null || !_resourceFilters.resourceType.contains(resourceType)) {
+        if (resourceType == null ||
+            !_resourceFilters.resourceType.contains(resourceType)) {
           return false;
         }
       }
@@ -512,7 +564,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }).toList();
   }
 
-  /// Get filter count for a specific category
+  /// Get filter count for a specific category.
   int _getFilterCountForCategory(CampusConnectCategory category) {
     switch (category) {
       case CampusConnectCategory.housing:
@@ -538,7 +590,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }
   }
 
-  /// Show housing-specific filters
+  /// Show housing-specific filters.
   Future<void> _showHousingFilters(BuildContext context) async {
     final result = await HousingFiltersSheet.show(
       context,
@@ -551,7 +603,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }
   }
 
-  /// Show event-specific filters (used for opportunities)
+  /// Show event-specific filters (used for opportunities).
   Future<void> _showEventFilters(BuildContext context) async {
     final result = await EventFiltersSheet.show(
       context,
@@ -564,7 +616,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }
   }
 
-  /// Show resource-specific filters (used for products)
+  /// Show resource-specific filters (used for products).
   Future<void> _showResourceFilters(BuildContext context) async {
     final result = await ResourceFiltersSheet.show(
       context,
@@ -577,7 +629,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }
   }
 
-  /// Check if a category has internal filters
+  /// Check if a category has internal filters.
   bool _hasInternalFilters(CampusConnectCategory category) {
     switch (category) {
       case CampusConnectCategory.housing:
@@ -601,8 +653,9 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }
   }
 
-  /// Show internal filters based on selected category
-  Future<void> _showInternalFilters(BuildContext context, CampusConnectCategory category) async {
+  /// Show internal filters based on selected category.
+  Future<void> _showInternalFilters(
+      BuildContext context, CampusConnectCategory category) async {
     switch (category) {
       case CampusConnectCategory.housing:
         await _showHousingFilters(context);
@@ -621,7 +674,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }
   }
 
-  /// Show the unified filter sheet with all tabs
+  /// Show the unified filter sheet with all tabs.
   Future<void> _showUnifiedFilterSheet(BuildContext context) async {
     final currentFilters = CampusConnectFilters(
       housing: _housingFilters,
@@ -848,7 +901,6 @@ class _StaggeredPostsGrid extends StatelessWidget {
   /// Determine if a community post should be shown as a help post.
   bool _shouldShowAsHelpPost(MarketplaceListing listing, int index) {
     final title = listing.title.toLowerCase();
-    // Show as help post if title contains help-related keywords
     return title.contains('struggling') ||
         title.contains('help') ||
         title.contains('difficult') ||
@@ -1216,13 +1268,15 @@ class _InternalFilterChip extends StatelessWidget {
                 color: hasActiveFilters
                     ? AppColors.primary
                     : AppColors.textSecondary,
-                fontWeight: hasActiveFilters ? FontWeight.w600 : FontWeight.w500,
+                fontWeight:
+                    hasActiveFilters ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
             if (hasActiveFilters) ...[
               const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(10),

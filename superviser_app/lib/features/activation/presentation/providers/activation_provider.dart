@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/network/supabase_client.dart';
 import '../../data/models/training_module.dart';
 import '../../data/repositories/activation_repository.dart';
 
@@ -395,7 +394,7 @@ class QuizNotifier extends StateNotifier<QuizState> {
 
 /// Repository provider
 final activationRepositoryProvider = Provider<ActivationRepository>((ref) {
-  return ActivationRepository(ref.watch(supabaseClientProvider));
+  return ActivationRepository();
 });
 
 /// Activation state provider

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/add_project/screens/expert_opinion_form.dart';
 import '../../features/add_project/screens/new_project_form.dart';
+import '../../features/add_project/screens/project_wizard_screen.dart';
 import '../../features/add_project/screens/proofreading_form.dart';
 import '../../features/add_project/screens/report_request_form.dart';
 import '../../features/auth/screens/login_screen.dart';
@@ -41,6 +42,15 @@ import '../../features/auth/screens/college_verification_screen.dart';
 import '../../features/connect/screens/connect_screen.dart';
 import '../../features/connect/screens/study_groups_screen.dart';
 import '../../features/projects/screens/project_payment_screen.dart';
+import '../../features/pro_network/screens/pro_network_screen.dart';
+import '../../features/pro_network/screens/pro_create_post_screen.dart';
+import '../../features/pro_network/screens/pro_post_detail_screen.dart';
+import '../../features/pro_network/screens/pro_saved_posts_screen.dart';
+import '../../features/business_hub/screens/business_hub_screen.dart';
+import '../../features/business_hub/screens/business_create_post_screen.dart';
+import '../../features/business_hub/screens/business_post_detail_screen.dart';
+import '../../features/business_hub/screens/business_saved_posts_screen.dart';
+import '../../features/settings/screens/settings_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../shared/animations/page_transitions.dart';
@@ -226,6 +236,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // Add Project routes - slide up transitions for modal-like forms
       GoRoute(
+        path: RouteNames.projectWizard,
+        name: 'projectWizard',
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const ProjectWizardScreen(),
+          state: state,
+        ),
+      ),
+      GoRoute(
         path: '/add-project/new',
         name: 'addProjectNew',
         pageBuilder: (context, state) => AppPageTransitions.slideUp(
@@ -367,6 +385,94 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             },
           ),
         ],
+      ),
+
+      // Pro Network routes - for post details, create, and saved posts
+      GoRoute(
+        path: '/pro-network',
+        name: 'proNetwork',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const ProNetworkScreen(),
+          state: state,
+        ),
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: 'proNetworkCreate',
+            pageBuilder: (context, state) => AppPageTransitions.slideUp(
+              child: const ProCreatePostScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'saved',
+            name: 'proNetworkSaved',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const ProSavedPostsScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'post/:id',
+            name: 'proNetworkPostDetail',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideRight(
+                child: ProPostDetailScreen(postId: id),
+                state: state,
+              );
+            },
+          ),
+        ],
+      ),
+
+      // Business Hub routes - for post details, create, and saved posts
+      GoRoute(
+        path: '/business-hub',
+        name: 'businessHub',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const BusinessHubScreen(),
+          state: state,
+        ),
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: 'businessHubCreate',
+            pageBuilder: (context, state) => AppPageTransitions.slideUp(
+              child: const BusinessCreatePostScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'saved',
+            name: 'businessHubSaved',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const BusinessSavedPostsScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'post/:id',
+            name: 'businessHubPostDetail',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideRight(
+                child: BusinessPostDetailScreen(postId: id),
+                state: state,
+              );
+            },
+          ),
+        ],
+      ),
+
+      // Settings - slide right transition
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const SettingsScreen(),
+          state: state,
+        ),
       ),
 
       // Notifications - slide right transition

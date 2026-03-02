@@ -10,7 +10,6 @@ import 'package:logger/logger.dart';
 import 'app.dart';
 import 'core/config/api_config.dart';
 import 'core/config/razorpay_config.dart';
-import 'core/config/supabase_config.dart';
 import 'core/services/notification_service.dart';
 
 /// Global logger instance for error tracking
@@ -42,10 +41,8 @@ void main() async {
           error: details.exception,
           stackTrace: details.stack,
         );
-        // In production, send to crash reporting service (e.g., Crashlytics)
         if (kReleaseMode) {
           // TODO: Send to Crashlytics or other crash reporting service
-          // FirebaseCrashlytics.instance.recordFlutterError(details);
         }
       };
 
@@ -76,28 +73,15 @@ void main() async {
         _logger.i('Firebase initialized successfully');
       } catch (e) {
         _logger.w('Firebase initialization skipped (not configured): $e');
-        // Firebase is optional - app can run without it
       }
 
-      // Validate and initialize Supabase
+      // Initialize API configuration
       try {
-        SupabaseConfig.validateConfiguration();
-        await SupabaseConfig.initialize();
-        _logger.i('Supabase initialized successfully');
+        await ApiConfig.initialize();
+        _logger.i('API client initialized: ${ApiConfig.baseUrl}');
       } catch (e) {
-        _logger.w('Supabase initialization failed: $e');
+        _logger.w('API initialization failed: $e');
         _logger.w('App will run in demo mode without backend connectivity');
-        // App can run in demo mode without Supabase
-      }
-
-      // Validate API configuration (required for payments)
-      try {
-        ApiConfig.validateConfiguration();
-        _logger.i('API configuration validated: ${ApiConfig.baseUrl}');
-      } catch (e) {
-        _logger.w('API configuration missing: $e');
-        _logger.w('Payment features will be unavailable');
-        // App can run without payments in limited mode
       }
 
       // Validate Razorpay configuration (required for payments)
@@ -107,7 +91,6 @@ void main() async {
       } catch (e) {
         _logger.w('Razorpay configuration missing: $e');
         _logger.w('Payment features will be unavailable');
-        // App can run without payments in limited mode
       }
 
       // Initialize notification service (requires Firebase)
@@ -116,7 +99,6 @@ void main() async {
         _logger.i('Notification service initialized successfully');
       } catch (e) {
         _logger.w('Notification service initialization failed (requires Firebase): $e');
-        // Push notifications require Firebase - app can run without them
       }
 
       // Run the app
@@ -131,7 +113,6 @@ void main() async {
       _logger.e('Uncaught async error', error: error, stackTrace: stackTrace);
       if (kReleaseMode) {
         // TODO: Send to crash reporting service
-        // FirebaseCrashlytics.instance.recordError(error, stackTrace);
       }
     },
   );

@@ -3,7 +3,7 @@ import { getWallet, getWalletTransactions } from "@/lib/actions/data";
 import { getCurrencySymbol } from "@/lib/utils";
 
 /**
- * Wallet interface matching Supabase schema
+ * Wallet interface matching API schema
  */
 export interface Wallet {
   id: string;
@@ -49,7 +49,7 @@ interface WalletState {
 
 /**
  * Wallet state store
- * Manages user wallet balance and transactions with Supabase integration
+ * Manages user wallet balance and transactions with API integration
  */
 export const useWalletStore = create<WalletState>((set) => ({
   wallet: null,
@@ -60,7 +60,7 @@ export const useWalletStore = create<WalletState>((set) => ({
   error: null,
 
   /**
-   * Fetches wallet from Supabase
+   * Fetches wallet from API
    */
   fetchWallet: async () => {
     set({ isLoading: true, error: null });
@@ -85,7 +85,7 @@ export const useWalletStore = create<WalletState>((set) => ({
   },
 
   /**
-   * Fetches wallet transactions from Supabase
+   * Fetches wallet transactions from API
    */
   fetchTransactions: async (limit = 20) => {
     set({ isLoading: true, error: null });

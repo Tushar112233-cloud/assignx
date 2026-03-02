@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { QUALIFICATION_OPTIONS, EXPERIENCE_LEVELS } from '@/lib/constants'
-import { createClient } from '@/lib/supabase/client'
+import { apiClient, getAccessToken } from '@/lib/api/client'
 
 /** Profile setup form schema */
 const profileSetupSchema = z.object({
@@ -104,36 +104,14 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
       setFetchError(null)
 
       try {
-        const supabase = createClient()
-
         // Fetch skills and subjects in parallel
-        const [skillsResult, subjectsResult] = await Promise.all([
-          supabase
-            .from('skills')
-            .select('id, name')
-            .eq('is_active', true)
-            .order('name'),
-          supabase
-            .from('subjects')
-            .select('id, name')
-            .eq('is_active', true)
-            .is('parent_id', null)
-            .order('name'),
+        const [skillsData, subjectsData] = await Promise.all([
+          apiClient<Skill[]>('/api/skills?is_active=true&sort=name'),
+          apiClient<Subject[]>('/api/subjects?is_active=true&parent_id=null&sort=name'),
         ])
 
-        if (skillsResult.error) {
-          console.error('Skills fetch error:', skillsResult.error)
-          setFetchError(`Failed to load skills: ${skillsResult.error.message}`)
-        } else {
-          setSkills(skillsResult.data || [])
-        }
-
-        if (subjectsResult.error) {
-          console.error('Subjects fetch error:', subjectsResult.error)
-          setFetchError(`Failed to load subjects: ${subjectsResult.error.message}`)
-        } else {
-          setSubjects(subjectsResult.data || [])
-        }
+        setSkills(skillsData || [])
+        setSubjects(subjectsData || [])
       } catch (error) {
         console.error('Error fetching profile data:', error)
         setFetchError('Failed to load data. Please refresh the page.')

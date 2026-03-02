@@ -13,6 +13,7 @@ export { FeaturedTutors } from "./featured-tutors";
 export { TutorProfileSheet } from "./tutor-profile-sheet";
 export { BookSessionSheet } from "./book-session-sheet";
 export { FilterSheet } from "./filter-sheet";
+export { ConnectTabs } from "./connect-tabs";
 
 // Q&A components
 export { QuestionCard } from "./question-card";

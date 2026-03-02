@@ -198,7 +198,7 @@ export function ProjectCard({
 }: ProjectCardProps) {
   const statusConfig = getStatusConfig(project.status)
   const timeInfo = getTimeRemaining(project.deadline)
-  const isUrgent = timeInfo.isUrgent || project.is_urgent
+  const isUrgent = timeInfo.isUrgent
   const payout = project.price ?? project.doer_payout ?? 0
 
   return (

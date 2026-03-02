@@ -116,7 +116,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
-    final displayName = user?.userMetadata?['full_name'] as String? ??
+    final profile = ref.watch(currentProfileProvider);
+    final displayName = profile?.fullName ??
         user?.email?.split('@').first ??
         'there';
 

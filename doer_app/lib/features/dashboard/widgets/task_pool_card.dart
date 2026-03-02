@@ -26,14 +26,17 @@ class TaskPoolCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 1,
+      elevation: 0,
       margin: EdgeInsets.zero,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        side: BorderSide(
+          color: AppColors.border.withValues(alpha: 0.7),
+        ),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppSpacing.borderRadiusMd,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
@@ -187,7 +190,7 @@ class TaskPoolCard extends StatelessWidget {
               // Accept button
               SizedBox(
                 width: double.infinity,
-                height: 40,
+                height: 42,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
@@ -195,7 +198,14 @@ class TaskPoolCard extends StatelessWidget {
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
-                    borderRadius: AppSpacing.borderRadiusSm,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
                   child: ElevatedButton(
                     onPressed: onAccept,
@@ -203,8 +213,8 @@ class TaskPoolCard extends StatelessWidget {
                       backgroundColor: Colors.transparent,
                       shadowColor: Colors.transparent,
                       foregroundColor: Colors.white,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: AppSpacing.borderRadiusSm,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                       ),
                       textStyle: const TextStyle(
                         fontSize: 14,
@@ -214,8 +224,8 @@ class TaskPoolCard extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add_circle_outline, size: 18),
-                        SizedBox(width: 6),
+                        const Icon(Icons.add_circle_outline, size: 18),
+                        const SizedBox(width: 6),
                         Text('Accept Task'.tr(context)),
                       ],
                     ),

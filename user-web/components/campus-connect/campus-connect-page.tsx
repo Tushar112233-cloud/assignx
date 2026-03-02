@@ -71,6 +71,7 @@ import {
   defaultCampusConnectFilters,
 } from "./filter-sheet";
 import { CampusPulseHero } from "./campus-pulse-hero";
+import { SavedListings } from "./saved-listings";
 import {
   getCampusConnectPosts,
   togglePostLike,
@@ -599,6 +600,7 @@ export function CampusConnectPage() {
   const [selectedUniversityId, setSelectedUniversityId] = useState<string | null>(null);
   const [myCollegeOnly, setMyCollegeOnly] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [internalFilters, setInternalFilters] = useState<CampusConnectFilters>(defaultCampusConnectFilters);
   const [hasMore, setHasMore] = useState(false);
@@ -901,6 +903,38 @@ export function CampusConnectPage() {
 
           <ActiveFiltersBar filters={internalFilters} onFiltersChange={setInternalFilters} className="mb-4" />
 
+          {/* Toolbar Row - Create Post + Saved */}
+          <div className="flex items-center gap-3 mb-6">
+            <Button
+              asChild
+              className="gap-2 rounded-xl h-11 px-5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:shadow-lg transition-all"
+            >
+              <Link href="/campus-connect/create">
+                <Plus className="h-4 w-4" />
+                Create Post
+              </Link>
+            </Button>
+            <Button
+              variant={showSaved ? "default" : "outline"}
+              className="gap-2 rounded-xl h-11 px-5"
+              onClick={() => setShowSaved(!showSaved)}
+            >
+              <Sparkles className="h-4 w-4" />
+              {showSaved ? "All Posts" : "Saved"}
+            </Button>
+          </div>
+
+          {/* Saved Listings View */}
+          {showSaved && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8"
+            >
+              <SavedListings />
+            </motion.div>
+          )}
+
           {/* All Category Tabs */}
           <div className="mb-6">
             <div className="flex flex-wrap gap-2">
@@ -1051,21 +1085,24 @@ export function CampusConnectPage() {
             )}
           </AnimatePresence>
 
-          {/* Floating Create Button - Mobile */}
-          {isVerified && (
-            <div className="fixed bottom-24 right-6 lg:hidden z-30">
-              <Button
-                asChild
-                size="lg"
-                className="h-14 w-14 rounded-full shadow-xl shadow-violet-500/30 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:shadow-2xl hover:scale-105 transition-all"
-              >
-                <Link href="/campus-connect/create">
-                  <Plus className="h-6 w-6" />
-                  <span className="sr-only">Create Post</span>
-                </Link>
-              </Button>
-            </div>
-          )}
+          {/* Floating Action Button */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+            className="fixed bottom-24 right-6 z-50"
+          >
+            <Button
+              asChild
+              size="lg"
+              className="h-14 w-14 rounded-full shadow-xl shadow-violet-500/30 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:shadow-2xl hover:scale-105 transition-all"
+            >
+              <Link href="/campus-connect/create">
+                <Plus className="h-6 w-6" />
+                <span className="sr-only">Create Post</span>
+              </Link>
+            </Button>
+          </motion.div>
         </div>
       </div>
     </div>

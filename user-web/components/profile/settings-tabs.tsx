@@ -6,6 +6,7 @@ import {
   Settings,
   Shield,
   CreditCard,
+  Wallet,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -34,6 +35,7 @@ const tabs: { value: ProfileTab; label: string; icon: React.ElementType }[] = [
   { value: "academic", label: "Academic", icon: GraduationCap },
   { value: "preferences", label: "Preferences", icon: Settings },
   { value: "security", label: "Security", icon: Shield },
+  { value: "payment", label: "Payment", icon: Wallet },
   { value: "subscription", label: "Subscription", icon: CreditCard },
 ];
 

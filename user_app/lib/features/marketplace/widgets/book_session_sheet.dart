@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/tutor_model.dart';
 
 /// Bottom sheet for booking a session with a tutor.
@@ -128,8 +129,8 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Session booked successfully!'),
+          SnackBar(
+            content: Text('Session booked successfully!'.tr(context)),
             backgroundColor: AppColors.success,
           ),
         );
@@ -182,29 +183,29 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Calendar
-                      _buildSectionTitle('Select Date', Icons.calendar_today),
+                      _buildSectionTitle('Select Date'.tr(context), Icons.calendar_today),
                       _buildCalendar(),
                       const SizedBox(height: AppSpacing.lg),
 
                       // Time slots
                       if (_selectedDate != null) ...[
-                        _buildSectionTitle('Select Time', Icons.access_time),
+                        _buildSectionTitle('Select Time'.tr(context), Icons.access_time),
                         _buildTimeSlots(),
                         const SizedBox(height: AppSpacing.lg),
                       ],
 
                       // Session type
-                      _buildSectionTitle('Session Type', Icons.people_outline),
+                      _buildSectionTitle('Session Type'.tr(context), Icons.people_outline),
                       _buildSessionTypeSelector(),
                       const SizedBox(height: AppSpacing.lg),
 
                       // Duration
-                      _buildSectionTitle('Duration', Icons.timer_outlined),
+                      _buildSectionTitle('Duration'.tr(context), Icons.timer_outlined),
                       _buildDurationSelector(),
                       const SizedBox(height: AppSpacing.lg),
 
                       // Subject/Topic
-                      _buildSectionTitle('Subject', Icons.subject),
+                      _buildSectionTitle('Subject'.tr(context), Icons.subject),
                       _buildSubjectSelector(),
                       const SizedBox(height: AppSpacing.md),
 
@@ -212,7 +213,7 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
                       TextField(
                         controller: _topicController,
                         decoration: InputDecoration(
-                          hintText: 'Or enter a specific topic...',
+                          hintText: 'Or enter a specific topic...'.tr(context),
                           filled: true,
                           fillColor: AppColors.surfaceVariant,
                           border: OutlineInputBorder(
@@ -225,13 +226,13 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
                       const SizedBox(height: AppSpacing.lg),
 
                       // Notes
-                      _buildSectionTitle('Notes (Optional)', Icons.note_outlined),
+                      _buildSectionTitle('Notes (Optional)'.tr(context), Icons.note_outlined),
                       TextField(
                         controller: _notesController,
                         maxLines: 3,
                         decoration: InputDecoration(
                           hintText:
-                              'What would you like to focus on in this session?',
+                              'What would you like to focus on in this session?'.tr(context),
                           filled: true,
                           fillColor: AppColors.surfaceVariant,
                           border: OutlineInputBorder(
@@ -323,11 +324,11 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Book a Session',
+                  'Book a Session'.tr(context),
                   style: AppTextStyles.headingSmall,
                 ),
                 Text(
-                  'with ${widget.tutor.name}',
+                  '${'with'.tr(context)} ${widget.tutor.name}',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -464,15 +465,15 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Morning slots
-        _buildTimePeriod('Morning', morningSlots),
+        _buildTimePeriod('Morning'.tr(context), morningSlots),
         const SizedBox(height: AppSpacing.sm),
 
         // Afternoon slots
-        _buildTimePeriod('Afternoon', afternoonSlots),
+        _buildTimePeriod('Afternoon'.tr(context), afternoonSlots),
         const SizedBox(height: AppSpacing.sm),
 
         // Evening slots
-        _buildTimePeriod('Evening', eveningSlots),
+        _buildTimePeriod('Evening'.tr(context), eveningSlots),
       ],
     );
   }
@@ -570,7 +571,7 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    type.displayName,
+                    type.displayName.tr(context),
                     style: AppTextStyles.labelMedium.copyWith(
                       color:
                           isSelected ? AppColors.primary : AppColors.textPrimary,
@@ -579,7 +580,7 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
                   ),
                   if (type == SessionType.group)
                     Text(
-                      '40% off',
+                      '40% off'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.success,
                         fontSize: 10,
@@ -623,7 +624,7 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
               child: Column(
                 children: [
                   Text(
-                    dur.displayName,
+                    dur.displayName.tr(context),
                     style: AppTextStyles.labelMedium.copyWith(
                       color:
                           isSelected ? AppColors.primary : AppColors.textPrimary,
@@ -702,22 +703,22 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
         children: [
           // Session rate
           _buildSummaryRow(
-            'Session Rate',
-            '\u20B9${widget.tutor.hourlyRate.toStringAsFixed(0)}/hour',
+            'Session Rate'.tr(context),
+            '\u20B9${widget.tutor.hourlyRate.toStringAsFixed(0)}/${'hour'.tr(context)}',
           ),
           const SizedBox(height: 8),
 
           // Duration
           _buildSummaryRow(
-            'Duration',
-            _duration.displayName,
+            'Duration'.tr(context),
+            _duration.displayName.tr(context),
           ),
           const SizedBox(height: 8),
 
           // Session type discount
           if (_sessionType == SessionType.group) ...[
             _buildSummaryRow(
-              'Group Discount',
+              'Group Discount'.tr(context),
               '-40%',
               isDiscount: true,
             ),
@@ -727,7 +728,7 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
           // Date and time
           if (_selectedDate != null && _selectedTimeSlot != null) ...[
             _buildSummaryRow(
-              'Date & Time',
+              'Date & Time'.tr(context),
               '${DateFormat('EEE, MMM d').format(_selectedDate!)} at ${_timeSlots.firstWhere((s) => s.id == _selectedTimeSlot).time}',
             ),
             const SizedBox(height: 8),
@@ -741,7 +742,7 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Total',
+                'Total'.tr(context),
                 style: AppTextStyles.labelLarge.copyWith(
                   fontWeight: FontWeight.w600,
                 ),

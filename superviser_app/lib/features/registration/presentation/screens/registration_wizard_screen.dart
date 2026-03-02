@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../shared/widgets/dialogs/confirm_dialog.dart';
 import '../providers/registration_provider.dart';
 import '../widgets/step_progress_indicator.dart';
@@ -107,7 +108,7 @@ class _RegistrationWizardScreenState
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Supervisor Application'),
+          title: Text('Supervisor Application'.tr(context)),
           leading: IconButton(
             icon: const Icon(Icons.close),
             onPressed: () async {

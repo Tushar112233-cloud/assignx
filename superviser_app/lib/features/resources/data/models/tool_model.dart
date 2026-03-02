@@ -102,20 +102,24 @@ class ToolModel {
   /// Creates a ToolModel from JSON.
   factory ToolModel.fromJson(Map<String, dynamic> json) {
     return ToolModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      name: json['name'] as String? ?? '',
       type: ToolType.fromId(json['type'] as String? ?? 'plagiarism'),
       description: json['description'] as String? ?? '',
       url: json['url'] as String?,
-      iconUrl: json['icon_url'] as String?,
-      isExternal: json['is_external'] as bool? ?? true,
-      isPremium: json['is_premium'] as bool? ?? false,
-      usageCount: json['usage_count'] as int? ?? 0,
-      lastUsed: json['last_used'] != null
-          ? DateTime.parse(json['last_used'] as String)
-          : null,
+      iconUrl: (json['iconUrl'] ?? json['icon_url']) as String?,
+      isExternal: (json['isExternal'] ?? json['is_external']) as bool? ?? true,
+      isPremium: (json['isPremium'] ?? json['is_premium']) as bool? ?? false,
+      usageCount: (json['usageCount'] ?? json['usage_count']) as int? ?? 0,
+      lastUsed: _tryParseDateStatic(json['lastUsed'] ?? json['last_used']),
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
+  }
+
+  static DateTime? _tryParseDateStatic(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   /// Converts this model to JSON.

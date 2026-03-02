@@ -163,15 +163,19 @@ class TrainingModule {
   /// @throws FormatException if required fields are missing.
   factory TrainingModule.fromJson(Map<String, dynamic> json) {
     return TrainingModule(
-      id: json['id'] as String,
-      title: json['title'] as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      title: (json['title'] as String?) ?? '',
       description: json['description'] as String? ?? '',
-      type: TrainingModuleType.fromString(json['type'] as String),
-      contentUrl: json['content_url'] as String,
-      durationMinutes: json['duration_minutes'] as int? ?? 0,
-      orderIndex: json['order_index'] as int? ?? 0,
-      isRequired: json['is_required'] as bool? ?? true,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      type: TrainingModuleType.fromString(
+        (json['content_type'] ?? json['contentType'] ?? json['type'] ?? 'video').toString(),
+      ),
+      contentUrl: (json['content_url'] ?? json['contentUrl'] ?? '').toString(),
+      durationMinutes: (json['duration_minutes'] ?? json['durationMinutes']) as int? ?? 0,
+      orderIndex: (json['sequence_order'] ?? json['sequenceOrder']
+          ?? json['order_index'] ?? json['orderIndex']) as int? ?? 0,
+      isRequired: json['is_mandatory'] as bool? ?? json['isMandatory'] as bool?
+          ?? json['is_required'] as bool? ?? json['isRequired'] as bool? ?? true,
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 
@@ -378,16 +382,36 @@ class TrainingProgress {
   /// @param json The JSON map from the database response.
   /// @returns A new [TrainingProgress] instance.
   factory TrainingProgress.fromJson(Map<String, dynamic> json) {
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // status is a varchar ('not_started', 'in_progress', 'completed');
+    // fall back to is_completed bool for backwards compatibility.
+    final statusStr = json['status'] as String?;
+    final isCompleted = statusStr != null
+        ? statusStr == 'completed'
+        : (json['is_completed'] as bool? ?? json['isCompleted'] as bool? ?? false);
+
+    // Handle moduleId which may be a populated Mongoose object.
+    String moduleId = '';
+    final rawModuleId = json['module_id'] ?? json['moduleId'];
+    if (rawModuleId is String) {
+      moduleId = rawModuleId;
+    } else if (rawModuleId is Map<String, dynamic>) {
+      moduleId = (rawModuleId['_id'] ?? rawModuleId['id'] ?? '').toString();
+    }
+
     return TrainingProgress(
-      id: json['id'] as String,
-      doerId: json['doer_id'] as String,
-      moduleId: json['module_id'] as String,
-      isCompleted: json['is_completed'] as bool? ?? false,
-      progressPercent: json['progress_percent'] as int? ?? 0,
-      completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'] as String)
-          : null,
-      startedAt: DateTime.parse(json['started_at'] as String),
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      doerId: (json['profile_id'] ?? json['profileId'] ?? json['doer_id'] ?? json['doerId'] ?? '').toString(),
+      moduleId: moduleId,
+      isCompleted: isCompleted,
+      progressPercent: (json['progress_percentage'] ?? json['progressPercentage']
+          ?? json['progress_percent'] ?? json['progressPercent']) as int? ?? 0,
+      completedAt: _parseDate(json['completed_at'] ?? json['completedAt']),
+      startedAt: _parseDate(json['started_at'] ?? json['startedAt']) ?? DateTime.now(),
     );
   }
 

@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:supabase_flutter/supabase_flutter.dart' hide PresenceEvent;
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
-import '../../../core/config/supabase_config.dart';
+import '../../../core/api/api_client.dart';
+import '../../../core/socket/socket_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/chat_model.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/chat_provider.dart';
 import '../widgets/typing_indicator.dart';
 import '../widgets/chat_presence_banner.dart';
@@ -112,8 +115,9 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
   final StreamController<PresenceEvent> _presenceStreamController =
       StreamController<PresenceEvent>.broadcast();
   final List<OnlineUser> _onlineUsers = [];
-  RealtimeChannel? _presenceChannel;
-  RealtimeChannel? _typingChannel;
+  IO.Socket? _socket;
+  String? _currentUserId;
+  String? _currentUserName;
 
   /// Effective role considering supervisor flag.
   UserRole get effectiveRole =>
@@ -137,8 +141,7 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
     _scrollController.dispose();
     _animationController.dispose();
     _typingTimer?.cancel();
-    _presenceChannel?.unsubscribe();
-    _typingChannel?.unsubscribe();
+    _socket?.emit('leave-room', _roomId);
     _presenceStreamController.close();
     super.dispose();
   }
@@ -169,18 +172,15 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
   }
 
   void _broadcastTyping(bool isTyping) {
-    // Broadcast typing status via Supabase Realtime
-    if (_roomId != null) {
-      final channel = SupabaseConfig.client.channel('typing:$_roomId');
-      channel.sendBroadcastMessage(
-        event: 'typing',
-        payload: {
-          'userId': SupabaseConfig.currentUser?.id,
-          'name': SupabaseConfig.currentUser?.userMetadata?['full_name'] ?? 'User',
-          'isTyping': isTyping,
-          'timestamp': DateTime.now().millisecondsSinceEpoch,
-        },
-      );
+    // Broadcast typing status via Socket.IO
+    if (_roomId != null && _socket != null) {
+      _socket!.emit('typing', {
+        'roomId': _roomId,
+        'userId': _currentUserId,
+        'name': _currentUserName ?? 'User',
+        'isTyping': isTyping,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
     }
   }
 
@@ -221,7 +221,7 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
     if (image != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('File attachments coming soon'),
+          content: Text('File attachments coming soon'.tr(context)),
           backgroundColor: AppColors.info,
           behavior: SnackBarBehavior.floating,
         ),
@@ -229,99 +229,88 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
     }
   }
 
-  void _subscribeToPresence(String roomId) {
-    // Unsubscribe from previous channels if switching rooms
-    _presenceChannel?.unsubscribe();
-    _typingChannel?.unsubscribe();
+  Future<void> _subscribeToPresence(String roomId) async {
+    // Connect via Socket.IO for presence and typing
+    try {
+      _socket = await SocketClient.getSocket();
 
-    final channel = SupabaseConfig.client.channel('presence:$roomId');
-    _presenceChannel = channel;
+      // Get current user info from auth provider
+      final user = ref.read(currentUserProvider);
+      final profile = ref.read(currentProfileProvider);
+      _currentUserId = user?.id;
+      _currentUserName = profile?.fullName ?? user?.email?.split('@').first ?? 'User';
 
-    channel.onPresenceSync((payload) {
-      final presenceState = channel.presenceState();
-      final users = <OnlineUser>[];
+      // Join the chat room
+      _socket!.emit('join-room', {
+        'roomId': roomId,
+        'userId': _currentUserId,
+        'name': _currentUserName,
+      });
 
-      // presenceState is List<SinglePresenceState>
-      for (final singleState in presenceState) {
-        for (final presence in singleState.presences) {
-          final data = presence.payload;
-          if (!users.any((u) => u.id == data['id'])) {
-            users.add(OnlineUser.fromJson(data));
+      // Listen for presence updates (users online in room)
+      _socket!.on('presence-sync', (data) {
+        if (!mounted) return;
+        final users = <OnlineUser>[];
+        final list = data is List ? data : [];
+        for (final item in list) {
+          final userData = item as Map<String, dynamic>;
+          if (!users.any((u) => u.id == userData['id'])) {
+            users.add(OnlineUser.fromJson(userData));
           }
         }
-      }
-
-      if (mounted) {
         setState(() {
           _onlineUsers.clear();
           _onlineUsers.addAll(users);
         });
-      }
-    });
+      });
 
-    channel.onPresenceJoin((payload) {
-      final newPresences = payload.newPresences;
-      for (final presence in newPresences) {
-        final data = presence.payload;
-        if (data['id'] != SupabaseConfig.currentUser?.id) {
+      // Listen for user joined events
+      _socket!.on('user-joined', (data) {
+        if (!mounted) return;
+        final userData = data as Map<String, dynamic>;
+        if (userData['id'] != _currentUserId) {
           _presenceStreamController.add(PresenceEvent(
             id: PresenceEvent.generateId(),
             type: PresenceEventType.joined,
-            userName: data['name'] as String? ?? 'Unknown',
-            userRole: data['role'] as String?,
+            userName: userData['name'] as String? ?? 'Unknown',
+            userRole: userData['role'] as String?,
             timestamp: DateTime.now().millisecondsSinceEpoch,
           ));
         }
-      }
-    });
+      });
 
-    channel.onPresenceLeave((payload) {
-      final leftPresences = payload.leftPresences;
-      for (final presence in leftPresences) {
-        final data = presence.payload;
-        if (data['id'] != SupabaseConfig.currentUser?.id) {
+      // Listen for user left events
+      _socket!.on('user-left', (data) {
+        if (!mounted) return;
+        final userData = data as Map<String, dynamic>;
+        if (userData['id'] != _currentUserId) {
           _presenceStreamController.add(PresenceEvent(
             id: PresenceEvent.generateId(),
             type: PresenceEventType.left,
-            userName: data['name'] as String? ?? 'Unknown',
-            userRole: data['role'] as String?,
+            userName: userData['name'] as String? ?? 'Unknown',
+            userRole: userData['role'] as String?,
             timestamp: DateTime.now().millisecondsSinceEpoch,
           ));
         }
-      }
-    });
+      });
 
-    channel.subscribe((status, error) async {
-      if (status == RealtimeSubscribeStatus.subscribed) {
-        await channel.track({
-          'id': SupabaseConfig.currentUser?.id,
-          'name': SupabaseConfig.currentUser?.userMetadata?['full_name'] ?? 'User',
-          'online_at': DateTime.now().toIso8601String(),
-        });
-      }
-    });
-
-    // Subscribe to typing events
-    final typingChannel = SupabaseConfig.client.channel('typing:$roomId');
-    _typingChannel = typingChannel;
-    typingChannel.onBroadcast(
-      event: 'typing',
-      callback: (payload) {
-        final data = payload as Map<String, dynamic>;
-        if (data['userId'] != SupabaseConfig.currentUser?.id) {
-          if (mounted) {
-            setState(() {
-              if (data['isTyping'] == true) {
-                _typingUserName = data['name'] as String?;
-              } else {
-                _typingUserName = null;
-              }
-            });
-          }
+      // Listen for typing events
+      _socket!.on('typing', (data) {
+        if (!mounted) return;
+        final typingData = data as Map<String, dynamic>;
+        if (typingData['userId'] != _currentUserId) {
+          setState(() {
+            if (typingData['isTyping'] == true) {
+              _typingUserName = typingData['name'] as String?;
+            } else {
+              _typingUserName = null;
+            }
+          });
         }
-      },
-    );
-    typingChannel.subscribe();
+      });
+    } catch (e) {
+      debugPrint('Failed to subscribe to presence: $e');
+    }
   }
 
   @override
@@ -369,14 +358,14 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Failed to load chat',
+                  'Failed to load chat'.tr(context),
                   style: AppTextStyles.bodyLarge.copyWith(color: Colors.white),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () =>
                       ref.invalidate(projectChatRoomProvider(widget.projectId)),
-                  child: const Text('Retry'),
+                  child: Text('Retry'.tr(context)),
                 ),
               ],
             ),
@@ -492,7 +481,7 @@ class _ChatContentState extends ConsumerState<_ChatContent>
   @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatNotifierProvider(widget.roomId));
-    final currentUserId = SupabaseConfig.currentUser?.id ?? '';
+    final currentUserId = ref.read(currentUserProvider)?.id ?? '';
 
     // Filter visible messages based on role
     final visibleMessages = chatState.messages
@@ -653,7 +642,7 @@ class _ChatContentState extends ConsumerState<_ChatContent>
                     Row(
                       children: [
                         Text(
-                          'Project Supervisor',
+                          'Project Supervisor'.tr(context),
                           style: AppTextStyles.labelLarge.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -684,7 +673,7 @@ class _ChatContentState extends ConsumerState<_ChatContent>
                                 ),
                                 const SizedBox(width: 2),
                                 Text(
-                                  'Supervisor',
+                                  'Supervisor'.tr(context),
                                   style: AppTextStyles.caption.copyWith(
                                     fontSize: 8,
                                     color: Colors.white,
@@ -752,7 +741,7 @@ class _ChatContentState extends ConsumerState<_ChatContent>
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Chat for Project ${widget.projectId.substring(0, 8).toUpperCase()}',
+                '${'Chat for Project'.tr(context)} ${widget.projectId.substring(0, 8).toUpperCase()}',
                 style: AppTextStyles.caption.copyWith(
                   color: _ChatColors.secondaryText,
                 ),
@@ -798,7 +787,7 @@ class _ChatContentState extends ConsumerState<_ChatContent>
               ListTile(
                 leading: Icon(Icons.search, color: _ChatColors.warmAccent),
                 title: Text(
-                  'Search Messages',
+                  'Search Messages'.tr(context),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: _ChatColors.primaryText,
                   ),
@@ -806,7 +795,7 @@ class _ChatContentState extends ConsumerState<_ChatContent>
                 onTap: () {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Search coming soon')),
+                    SnackBar(content: Text('Search coming soon'.tr(context))),
                   );
                 },
               ),
@@ -816,7 +805,7 @@ class _ChatContentState extends ConsumerState<_ChatContent>
                   color: _ChatColors.warmAccent,
                 ),
                 title: Text(
-                  'Mute Notifications',
+                  'Mute Notifications'.tr(context),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: _ChatColors.primaryText,
                   ),
@@ -824,7 +813,7 @@ class _ChatContentState extends ConsumerState<_ChatContent>
                 onTap: () {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Mute coming soon')),
+                    SnackBar(content: Text('Mute coming soon'.tr(context))),
                   );
                 },
               ),
@@ -866,7 +855,7 @@ class _EmptyChat extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'No messages yet',
+            'No messages yet'.tr(context),
             style: AppTextStyles.bodyLarge.copyWith(
               color: _ChatColors.primaryText,
               fontWeight: FontWeight.bold,
@@ -874,7 +863,7 @@ class _EmptyChat extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Send a message to start the conversation',
+            'Send a message to start the conversation'.tr(context),
             style: AppTextStyles.bodyMedium.copyWith(
               color: _ChatColors.mutedText,
             ),
@@ -933,7 +922,7 @@ class _ChatInputArea extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                'Messages are reviewed by supervisor before delivery',
+                'Messages are reviewed by supervisor before delivery'.tr(context),
                 style: AppTextStyles.caption.copyWith(
                   fontSize: 10,
                   color: _ChatColors.mutedText,
@@ -974,7 +963,7 @@ class _ChatInputArea extends StatelessWidget {
                       color: _ChatColors.primaryText,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Type a message...',
+                      hintText: 'Type a message...'.tr(context),
                       hintStyle: AppTextStyles.bodyMedium.copyWith(
                         color: _ChatColors.mutedText,
                       ),
@@ -1068,7 +1057,7 @@ class _DateSeparator extends StatelessWidget {
                 ),
               ),
               child: Text(
-                _formatDate(date),
+                _formatDate(context, date),
                 style: AppTextStyles.caption.copyWith(
                   color: _ChatColors.secondaryText,
                   fontWeight: FontWeight.w600,
@@ -1087,16 +1076,16 @@ class _DateSeparator extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(BuildContext context, DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
     final messageDate = DateTime(date.year, date.month, date.day);
 
     if (messageDate == today) {
-      return 'Today';
+      return 'Today'.tr(context);
     } else if (messageDate == yesterday) {
-      return 'Yesterday';
+      return 'Yesterday'.tr(context);
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
@@ -1226,7 +1215,7 @@ class _MessageBubble extends ConsumerWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Attachment',
+                                'Attachment'.tr(context),
                                 style: AppTextStyles.caption.copyWith(
                                   fontSize: 12,
                                   color: isMe ? Colors.white : _ChatColors.secondaryText,
@@ -1268,7 +1257,7 @@ class _MessageBubble extends ConsumerWidget {
                               approvalStatus == MessageApprovalStatus.pending) ...[
                             const SizedBox(width: 4),
                             Text(
-                              '• Pending',
+                              '• ${'Pending'.tr(context)}',
                               style: AppTextStyles.caption.copyWith(
                                 color: AppColors.warning,
                                 fontSize: 10,
@@ -1363,8 +1352,8 @@ class _SupervisorActionsState extends ConsumerState<_SupervisorActions> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Message approved'),
+          SnackBar(
+            content: Text('Message approved'.tr(context)),
             backgroundColor: AppColors.success,
           ),
         );
@@ -1374,7 +1363,7 @@ class _SupervisorActionsState extends ConsumerState<_SupervisorActions> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to approve: $e'),
+            content: Text('${'Failed to approve:'.tr(context)} $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1392,17 +1381,17 @@ class _SupervisorActionsState extends ConsumerState<_SupervisorActions> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reject Message'),
+        title: Text('Reject Message'.tr(context)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Please provide a reason for rejection.'),
+            Text('Please provide a reason for rejection.'.tr(context)),
             const SizedBox(height: 16),
             TextField(
               controller: reasonController,
-              decoration: const InputDecoration(
-                labelText: 'Rejection reason',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'Rejection reason'.tr(context),
+                border: const OutlineInputBorder(),
               ),
               maxLines: 3,
               maxLength: 500,
@@ -1412,7 +1401,7 @@ class _SupervisorActionsState extends ConsumerState<_SupervisorActions> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1423,7 +1412,7 @@ class _SupervisorActionsState extends ConsumerState<_SupervisorActions> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
             ),
-            child: const Text('Reject'),
+            child: Text('Reject'.tr(context)),
           ),
         ],
       ),
@@ -1441,8 +1430,8 @@ class _SupervisorActionsState extends ConsumerState<_SupervisorActions> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Message rejected'),
+          SnackBar(
+            content: Text('Message rejected'.tr(context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1452,7 +1441,7 @@ class _SupervisorActionsState extends ConsumerState<_SupervisorActions> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to reject: $e'),
+            content: Text('${'Failed to reject:'.tr(context)} $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1475,7 +1464,7 @@ class _SupervisorActionsState extends ConsumerState<_SupervisorActions> {
           color: AppColors.success,
           isLoading: _isApproving,
           onPressed: _handleApprove,
-          tooltip: 'Approve',
+          tooltip: 'Approve'.tr(context),
         ),
         const SizedBox(width: 4),
         // Reject button
@@ -1484,7 +1473,7 @@ class _SupervisorActionsState extends ConsumerState<_SupervisorActions> {
           color: AppColors.error,
           isLoading: _isRejecting,
           onPressed: _showRejectDialog,
-          tooltip: 'Reject',
+          tooltip: 'Reject'.tr(context),
         ),
       ],
     );

@@ -23,6 +23,7 @@ class RouteNames {
   static const String myProjects = '/my-projects';
   static const String projectDetail = '/projects/:id';
   static const String addProject = '/add-project';
+  static const String projectWizard = '/add-project/wizard';
   static const String marketplace = '/marketplace';
   static const String campusConnect = '/campus-connect';
   static const String createPost = '/campus-connect/create';
@@ -32,6 +33,13 @@ class RouteNames {
   static const String connect = '/connect';
   static const String studyGroups = '/connect/groups';
   static const String resources = '/connect/resources';
+  static const String proNetwork = '/pro-network';
+  static const String proNetworkCreate = '/pro-network/create';
+  static const String proNetworkSaved = '/pro-network/saved';
+  static const String businessHub = '/business-hub';
+  static const String businessHubCreate = '/business-hub/create';
+  static const String businessHubSaved = '/business-hub/saved';
+  static const String settings = '/settings';
   static const String profile = '/profile';
 
   // Profile Sub-routes (aligned with actual router paths)
@@ -75,4 +83,10 @@ class RouteNames {
 
   /// Get study group detail route with ID.
   static String studyGroupDetailPath(String id) => '/connect/groups/$id';
+
+  /// Get pro network post detail route with ID.
+  static String proNetworkPostPath(String id) => '/pro-network/post/$id';
+
+  /// Get business hub post detail route with ID.
+  static String businessHubPostPath(String id) => '/business-hub/post/$id';
 }

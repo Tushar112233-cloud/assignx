@@ -234,36 +234,108 @@ class ProjectModel {
 
   /// Creates a [ProjectModel] from a JSON map (database response).
   ///
+  /// Handles both flat Supabase-style and nested MongoDB/Mongoose-style responses.
+  /// MongoDB may return populated objects for supervisorId/doerId and nested
+  /// sub-documents for pricing, payment, delivery, qualityCheck, userApproval.
+  ///
   /// @param json The JSON map from the database response.
   /// @returns A new [ProjectModel] instance.
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
+    // Helper to extract string ID or null from a possibly populated field.
+    String? _extractIdOrNull(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        final id = value['_id'] ?? value['id'];
+        return id?.toString();
+      }
+      return value.toString();
+    }
+
+    // Helper to extract a display name from a populated object.
+    String? _extractName(dynamic value) {
+      if (value == null) return null;
+      if (value is Map<String, dynamic>) {
+        return (value['fullName'] ?? value['full_name'] ?? value['name']) as String?;
+      }
+      return null;
+    }
+
+    // Helper to safely parse a double from various types.
+    double? _parseDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
+    // Helper to safely parse DateTime.
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Extract nested sub-documents (MongoDB Mongoose style).
+    final pricing = json['pricing'] as Map<String, dynamic>? ?? {};
+    final delivery = json['delivery'] as Map<String, dynamic>? ?? {};
+
+    // Handle subject - could be a string or a populated object.
+    String subject = 'General';
+    final subjectRaw = json['subject'] ?? json['subjectId'] ?? json['subject_id'];
+    if (subjectRaw is Map<String, dynamic>) {
+      subject = (subjectRaw['name'] as String?) ?? 'General';
+    } else if (subjectRaw is String) {
+      subject = subjectRaw;
+    }
+
+    // Handle reference_style - could be a string or a populated object.
+    String? referenceStyle;
+    final refStyleRaw = json['reference_style'] ?? json['referenceStyle']
+        ?? json['referenceStyleId'] ?? json['reference_style_id'];
+    if (refStyleRaw is Map<String, dynamic>) {
+      referenceStyle = (refStyleRaw['name'] ?? refStyleRaw['slug']) as String?;
+    } else if (refStyleRaw is String) {
+      referenceStyle = refStyleRaw;
+    }
+
+    // Handle supervisorId which may be a populated object.
+    final supervisorRaw = json['supervisor_id'] ?? json['supervisorId'];
+    final supervisorName = _extractName(supervisorRaw)
+        ?? json['supervisor_name'] as String?
+        ?? json['supervisorName'] as String?;
+
+    // Handle doerId which may be a populated object.
+    final doerRaw = json['doer_id'] ?? json['doerId'];
+
+    // Price: check nested pricing, then flat field.
+    final price = _parseDouble(json['price'] ?? json['doer_payout']
+        ?? json['doerPayout'] ?? pricing['doerPayout']) ?? 0.0;
+
     return ProjectModel(
-      id: json['id'] as String,
-      title: json['title'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      title: (json['title'] as String?) ?? '',
       description: json['description'] as String?,
-      subject: json['subject'] as String? ?? 'General',
-      status: ProjectStatus.fromString(json['status'] as String? ?? 'open'),
-      urgency: ProjectUrgency.fromString(json['urgency'] as String? ?? 'normal'),
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      deadline: DateTime.parse(json['deadline'] as String),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      acceptedAt: json['accepted_at'] != null
-          ? DateTime.parse(json['accepted_at'] as String)
-          : null,
-      submittedAt: json['submitted_at'] != null
-          ? DateTime.parse(json['submitted_at'] as String)
-          : null,
-      completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'] as String)
-          : null,
-      supervisorId: json['supervisor_id'] as String?,
-      supervisorName: json['supervisor_name'] as String?,
-      doerId: json['doer_id'] as String?,
-      wordCount: json['word_count'] as int?,
-      referenceStyle: json['reference_style'] as String?,
-      requirements: (json['requirements'] as List<dynamic>?)?.cast<String>() ?? [],
+      subject: subject,
+      status: ProjectStatus.fromString((json['status'] ?? 'open').toString()),
+      urgency: ProjectUrgency.fromString((json['urgency'] ?? 'normal').toString()),
+      price: price,
+      deadline: _parseDate(json['deadline']) ?? DateTime.now(),
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      acceptedAt: _parseDate(json['accepted_at'] ?? json['acceptedAt']),
+      submittedAt: _parseDate(json['submitted_at'] ?? json['submittedAt']),
+      completedAt: _parseDate(json['completed_at'] ?? json['completedAt']
+          ?? delivery['completedAt']),
+      supervisorId: _extractIdOrNull(supervisorRaw),
+      supervisorName: supervisorName,
+      doerId: _extractIdOrNull(doerRaw),
+      wordCount: (json['word_count'] ?? json['wordCount']) as int?,
+      referenceStyle: referenceStyle,
+      requirements: ((json['requirements'] ?? json['focus_areas']
+          ?? json['focusAreas']) as List<dynamic>?)
+          ?.map((e) => e.toString()).toList() ?? [],
       hasRevision: json['has_revision'] as bool? ?? false,
-      revisionNote: json['revision_note'] as String?,
+      revisionNote: (json['revision_note'] ?? json['revisionNote']
+          ?? json['revision_feedback'] ?? json['revisionFeedback']) as String?,
     );
   }
 
@@ -652,12 +724,12 @@ class DoerStats {
   /// @returns A new [DoerStats] instance.
   factory DoerStats.fromJson(Map<String, dynamic> json) {
     return DoerStats(
-      activeProjects: json['active_projects'] as int? ?? 0,
-      completedProjects: json['completed_projects'] as int? ?? 0,
-      totalEarnings: (json['total_earnings'] as num?)?.toDouble() ?? 0.0,
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      successRate: (json['success_rate'] as num?)?.toDouble() ?? 0.0,
-      onTimeDeliveryRate: (json['on_time_delivery_rate'] as num?)?.toDouble() ?? 0.0,
+      activeProjects: (json['active_projects'] ?? json['activeProjects'] ?? json['activeAssignments']) as int? ?? 0,
+      completedProjects: (json['completed_projects'] ?? json['completedProjects']) as int? ?? 0,
+      totalEarnings: ((json['total_earnings'] ?? json['totalEarnings']) as num?)?.toDouble() ?? 0.0,
+      rating: ((json['rating'] ?? json['average_rating'] ?? json['averageRating']) as num?)?.toDouble() ?? 0.0,
+      successRate: ((json['success_rate'] ?? json['successRate']) as num?)?.toDouble() ?? 0.0,
+      onTimeDeliveryRate: ((json['on_time_delivery_rate'] ?? json['onTimeDeliveryRate']) as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -771,29 +843,45 @@ class ReviewModel {
   ///
   /// Supports both flat and nested (join) response formats.
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
-    // Handle nested project join
+    // Handle nested project join (may be a populated Mongoose object).
     final project = json['project'] as Map<String, dynamic>?;
-    final reviewer = json['reviewer'] as Map<String, dynamic>?;
+
+    // Handle reviewer - may be populated Mongoose object or nested profile.
+    Map<String, dynamic>? reviewer;
+    final reviewerRaw = json['reviewer'] ?? json['reviewerId'] ?? json['reviewer_id'];
+    if (reviewerRaw is Map<String, dynamic>) {
+      reviewer = reviewerRaw;
+    }
+
+    // Handle projectId which may be a populated Mongoose object.
+    String projectId = '';
+    final rawProjectId = json['project_id'] ?? json['projectId'];
+    if (rawProjectId is String) {
+      projectId = rawProjectId;
+    } else if (rawProjectId is Map<String, dynamic>) {
+      projectId = (rawProjectId['_id'] ?? rawProjectId['id'] ?? '').toString();
+    }
 
     return ReviewModel(
-      id: json['id'] as String,
-      projectId: json['project_id'] as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      projectId: projectId,
       projectTitle: project?['title'] as String? ??
-          json['project_title'] as String? ??
+          json['project_title'] as String? ?? json['projectTitle'] as String? ??
           'Project',
-      reviewerName: reviewer?['full_name'] as String? ??
-          json['reviewer_name'] as String? ??
+      reviewerName: reviewer?['full_name'] as String? ?? reviewer?['fullName'] as String? ??
+          json['reviewer_name'] as String? ?? json['reviewerName'] as String? ??
           'Anonymous',
-      reviewerAvatarUrl: reviewer?['avatar_url'] as String?,
-      rating: (json['overall_rating'] as num?)?.toDouble() ??
+      reviewerAvatarUrl: reviewer?['avatar_url'] as String? ?? reviewer?['avatarUrl'] as String?
+          ?? json['reviewer_avatar'] as String? ?? json['reviewerAvatar'] as String?,
+      rating: ((json['overall_rating'] ?? json['overallRating']) as num?)?.toDouble() ??
           (json['rating'] as num?)?.toDouble() ??
           0.0,
-      qualityRating: (json['quality_rating'] as num?)?.toDouble(),
-      timelinessRating: (json['timeliness_rating'] as num?)?.toDouble(),
-      communicationRating: (json['communication_rating'] as num?)?.toDouble(),
-      comment: json['review_text'] as String? ?? json['comment'] as String?,
-      isPublic: json['is_public'] as bool? ?? true,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      qualityRating: ((json['quality_rating'] ?? json['qualityRating']) as num?)?.toDouble(),
+      timelinessRating: ((json['timeliness_rating'] ?? json['timelinessRating']) as num?)?.toDouble(),
+      communicationRating: ((json['communication_rating'] ?? json['communicationRating']) as num?)?.toDouble(),
+      comment: json['review_text'] as String? ?? json['reviewText'] as String? ?? json['comment'] as String?,
+      isPublic: json['is_public'] as bool? ?? json['isPublic'] as bool? ?? true,
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 }

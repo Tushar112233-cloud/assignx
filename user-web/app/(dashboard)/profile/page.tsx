@@ -12,6 +12,7 @@ import {
   DangerZone,
   SettingsTabs,
   SettingsSection,
+  PaymentMethodsSection,
 } from "@/components/profile";
 import { ProfilePro } from "./profile-pro";
 import { useUserStore, type User } from "@/stores/user-store";
@@ -21,7 +22,8 @@ import {
   getUserPreferences,
   updateUserPreferences,
 } from "@/lib/actions/data";
-import { createClient } from "@/lib/supabase/client";
+import { apiClient } from "@/lib/api/client";
+import { logout } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type {
@@ -180,34 +182,23 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  // Handle avatar change
+  // Handle avatar change via Cloudinary
   const handleAvatarChange = async (file: File) => {
     if (!user) return;
     setIsSaving(true);
     try {
-      const supabase = createClient();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "avatars");
 
-      // Upload to Supabase storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
+      const uploadResult = await apiClient<{ url: string }>("/api/upload", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
 
       // Update profile with new avatar URL
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: urlData.publicUrl })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
+      await updateProfile({ avatarUrl: uploadResult.url });
 
       toast.success("Avatar updated successfully");
       await fetchUser();
@@ -286,16 +277,17 @@ export default function ProfilePage() {
     }
   };
 
-  // Handle password change
+  // Handle password change via API
   const handlePasswordChange = async (data: PasswordChangeData) => {
     setIsSaving(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.updateUser({
-        password: data.newPassword,
+      await apiClient("/api/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify({
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        }),
       });
-
-      if (error) throw error;
 
       toast.success("Password changed successfully");
       setSecurity((prev) => ({
@@ -342,7 +334,7 @@ export default function ProfilePage() {
 
   // Handle session revoke
   const handleRevokeSession = async (sessionId: string) => {
-    // TODO: Implement session revoke via Supabase Auth
+    // TODO: Implement session revoke via API
     setSecurity((prev) => ({
       ...prev,
       activeSessions: prev.activeSessions.filter((s) => s.id !== sessionId),
@@ -352,7 +344,7 @@ export default function ProfilePage() {
 
   // Handle revoke all sessions
   const handleRevokeAllSessions = async () => {
-    // TODO: Implement revoke all sessions via Supabase Auth
+    // TODO: Implement revoke all sessions via API
     setSecurity((prev) => ({
       ...prev,
       activeSessions: prev.activeSessions.filter((s) => s.current),
@@ -377,35 +369,11 @@ export default function ProfilePage() {
     if (!user) return;
     setIsSaving(true);
     try {
-      const supabase = createClient();
+      await apiClient("/api/profiles/me/delete", {
+        method: "POST",
+      });
 
-      // Soft delete: Mark profile as inactive
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          is_active: false,
-          deleted_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      // Clear localStorage tokens
-      if (typeof window !== "undefined") {
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.startsWith("sb-") && key.includes("-auth-token"))) {
-            keysToRemove.push(key);
-          }
-        }
-        keysToRemove.push("user-storage", "auth-storage", "wallet-storage", "notification-storage", "project-storage");
-        keysToRemove.forEach((key) => localStorage.removeItem(key));
-      }
-
-      // Sign out user
-      await supabase.auth.signOut();
-
+      logout();
       toast.success("Account deleted successfully");
       window.location.href = '/login';
     } catch (error: any) {
@@ -492,6 +460,8 @@ export default function ProfilePage() {
             onManageBilling={handleManageBilling}
           />
         );
+      case "payment":
+        return <PaymentMethodsSection />;
       default:
         return null;
     }
@@ -511,6 +481,7 @@ export default function ProfilePage() {
       case "preferences": return "Preferences";
       case "security": return "Security & Privacy";
       case "subscription": return "Subscription";
+      case "payment": return "Payment Methods";
       default: return "Settings";
     }
   };

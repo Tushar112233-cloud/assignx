@@ -22,7 +22,7 @@ interface ConversationItemProps {
 /**
  * Formats a timestamp into a relative time string
  */
-function formatTimestamp(date: string | null): string {
+function formatTimestamp(date: string | null | undefined): string {
   if (!date) return ""
 
   const now = new Date()
@@ -106,8 +106,8 @@ export function ConversationItem({
   onClick,
 }: ConversationItemProps) {
   const { name, initials, profile } = getParticipantInfo(room)
-  const RoomIcon = getRoomTypeIcon(room.room_type)
-  const roomLabel = getRoomTypeLabel(room.room_type)
+  const RoomIcon = getRoomTypeIcon(room.room_type || room.type || "direct")
+  const roomLabel = getRoomTypeLabel(room.room_type || room.type || "direct")
   const project = room.projects
 
   return (

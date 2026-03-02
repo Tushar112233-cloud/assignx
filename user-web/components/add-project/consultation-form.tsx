@@ -71,7 +71,7 @@ export function ConsultationForm({ onSuccess, onStepChange }: ConsultationFormPr
         return;
       }
 
-      onSuccess(result.projectId!, result.projectNumber!);
+      onSuccess(result.project?.id || result.project?._id, result.project?.project_number || result.project?.projectNumber);
     } catch {
       toast.error("Something went wrong. Please try again.");
       setIsSubmitting(false);

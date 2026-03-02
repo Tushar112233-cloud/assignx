@@ -1,7 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { verifyAdmin } from "@/lib/admin/auth";
+import { verifyAdmin, serverFetch } from "@/lib/admin/auth";
 
 export async function getBanners(params: {
   search?: string;
@@ -11,54 +10,31 @@ export async function getBanners(params: {
   perPage?: number;
 }) {
   await verifyAdmin();
-  const supabase = await createClient();
-  const page = params.page || 1;
-  const perPage = params.perPage || 20;
-  const from = (page - 1) * perPage;
-  const to = from + perPage - 1;
 
-  let query = supabase
-    .from("banners")
-    .select("*", { count: "exact" })
-    .order("display_order", { ascending: true })
-    .range(from, to);
+  const query = new URLSearchParams();
+  if (params.search) query.set("search", params.search);
+  if (params.location) query.set("location", params.location);
+  if (params.active) query.set("active", params.active);
+  if (params.page) query.set("page", String(params.page));
+  if (params.perPage) query.set("perPage", String(params.perPage));
 
-  if (params.search) {
-    query = query.or(
-      `title.ilike.%${params.search}%,subtitle.ilike.%${params.search}%`
-    );
+  try {
+    const result = await serverFetch(`/api/admin/banners?${query.toString()}`);
+    const arr = result.banners || result.data || [];
+    return {
+      data: arr,
+      total: result.total || arr.length,
+      page: result.page || params.page || 1,
+      totalPages: result.totalPages || Math.ceil((result.total || arr.length) / (params.perPage || 20)),
+    };
+  } catch {
+    return { data: [], total: 0, page: params.page || 1, totalPages: 1 };
   }
-  if (params.location) {
-    query = query.eq("display_location", params.location);
-  }
-  if (params.active === "true") {
-    query = query.eq("is_active", true);
-  } else if (params.active === "false") {
-    query = query.eq("is_active", false);
-  }
-
-  const { data, count, error } = await query;
-  if (error) throw new Error(error.message);
-
-  return {
-    data: data || [],
-    total: count || 0,
-    page,
-    perPage,
-    totalPages: Math.ceil((count || 0) / perPage),
-  };
 }
 
 export async function getBannerById(id: string) {
   await verifyAdmin();
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("banners")
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (error) throw new Error(error.message);
-  return data;
+  return serverFetch(`/api/admin/banners/${id}`);
 }
 
 export async function createBanner(formData: {
@@ -77,26 +53,12 @@ export async function createBanner(formData: {
   cta_url?: string;
   cta_action?: string;
 }) {
-  const admin = await verifyAdmin();
-  const supabase = await createClient();
+  await verifyAdmin();
 
-  const { data, error } = await supabase
-    .from("banners")
-    .insert(formData)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  await supabase.from("admin_audit_logs").insert({
-    admin_id: admin.id,
-    action: "create_banner",
-    target_type: "banner",
-    target_id: data.id,
-    details: { title: formData.title },
+  return serverFetch(`/api/admin/banners`, {
+    method: "POST",
+    body: JSON.stringify(formData),
   });
-
-  return data;
 }
 
 export async function updateBanner(
@@ -118,62 +80,30 @@ export async function updateBanner(
     cta_action?: string;
   }
 ) {
-  const admin = await verifyAdmin();
-  const supabase = await createClient();
+  await verifyAdmin();
 
-  const { data, error } = await supabase
-    .from("banners")
-    .update({ ...formData, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  await supabase.from("admin_audit_logs").insert({
-    admin_id: admin.id,
-    action: "update_banner",
-    target_type: "banner",
-    target_id: id,
-    details: { changes: Object.keys(formData) },
+  return serverFetch(`/api/admin/banners/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(formData),
   });
-
-  return data;
 }
 
 export async function deleteBanner(id: string) {
-  const admin = await verifyAdmin();
-  const supabase = await createClient();
+  await verifyAdmin();
 
-  const { error } = await supabase.from("banners").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-
-  await supabase.from("admin_audit_logs").insert({
-    admin_id: admin.id,
-    action: "delete_banner",
-    target_type: "banner",
-    target_id: id,
+  await serverFetch(`/api/admin/banners/${id}`, {
+    method: "DELETE",
   });
 
   return { success: true };
 }
 
 export async function toggleBannerActive(id: string, active: boolean) {
-  const admin = await verifyAdmin();
-  const supabase = await createClient();
+  await verifyAdmin();
 
-  const { error } = await supabase
-    .from("banners")
-    .update({ is_active: active, updated_at: new Date().toISOString() })
-    .eq("id", id);
-
-  if (error) throw new Error(error.message);
-
-  await supabase.from("admin_audit_logs").insert({
-    admin_id: admin.id,
-    action: active ? "activate_banner" : "deactivate_banner",
-    target_type: "banner",
-    target_id: id,
+  await serverFetch(`/api/admin/banners/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ is_active: active }),
   });
 
   return { success: true };

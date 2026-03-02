@@ -28,7 +28,7 @@ import { formatINR } from "@/lib/utils";
 import type { ConsultationBooking, SessionStatus } from "@/types/expert";
 import { MOCK_EXPERTS } from "@/lib/data/experts";
 import { ReviewForm } from "@/components/experts/review-form";
-import { createClient } from "@/lib/supabase/client";
+import { apiClient } from "@/lib/api/client";
 
 interface MyBookingsProps {
   bookings: ConsultationBooking[];
@@ -192,19 +192,21 @@ function BookingCard({
   const [hasReviewed, setHasReviewed] = useState(!!(booking as any).review_rating);
 
   /**
-   * Submit review to Supabase
+   * Submit review via API
    */
   const handleReviewSubmit = async ({ rating, comment }: { rating: number; comment: string }) => {
-    const supabase = createClient();
-    // Best-effort DB persist — mock bookings have non-UUID IDs and won't match
-    await supabase
-      .from("expert_bookings")
-      .update({
-        review_rating: rating,
-        review_text: comment,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq("id", booking.id);
+    try {
+      await apiClient(`/api/expert-bookings/${booking.id}/review`, {
+        method: "POST",
+        body: JSON.stringify({
+          review_rating: rating,
+          review_text: comment,
+          reviewed_at: new Date().toISOString(),
+        }),
+      });
+    } catch {
+      // Best-effort — mock bookings have non-UUID IDs and won't match
+    }
     setHasReviewed(true);
     setShowReviewForm(false);
   };

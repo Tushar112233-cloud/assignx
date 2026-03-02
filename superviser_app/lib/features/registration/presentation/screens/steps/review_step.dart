@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/translation/translation_extensions.dart';
 import '../../../../../shared/widgets/buttons/primary_button.dart';
 import '../../providers/registration_provider.dart';
 
@@ -31,14 +32,14 @@ class ReviewStep extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Review Your Application',
+            'Review Your Application'.tr(context),
             style: AppTypography.headlineSmall.copyWith(
               color: AppColors.textPrimaryLight,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Please review all information before submitting',
+            'Please review all information before submitting'.tr(context),
             style: AppTypography.bodyMedium.copyWith(
               color: AppColors.textSecondaryLight,
             ),
@@ -48,26 +49,26 @@ class ReviewStep extends ConsumerWidget {
           // Personal Information Section
           _buildSection(
             context: context,
-            title: 'Personal Information',
+            title: 'Personal Information'.tr(context),
             stepIndex: 0,
             onEdit: () => onEditStep(0),
             items: [
-              _ReviewItem('Phone', data.phone ?? 'Not provided'),
+              _ReviewItem('Phone'.tr(context), data.phone ?? 'Not provided'.tr(context)),
               _ReviewItem(
-                'Date of Birth',
+                'Date of Birth'.tr(context),
                 data.dateOfBirth != null
                     ? '${data.dateOfBirth!.day}/${data.dateOfBirth!.month}/${data.dateOfBirth!.year}'
-                    : 'Not provided',
+                    : 'Not provided'.tr(context),
               ),
-              _ReviewItem('Gender', data.gender ?? 'Not provided'),
+              _ReviewItem('Gender'.tr(context), data.gender ?? 'Not provided'.tr(context)),
               _ReviewItem(
-                'Location',
+                'Location'.tr(context),
                 [data.city, data.state, data.country]
                     .where((s) => s != null && s.isNotEmpty)
                     .join(', '),
               ),
               if (data.linkedInUrl != null && data.linkedInUrl!.isNotEmpty)
-                _ReviewItem('LinkedIn', data.linkedInUrl!),
+                _ReviewItem('LinkedIn'.tr(context), data.linkedInUrl!),
             ],
           ),
           const SizedBox(height: 16),
@@ -75,29 +76,29 @@ class ReviewStep extends ConsumerWidget {
           // Education & Experience Section
           _buildSection(
             context: context,
-            title: 'Education & Experience',
+            title: 'Education & Experience'.tr(context),
             stepIndex: 1,
             onEdit: () => onEditStep(1),
             items: [
               _ReviewItem(
-                  'Education', data.highestEducation ?? 'Not provided'),
+                  'Education'.tr(context), data.highestEducation ?? 'Not provided'.tr(context)),
               _ReviewItem(
-                  'Field of Study', data.fieldOfStudy ?? 'Not provided'),
+                  'Field of Study'.tr(context), data.fieldOfStudy ?? 'Not provided'.tr(context)),
               _ReviewItem(
-                'Experience',
+                'Experience'.tr(context),
                 data.yearsOfExperience != null
-                    ? '${data.yearsOfExperience} years'
-                    : 'Not provided',
+                    ? '${data.yearsOfExperience} ${'years'.tr(context)}'
+                    : 'Not provided'.tr(context),
               ),
               _ReviewItem(
-                'Expertise',
+                'Expertise'.tr(context),
                 data.expertiseAreas.isNotEmpty
                     ? data.expertiseAreas.join(', ')
-                    : 'Not selected',
+                    : 'Not selected'.tr(context),
               ),
               _ReviewItem(
-                'CV',
-                data.cvUrl != null ? 'Uploaded' : 'Not uploaded',
+                'CV'.tr(context),
+                data.cvUrl != null ? 'Uploaded'.tr(context) : 'Not uploaded'.tr(context),
                 isHighlighted: data.cvUrl != null,
               ),
             ],
@@ -107,28 +108,28 @@ class ReviewStep extends ConsumerWidget {
           // Banking Details Section
           _buildSection(
             context: context,
-            title: 'Banking Details',
+            title: 'Banking Details'.tr(context),
             stepIndex: 2,
             onEdit: () => onEditStep(2),
             items: [
               _ReviewItem(
-                  'Account Holder', data.accountHolderName ?? 'Not provided'),
+                  'Account Holder'.tr(context), data.accountHolderName ?? 'Not provided'.tr(context)),
               _ReviewItem(
-                'Account Number',
+                'Account Number'.tr(context),
                 data.accountNumber != null
                     ? _maskAccountNumber(data.accountNumber!)
-                    : 'Not provided',
+                    : 'Not provided'.tr(context),
               ),
-              _ReviewItem('Bank Name', data.bankName ?? 'Not provided'),
-              _ReviewItem('IFSC Code', data.ifscCode ?? 'Not provided'),
+              _ReviewItem('Bank Name'.tr(context), data.bankName ?? 'Not provided'.tr(context)),
+              _ReviewItem('IFSC Code'.tr(context), data.ifscCode ?? 'Not provided'.tr(context)),
               if (data.panNumber != null && data.panNumber!.isNotEmpty)
-                _ReviewItem('PAN', _maskPan(data.panNumber!)),
+                _ReviewItem('PAN'.tr(context), _maskPan(data.panNumber!)),
             ],
           ),
           const SizedBox(height: 24),
 
           // Completion Status
-          _buildCompletionStatus(data.isComplete),
+          _buildCompletionStatus(context, data.isComplete),
           const SizedBox(height: 24),
 
           // Terms Agreement
@@ -149,7 +150,7 @@ class ReviewStep extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'By submitting this application, you agree to our Terms of Service and Privacy Policy. Your information will be reviewed by our team.',
+                    'By submitting this application, you agree to our Terms of Service and Privacy Policy. Your information will be reviewed by our team.'.tr(context),
                     style: AppTypography.bodySmall.copyWith(
                       color: AppColors.textSecondaryLight,
                     ),
@@ -165,7 +166,7 @@ class ReviewStep extends ConsumerWidget {
             children: [
               Expanded(
                 child: SecondaryButton(
-                  text: 'Back',
+                  text: 'Back'.tr(context),
                   onPressed: onBack,
                 ),
               ),
@@ -173,7 +174,7 @@ class ReviewStep extends ConsumerWidget {
               Expanded(
                 flex: 2,
                 child: PrimaryButton(
-                  text: 'Submit Application',
+                  text: 'Submit Application'.tr(context),
                   onPressed: data.isComplete ? onSubmit : null,
                   isLoading: state.isLoading,
                   icon: Icons.send_outlined,
@@ -221,7 +222,7 @@ class ReviewStep extends ConsumerWidget {
                 TextButton.icon(
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit_outlined, size: 16),
-                  label: const Text('Edit'),
+                  label: Text('Edit'.tr(context)),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -275,7 +276,7 @@ class ReviewStep extends ConsumerWidget {
     );
   }
 
-  Widget _buildCompletionStatus(bool isComplete) {
+  Widget _buildCompletionStatus(BuildContext context, bool isComplete) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -302,8 +303,8 @@ class ReviewStep extends ConsumerWidget {
               children: [
                 Text(
                   isComplete
-                      ? 'Application Complete'
-                      : 'Application Incomplete',
+                      ? 'Application Complete'.tr(context)
+                      : 'Application Incomplete'.tr(context),
                   style: AppTypography.titleSmall.copyWith(
                     color: isComplete ? AppColors.success : AppColors.warning,
                     fontWeight: FontWeight.w600,
@@ -312,8 +313,8 @@ class ReviewStep extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   isComplete
-                      ? 'All required fields have been filled. You can now submit your application.'
-                      : 'Please complete all required fields before submitting.',
+                      ? 'All required fields have been filled. You can now submit your application.'.tr(context)
+                      : 'Please complete all required fields before submitting.'.tr(context),
                   style: AppTypography.bodySmall.copyWith(
                     color: isComplete
                         ? AppColors.success.withValues(alpha: 0.8)

@@ -135,7 +135,8 @@ export function ReportForm({ onSuccess, onStepChange }: ReportFormProps) {
       }
 
       // Upload files to Cloudinary
-      if (files.length > 0 && result.projectId) {
+      const projectId = result.project?.id || result.project?._id;
+      if (files.length > 0 && projectId) {
         for (const uploadedFile of files) {
           try {
             // Convert File to base64
@@ -152,7 +153,7 @@ export function ReportForm({ onSuccess, onStepChange }: ReportFormProps) {
             });
 
             // Upload file
-            const uploadResult = await uploadProjectFile(result.projectId, {
+            const uploadResult = await uploadProjectFile(projectId, {
               name: uploadedFile.name,
               type: uploadedFile.type,
               size: uploadedFile.size,
@@ -168,7 +169,8 @@ export function ReportForm({ onSuccess, onStepChange }: ReportFormProps) {
         }
       }
 
-      onSuccess(result.projectId!, result.projectNumber!);
+      const projectNumber = result.project?.project_number || result.project?.projectNumber;
+      onSuccess(projectId || result.project?.id, projectNumber);
     } catch {
       toast.error("Something went wrong. Please try again.");
       setIsSubmitting(false);

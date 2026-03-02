@@ -26,7 +26,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { apiClient } from "@/lib/api/client";
 
 import "./onboarding.css";
 
@@ -394,8 +394,6 @@ function OnboardingContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
-
   // Handle step from URL
   useEffect(() => {
     if (step === "role") {
@@ -450,24 +448,14 @@ function OnboardingContent() {
       document.cookie = `signup_role=${selectedRole}; path=/; max-age=600; SameSite=Lax`;
       document.cookie = `signup_intent=true; path=/; max-age=600; SameSite=Lax`;
 
+      // Redirect to API server's Google OAuth endpoint
       const callbackUrl = `${window.location.origin}/auth/callback`;
-
-      const { error: authError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: callbackUrl,
-          queryParams: {
-            ...(selectedRole === "student" && {
-              hd: "*",
-            }),
-          },
-        },
+      const params = new URLSearchParams({
+        role: selectedRole,
+        redirect: callbackUrl,
       });
 
-      if (authError) {
-        setError(authError.message);
-        setIsLoading(false);
-      }
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/auth/google?${params.toString()}`;
     } catch (err) {
       setError("Something went wrong. Please try again.");
       setIsLoading(false);

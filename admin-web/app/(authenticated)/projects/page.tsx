@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { serverFetch } from "@/lib/admin/auth";
 import { ProjectsDataTable } from "@/components/admin/projects/projects-data-table";
 
 export const metadata = { title: "Projects - AssignX Admin" };
@@ -13,36 +13,42 @@ export default async function ProjectsPage({
   }>;
 }) {
   const params = await searchParams;
-  const supabase = await createClient();
   const page = parseInt(params.page || "1");
   const perPage = 20;
-  const offset = (page - 1) * perPage;
 
-  // supervisor_id → supervisors.id → profiles, doer_id → doers.id → profiles
-  let query = supabase
-    .from("projects")
-    .select(
-      "*, user:profiles!user_id(full_name, email, avatar_url), supervisor:supervisors!supervisor_id(profiles!profile_id(full_name, email)), doer:doers!doer_id(profiles!profile_id(full_name, email))",
-      { count: "exact" }
-    )
-    .order("created_at", { ascending: false })
-    .range(offset, offset + perPage - 1);
+  const query = new URLSearchParams();
+  if (params.search) query.set("search", params.search);
+  if (params.status) query.set("status", params.status);
+  query.set("page", String(page));
+  query.set("perPage", String(perPage));
 
-  if (params.search) {
-    query = query.or(
-      `title.ilike.%${params.search}%,description.ilike.%${params.search}%`
-    );
-  }
-  if (params.status) query = query.eq("status", params.status);
-
-  const { data: rawProjects, count } = await query;
-
-  // Flatten nested profile joins so ProjectsDataTable gets { supervisor: { full_name } }
-  const projects = (rawProjects || []).map((p: any) => ({
-    ...p,
-    supervisor: p.supervisor?.profiles ?? null,
-    doer: p.doer?.profiles ?? null,
+  const result = await serverFetch(`/api/admin/projects?${query.toString()}`).catch(() => ({
+    projects: [],
+    total: 0,
+    page: 1,
+    totalPages: 1,
   }));
+
+  const rawProjects = result.projects || result.data || [];
+
+  // Normalize camelCase API response to snake_case for component
+  const projects = rawProjects.map((p: any) => {
+    const userId = p.userId && typeof p.userId === 'object' ? p.userId : null;
+    const doerId = p.doerId && typeof p.doerId === 'object' ? p.doerId : null;
+    const supervisorId = p.supervisorId && typeof p.supervisorId === 'object' ? p.supervisorId : null;
+    return {
+      id: p._id || p.id,
+      title: p.title || 'Untitled',
+      status: p.status || 'unknown',
+      service_type: p.serviceType || p.service_type || null,
+      price: p.budget ?? p.price ?? null,
+      deadline: p.deadline || null,
+      created_at: p.createdAt || p.created_at || new Date().toISOString(),
+      user: userId ? { full_name: userId.fullName || userId.full_name || null } : null,
+      supervisor: supervisorId ? { full_name: supervisorId.fullName || supervisorId.full_name || null } : null,
+      doer: doerId ? { full_name: doerId.fullName || doerId.full_name || null } : null,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-4 py-4">
@@ -54,9 +60,9 @@ export default async function ProjectsPage({
       </div>
       <ProjectsDataTable
         data={projects}
-        total={count || 0}
-        page={page}
-        totalPages={Math.ceil((count || 0) / perPage)}
+        total={result.total || 0}
+        page={result.page || page}
+        totalPages={result.totalPages || result.total_pages || Math.ceil((result.total || 0) / perPage)}
       />
     </div>
   );

@@ -1,26 +1,23 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:async';
 
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
+import '../../core/api/api_client.dart';
+import '../../core/socket/socket_client.dart';
 import '../models/project_model.dart';
 
 /// Repository for project-related operations.
 class ProjectRepository {
-  final SupabaseClient _supabase;
-
-  ProjectRepository({SupabaseClient? supabaseClient})
-      : _supabase = supabaseClient ?? Supabase.instance.client;
+  ProjectRepository();
 
   /// Fetches all projects for the current user.
   Future<List<Project>> getProjects() async {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) throw Exception('User not authenticated');
-
-    final response = await _supabase
-        .from('projects')
-        .select('*, subjects(name)')
-        .eq('user_id', userId)
-        .order('created_at', ascending: false);
-
-    return (response as List)
+    final response = await ApiClient.get('/projects');
+    // API may return a list or { projects: [...] }
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['projects'] as List? ?? [];
+    return list
         .map((json) => Project.fromJson(json as Map<String, dynamic>))
         .toList();
   }
@@ -28,32 +25,27 @@ class ProjectRepository {
   /// Fetches projects by status tab (matching web app).
   ///
   /// Tab indices (matching web):
-  /// - 0: In Review (submitted, analyzing, quoted, payment_pending) - being reviewed by AssignX
-  /// - 1: In Progress (paid, assigning, assigned, in_progress, qc states, revision) - expert working
-  /// - 2: For Review (delivered) - awaiting user approval
+  /// - 0: In Review (submitted, analyzing, quoted, payment_pending)
+  /// - 1: In Progress (paid, assigning, assigned, in_progress, qc states, revision)
+  /// - 2: For Review (delivered)
   /// - 3: History (completed, auto_approved, cancelled, refunded)
   Future<List<Project>> getProjectsByTab(int tabIndex) async {
     final allProjects = await getProjects();
 
     switch (tabIndex) {
       case 0:
-        // In Review - projects being reviewed by AssignX (awaiting quote/payment)
         return allProjects.where((p) => _isInReviewStatus(p.status)).toList();
       case 1:
-        // In Progress - expert is working on project
         return allProjects.where((p) => _isInProgressStatus(p.status)).toList();
       case 2:
-        // For Review - delivered projects awaiting user approval
         return allProjects.where((p) => _isForReviewStatus(p.status)).toList();
       case 3:
-        // History - completed, cancelled, refunded projects
         return allProjects.where((p) => _isHistoryStatus(p.status)).toList();
       default:
         return allProjects;
     }
   }
 
-  /// Check if status is "In Review" (being reviewed by AssignX).
   bool _isInReviewStatus(ProjectStatus status) {
     return [
       ProjectStatus.draft,
@@ -64,7 +56,6 @@ class ProjectRepository {
     ].contains(status);
   }
 
-  /// Check if status is "In Progress" (expert working on project).
   bool _isInProgressStatus(ProjectStatus status) {
     return [
       ProjectStatus.paid,
@@ -80,14 +71,10 @@ class ProjectRepository {
     ].contains(status);
   }
 
-  /// Check if status is "For Review" (awaiting user approval).
   bool _isForReviewStatus(ProjectStatus status) {
-    return [
-      ProjectStatus.delivered,
-    ].contains(status);
+    return [ProjectStatus.delivered].contains(status);
   }
 
-  /// Check if status is "History" (completed or cancelled).
   bool _isHistoryStatus(ProjectStatus status) {
     return [
       ProjectStatus.completed,
@@ -99,31 +86,29 @@ class ProjectRepository {
 
   /// Fetches projects with pending payments.
   Future<List<Project>> getPendingPaymentProjects() async {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) throw Exception('User not authenticated');
-
-    final response = await _supabase
-        .from('projects')
-        .select('*, subjects(name)')
-        .eq('user_id', userId)
-        .inFilter('status', ['payment_pending', 'quoted'])
-        .order('created_at', ascending: false);
-
-    return (response as List)
+    final response = await ApiClient.get('/projects', queryParams: {
+      'status': 'payment_pending,quoted',
+    });
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['projects'] as List? ?? [];
+    return list
         .map((json) => Project.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
   /// Fetches a single project by ID.
   Future<Project?> getProject(String projectId) async {
-    final response = await _supabase
-        .from('projects')
-        .select('*, subjects(name)')
-        .eq('id', projectId)
-        .maybeSingle();
-
-    if (response == null) return null;
-    return Project.fromJson(response);
+    try {
+      final response = await ApiClient.get('/projects/$projectId');
+      if (response == null) return null;
+      final data = response as Map<String, dynamic>;
+      // API may return flat project or { project: {...} }
+      final projectData = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
+      return Project.fromJson(projectData);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Creates a new project.
@@ -140,31 +125,24 @@ class ProjectRepository {
     String? specificInstructions,
     List<String>? focusAreas,
   }) async {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) throw Exception('User not authenticated');
-
     final projectData = {
-      'user_id': userId,
       'title': title,
       'description': description,
-      'service_type': serviceType.toDbString(),
-      'subject_id': subjectId,
+      'serviceType': serviceType.toDbString(),
+      'subjectId': subjectId,
       'topic': topic,
-      'word_count': wordCount,
-      'page_count': pageCount,
-      'reference_style_id': referenceStyleId,
-      'specific_instructions': specificInstructions,
-      'focus_areas': focusAreas,
+      'wordCount': wordCount,
+      'pageCount': pageCount,
+      'referenceStyleId': referenceStyleId,
+      'specificInstructions': specificInstructions,
+      'focusAreas': focusAreas,
       'deadline': deadline.toIso8601String(),
     };
 
-    final response = await _supabase
-        .from('projects')
-        .insert(projectData)
-        .select('*, subjects(name)')
-        .single();
-
-    return Project.fromJson(response);
+    final response = await ApiClient.post('/projects', projectData);
+    final data = response as Map<String, dynamic>;
+    final projectJson = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
+    return Project.fromJson(projectJson);
   }
 
   /// Updates project status.
@@ -172,17 +150,12 @@ class ProjectRepository {
     String projectId,
     ProjectStatus status,
   ) async {
-    final response = await _supabase
-        .from('projects')
-        .update({
-          'status': status.toDbString(),
-          'status_updated_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', projectId)
-        .select('*, subjects(name)')
-        .single();
-
-    return Project.fromJson(response);
+    final response = await ApiClient.put('/projects/$projectId/status', {
+      'status': status.toDbString(),
+    });
+    final data = response as Map<String, dynamic>;
+    final projectJson = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
+    return Project.fromJson(projectJson);
   }
 
   /// Approves a project (moves to completed).
@@ -192,108 +165,105 @@ class ProjectRepository {
 
   /// Requests changes for a project.
   Future<Project> requestChanges(String projectId, String feedback) async {
-    final response = await _supabase
-        .from('projects')
-        .update({
-          'status': ProjectStatus.revisionRequested.toDbString(),
-          'user_feedback': feedback,
-          'status_updated_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', projectId)
-        .select('*, subjects(name)')
-        .single();
-
-    return Project.fromJson(response);
+    final response = await ApiClient.put('/projects/$projectId/status', {
+      'status': ProjectStatus.revisionRequested.toDbString(),
+      'userFeedback': feedback,
+    });
+    final data = response as Map<String, dynamic>;
+    final projectJson = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
+    return Project.fromJson(projectJson);
   }
 
   /// Updates the grade received by user for a completed project.
   Future<Project> updateFinalGrade(String projectId, String grade) async {
-    final response = await _supabase
-        .from('projects')
-        .update({
-          'user_grade': grade,
-        })
-        .eq('id', projectId)
-        .select('*, subjects(name)')
-        .single();
-
-    return Project.fromJson(response);
+    final response = await ApiClient.put('/projects/$projectId', {
+      'userGrade': grade,
+    });
+    final data = response as Map<String, dynamic>;
+    final projectJson = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
+    return Project.fromJson(projectJson);
   }
 
   /// Records payment for a project.
   Future<Project> recordPayment(String projectId, String paymentId) async {
-    final now = DateTime.now();
-    final response = await _supabase
-        .from('projects')
-        .update({
-          'status': ProjectStatus.paid.toDbString(),
-          'payment_id': paymentId,
-          'is_paid': true,
-          'paid_at': now.toIso8601String(),
-          'status_updated_at': now.toIso8601String(),
-        })
-        .eq('id', projectId)
-        .select('*, subjects(name)')
-        .single();
-
-    return Project.fromJson(response);
+    final response = await ApiClient.post('/payments/verify', {
+      'projectId': projectId,
+      'gatewayPaymentId': paymentId,
+    });
+    final data = response as Map<String, dynamic>;
+    final projectJson = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
+    return Project.fromJson(projectJson);
   }
 
   /// Gets the project timeline events.
   Future<List<ProjectTimelineEvent>> getProjectTimeline(
     String projectId,
   ) async {
-    final response = await _supabase
-        .from('project_timeline')
-        .select()
-        .eq('project_id', projectId)
-        .order('sequence_order', ascending: true);
-
-    return (response as List)
+    final response = await ApiClient.get('/projects/$projectId/timeline');
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['timeline'] as List? ?? [];
+    return list
         .map((json) => ProjectTimelineEvent.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
   /// Gets the deliverables for a project.
   Future<List<ProjectDeliverable>> getDeliverables(String projectId) async {
-    final response = await _supabase
-        .from('project_deliverables')
-        .select()
-        .eq('project_id', projectId)
-        .order('created_at', ascending: false);
-
-    return (response as List)
+    final response = await ApiClient.get('/projects/$projectId/deliverables');
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['deliverables'] as List? ?? [];
+    return list
         .map((json) => ProjectDeliverable.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
-  /// Subscribes to real-time project updates.
+  /// Subscribes to real-time project updates via Socket.IO.
   Stream<List<Project>> watchProjects() {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) {
-      return Stream.error(Exception('User not authenticated'));
-    }
+    final controller = StreamController<List<Project>>.broadcast();
 
-    return _supabase
-        .from('projects')
-        .stream(primaryKey: ['id'])
-        .eq('user_id', userId)
-        .order('created_at', ascending: false)
-        .map((data) => data
-            .map((json) => Project.fromJson(json))
-            .toList());
+    () async {
+      try {
+        final socket = await SocketClient.getSocket();
+        socket.on('projects:updated', (data) {
+          try {
+            if (data is List) {
+              final projects = data
+                  .map((json) => Project.fromJson(json as Map<String, dynamic>))
+                  .toList();
+              controller.add(projects);
+            }
+          } catch (_) {}
+        });
+      } catch (e) {
+        controller.addError(e);
+      }
+    }();
+
+    return controller.stream;
   }
 
-  /// Subscribes to a single project's updates.
+  /// Subscribes to a single project's updates via Socket.IO.
   Stream<Project?> watchProject(String projectId) {
-    return _supabase
-        .from('projects')
-        .stream(primaryKey: ['id'])
-        .eq('id', projectId)
-        .map((data) {
-          if (data.isEmpty) return null;
-          return Project.fromJson(data.first);
+    final controller = StreamController<Project?>.broadcast();
+
+    () async {
+      try {
+        final socket = await SocketClient.getSocket();
+        socket.on('project:$projectId', (data) {
+          try {
+            if (data != null) {
+              controller.add(Project.fromJson(data as Map<String, dynamic>));
+            }
+          } catch (_) {}
         });
+      } catch (e) {
+        controller.addError(e);
+      }
+    }();
+
+    return controller.stream;
   }
 
   /// Cancels a project.
@@ -301,13 +271,7 @@ class ProjectRepository {
     return updateProjectStatus(projectId, ProjectStatus.cancelled);
   }
 
-  /// Gets project count by status tab (matching web app).
-  ///
-  /// Tab indices:
-  /// - 0: In Review (awaiting AssignX review)
-  /// - 1: In Progress (expert working)
-  /// - 2: For Review (awaiting user approval)
-  /// - 3: History (completed/cancelled)
+  /// Gets project count by status tab.
   Future<Map<int, int>> getProjectCounts() async {
     final projects = await getProjects();
 
@@ -318,16 +282,15 @@ class ProjectRepository {
     final completedCount = projects.where((p) => _isCompletedStatus(p.status)).length;
 
     return {
-      0: inReviewCount,    // In Review tab
-      1: inProgressCount,  // In Progress tab
-      2: forReviewCount,   // For Review tab
-      3: historyCount,     // History tab
-      4: completedCount,   // Completed count (for stats - Done)
-      5: projects.length,  // Total count (for stats - Total)
+      0: inReviewCount,
+      1: inProgressCount,
+      2: forReviewCount,
+      3: historyCount,
+      4: completedCount,
+      5: projects.length,
     };
   }
 
-  /// Check if status is considered "completed" (for stats).
   bool _isCompletedStatus(ProjectStatus status) {
     return [
       ProjectStatus.completed,

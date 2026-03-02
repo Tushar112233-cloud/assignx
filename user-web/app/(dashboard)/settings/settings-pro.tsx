@@ -280,7 +280,7 @@ export function SettingsPro() {
   // Memoize time-based gradient class
   const gradientClass = useMemo(() => getTimeBasedGradientClass(), []);
 
-  // Use Supabase-persisted preferences
+  // Use API-persisted preferences
   const {
     preferences,
     isLoading: prefsLoading,

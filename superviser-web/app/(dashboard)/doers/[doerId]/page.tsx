@@ -23,7 +23,7 @@ import {
   Ban,
   UserCheck,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -62,66 +62,39 @@ export default function DoerDetailPage() {
   const [showBlacklistDialog, setShowBlacklistDialog] = useState(false)
 
   const fetchDoer = useCallback(async () => {
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
       setError(null)
 
-      // Fetch doer details
-      const { data: doerData, error: doerError } = await supabase
-        .from("doers")
-        .select(`
-          *,
-          profiles!profile_id (*)
-        `)
-        .eq("id", doerId)
-        .single()
+      // Fetch doer details with subjects
+      const data = await apiFetch<{ doer: DoerWithProfile; subjects: { id: string; name: string }[] }>(
+        `/api/doers/${doerId}`
+      )
 
-      if (doerError) throw doerError
-      if (!doerData) throw new Error("Doer not found")
+      if (!data.doer) throw new Error("Doer not found")
 
-      setDoer(doerData as DoerWithProfile)
-
-      // Fetch doer's subjects/expertise
-      const { data: subjectsData } = await supabase
-        .from("doer_subjects")
-        .select("subjects (id, name)")
-        .eq("doer_id", doerId)
-
-      if (subjectsData) {
-        setDoerSubjects(
-          subjectsData
-            .map((ds: { subjects: { id: string; name: string } | null }) => ds.subjects)
-            .filter(Boolean) as { id: string; name: string }[]
-        )
-      }
+      setDoer(data.doer)
+      setDoerSubjects(data.subjects || [])
 
       // Fetch projects for this doer
       if (supervisor?.id) {
-        const { data: projectsData } = await supabase
-          .from("projects")
-          .select(`
-            *,
-            profiles!projects_user_id_fkey (*),
-            subjects (*)
-          `)
-          .eq("doer_id", doerId)
-          .eq("supervisor_id", supervisor.id)
-          .order("created_at", { ascending: false })
-          .limit(10)
+        const projectsData = await apiFetch<{ projects: ProjectWithRelations[] }>(
+          `/api/projects?doerId=${doerId}&supervisorId=me&limit=10&sort=-created_at`
+        )
 
-        setProjects((projectsData as ProjectWithRelations[]) || [])
+        setProjects(projectsData.projects || [])
 
         // Check if doer is blacklisted
-        const { data: blacklistData } = await supabase
-          .from("supervisor_blacklisted_doers")
-          .select("id")
-          .eq("supervisor_id", supervisor.id)
-          .eq("doer_id", doerId)
-          .maybeSingle()
-
-        setIsBlacklisted(!!blacklistData)
+        try {
+          const blacklistData = await apiFetch<{ doers: { id: string }[] }>(
+            "/api/supervisors/me/blacklist"
+          )
+          setIsBlacklisted(
+            (blacklistData.doers || []).some((d) => d.id === doerId)
+          )
+        } catch {
+          setIsBlacklisted(false)
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch doer"))
@@ -140,31 +113,21 @@ export default function DoerDetailPage() {
       return
     }
 
-    const supabase = createClient()
-
     try {
       if (isBlacklisted) {
-        // Remove from blacklist
-        const { error } = await supabase
-          .from("supervisor_blacklisted_doers")
-          .delete()
-          .eq("supervisor_id", supervisor.id)
-          .eq("doer_id", doerId)
-
-        if (error) throw error
+        await apiFetch(`/api/supervisors/me/blacklist/${doerId}`, {
+          method: "DELETE",
+        })
         toast.success("Doer removed from blacklist")
         setIsBlacklisted(false)
       } else {
-        // Add to blacklist
-        const { error } = await supabase
-          .from("supervisor_blacklisted_doers")
-          .insert({
-            supervisor_id: supervisor.id,
-            doer_id: doerId,
+        await apiFetch("/api/supervisors/me/blacklist", {
+          method: "POST",
+          body: JSON.stringify({
+            doerId,
             reason: "Manually blacklisted by supervisor",
-          })
-
-        if (error) throw error
+          }),
+        })
         toast.success("Doer added to blacklist")
         setIsBlacklisted(true)
       }

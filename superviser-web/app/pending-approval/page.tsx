@@ -10,7 +10,9 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Clock, Shield, CheckCircle2, FileCheck, UserCheck, Zap, LogOut, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
+import { getStoredUser, clearStoredUser } from "@/lib/api/auth"
+import { clearTokens } from "@/lib/api/client"
 
 const steps = [
   {
@@ -47,20 +49,8 @@ export default function PendingApprovalPage() {
   const handleCheckStatus = async () => {
     setIsChecking(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push("/login")
-        return
-      }
-
-      const { data: supervisor } = await supabase
-        .from("supervisors" as any)
-        .select("is_access_granted")
-        .eq("profile_id", user.id)
-        .maybeSingle()
-
-      if ((supervisor as any)?.is_access_granted) {
+      const data = await apiFetch<{ is_access_granted?: boolean }>("/api/supervisors/me")
+      if (data?.is_access_granted) {
         router.push("/dashboard")
       }
     } catch {
@@ -73,8 +63,8 @@ export default function PendingApprovalPage() {
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      const supabase = createClient()
-      await supabase.auth.signOut()
+      clearTokens()
+      clearStoredUser()
       router.push("/login")
     } catch {
       // ignore

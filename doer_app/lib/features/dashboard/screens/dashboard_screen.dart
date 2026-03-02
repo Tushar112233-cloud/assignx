@@ -372,31 +372,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
-        AppSpacing.sm,
+        AppSpacing.lg,
         AppSpacing.md,
         AppSpacing.sm,
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(width: 10),
           Text(
             title,
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: color,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 8,
-              vertical: 2,
+              vertical: 3,
             ),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: AppSpacing.borderRadiusSm,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             ),
             child: Text(
               count.toString(),
@@ -411,12 +418,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           if (onSeeAll != null)
             GestureDetector(
               onTap: onSeeAll,
-              child: Text(
-                'See All'.tr(context),
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.accent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                ),
+                child: Text(
+                  'See All'.tr(context),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accent,
+                  ),
                 ),
               ),
             ),
@@ -603,7 +620,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
-/// Quick stat card widget for horizontal scroll.
+/// Quick stat card widget for horizontal scroll with gradient background.
 class _QuickStatCard extends StatelessWidget {
   final IconData icon;
   final String value;
@@ -622,17 +639,29 @@ class _QuickStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 130,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      width: 140,
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppSpacing.borderRadiusMd,
-        border: Border.all(color: AppColors.border),
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.08),
+            color.withValues(alpha: 0.03),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: color.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -640,10 +669,10 @@ class _QuickStatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: AppSpacing.borderRadiusSm,
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 18, color: color),
           ),
@@ -663,7 +692,7 @@ class _QuickStatCard extends StatelessWidget {
                 child: Text(
                   value,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: color,
                   ),
@@ -673,11 +702,12 @@ class _QuickStatCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 3),
           Text(
             label,
             style: const TextStyle(
               fontSize: 11,
+              fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
             ),
             maxLines: 1,
@@ -700,29 +730,43 @@ class _EmptyAssignedTasks extends StatelessWidget {
       padding: AppSpacing.paddingLg,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: AppSpacing.borderRadiusMd,
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.assignment_outlined,
-            size: 40,
-            color: AppColors.textTertiary,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.assignment_outlined,
+              size: 32,
+              color: AppColors.primary,
+            ),
           ),
-          SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           Text(
             'No Active Projects'.tr(context),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             'Accept tasks from the pool below to get started!'.tr(context),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,
             ),
@@ -745,29 +789,43 @@ class _EmptyTaskPool extends StatelessWidget {
       padding: AppSpacing.paddingLg,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: AppSpacing.borderRadiusMd,
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.explore_outlined,
-            size: 40,
-            color: AppColors.textTertiary,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.explore_outlined,
+              size: 32,
+              color: AppColors.accent,
+            ),
           ),
-          SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           Text(
             'No Projects Available'.tr(context),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             'Check back later for new opportunities!'.tr(context),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,
             ),

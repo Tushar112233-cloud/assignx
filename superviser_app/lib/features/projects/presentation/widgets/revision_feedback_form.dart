@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../shared/widgets/buttons/primary_button.dart';
 import '../../../../shared/widgets/inputs/app_text_field.dart';
 
@@ -118,7 +119,7 @@ class _RevisionFeedbackFormState extends State<RevisionFeedbackForm> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Request Revision',
+                            'Request Revision'.tr(context),
                             style: Theme.of(context)
                                 .textTheme
                                 .titleLarge
@@ -156,7 +157,7 @@ class _RevisionFeedbackFormState extends State<RevisionFeedbackForm> {
                   children: [
                     // Common issues
                     Text(
-                      'Select Issues (Optional)',
+                      'Select Issues (Optional)'.tr(context),
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -168,7 +169,7 @@ class _RevisionFeedbackFormState extends State<RevisionFeedbackForm> {
                       children: _commonIssues.map((issue) {
                         final isSelected = _selectedIssues.contains(issue);
                         return FilterChip(
-                          label: Text(issue),
+                          label: Text(issue.tr(context)),
                           selected: isSelected,
                           onSelected: (selected) {
                             setState(() {
@@ -198,14 +199,14 @@ class _RevisionFeedbackFormState extends State<RevisionFeedbackForm> {
                     const SizedBox(height: 24),
                     // Feedback text
                     Text(
-                      'Detailed Feedback',
+                      'Detailed Feedback'.tr(context),
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Provide specific feedback to help the doer understand what needs to be changed.',
+                      'Provide specific feedback to help the doer understand what needs to be changed.'.tr(context),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondaryLight,
                           ),
@@ -213,7 +214,7 @@ class _RevisionFeedbackFormState extends State<RevisionFeedbackForm> {
                     const SizedBox(height: 12),
                     AppTextField(
                       controller: _feedbackController,
-                      hint: 'Enter your feedback here...',
+                      hint: 'Enter your feedback here...'.tr(context),
                       maxLines: 6,
                     ),
                     // Error message
@@ -263,7 +264,7 @@ class _RevisionFeedbackFormState extends State<RevisionFeedbackForm> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Tips for Good Feedback',
+                                'Tips for Good Feedback'.tr(context),
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleSmall
@@ -274,10 +275,10 @@ class _RevisionFeedbackFormState extends State<RevisionFeedbackForm> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          _TipItem(text: 'Be specific about what needs to change'),
-                          _TipItem(text: 'Reference specific sections or pages'),
-                          _TipItem(text: 'Explain why the change is needed'),
-                          _TipItem(text: 'Provide examples when possible'),
+                          _TipItem(text: 'Be specific about what needs to change'.tr(context)),
+                          _TipItem(text: 'Reference specific sections or pages'.tr(context)),
+                          _TipItem(text: 'Explain why the change is needed'.tr(context)),
+                          _TipItem(text: 'Provide examples when possible'.tr(context)),
                         ],
                       ),
                     ),
@@ -299,7 +300,7 @@ class _RevisionFeedbackFormState extends State<RevisionFeedbackForm> {
                   ],
                 ),
                 child: PrimaryButton(
-                  text: 'Submit Revision Request',
+                  text: 'Submit Revision Request'.tr(context),
                   isLoading: _isSubmitting,
                   onPressed: _submit,
                 ),
@@ -316,7 +317,7 @@ class _RevisionFeedbackFormState extends State<RevisionFeedbackForm> {
 
     if (feedback.isEmpty) {
       setState(() {
-        _error = 'Please provide feedback for the revision request.';
+        _error = 'Please provide feedback for the revision request.'.tr(context);
       });
       return;
     }
@@ -336,14 +337,14 @@ class _RevisionFeedbackFormState extends State<RevisionFeedbackForm> {
         Navigator.pop(context, true);
       } else if (mounted) {
         setState(() {
-          _error = 'Failed to submit revision request. Please try again.';
+          _error = 'Failed to submit revision request. Please try again.'.tr(context);
           _isSubmitting = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'An error occurred. Please try again.';
+          _error = 'An error occurred. Please try again.'.tr(context);
           _isSubmitting = false;
         });
       }

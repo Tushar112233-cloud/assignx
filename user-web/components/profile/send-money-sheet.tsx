@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { getStoredUser } from "@/lib/api/auth";
 import { searchUserByEmail } from "@/lib/actions/data";
 
 /**
@@ -62,12 +62,10 @@ export function SendMoneySheet({ open, onOpenChange }: SendMoneySheetProps) {
 
   // Get user data on mount
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }: any) => {
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    });
+    const user = getStoredUser();
+    if (user) {
+      setUserId(user.id);
+    }
   }, []);
 
   const effectiveAmount =

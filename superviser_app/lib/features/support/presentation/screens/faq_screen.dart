@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/services/external_actions_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../providers/support_provider.dart';
 import '../widgets/faq_accordion.dart';
 
@@ -43,15 +44,15 @@ class _FAQScreenState extends ConsumerState<FAQScreen> {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search FAQ...',
+                decoration: InputDecoration(
+                  hintText: 'Search FAQ...'.tr(context),
                   border: InputBorder.none,
                 ),
                 onChanged: (query) {
                   ref.read(faqProvider.notifier).search(query);
                 },
               )
-            : const Text('FAQ'),
+            : Text('FAQ'.tr(context)),
         actions: [
           IconButton(
             onPressed: () {
@@ -82,7 +83,7 @@ class _FAQScreenState extends ConsumerState<FAQScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.pushNamed(RouteNames.support),
         icon: const Icon(Icons.support_agent),
-        label: const Text('Contact Support'),
+        label: Text('Contact Support'.tr(context)),
       ),
     );
   }
@@ -114,14 +115,14 @@ class _FAQContent extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Frequently Asked Questions',
+                'Frequently Asked Questions'.tr(context),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Find answers to common questions',
+                'Find answers to common questions'.tr(context),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.textSecondaryLight,
                     ),
@@ -145,7 +146,7 @@ class _FAQContent extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Need more help?',
+            'Need more help?'.tr(context),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -191,7 +192,7 @@ class _SearchResults extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
+                child: Text('Close'.tr(context)),
               ),
             ],
           ),
@@ -213,7 +214,7 @@ class _QuickLinksSection extends ConsumerWidget {
         children: [
           _QuickLinkCard(
             icon: Icons.email_outlined,
-            title: 'Email Support',
+            title: 'Email Support'.tr(context),
             subtitle: 'support@adminx.com',
             onTap: () {
               externalActions.sendEmail(
@@ -225,8 +226,8 @@ class _QuickLinksSection extends ConsumerWidget {
           const SizedBox(height: 8),
           _QuickLinkCard(
             icon: Icons.chat_outlined,
-            title: 'Live Chat',
-            subtitle: 'Available 9 AM - 6 PM',
+            title: 'Live Chat'.tr(context),
+            subtitle: 'Available 9 AM - 6 PM'.tr(context),
             onTap: () {
               externalActions.openLiveChat();
             },
@@ -234,7 +235,7 @@ class _QuickLinksSection extends ConsumerWidget {
           const SizedBox(height: 8),
           _QuickLinkCard(
             icon: Icons.phone_outlined,
-            title: 'Phone Support',
+            title: 'Phone Support'.tr(context),
             subtitle: '+1 (555) 123-4567',
             onTap: () {
               externalActions.makePhoneCall('+15551234567');

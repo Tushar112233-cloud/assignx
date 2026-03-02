@@ -20,9 +20,6 @@ class DashboardAppBar extends ConsumerWidget {
   // Light theme colors (transparent header matching background)
   static const Color _backgroundColor = Colors.transparent;
   static const Color _textColor = Color(0xFF1A1A1A); // Dark text
-  static const Color _iconColor = Color(0xFF1A1A1A); // Dark icons
-  static const Color _inactiveColor = Color(0xFF6B6B6B); // Gray
-  static const Color _pillBackground = Color(0xFFF5F0EB); // Light brown/cream
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -63,7 +60,7 @@ class DashboardAppBar extends ConsumerWidget {
 
               const Spacer(),
 
-              // Right side: Wallet pill + Notification bell
+              // Right side: Wallet + Notifications
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -77,7 +74,7 @@ class DashboardAppBar extends ConsumerWidget {
                       balance: '...',
                       onTap: () {},
                     ),
-                    error: (_, __) => _WalletPill(
+                    error: (_, _) => _WalletPill(
                       balance: '\u20B90',
                       onTap: () => context.push('/wallet'),
                     ),

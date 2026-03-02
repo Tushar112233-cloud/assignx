@@ -33,7 +33,7 @@ const contactCategories = [
 
 /**
  * Contact form for support requests
- * Submits tickets to Supabase
+ * Submits tickets to API
  */
 export function ContactForm() {
   const [form, setForm] = useState<ContactFormData>({

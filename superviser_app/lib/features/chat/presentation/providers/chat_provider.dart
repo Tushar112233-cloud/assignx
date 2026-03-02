@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/api/api_client.dart';
 import '../../data/models/chat_room_model.dart';
 import '../../data/models/message_model.dart';
 import '../../data/repositories/chat_repository.dart';
@@ -281,7 +281,7 @@ class ActiveChatNotifier extends StateNotifier<ActiveChatState> {
 
   /// Sends an attachment from local file path.
   ///
-  /// This uploads the file to Supabase storage first, then sends as a message.
+  /// This uploads the file via ApiClient, then sends as a message.
   Future<bool> sendAttachment(String filePath, String type) async {
     if (state.room == null) return false;
     if (state.isSuspended) return false;
@@ -305,26 +305,14 @@ class ActiveChatNotifier extends StateNotifier<ActiveChatState> {
         throw Exception('File size exceeds 10MB limit');
       }
 
-      // Generate unique storage path
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final roomId = state.room!.id;
-      final storagePath = '$roomId/${timestamp}_$fileName';
-
-      // Upload to Supabase storage
-      final supabase = Supabase.instance.client;
-      await supabase.storage.from('chat-files').uploadBinary(
-        storagePath,
-        fileBytes,
-        fileOptions: FileOptions(
-          contentType: _getMimeType(fileExtension),
-          upsert: true,
-        ),
+      // Upload via ApiClient
+      final uploadResponse = await ApiClient.uploadFile(
+        '/uploads/chat',
+        file,
+        folder: 'chat-files/${state.room!.id}',
       );
 
-      // Get public URL
-      final fileUrl = supabase.storage
-          .from('chat-files')
-          .getPublicUrl(storagePath);
+      final fileUrl = (uploadResponse as Map<String, dynamic>)['url'] as String? ?? '';
 
       // Determine message type based on file type
       final messageType = _getMessageType(fileExtension);

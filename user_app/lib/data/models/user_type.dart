@@ -94,9 +94,13 @@ enum UserType {
     if (value == null) return null;
     switch (value.toLowerCase()) {
       case 'student':
+      case 'user':
         return UserType.student;
       case 'professional':
         return UserType.professional;
+      case 'admin':
+        // Admin users default to student type in the user app
+        return UserType.student;
       default:
         return null;
     }

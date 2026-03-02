@@ -5,15 +5,14 @@
 
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants"
-import { createClient } from "@/lib/supabase/client"
+import { getAccessToken } from "@/lib/api/client"
 
 export default function SplashPage() {
   const router = useRouter()
-  const supabase = useMemo(() => createClient(), [])
   const [showTagline, setShowTagline] = useState(false)
 
   useEffect(() => {
@@ -23,12 +22,10 @@ export default function SplashPage() {
     }, 800)
 
     // Check auth state and navigate accordingly
-    const navigationTimer = setTimeout(async () => {
+    const navigationTimer = setTimeout(() => {
       try {
-        // Use getSession() which reads from localStorage (no network request)
-        // Server-side layout and middleware will validate the session properly
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user) {
+        const token = getAccessToken()
+        if (token) {
           router.push("/dashboard")
         } else {
           router.push("/login")

@@ -8,6 +8,7 @@ class SettingsState {
     // Notifications
     this.emailNotifications = true,
     this.pushNotifications = true,
+    this.marketingEmails = false,
     this.quietHoursEnabled = false,
     this.quietHoursStart = const TimeOfDay(hour: 22, minute: 0),
     this.quietHoursEnd = const TimeOfDay(hour: 7, minute: 0),
@@ -23,6 +24,7 @@ class SettingsState {
 
   final bool emailNotifications;
   final bool pushNotifications;
+  final bool marketingEmails;
   final bool quietHoursEnabled;
   final TimeOfDay quietHoursStart;
   final TimeOfDay quietHoursEnd;
@@ -38,6 +40,7 @@ class SettingsState {
   SettingsState copyWith({
     bool? emailNotifications,
     bool? pushNotifications,
+    bool? marketingEmails,
     bool? quietHoursEnabled,
     TimeOfDay? quietHoursStart,
     TimeOfDay? quietHoursEnd,
@@ -50,6 +53,7 @@ class SettingsState {
     return SettingsState(
       emailNotifications: emailNotifications ?? this.emailNotifications,
       pushNotifications: pushNotifications ?? this.pushNotifications,
+      marketingEmails: marketingEmails ?? this.marketingEmails,
       quietHoursEnabled: quietHoursEnabled ?? this.quietHoursEnabled,
       quietHoursStart: quietHoursStart ?? this.quietHoursStart,
       quietHoursEnd: quietHoursEnd ?? this.quietHoursEnd,
@@ -76,6 +80,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       state = SettingsState(
         emailNotifications: prefs.getBool('${_prefix}email_notifications') ?? true,
         pushNotifications: prefs.getBool('${_prefix}push_notifications') ?? true,
+        marketingEmails: prefs.getBool('${_prefix}marketing_emails') ?? false,
         quietHoursEnabled: prefs.getBool('${_prefix}quiet_hours_enabled') ?? false,
         quietHoursStart: _timeFromMinutes(
           prefs.getInt('${_prefix}quiet_hours_start') ?? 22 * 60,
@@ -100,6 +105,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       await Future.wait([
         prefs.setBool('${_prefix}email_notifications', state.emailNotifications),
         prefs.setBool('${_prefix}push_notifications', state.pushNotifications),
+        prefs.setBool('${_prefix}marketing_emails', state.marketingEmails),
         prefs.setBool('${_prefix}quiet_hours_enabled', state.quietHoursEnabled),
         prefs.setInt('${_prefix}quiet_hours_start', _timeToMinutes(state.quietHoursStart)),
         prefs.setInt('${_prefix}quiet_hours_end', _timeToMinutes(state.quietHoursEnd)),
@@ -121,6 +127,11 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   void setPushNotifications(bool value) {
     state = state.copyWith(pushNotifications: value);
+    _save();
+  }
+
+  void setMarketingEmails(bool value) {
+    state = state.copyWith(marketingEmails: value);
     _save();
   }
 

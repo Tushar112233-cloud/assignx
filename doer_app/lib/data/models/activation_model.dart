@@ -197,31 +197,35 @@ class ActivationStatus {
   /// @param json The JSON map from the database response.
   /// @returns A new [ActivationStatus] instance.
   factory ActivationStatus.fromJson(Map<String, dynamic> json) {
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Handle doerId which may be a populated Mongoose object.
+    String doerId = '';
+    final rawDoerId = json['doer_id'] ?? json['doerId'];
+    if (rawDoerId is String) {
+      doerId = rawDoerId;
+    } else if (rawDoerId is Map<String, dynamic>) {
+      doerId = (rawDoerId['_id'] ?? rawDoerId['id'] ?? '').toString();
+    }
+
     return ActivationStatus(
-      id: json['id'] as String,
-      doerId: json['doer_id'] as String,
-      trainingCompleted: json['training_completed'] as bool? ?? false,
-      trainingCompletedAt: json['training_completed_at'] != null
-          ? DateTime.parse(json['training_completed_at'] as String)
-          : null,
-      quizPassed: json['quiz_passed'] as bool? ?? false,
-      quizPassedAt: json['quiz_passed_at'] != null
-          ? DateTime.parse(json['quiz_passed_at'] as String)
-          : null,
-      quizAttemptId: json['quiz_attempt_id'] as String?,
-      totalQuizAttempts: json['total_quiz_attempts'] as int? ?? 0,
-      bankDetailsAdded: json['bank_details_added'] as bool? ?? false,
-      bankDetailsAddedAt: json['bank_details_added_at'] != null
-          ? DateTime.parse(json['bank_details_added_at'] as String)
-          : null,
-      isFullyActivated: json['is_fully_activated'] as bool? ?? false,
-      activatedAt: json['activated_at'] != null
-          ? DateTime.parse(json['activated_at'] as String)
-          : null,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      doerId: doerId,
+      trainingCompleted: json['training_completed'] as bool? ?? json['trainingCompleted'] as bool? ?? false,
+      trainingCompletedAt: _parseDate(json['training_completed_at'] ?? json['trainingCompletedAt']),
+      quizPassed: json['quiz_passed'] as bool? ?? json['quizPassed'] as bool? ?? false,
+      quizPassedAt: _parseDate(json['quiz_passed_at'] ?? json['quizPassedAt']),
+      quizAttemptId: json['quiz_attempt_id'] as String? ?? json['quizAttemptId'] as String?,
+      totalQuizAttempts: (json['total_quiz_attempts'] ?? json['totalQuizAttempts']) as int? ?? 0,
+      bankDetailsAdded: json['bank_details_added'] as bool? ?? json['bankDetailsAdded'] as bool? ?? false,
+      bankDetailsAddedAt: _parseDate(json['bank_details_added_at'] ?? json['bankDetailsAddedAt']),
+      isFullyActivated: json['is_fully_activated'] as bool? ?? json['isFullyActivated'] as bool? ?? false,
+      activatedAt: _parseDate(json['activated_at'] ?? json['activatedAt']),
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDate(json['updated_at'] ?? json['updatedAt']),
     );
   }
 

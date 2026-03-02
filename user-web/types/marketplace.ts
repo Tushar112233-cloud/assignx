@@ -3,16 +3,16 @@
  * Implements U73-U85 from feature spec
  *
  * This file contains both:
- * - Database types (DB*) matching Supabase schema exactly
+ * - Database types (DB*) matching API schema exactly
  * - UI types for frontend display
  */
 
 // =============================================================================
-// DATABASE TYPES - Match Supabase schema exactly
+// DATABASE TYPES - Match API schema exactly
 // =============================================================================
 
 /**
- * Database listing_type enum - matches Supabase enum exactly
+ * Database listing_type enum - matches API enum exactly
  */
 export type DBListingType =
   | "sell" // Items for sale
@@ -25,7 +25,7 @@ export type DBListingType =
   | "event"; // Events
 
 /**
- * Database listing_status enum - matches Supabase enum exactly
+ * Database listing_status enum - matches API enum exactly
  */
 export type ListingStatus =
   | "draft"
@@ -140,7 +140,7 @@ export interface DBMarketplaceListing {
 }
 
 /**
- * Marketplace listing with joined relations (from Supabase query)
+ * Marketplace listing with joined relations (from API query)
  * This is the shape returned by getMarketplaceListings() and getListingById()
  */
 export interface DBMarketplaceListingWithRelations extends DBMarketplaceListing {

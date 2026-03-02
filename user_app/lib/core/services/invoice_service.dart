@@ -7,8 +7,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../api/api_client.dart';
 import '../../data/models/invoice_model.dart';
 import '../../data/models/project.dart';
 import '../../data/models/user_profile.dart';
@@ -116,8 +115,6 @@ class InvoiceData {
 ///
 /// Implements U37 from feature specification.
 class InvoiceService {
-  static final SupabaseClient _supabase = Supabase.instance.client;
-
   // Brand colors
   static const PdfColor _primaryColor = PdfColor.fromInt(0xFF4F46E5); // Indigo
   static const PdfColor _successColor = PdfColor.fromInt(0xFF10B981); // Green
@@ -133,29 +130,15 @@ class InvoiceService {
   /// Combines project data with user profile to create a complete invoice.
   static Future<InvoiceModel?> getInvoiceForProject(String projectId) async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
+      // Fetch project via API
+      final projectResponse = await ApiClient.get('/projects/$projectId');
+      if (projectResponse == null) return null;
+      final project = Project.fromJson(projectResponse as Map<String, dynamic>);
 
-      // Fetch project with subject info
-      final projectResponse = await _supabase
-          .from('projects')
-          .select('*, subjects(name)')
-          .eq('id', projectId)
-          .eq('user_id', userId)
-          .single();
-
-      final project = Project.fromJson(projectResponse);
-
-      // Fetch user profile
-      final profileResponse = await _supabase
-          .from('profiles')
-          .select()
-          .eq('id', userId)
-          .single();
-
-      final profile = UserProfile.fromJson(profileResponse);
+      // Fetch user profile via API
+      final profileResponse = await ApiClient.get('/profiles/me');
+      if (profileResponse == null) return null;
+      final profile = UserProfile.fromJson(profileResponse as Map<String, dynamic>);
 
       // Create invoice from project and profile
       return InvoiceModel.fromProjectAndProfile(project, profile);

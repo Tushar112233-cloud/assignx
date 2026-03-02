@@ -56,7 +56,8 @@ import {
 } from "@/components/ui/alert"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
+import { getStoredUser } from "@/lib/api/auth"
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("notifications")
@@ -89,49 +90,43 @@ export default function SettingsPage() {
   const [language, setLanguage] = useState("en")
   const [timezone, setTimezone] = useState("Asia/Kolkata")
 
-  // SW-030: Load settings from Supabase on mount
+  // Load settings from API on mount
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const user = getStoredUser()
         if (!user) return
 
-        const { data } = await supabase
-          .from("profiles")
-          .select("settings" as any)
-          .eq("id", user.id)
-          .single()
+        const data = await apiFetch<{ settings?: Record<string, unknown> }>(
+          `/api/profiles/${user.id}`
+        )
 
-        if ((data as any)?.settings) {
-          const s = (data as any).settings as Record<string, unknown>
+        if (data?.settings) {
+          const s = data.settings
           if (s.notifications) setNotifications(prev => ({ ...prev, ...(s.notifications as object) }))
           if (s.privacy) setPrivacy(prev => ({ ...prev, ...(s.privacy as object) }))
           if (s.language) setLanguage(s.language as string)
           if (s.timezone) setTimezone(s.timezone as string)
         }
       } catch {
-        // Settings table/column may not exist yet
+        // Settings may not exist yet
       }
     }
     loadSettings()
   }, [])
 
-  const saveSettingsToSupabase = async (settingsData: Record<string, unknown>) => {
+  const saveSettings = async (settingsData: Record<string, unknown>) => {
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = getStoredUser()
       if (!user) return
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({
+      await apiFetch(`/api/profiles/${user.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
           settings: settingsData,
           updated_at: new Date().toISOString(),
-        } as any)
-        .eq("id", user.id)
-
-      if (error) throw error
+        }),
+      })
     } catch (err) {
       console.error("Failed to save settings:", err)
       toast.error("Failed to save settings")
@@ -141,14 +136,14 @@ export default function SettingsPage() {
   const handleNotificationChange = (key: string, value: boolean) => {
     const updatedNotifications = { ...notifications, [key]: value }
     setNotifications(updatedNotifications)
-    saveSettingsToSupabase({ notifications: updatedNotifications, privacy, language, timezone })
+    saveSettings({ notifications: updatedNotifications, privacy, language, timezone })
     toast.success("Settings updated")
   }
 
   const handlePrivacyChange = (key: string, value: boolean) => {
     const updatedPrivacy = { ...privacy, [key]: value }
     setPrivacy(updatedPrivacy)
-    saveSettingsToSupabase({ notifications, privacy: updatedPrivacy, language, timezone })
+    saveSettings({ notifications, privacy: updatedPrivacy, language, timezone })
     toast.success("Privacy settings updated")
   }
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { getSocket } from "@/lib/socket/client"
 
 /**
  * Props for the TypingIndicator component
@@ -39,15 +40,6 @@ function TypingDot({ delay }: { delay: number }) {
 
 /**
  * Typing indicator component showing animated dots with typer name.
- * Displays "[Name] is typing..." with smooth fade in/out animations.
- *
- * @example
- * ```tsx
- * <TypingIndicator
- *   typerName="Supervisor"
- *   isTyping={isSupervisorTyping}
- * />
- * ```
  */
 export function TypingIndicator({
   typerName = "Someone",
@@ -67,14 +59,11 @@ export function TypingIndicator({
             className
           )}
         >
-          {/* Typing dots container */}
           <div className="flex items-center gap-1 rounded-full bg-muted px-3 py-2">
             <TypingDot delay={0} />
             <TypingDot delay={0.15} />
             <TypingDot delay={0.3} />
           </div>
-
-          {/* Typer name */}
           <motion.span
             initial={{ opacity: 0, x: -5 }}
             animate={{ opacity: 1, x: 0 }}
@@ -90,18 +79,12 @@ export function TypingIndicator({
 }
 
 /**
- * Hook to manage typing indicator state with Supabase Realtime.
+ * Hook to manage typing indicator state with Socket.IO.
  * Returns the current typing users and a function to broadcast typing status.
- *
- * @param roomId - The chat room ID to subscribe to
- * @param userId - Current user's ID
- * @param supabase - Supabase client instance
- * @returns Object containing typing users and broadcast function
  */
 export function useTypingIndicator(
   roomId: string | null,
   userId: string | null,
-  supabase: ReturnType<typeof import("@/lib/supabase/client").createClient>
 ) {
   const [typingUsers, setTypingUsers] = useState<
     { userId: string; name: string; timestamp: number }[]
@@ -110,60 +93,50 @@ export function useTypingIndicator(
   useEffect(() => {
     if (!roomId || !userId) return
 
-    const channel = supabase.channel(`typing:${roomId}`)
+    const socket = getSocket()
+    const eventName = `typing:${roomId}`
 
-    // Subscribe to presence for typing status
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState()
-        const typingList: { userId: string; name: string; timestamp: number }[] = []
+    const handler = (data: { userId: string; name: string; isTyping: boolean }) => {
+      if (data.userId === userId) return
 
-        Object.values(state).forEach((presences) => {
-          // Type assertion for Supabase presence state
-          const typedPresences = presences as unknown as { userId: string; name: string; isTyping: boolean; timestamp: number }[]
-          typedPresences.forEach((presence) => {
-              if (presence.isTyping && presence.userId !== userId) {
-                typingList.push({
-                  userId: presence.userId,
-                  name: presence.name,
-                  timestamp: presence.timestamp,
-                })
-              }
-            })
+      if (data.isTyping) {
+        setTypingUsers((prev) => {
+          const existing = prev.find((t) => t.userId === data.userId)
+          if (existing) {
+            return prev.map((t) =>
+              t.userId === data.userId ? { ...t, timestamp: Date.now() } : t
+            )
+          }
+          return [...prev, { userId: data.userId, name: data.name, timestamp: Date.now() }]
         })
+      } else {
+        setTypingUsers((prev) => prev.filter((t) => t.userId !== data.userId))
+      }
+    }
 
-        // Sort by timestamp and remove stale entries (older than 5 seconds)
-        const now = Date.now()
-        const activeTypers = typingList
-          .filter((t) => now - t.timestamp < 5000)
-          .sort((a, b) => a.timestamp - b.timestamp)
+    socket.on(eventName, handler)
 
-        setTypingUsers(activeTypers)
-      })
-      .subscribe()
+    // Clean up stale typing entries every 5 seconds
+    const interval = setInterval(() => {
+      const now = Date.now()
+      setTypingUsers((prev) => prev.filter((t) => now - t.timestamp < 5000))
+    }, 5000)
 
     return () => {
-      channel.unsubscribe()
+      socket.off(eventName, handler)
+      clearInterval(interval)
     }
-  }, [roomId, userId, supabase])
+  }, [roomId, userId])
 
   /**
    * Broadcast typing status to other users in the room
    */
-  const broadcastTyping = async (isTyping: boolean, userName: string) => {
+  const broadcastTyping = (isTyping: boolean, userName: string) => {
     if (!roomId) return
-
-    const channel = supabase.channel(`typing:${roomId}`)
-    await channel.track({
-      userId,
-      name: userName,
-      isTyping,
-      timestamp: Date.now(),
-    })
+    const socket = getSocket()
+    socket.emit('typing', { roomId, userId, name: userName, isTyping })
   }
 
-  // Get the first typing user's name for display
-  const activeTyper = typingUsers.length > 0 ? typingUsers[0] : null
   const isAnyoneTyping = typingUsers.length > 0
   const typingDisplayName =
     typingUsers.length === 1

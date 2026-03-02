@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { SplashScreen } from '@/components/onboarding/SplashScreen'
 import { ROUTES } from '@/lib/constants'
+import { getAccessToken } from '@/lib/api/client'
 
 /**
  * Home page - Entry point for the application
@@ -20,18 +21,11 @@ export default function HomePage() {
       const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding')
 
       if (hasSeenOnboarding) {
-        // Check if user is authenticated via Supabase
-        try {
-          const { createClient } = await import('@/lib/supabase/client')
-          const supabase = createClient()
-          const { data: { session } } = await supabase.auth.getSession()
-
-          if (session?.user) {
-            router.push(ROUTES.dashboard)
-          } else {
-            router.push(ROUTES.login)
-          }
-        } catch {
+        // Check if user is authenticated via JWT token
+        const token = getAccessToken()
+        if (token) {
+          router.push(ROUTES.dashboard)
+        } else {
           router.push(ROUTES.login)
         }
       } else {

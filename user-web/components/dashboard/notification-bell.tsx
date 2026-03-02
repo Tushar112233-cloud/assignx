@@ -16,13 +16,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotificationStore, type Notification } from "@/stores/notification-store";
-import { createClient } from "@/lib/supabase/client";
+import { getSocket } from "@/lib/socket/client";
+import { getStoredUser } from "@/lib/api/auth";
 import { cn } from "@/lib/utils";
 
 /**
  * Notification bell with dropdown
- * Fetches notifications from Supabase and shows unread count badge
- * Subscribes to Supabase Realtime for live notification updates
+ * Fetches notifications from API and shows unread count badge
+ * Subscribes to API Realtime for live notification updates
  */
 export function NotificationBell() {
   const {
@@ -40,56 +41,33 @@ export function NotificationBell() {
     fetchNotifications(20);
   }, [fetchNotifications]);
 
-  // Subscribe to realtime notification inserts
+  // Subscribe to realtime notification inserts via Socket.IO
   useEffect(() => {
-    const supabase = createClient();
-    let channel: ReturnType<typeof supabase.channel> | null = null;
+    const user = getStoredUser();
+    if (!user?.id) return;
 
-    const setupRealtimeSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    const socket = getSocket();
+    const eventName = `notification:${user.id}`;
 
-      channel = supabase
-        .channel(`user_notifications_${user.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "notifications",
-            filter: `profile_id=eq.${user.id}`,
-          },
-          (payload: any) => {
-            const newNotification = payload.new as {
-              title?: string;
-              body?: string;
-              target_role?: string;
-            };
+    const handler = (notification: any) => {
+      // Only handle notifications for the user platform
+      if (notification.target_role && notification.target_role !== "user") return;
 
-            // Only handle notifications for the user platform
-            if (newNotification.target_role && newNotification.target_role !== "user") return;
+      // Refresh the notification store to pick up the new notification
+      fetchNotifications(20);
 
-            // Refresh the notification store to pick up the new notification
-            fetchNotifications(20);
-
-            // Show a toast with the new notification details
-            if (newNotification.title) {
-              toast(newNotification.title, {
-                description: newNotification.body || undefined,
-              });
-            }
-          }
-        )
-        .subscribe();
+      // Show a toast with the new notification details
+      if (notification.title) {
+        toast(notification.title, {
+          description: notification.body || notification.message || undefined,
+        });
+      }
     };
 
-    setupRealtimeSubscription();
+    socket.on(eventName, handler);
 
     return () => {
-      if (channel) {
-        const supabaseCleanup = createClient();
-        supabaseCleanup.removeChannel(channel);
-      }
+      socket.off(eventName, handler);
     };
   }, [fetchNotifications]);
 

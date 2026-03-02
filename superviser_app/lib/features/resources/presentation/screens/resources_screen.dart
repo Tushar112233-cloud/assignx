@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/router/routes.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../providers/resources_provider.dart';
 import '../widgets/tool_card.dart';
 import '../widgets/training_library.dart';
@@ -38,13 +39,13 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Resources'),
+        title: Text('Resources'.tr(context)),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.build_outlined), text: 'Tools'),
-            Tab(icon: Icon(Icons.school_outlined), text: 'Training'),
-            Tab(icon: Icon(Icons.monetization_on_outlined), text: 'Pricing'),
+          tabs: [
+            Tab(icon: const Icon(Icons.build_outlined), text: 'Tools'.tr(context)),
+            Tab(icon: const Icon(Icons.school_outlined), text: 'Training'.tr(context)),
+            Tab(icon: const Icon(Icons.monetization_on_outlined), text: 'Pricing'.tr(context)),
           ],
         ),
       ),
@@ -83,7 +84,7 @@ class _ToolsTab extends ConsumerWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.read(toolsProvider.notifier).loadTools(),
-              child: const Text('Retry'),
+              child: Text('Retry'.tr(context)),
             ),
           ],
         ),
@@ -100,7 +101,7 @@ class _ToolsTab extends ConsumerWidget {
             if (state.frequentlyUsed.isNotEmpty) ...[
               const SizedBox(height: 16),
               ToolQuickAccess(
-                title: 'Frequently Used',
+                title: 'Frequently Used'.tr(context),
                 tools: state.frequentlyUsed,
                 onToolTap: (tool) => _openTool(context, ref, tool),
               ),
@@ -110,7 +111,7 @@ class _ToolsTab extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'All Tools',
+                'All Tools'.tr(context),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -179,7 +180,7 @@ class _TrainingTab extends ConsumerWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.read(trainingVideosProvider.notifier).loadVideos(),
-              child: const Text('Retry'),
+              child: Text('Retry'.tr(context)),
             ),
           ],
         ),
@@ -247,7 +248,7 @@ class _PricingTab extends ConsumerWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.read(pricingProvider.notifier).loadPricing(),
-              child: const Text('Retry'),
+              child: Text('Retry'.tr(context)),
             ),
           ],
         ),
@@ -256,7 +257,7 @@ class _PricingTab extends ConsumerWidget {
 
     final guide = state.pricingGuide;
     if (guide == null) {
-      return const Center(child: Text('No pricing data available'));
+      return Center(child: Text('No pricing data available'.tr(context)));
     }
 
     return DefaultTabController(
@@ -269,12 +270,12 @@ class _PricingTab extends ConsumerWidget {
               color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const TabBar(
+            child: TabBar(
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               tabs: [
-                Tab(text: 'Price Table'),
-                Tab(text: 'Calculator'),
+                Tab(text: 'Price Table'.tr(context)),
+                Tab(text: 'Calculator'.tr(context)),
               ],
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../core/api/api_client.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 
@@ -11,6 +12,7 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../widgets/account_upgrade_card.dart';
+import '../widgets/app_info_footer.dart';
 import '../widgets/avatar_upload_dialog.dart';
 import '../widgets/preferences_section.dart';
 import '../widgets/subscription_card.dart';
@@ -102,7 +104,7 @@ class ProfileScreen extends ConsumerWidget {
 
                     const SizedBox(height: 16),
 
-                    // Subscription Card
+                    // Account Role Card
                     const SubscriptionCard(),
 
                     const SizedBox(height: 16),
@@ -133,6 +135,11 @@ class ProfileScreen extends ConsumerWidget {
 
                     // Settings Section
                     _buildSettingsSection(context, ref, profile),
+
+                    const SizedBox(height: 24),
+
+                    // App Info Footer
+                    const AppInfoFooter(),
                   ],
                 ),
               ),
@@ -978,7 +985,7 @@ class ProfileScreen extends ConsumerWidget {
             onTap: () => context.push('/profile/edit'),
           ),
           const SizedBox(height: 10),
-          // Upgrade Account - uses actual account type from profile
+          // Switch Account Type - uses actual account role from profile
           _buildUpgradeSettingsItem(
             context: context,
             currentType: AccountType.fromDbString(profile.userType?.toDbString() ?? 'student'),
@@ -990,6 +997,14 @@ class ProfileScreen extends ConsumerWidget {
             title: 'Security',
             subtitle: 'Password, 2FA, sessions',
             onTap: () => context.push('/profile/security'),
+          ),
+          const SizedBox(height: 10),
+          // My Roles
+          _buildSettingsItem(
+            icon: Icons.badge_outlined,
+            title: 'My Roles',
+            subtitle: 'Manage your portal access',
+            onTap: () => context.push('/settings'),
           ),
           const SizedBox(height: 10),
           // App Settings
@@ -1028,6 +1043,24 @@ class ProfileScreen extends ConsumerWidget {
             title: 'Log Out',
             subtitle: 'Sign out of your account',
             onTap: () => _showLogoutDialog(context, ref),
+            isDestructive: true,
+          ),
+          const SizedBox(height: 10),
+          // Deactivate Account
+          _buildSettingsItem(
+            icon: Icons.pause_circle_outline,
+            title: 'Deactivate Account',
+            subtitle: 'Temporarily disable your account',
+            onTap: () => _showDeactivateDialog(context, ref),
+            isDestructive: true,
+          ),
+          const SizedBox(height: 10),
+          // Delete Account
+          _buildSettingsItem(
+            icon: Icons.delete_forever_outlined,
+            title: 'Delete Account',
+            subtitle: 'Permanently delete all data',
+            onTap: () => _showDeleteAccountDialog(context, ref),
             isDestructive: true,
           ),
         ],
@@ -1114,7 +1147,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds the upgrade account settings item with special styling.
+  /// Builds the switch account type settings item with special styling.
   Widget _buildUpgradeSettingsItem({
     required BuildContext context,
     required AccountType currentType,
@@ -1150,7 +1183,7 @@ class ProfileScreen extends ConsumerWidget {
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
@@ -1166,7 +1199,7 @@ class ProfileScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Upgrade Account',
+                    'Switch Account Type',
                     style: AppTextStyles.labelLarge.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -1175,7 +1208,7 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Unlock ${nextTier.displayName} features',
+                    'Switch to ${nextTier.displayName} role',
                     style: AppTextStyles.bodySmall.copyWith(
                       fontSize: 13,
                       color: _ProfileColors.secondaryText,
@@ -1191,7 +1224,7 @@ class ProfileScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Upgrade',
+                'Switch',
                 style: AppTextStyles.labelSmall.copyWith(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -1339,6 +1372,165 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showDeactivateDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text('Deactivate Account'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Deactivating your account will:',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: _ProfileColors.secondaryText,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text('- Hide your profile from other users'),
+            const Text('- Pause all active projects'),
+            const SizedBox(height: 8),
+            Text(
+              'You can reactivate anytime by logging back in.',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: _ProfileColors.mutedText,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              try {
+                await ApiClient.post('/profiles/me/deactivate', {});
+                final repository = ref.read(profileRepositoryProvider);
+                await repository.logout();
+                if (context.mounted) {
+                  context.go('/login');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed: ${e.toString()}')),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF59E0B),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Deactivate'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+    final confirmController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text('Delete Account'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This action is permanent and irreversible. All your data will be deleted.',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: _ProfileColors.secondaryText,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Type DELETE to confirm',
+                style: AppTextStyles.labelMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: confirmController,
+                decoration: InputDecoration(
+                  hintText: 'DELETE',
+                  hintStyle: TextStyle(
+                    fontFamily: 'monospace',
+                    color: _ProfileColors.mutedText,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF5F5F5),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                style: const TextStyle(fontFamily: 'monospace'),
+                onChanged: (_) => setState(() {}),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: confirmController.text == 'DELETE'
+                  ? () async {
+                      Navigator.pop(dialogContext);
+                      try {
+                        await ApiClient.post('/profiles/me/delete', {});
+                        final repository =
+                            ref.read(profileRepositoryProvider);
+                        await repository.logout();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content:
+                                  Text('Account deletion request submitted'),
+                              backgroundColor: Color(0xFFF44336),
+                            ),
+                          );
+                          context.go('/login');
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('Failed: ${e.toString()}')),
+                          );
+                        }
+                      }
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Delete Account'),
+            ),
+          ],
+        ),
       ),
     );
   }

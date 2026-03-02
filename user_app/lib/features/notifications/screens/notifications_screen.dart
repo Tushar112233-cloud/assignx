@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-import '../../../core/config/supabase_config.dart';
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/notification_model.dart';
@@ -12,33 +12,30 @@ import '../../../shared/widgets/glass_container.dart';
 
 /// Provider for notifications list
 final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
-  final userId = SupabaseConfig.currentUser?.id;
-  if (userId == null) return [];
-
-  final response = await SupabaseConfig.client
-      .from('notifications')
-      .select()
-      .eq('profile_id', userId)
-      .order('created_at', ascending: false)
-      .limit(50);
-
-  return (response as List)
-      .map((json) => AppNotification.fromJson(json))
-      .toList();
+  try {
+    final response = await ApiClient.get('/notifications?limit=50');
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['notifications'] as List? ?? [];
+    return list
+        .map((json) => AppNotification.fromJson(json as Map<String, dynamic>))
+        .toList();
+  } catch (_) {
+    return [];
+  }
 });
 
 /// Provider for unread count
 final unreadNotificationsCountProvider = FutureProvider<int>((ref) async {
-  final userId = SupabaseConfig.currentUser?.id;
-  if (userId == null) return 0;
-
-  final response = await SupabaseConfig.client
-      .from('notifications')
-      .select('id')
-      .eq('profile_id', userId)
-      .eq('is_read', false);
-
-  return (response as List).length;
+  try {
+    final response = await ApiClient.get('/notifications/unread-count');
+    if (response is Map<String, dynamic>) {
+      return response['count'] as int? ?? 0;
+    }
+    return 0;
+  } catch (_) {
+    return 0;
+  }
 });
 
 /// Notifications screen showing all user notifications.
@@ -391,29 +388,22 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   }
 
   Future<void> _markAllAsRead(WidgetRef ref) async {
-    final userId = SupabaseConfig.currentUser?.id;
-    if (userId == null) return;
-
-    await SupabaseConfig.client
-        .from('notifications')
-        .update({
-          'is_read': true,
-          'read_at': DateTime.now().toIso8601String(),
-        })
-        .eq('profile_id', userId)
-        .eq('is_read', false);
-
+    try {
+      await ApiClient.put('/notifications/mark-all-read', {});
+    } catch (_) {
+      // Silently fail
+    }
     ref.invalidate(notificationsProvider);
     ref.invalidate(unreadNotificationsCountProvider);
   }
 
   /// Delete a notification
   Future<void> _deleteNotification(WidgetRef ref, String notificationId) async {
-    await SupabaseConfig.client
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
-
+    try {
+      await ApiClient.delete('/notifications/$notificationId');
+    } catch (_) {
+      // Silently fail
+    }
     ref.invalidate(notificationsProvider);
     ref.invalidate(unreadNotificationsCountProvider);
   }
@@ -425,14 +415,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   ) async {
     // Mark as read
     if (!notification.isRead) {
-      await SupabaseConfig.client
-          .from('notifications')
-          .update({
-            'is_read': true,
-            'read_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', notification.id);
-
+      try {
+        await ApiClient.put('/notifications/${notification.id}/read', {});
+      } catch (_) {
+        // Silently fail
+      }
       ref.invalidate(notificationsProvider);
       ref.invalidate(unreadNotificationsCountProvider);
     }

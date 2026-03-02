@@ -26,11 +26,12 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
   getOpenPoolTasks,
+  getAssignedTasks,
   acceptPoolTask,
   isDeadlineUrgent,
   type ProjectWithSupervisor,
 } from '@/services/project.service'
-import { createClient } from '@/lib/supabase/client'
+import { apiClient, getAccessToken } from '@/lib/api/client'
 import { useProjectSubscription, useNewProjectsSubscription } from '@/hooks/useProjectSubscription'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -440,7 +441,7 @@ export function DashboardClient() {
   const [activeTab, setActiveTab] = useState('assigned')
 
   /**
-   * Load tasks from Supabase.
+   * Load tasks from the API.
    */
   const loadTasks = useCallback(async (showRefresh = false) => {
     if (!authDoer?.id) {
@@ -451,30 +452,13 @@ export function DashboardClient() {
     else setIsLoading(true)
 
     try {
-      const supabase = createClient()
       // Fetch assigned tasks and pool tasks in parallel
-      const [assignedResult, poolData] = await Promise.all([
-        supabase
-          .from('projects')
-          .select(`
-            *,
-            supervisor:supervisors!projects_supervisor_id_fkey (
-              id,
-              profile:profiles!supervisors_profile_id_fkey (
-                full_name,
-                avatar_url
-              )
-            )
-          `)
-          .eq('doer_id', authDoer.id)
-          .in('status', ['assigned', 'in_progress', 'in_revision', 'revision_requested'])
-          .order('deadline', { ascending: true }),
+      const [assignedData, poolData] = await Promise.all([
+        getAssignedTasks(authDoer.id),
         getOpenPoolTasks(),
       ])
 
-      if (assignedResult.error) throw assignedResult.error
-
-      setAssignedTasks(((assignedResult.data || []) as ProjectWithSupervisor[]).map(transformProject))
+      setAssignedTasks((assignedData || []).map(transformProject))
       setPoolTasks(poolData.map(transformProject))
     } catch (error) {
       console.warn('[Dashboard] loadTasks FAILED:', error)

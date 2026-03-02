@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/client_model.dart';
 import '../providers/users_provider.dart';
 
@@ -42,15 +43,15 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search clients...',
+                decoration: InputDecoration(
+                  hintText: 'Search clients...'.tr(context),
                   border: InputBorder.none,
                 ),
                 onChanged: (query) {
                   ref.read(clientsProvider.notifier).search(query);
                 },
               )
-            : const Text('Clients'),
+            : Text('Clients'.tr(context)),
         actions: [
           IconButton(
             onPressed: () {
@@ -66,7 +67,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.sort),
-            tooltip: 'Sort',
+            tooltip: 'Sort'.tr(context),
             onSelected: (value) {
               switch (value) {
                 case 'name_asc':
@@ -84,21 +85,21 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'name_asc',
-                child: Text('Name (A-Z)'),
+                child: Text('Name (A-Z)'.tr(context)),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'name_desc',
-                child: Text('Name (Z-A)'),
+                child: Text('Name (Z-A)'.tr(context)),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'recent',
-                child: Text('Recently Active'),
+                child: Text('Recently Active'.tr(context)),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'projects',
-                child: Text('Most Projects'),
+                child: Text('Most Projects'.tr(context)),
               ),
             ],
           ),
@@ -303,13 +304,13 @@ class _ClientCard extends StatelessWidget {
                           children: [
                             _StatChip(
                               icon: Icons.folder_outlined,
-                              label: '${client.totalProjects} projects',
+                              label: '${client.totalProjects} ${'projects'.tr(context)}',
                             ),
                             const SizedBox(width: 12),
                             if (client.activeProjects > 0)
                               _StatChip(
                                 icon: Icons.play_circle_outline,
-                                label: '${client.activeProjects} active',
+                                label: '${client.activeProjects} ${'active'.tr(context)}',
                                 color: AppColors.success,
                               ),
                           ],
@@ -336,7 +337,7 @@ class _ClientCard extends StatelessWidget {
                         // TODO: Navigate to client projects
                       },
                       icon: const Icon(Icons.folder_open, size: 16),
-                      label: const Text('View Projects'),
+                      label: Text('View Projects'.tr(context)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.accent,
                         side: const BorderSide(color: AppColors.accent),
@@ -356,7 +357,7 @@ class _ClientCard extends StatelessWidget {
                         // TODO: Navigate to chat with client
                       },
                       icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                      label: const Text('Chat'),
+                      label: Text('Chat'.tr(context)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primary,
                         side: BorderSide(
@@ -465,7 +466,7 @@ class _UsersHeroSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Client Overview',
+                'Client Overview'.tr(context),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -476,9 +477,9 @@ class _UsersHeroSection extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _UsersHeroStat(label: 'Total Users', value: '$totalUsers'),
-              _UsersHeroStat(label: 'Active', value: '$activeUsers'),
-              _UsersHeroStat(label: 'New This Month', value: '$newThisMonth'),
+              _UsersHeroStat(label: 'Total Users'.tr(context), value: '$totalUsers'),
+              _UsersHeroStat(label: 'Active'.tr(context), value: '$activeUsers'),
+              _UsersHeroStat(label: 'New This Month'.tr(context), value: '$newThisMonth'),
             ],
           ),
         ],
@@ -541,13 +542,13 @@ class _StatsPills extends StatelessWidget {
           children: [
             _Pill(
               icon: Icons.verified,
-              label: '$verified Verified',
+              label: '$verified ${'Verified'.tr(context)}',
               color: AppColors.success,
             ),
             const SizedBox(width: 8),
             _Pill(
               icon: Icons.play_circle_fill,
-              label: '$withActiveProjects With Active',
+              label: '$withActiveProjects ${'With Active'.tr(context)}',
               color: AppColors.info,
             ),
             const SizedBox(width: 8),

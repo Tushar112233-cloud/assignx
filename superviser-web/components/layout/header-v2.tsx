@@ -27,7 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 import { LanguageSelector } from "@/components/language-selector"
 
 interface HeaderV2Props {
@@ -48,16 +48,10 @@ export function HeaderV2({
     const newValue = !isAvailable
     setIsAvailable(newValue)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setIsAvailable(!newValue)
-        return
-      }
-      await supabase
-        .from("supervisors")
-        .update({ is_available: newValue })
-        .eq("profile_id", user.id)
+      await apiFetch("/api/supervisors/me", {
+        method: "PUT",
+        body: JSON.stringify({ is_available: newValue }),
+      })
     } catch (err) {
       console.error("Failed to update availability:", err)
       setIsAvailable(!newValue)

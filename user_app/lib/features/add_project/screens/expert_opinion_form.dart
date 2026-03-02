@@ -89,7 +89,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
             ? _contextController.text.trim()
             : null,
         serviceType: ServiceType.expertOpinion,
-        subjectId: _subject?.id,
+        subjectId: _subject?.name,
         deadline: DateTime.now().add(const Duration(days: 3)),
         specificInstructions: 'Question: ${_questionController.text.trim()}\n'
             'Expertise Level: ${_expertiseLevel?.title ?? 'Not selected'}\n'

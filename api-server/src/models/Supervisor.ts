@@ -1,0 +1,70 @@
+import mongoose, { Schema, Document, Types } from 'mongoose';
+
+export interface ISupervisor extends Document {
+  profileId: Types.ObjectId;
+  qualification: string;
+  yearsOfExperience: number;
+  bio: string;
+  isActive: boolean;
+  isActivated: boolean;
+  isAvailable: boolean;
+  isApproved: boolean;
+  isAccessGranted: boolean;
+  totalEarnings: number;
+  totalProjectsCompleted: number;
+  averageRating: number;
+  totalReviews: number;
+  onTimeDeliveryRate: number;
+  successRate: number;
+  isFlagged: boolean;
+  flagReason: string;
+  activatedAt: Date;
+  bankDetails: {
+    accountName: string;
+    accountNumber: string;
+    ifscCode: string;
+    bankName: string;
+    upiId: string;
+    verified: boolean;
+  };
+  blacklistedDoers: Array<{ id: string; reason: string; addedAt: Date }>;
+  expertise: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const supervisorSchema = new Schema<ISupervisor>(
+  {
+    profileId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true, unique: true },
+    qualification: { type: String },
+    yearsOfExperience: { type: Number, default: 0 },
+    bio: { type: String, default: '' },
+    isActive: { type: Boolean, default: true },
+    isActivated: { type: Boolean, default: false },
+    isAvailable: { type: Boolean, default: true },
+    isApproved: { type: Boolean, default: false },
+    isAccessGranted: { type: Boolean, default: false },
+    totalEarnings: { type: Number, default: 0 },
+    totalProjectsCompleted: { type: Number, default: 0 },
+    averageRating: { type: Number, default: 0 },
+    totalReviews: { type: Number, default: 0 },
+    onTimeDeliveryRate: { type: Number, default: 0 },
+    successRate: { type: Number, default: 0 },
+    isFlagged: { type: Boolean, default: false },
+    flagReason: { type: String, default: '' },
+    activatedAt: { type: Date },
+    blacklistedDoers: { type: [{ id: String, reason: String, addedAt: Date }], default: [] },
+    expertise: { type: [String], default: [] },
+    bankDetails: {
+      accountName: { type: String, default: '' },
+      accountNumber: { type: String, default: '' },
+      ifscCode: { type: String, default: '' },
+      bankName: { type: String, default: '' },
+      upiId: { type: String, default: '' },
+      verified: { type: Boolean, default: false },
+    },
+  },
+  { timestamps: true }
+);
+
+export const Supervisor = mongoose.model<ISupervisor>('Supervisor', supervisorSchema, 'supervisors');

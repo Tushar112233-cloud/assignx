@@ -8,14 +8,14 @@ class WalletModel {
   final String id;
   final String profileId;
   final double balance;
-  final double pendingBalance;
-  final double totalEarned;
+  final double lockedAmount;
+  final double totalCredited;
   final double totalWithdrawn;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
-  /// Available balance for withdrawal (balance - pendingBalance).
-  double get availableBalance => balance - pendingBalance;
+  /// Available balance for withdrawal (balance - lockedAmount).
+  double get availableBalance => balance - lockedAmount;
 
   /// Formatted balance string.
   String get formattedBalance => '₹${balance.toStringAsFixed(2)}';
@@ -23,35 +23,47 @@ class WalletModel {
   /// Formatted available balance string.
   String get formattedAvailable => '₹${availableBalance.toStringAsFixed(2)}';
 
-  /// Formatted pending balance string.
-  String get formattedPending => '₹${pendingBalance.toStringAsFixed(2)}';
+  /// Formatted locked amount string.
+  String get formattedLocked => '₹${lockedAmount.toStringAsFixed(2)}';
 
-  /// Formatted total earnings string.
-  String get formattedTotalEarned => '₹${totalEarned.toStringAsFixed(0)}';
+  /// Formatted total credited string.
+  String get formattedTotalCredited => '₹${totalCredited.toStringAsFixed(0)}';
 
   const WalletModel({
     required this.id,
     required this.profileId,
     this.balance = 0.0,
-    this.pendingBalance = 0.0,
-    this.totalEarned = 0.0,
+    this.lockedAmount = 0.0,
+    this.totalCredited = 0.0,
     this.totalWithdrawn = 0.0,
     required this.createdAt,
     this.updatedAt,
   });
 
   factory WalletModel.fromJson(Map<String, dynamic> json) {
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Handle profileId which may be a populated Mongoose object.
+    String profileId = '';
+    final rawProfileId = json['profile_id'] ?? json['profileId'];
+    if (rawProfileId is String) {
+      profileId = rawProfileId;
+    } else if (rawProfileId is Map<String, dynamic>) {
+      profileId = (rawProfileId['_id'] ?? rawProfileId['id'] ?? '').toString();
+    }
+
     return WalletModel(
-      id: json['id'] as String,
-      profileId: json['profile_id'] as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      profileId: profileId,
       balance: (json['balance'] as num?)?.toDouble() ?? 0.0,
-      pendingBalance: (json['pending_balance'] as num?)?.toDouble() ?? 0.0,
-      totalEarned: (json['total_earned'] as num?)?.toDouble() ?? 0.0,
-      totalWithdrawn: (json['total_withdrawn'] as num?)?.toDouble() ?? 0.0,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      lockedAmount: ((json['locked_amount'] ?? json['lockedAmount']) as num?)?.toDouble() ?? 0.0,
+      totalCredited: ((json['total_credited'] ?? json['totalCredited']) as num?)?.toDouble() ?? 0.0,
+      totalWithdrawn: ((json['total_withdrawn'] ?? json['totalWithdrawn']) as num?)?.toDouble() ?? 0.0,
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDate(json['updated_at'] ?? json['updatedAt']),
     );
   }
 }
@@ -97,20 +109,20 @@ class WalletTransaction {
 
   factory WalletTransaction.fromJson(Map<String, dynamic> json) {
     return WalletTransaction(
-      id: json['id'] as String,
-      walletId: json['wallet_id'] as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      walletId: (json['wallet_id'] ?? json['walletId'] ?? '').toString(),
       transactionType: TransactionType.fromString(
-        json['transaction_type'] as String? ?? 'credit',
+        (json['transaction_type'] ?? json['transactionType'] ?? 'credit').toString(),
       ),
       amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
-      balanceBefore: (json['balance_before'] as num?)?.toDouble() ?? 0.0,
-      balanceAfter: (json['balance_after'] as num?)?.toDouble() ?? 0.0,
-      referenceType: json['reference_type'] as String?,
-      referenceId: json['reference_id'] as String?,
+      balanceBefore: ((json['balance_before'] ?? json['balanceBefore']) as num?)?.toDouble() ?? 0.0,
+      balanceAfter: ((json['balance_after'] ?? json['balanceAfter']) as num?)?.toDouble() ?? 0.0,
+      referenceType: json['reference_type'] as String? ?? json['referenceType'] as String?,
+      referenceId: json['reference_id'] as String? ?? json['referenceId'] as String?,
       description: json['description'] as String?,
       notes: json['notes'] as String?,
       status: json['status'] as String? ?? 'completed',
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 }
@@ -154,23 +166,24 @@ class EarningsRecord {
   });
 
   factory EarningsRecord.fromJson(Map<String, dynamic> json) {
-    // Handle nested project
+    // Handle nested project (may be a populated Mongoose object).
     String? projectTitle;
     String? projectNumber;
     String? projectId;
-    if (json['project'] != null && json['project'] is Map) {
-      projectTitle = json['project']['title'] as String?;
-      projectNumber = json['project']['project_number'] as String?;
-      projectId = json['project']['id'] as String?;
+    final project = json['project'];
+    if (project != null && project is Map) {
+      projectTitle = project['title'] as String?;
+      projectNumber = (project['project_number'] ?? project['projectNumber']) as String?;
+      projectId = (project['_id'] ?? project['id'])?.toString();
     }
 
     return EarningsRecord(
-      id: json['id'] as String,
-      projectId: projectId ?? json['reference_id'] as String?,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      projectId: projectId ?? (json['reference_id'] ?? json['referenceId']) as String?,
       projectTitle: projectTitle,
       projectNumber: projectNumber,
       amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
-      earnedAt: DateTime.parse(json['created_at'] as String),
+      earnedAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 }
@@ -202,18 +215,22 @@ class WithdrawalRequest {
   });
 
   factory WithdrawalRequest.fromJson(Map<String, dynamic> json) {
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
     return WithdrawalRequest(
-      id: json['id'] as String,
-      walletId: json['wallet_id'] as String,
-      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
-      withdrawalMethod: json['withdrawal_method'] as String? ?? 'bank_transfer',
-      status: WithdrawalStatus.fromString(json['status'] as String? ?? 'pending'),
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      walletId: (json['profile_id'] ?? json['profileId'] ?? json['wallet_id'] ?? json['walletId'] ?? '').toString(),
+      amount: ((json['requested_amount'] ?? json['requestedAmount']) as num?)?.toDouble() ??
+              (json['amount'] as num?)?.toDouble() ?? 0.0,
+      withdrawalMethod: (json['withdrawal_method'] ?? json['withdrawalMethod'] ?? 'bank_transfer').toString(),
+      status: WithdrawalStatus.fromString((json['status'] ?? 'pending').toString()),
       notes: json['notes'] as String?,
-      rejectionReason: json['rejection_reason'] as String?,
-      requestedAt: DateTime.parse(json['requested_at'] as String),
-      processedAt: json['processed_at'] != null
-          ? DateTime.parse(json['processed_at'] as String)
-          : null,
+      rejectionReason: json['rejection_reason'] as String? ?? json['rejectionReason'] as String?,
+      requestedAt: _parseDate(json['created_at'] ?? json['createdAt'] ?? json['requested_at'] ?? json['requestedAt']) ?? DateTime.now(),
+      processedAt: _parseDate(json['processed_at'] ?? json['processedAt']),
     );
   }
 }
@@ -276,9 +293,9 @@ class MonthlySummary {
 
   factory MonthlySummary.fromJson(Map<String, dynamic> json) {
     return MonthlySummary(
-      month: DateTime.parse(json['month'] as String),
-      totalEarnings: (json['total_earnings'] as num?)?.toDouble() ?? 0.0,
-      projectCount: json['project_count'] as int? ?? 0,
+      month: DateTime.tryParse((json['month'] ?? '').toString()) ?? DateTime.now(),
+      totalEarnings: ((json['total_earnings'] ?? json['totalEarnings']) as num?)?.toDouble() ?? 0.0,
+      projectCount: (json['project_count'] ?? json['projectCount']) as int? ?? 0,
     );
   }
 }

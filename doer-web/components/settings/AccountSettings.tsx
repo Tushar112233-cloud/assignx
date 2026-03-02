@@ -2,20 +2,23 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { User, Mail, Phone, Globe, Save } from 'lucide-react'
+import { User, Mail, Phone, Globe, Save, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { apiClient } from '@/lib/api/client'
 import { toast } from 'sonner'
 
 type AccountSettingsProps = {
   profile: any
+  userId: string
 }
 
 /**
  * AccountSettings - Edit account information
+ * Persists changes to the profiles table via the Express API
  */
-export function AccountSettings({ profile }: AccountSettingsProps) {
+export function AccountSettings({ profile, userId }: AccountSettingsProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     fullName: profile?.full_name || '',
@@ -24,15 +27,30 @@ export function AccountSettings({ profile }: AccountSettingsProps) {
     location: profile?.location || '',
   })
 
+  /**
+   * Save account settings to profiles table
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!userId) {
+      toast.error('User session not found. Please reload the page.')
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      // TODO: Implement actual save logic
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await apiClient('/api/profiles/me', {
+        method: 'PUT',
+        body: JSON.stringify({
+          full_name: formData.fullName || null,
+          phone: formData.phone || null,
+        }),
+      })
+
       toast.success('Account settings saved successfully')
-    } catch (error) {
+    } catch {
       toast.error('Failed to save settings')
     } finally {
       setIsLoading(false)
@@ -72,7 +90,7 @@ export function AccountSettings({ profile }: AccountSettingsProps) {
             </div>
           </div>
 
-          {/* Email */}
+          {/* Email (read-only, managed by auth) */}
           <div className="space-y-3">
             <Label htmlFor="email" className="text-sm font-medium text-slate-700">
               Email Address
@@ -83,11 +101,12 @@ export function AccountSettings({ profile }: AccountSettingsProps) {
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="h-12 rounded-2xl border-slate-200/80 bg-white pl-12 text-slate-900 shadow-sm transition focus:border-[#5A7CFF] focus:ring-4 focus:ring-[#E7ECFF]"
+                disabled
+                className="h-12 rounded-2xl border-slate-200/80 bg-slate-50 pl-12 text-slate-500 shadow-sm cursor-not-allowed"
                 placeholder="your.email@example.com"
               />
             </div>
+            <p className="text-xs text-slate-400">Email is managed through authentication and cannot be changed here.</p>
           </div>
 
           {/* Phone */}
@@ -103,24 +122,7 @@ export function AccountSettings({ profile }: AccountSettingsProps) {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="h-12 rounded-2xl border-slate-200/80 bg-white pl-12 text-slate-900 shadow-sm transition focus:border-[#5A7CFF] focus:ring-4 focus:ring-[#E7ECFF]"
-                placeholder="+1 (555) 000-0000"
-              />
-            </div>
-          </div>
-
-          {/* Location */}
-          <div className="space-y-3">
-            <Label htmlFor="location" className="text-sm font-medium text-slate-700">
-              Location
-            </Label>
-            <div className="relative">
-              <Globe className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="h-12 rounded-2xl border-slate-200/80 bg-white pl-12 text-slate-900 shadow-sm transition focus:border-[#5A7CFF] focus:ring-4 focus:ring-[#E7ECFF]"
-                placeholder="City, Country"
+                placeholder="+91 XXXXX XXXXX"
               />
             </div>
           </div>
@@ -132,8 +134,17 @@ export function AccountSettings({ profile }: AccountSettingsProps) {
               disabled={isLoading}
               className="h-12 rounded-2xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] px-8 text-white shadow-[0_12px_28px_rgba(90,124,255,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_35px_rgba(90,124,255,0.45)]"
             >
-              <Save className="mr-2 h-5 w-5" />
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-5 w-5" />
+                  Save Changes
+                </>
+              )}
             </Button>
           </div>
         </form>

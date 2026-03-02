@@ -1,5 +1,6 @@
 /**
  * @fileoverview Custom hooks for notifications management.
+ * Uses Express API + Socket.IO instead of Supabase.
  * @module hooks/use-notifications
  */
 
@@ -7,7 +8,9 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { toast } from "sonner"
-import { createClient, getAuthUser } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
+import { getStoredUser } from "@/lib/api/auth"
+import { getSocket } from "@/lib/socket/client"
 import type { Notification, NotificationType } from "@/types/database"
 
 interface UseNotificationsOptions {
@@ -35,53 +38,29 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
   const [error, setError] = useState<Error | null>(null)
 
   const fetchNotifications = useCallback(async () => {
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
       setError(null)
 
-      const user = await getAuthUser()
-      if (!user) throw new Error("Not authenticated")
+      const params = new URLSearchParams()
+      params.set("role", "supervisor")
+      params.set("limit", String(limit))
 
-      // Build query - match only supervisor-specific notifications
-      let query = supabase
-        .from("notifications")
-        .select("*")
-        .eq("profile_id", user.id)
-        .eq("target_role", "supervisor")
-        .order("created_at", { ascending: false })
-        .limit(limit)
-
-      // Filter by type
       if (type) {
-        if (Array.isArray(type)) {
-          query = query.in("type", type)
-        } else {
-          query = query.eq("type", type)
-        }
+        const types = Array.isArray(type) ? type.join(",") : type
+        params.set("type", types)
       }
-
-      // Filter by read status
       if (isRead !== undefined) {
-        query = query.eq("is_read", isRead)
+        params.set("isRead", String(isRead))
       }
 
-      const { data, error: queryError } = await query
+      const data = await apiFetch<{
+        notifications: Notification[]
+        unreadCount: number
+      }>(`/api/notifications?${params.toString()}`)
 
-      if (queryError) throw queryError
-
-      setNotifications(data || [])
-
-      // Get unread count
-      const { count } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("profile_id", user.id)
-        .eq("target_role", "supervisor")
-        .eq("is_read", false)
-
-      setUnreadCount(count || 0)
+      setNotifications(data.notifications || [])
+      setUnreadCount(data.unreadCount || 0)
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch notifications"))
     } finally {
@@ -90,14 +69,9 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
   }, [type, isRead, limit])
 
   const markAsRead = useCallback(async (notificationId: string) => {
-    const supabase = createClient()
-
-    const { error: updateError } = await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("id", notificationId)
-
-    if (updateError) throw updateError
+    await apiFetch(`/api/notifications/${notificationId}/read`, {
+      method: "PUT",
+    })
 
     setNotifications(prev =>
       prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
@@ -106,34 +80,21 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
   }, [])
 
   const markAllAsRead = useCallback(async () => {
-    const supabase = createClient()
-    const user = await getAuthUser()
-    if (!user) return
-
-    const { error: updateError } = await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("profile_id", user.id)
-      .eq("target_role", "supervisor")
-      .eq("is_read", false)
-
-    if (updateError) throw updateError
+    await apiFetch("/api/notifications/read-all", {
+      method: "PUT",
+      body: JSON.stringify({ role: "supervisor" }),
+    })
 
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
     setUnreadCount(0)
   }, [])
 
   const deleteNotification = useCallback(async (notificationId: string) => {
-    const supabase = createClient()
-
     const notification = notifications.find(n => n.id === notificationId)
 
-    const { error: deleteError } = await supabase
-      .from("notifications")
-      .delete()
-      .eq("id", notificationId)
-
-    if (deleteError) throw deleteError
+    await apiFetch(`/api/notifications/${notificationId}`, {
+      method: "DELETE",
+    })
 
     setNotifications(prev => prev.filter(n => n.id !== notificationId))
     if (notification && !notification.is_read) {
@@ -145,69 +106,42 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
     fetchNotifications()
   }, [fetchNotifications])
 
-  // Real-time subscription for new and updated notifications
+  // Real-time via Socket.IO
   useEffect(() => {
-    const supabase = createClient()
-    let channel: ReturnType<typeof supabase.channel> | null = null
-    let cancelled = false
+    const user = getStoredUser()
+    if (!user) return
 
-    const setupSubscription = async () => {
-      const user = await getAuthUser()
-      if (!user || cancelled) return
+    try {
+      const socket = getSocket()
 
-      channel = supabase
-        .channel(`supervisor_notifications_${user.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "notifications",
-            filter: `profile_id=eq.${user.id}`,
-          },
-          (payload) => {
-            const newNotification = payload.new as Notification & { target_role?: string }
+      const handleNew = (newNotification: Notification & { target_role?: string }) => {
+        if (newNotification.target_role && newNotification.target_role !== "supervisor") return
 
-            // Only handle supervisor-platform notifications
-            if (newNotification.target_role && newNotification.target_role !== "supervisor") return
+        setNotifications(prev => [newNotification, ...prev])
+        setUnreadCount(prev => prev + 1)
 
-            setNotifications(prev => [newNotification, ...prev])
-            setUnreadCount(prev => prev + 1)
-
-            // Show toast for new notification
-            toast(newNotification.title, {
-              description: (newNotification as any).message || newNotification.body || undefined,
-            })
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "notifications",
-            filter: `profile_id=eq.${user.id}`,
-          },
-          (payload) => {
-            const updated = payload.new as Notification
-            setNotifications(prev => {
-              const newList = prev.map(n => n.id === updated.id ? updated : n)
-              // Recalculate unread count in single pass
-              setUnreadCount(newList.filter(n => !n.is_read).length)
-              return newList
-            })
-          }
-        )
-        .subscribe()
-    }
-
-    setupSubscription().catch(() => {})
-
-    return () => {
-      cancelled = true
-      if (channel) {
-        supabase.removeChannel(channel)
+        toast(newNotification.title, {
+          description: (newNotification as Notification & { message?: string }).message || newNotification.body || undefined,
+        })
       }
+
+      const handleUpdate = (updated: Notification) => {
+        setNotifications(prev => {
+          const newList = prev.map(n => n.id === updated.id ? updated : n)
+          setUnreadCount(newList.filter(n => !n.is_read).length)
+          return newList
+        })
+      }
+
+      socket.on(`notification:${user.id}`, handleNew)
+      socket.on(`notification:update:${user.id}`, handleUpdate)
+
+      return () => {
+        socket.off(`notification:${user.id}`, handleNew)
+        socket.off(`notification:update:${user.id}`, handleUpdate)
+      }
+    } catch {
+      return undefined
     }
   }, [])
 

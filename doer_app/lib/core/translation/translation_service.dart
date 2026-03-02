@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:google_mlkit_translation/google_mlkit_translation.dart';
+import 'mlkit_stub.dart';
 
 /// Singleton service managing ML Kit on-device translation.
 ///

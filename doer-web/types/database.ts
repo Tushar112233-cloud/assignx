@@ -100,7 +100,7 @@ import type { ProjectStatus, QCStatus } from './project.types'
 import type { ChatRoomType, MessageType, NotificationType } from './chat.types'
 
 /**
- * Database schema type for Supabase
+ * Database schema types
  * Defines table structures for type-safe queries
  */
 export interface Database {
@@ -178,7 +178,7 @@ export interface Database {
       }
       project_deliverables: {
         Row: ProjectDeliverable
-        Insert: Omit<ProjectDeliverable, 'id' | 'submitted_at'>
+        Insert: Omit<ProjectDeliverable, 'id' | 'created_at'>
         Update: Partial<Omit<ProjectDeliverable, 'id'>>
       }
       project_revisions: {

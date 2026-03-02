@@ -10,7 +10,6 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/network/supabase_client.dart';
 import '../../data/models/request_model.dart';
 import '../../data/models/doer_model.dart';
 import '../../data/models/quote_model.dart';
@@ -614,10 +613,10 @@ class QuoteFormNotifier extends StateNotifier<QuoteFormState> {
 
 /// Provider for the [DashboardRepository] instance.
 ///
-/// Provides a singleton repository that uses the global Supabase client.
+/// Provides a singleton repository that calls the Express API.
 /// Use this to access the repository directly if needed.
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
-  return DashboardRepository(ref.watch(supabaseClientProvider));
+  return DashboardRepository();
 });
 
 /// Provider for the main dashboard state.

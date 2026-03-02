@@ -27,20 +27,21 @@ class AssignedTaskCard extends StatelessWidget {
     final urgencyLabel = _getUrgencyLabel(context);
 
     return Card(
-      elevation: 2,
+      elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         side: project.hasRevision
             ? const BorderSide(color: AppColors.error, width: 1.5)
             : BorderSide(
-                color: urgencyColor.withValues(alpha: 0.3),
+                color: urgencyColor.withValues(alpha: 0.2),
                 width: 1,
               ),
       ),
+      shadowColor: Colors.black.withValues(alpha: 0.08),
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppSpacing.borderRadiusMd,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -49,10 +50,15 @@ class AssignedTaskCard extends StatelessWidget {
               width: double.infinity,
               height: 4,
               decoration: BoxDecoration(
-                color: urgencyColor,
+                gradient: LinearGradient(
+                  colors: [
+                    urgencyColor,
+                    urgencyColor.withValues(alpha: 0.6),
+                  ],
+                ),
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(AppSpacing.radiusMd),
-                  topRight: Radius.circular(AppSpacing.radiusMd),
+                  topLeft: Radius.circular(AppSpacing.radiusLg),
+                  topRight: Radius.circular(AppSpacing.radiusLg),
                 ),
               ),
             ),

@@ -14,11 +14,13 @@ import { getSupportTickets } from "@/lib/actions/data";
 type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
 
 /**
- * Support ticket interface matching Supabase schema
+ * Support ticket interface matching API schema
  */
 interface SupportTicket {
   id: string;
+  _id?: string;
   ticket_number: string;
+  ticketNumber?: string;
   requester_id: string;
   assigned_to: string | null;
   subject: string;
@@ -31,6 +33,8 @@ interface SupportTicket {
   closed_at: string | null;
   created_at: string;
   updated_at: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
@@ -70,7 +74,7 @@ function getStatusBadge(status: TicketStatus): "default" | "secondary" | "outlin
 
 /**
  * Ticket history section showing past support tickets
- * Fetches tickets from Supabase
+ * Fetches tickets from API
  */
 export function TicketHistory() {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -111,7 +115,7 @@ export function TicketHistory() {
           <div className="space-y-4">
             {tickets.map((ticket) => (
               <div
-                key={ticket.id}
+                key={ticket._id || ticket.id}
                 className="flex items-start justify-between gap-4 p-4 rounded-lg border"
               >
                 <div className="flex items-start gap-3">
@@ -120,12 +124,12 @@ export function TicketHistory() {
                     <p className="font-medium">{ticket.subject}</p>
                     <p className="text-sm text-muted-foreground">
                       {ticket.category || "General"} • Updated{" "}
-                      {formatDistanceToNow(new Date(ticket.updated_at), {
+                      {formatDistanceToNow(new Date(ticket.updatedAt || ticket.updated_at || ticket.createdAt || ticket.created_at), {
                         addSuffix: true,
                       })}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      #{ticket.ticket_number}
+                      #{ticket.ticketNumber || ticket.ticket_number}
                     </p>
                   </div>
                 </div>

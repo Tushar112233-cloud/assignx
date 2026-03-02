@@ -17,8 +17,9 @@ dependencies:
   # Navigation
   go_router: ^13.0.0
 
-  # Supabase
-  supabase_flutter: ^2.3.0
+  # HTTP & Real-time
+  http: ^1.2.1
+  socket_io_client: ^3.0.2
 
   # UI Components
   flutter_svg: ^2.0.9
@@ -30,7 +31,7 @@ dependencies:
   reactive_forms: ^16.1.1
 
   # Translation
-  google_mlkit_translation: ^0.13.0
+  # google_mlkit_translation: ^0.13.0  # Disabled - vendored frameworks don't support arm64 simulator on Xcode 26
 
   # Local Storage
   shared_preferences: ^2.2.2

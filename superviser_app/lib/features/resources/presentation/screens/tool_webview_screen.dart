@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../core/services/external_actions_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// WebView screen for external tools.
 ///
@@ -87,23 +88,23 @@ class _ToolWebViewScreenState extends State<ToolWebViewScreen> {
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'open_browser',
                 child: Row(
                   children: [
-                    Icon(Icons.open_in_browser, size: 20),
-                    SizedBox(width: 12),
-                    Text('Open in Browser'),
+                    const Icon(Icons.open_in_browser, size: 20),
+                    const SizedBox(width: 12),
+                    Text('Open in Browser'.tr(context)),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'copy_url',
                 child: Row(
                   children: [
-                    Icon(Icons.copy, size: 20),
-                    SizedBox(width: 12),
-                    Text('Copy URL'),
+                    const Icon(Icons.copy, size: 20),
+                    const SizedBox(width: 12),
+                    Text('Copy URL'.tr(context)),
                   ],
                 ),
               ),
@@ -200,7 +201,7 @@ class _ErrorView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Failed to Load',
+              'Failed to Load'.tr(context),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -217,7 +218,7 @@ class _ErrorView extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text('Retry'.tr(context)),
             ),
           ],
         ),

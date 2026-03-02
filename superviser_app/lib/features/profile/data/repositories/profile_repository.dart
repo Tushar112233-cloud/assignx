@@ -1,32 +1,21 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/network/supabase_client.dart';
+import '../../../../core/api/api_client.dart';
 import '../models/profile_model.dart';
 import '../models/review_model.dart';
 
 /// Repository for profile and review operations.
 class ProfileRepository {
-  ProfileRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
-
-  final SupabaseClient _client;
+  ProfileRepository();
 
   // ==================== PROFILE ====================
 
   /// Get current user's profile.
   Future<SupervisorProfile?> getProfile() async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) return null;
-
-      final response = await _client
-          .from('supervisor_profiles')
-          .select()
-          .eq('user_id', userId)
-          .single();
-
-      return SupervisorProfile.fromJson(response);
+      final response = await ApiClient.get('/supervisor/profile');
+      if (response == null) return null;
+      return SupervisorProfile.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ProfileRepository.getProfile error: $e');
@@ -38,14 +27,12 @@ class ProfileRepository {
   /// Update profile.
   Future<SupervisorProfile?> updateProfile(SupervisorProfile profile) async {
     try {
-      final response = await _client
-          .from('supervisor_profiles')
-          .update(profile.toJson())
-          .eq('id', profile.id)
-          .select()
-          .single();
-
-      return SupervisorProfile.fromJson(response);
+      final response = await ApiClient.put(
+        '/supervisor/profile',
+        profile.toJson(),
+      );
+      if (response == null) return null;
+      return SupervisorProfile.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ProfileRepository.updateProfile error: $e');
@@ -57,20 +44,13 @@ class ProfileRepository {
   /// Upload avatar image.
   Future<String?> uploadAvatar(File imageFile) async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) return null;
-
-      final fileName = 'avatar_$userId.jpg';
-      final path = 'avatars/$fileName';
-
-      await _client.storage.from('profiles').upload(
-            path,
-            imageFile,
-            fileOptions: const FileOptions(upsert: true),
-          );
-
-      final url = _client.storage.from('profiles').getPublicUrl(path);
-      return url;
+      final response = await ApiClient.uploadFile(
+        '/uploads/avatar',
+        imageFile,
+        fieldName: 'avatar',
+      );
+      if (response == null) return null;
+      return (response as Map<String, dynamic>)['url'] as String?;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ProfileRepository.uploadAvatar error: $e');
@@ -82,13 +62,9 @@ class ProfileRepository {
   /// Update availability status.
   Future<bool> updateAvailability(bool isAvailable) async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) return false;
-
-      await _client
-          .from('supervisor_profiles')
-          .update({'is_available': isAvailable}).eq('user_id', userId);
-
+      await ApiClient.put('/supervisor/profile/availability', {
+        'is_available': isAvailable,
+      });
       return true;
     } catch (e) {
       if (kDebugMode) {
@@ -107,27 +83,25 @@ class ProfileRepository {
     ReviewFilter? filter,
   }) async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) return [];
-
-      var query = _client
-          .from('reviews')
-          .select()
-          .eq('supervisor_id', userId);
-
+      final params = <String, String>{
+        'limit': '$limit',
+        'offset': '$offset',
+      };
       if (filter?.minRating != null) {
-        query = query.gte('rating', filter!.minRating!);
+        params['minRating'] = '${filter!.minRating}';
       }
       if (filter?.maxRating != null) {
-        query = query.lte('rating', filter!.maxRating!);
+        params['maxRating'] = '${filter!.maxRating}';
       }
+      final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
 
-      final response = await query
-          .order('created_at', ascending: false)
-          .range(offset, offset + limit - 1);
+      final response = await ApiClient.get('/supervisor/reviews?$query');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['reviews'] as List? ?? [];
 
-      return (response as List)
-          .map((json) => ReviewModel.fromJson(json))
+      return list
+          .map((json) => ReviewModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       if (kDebugMode) {
@@ -140,16 +114,18 @@ class ProfileRepository {
   /// Get reviews summary.
   Future<ReviewsSummary> getReviewsSummary() async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) {
-        throw Exception('User not authenticated');
+      final response = await ApiClient.get('/supervisor/reviews/summary');
+
+      if (response == null) {
+        return const ReviewsSummary(
+          averageRating: 0,
+          totalReviews: 0,
+          ratingDistribution: {},
+        );
       }
 
-      final response = await _client.rpc('get_reviews_summary', params: {
-        'supervisor_id': userId,
-      });
-
-      return ReviewsSummary.fromJson(response);
+      final data = response as Map<String, dynamic>;
+      return ReviewsSummary.fromJson(data);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ProfileRepository.getReviewsSummary error: $e');
@@ -160,19 +136,8 @@ class ProfileRepository {
 
   /// Respond to a review.
   Future<bool> respondToReview(String reviewId, String response) async {
-    try {
-      await _client.from('reviews').update({
-        'response': response,
-        'responded_at': DateTime.now().toIso8601String(),
-      }).eq('id', reviewId);
-
-      return true;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('ProfileRepository.respondToReview error: $e');
-      }
-      rethrow;
-    }
+    // Response functionality not yet supported
+    return false;
   }
 
   // ==================== DOER BLACKLIST ====================
@@ -180,23 +145,14 @@ class ProfileRepository {
   /// Get blacklisted doers.
   Future<List<DoerInfo>> getBlacklistedDoers() async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) return [];
+      final response = await ApiClient.get('/supervisor/blacklist');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['doers'] as List? ?? [];
 
-      final response = await _client
-          .from('doer_blacklist')
-          .select('doers(*)')
-          .eq('supervisor_id', userId);
-
-      return (response as List).map((json) {
-        final doerJson = json['doers'] as Map<String, dynamic>;
-        return DoerInfo.fromJson({
-          ...doerJson,
-          'is_blacklisted': true,
-          'blacklist_reason': json['reason'],
-          'blacklisted_at': json['created_at'],
-        });
-      }).toList();
+      return list
+          .map((json) => DoerInfo.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ProfileRepository.getBlacklistedDoers error: $e');
@@ -208,15 +164,10 @@ class ProfileRepository {
   /// Add doer to blacklist.
   Future<bool> blacklistDoer(String doerId, String reason) async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) return false;
-
-      await _client.from('doer_blacklist').insert({
-        'supervisor_id': userId,
+      await ApiClient.post('/supervisor/blacklist', {
         'doer_id': doerId,
         'reason': reason,
       });
-
       return true;
     } catch (e) {
       if (kDebugMode) {
@@ -229,15 +180,7 @@ class ProfileRepository {
   /// Remove doer from blacklist.
   Future<bool> unblacklistDoer(String doerId) async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) return false;
-
-      await _client
-          .from('doer_blacklist')
-          .delete()
-          .eq('supervisor_id', userId)
-          .eq('doer_id', doerId);
-
+      await ApiClient.delete('/supervisor/blacklist/$doerId');
       return true;
     } catch (e) {
       if (kDebugMode) {
@@ -246,5 +189,4 @@ class ProfileRepository {
       rethrow;
     }
   }
-
 }

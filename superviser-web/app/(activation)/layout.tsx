@@ -4,59 +4,58 @@
  */
 
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 
-interface SupervisorStatus {
-  id: string
-  status: "pending" | "in_review" | "active" | "rejected" | "suspended" | null
-}
-
-interface ActivationStatus {
-  training_completed: boolean
-  quiz_passed: boolean
-  is_activated: boolean
-}
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
 
 export default async function ActivationLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  const cookieStore = await cookies()
+  const token = cookieStore.get("supervisor_token")?.value
 
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
+  if (!token) {
     redirect("/login")
   }
 
-  // Check supervisor status
+  // Validate token and check supervisor status
   try {
-    const { data: supervisorData } = await supabase
-      .from("supervisors")
-      .select("id, status")
-      .eq("profile_id", user.id)
-      .single()
+    const authRes = await fetch(`${API_BASE}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
 
-    const supervisor = supervisorData as SupervisorStatus | null
+    if (!authRes.ok) {
+      redirect("/login")
+    }
 
-    if (!supervisor || supervisor.status !== "active") {
+    // Check supervisor status
+    const supervisorRes = await fetch(`${API_BASE}/api/supervisors/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (!supervisorRes.ok) {
       // Supervisor not approved yet
       redirect("/training")
     }
 
-    // Check activation status - use the supervisor's id, not user.id
-    const { data } = await supabase
-      .from("supervisor_activation")
-      .select("training_completed, quiz_passed, is_activated")
-      .eq("supervisor_id", supervisor.id)
-      .single()
+    const supervisor = await supervisorRes.json()
 
-    const activation = data as ActivationStatus | null
+    if (!supervisor || supervisor.status !== "active") {
+      redirect("/training")
+    }
 
-    if (activation?.is_activated) {
-      // Already activated, go to dashboard
-      redirect("/dashboard")
+    // Check activation status
+    const activationRes = await fetch(`${API_BASE}/api/supervisors/me/activation`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (activationRes.ok) {
+      const activation = await activationRes.json()
+      if (activation?.is_activated) {
+        redirect("/dashboard")
+      }
     }
   } catch {
     // No activation record yet, continue to activation flow

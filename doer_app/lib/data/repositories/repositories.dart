@@ -100,7 +100,7 @@
 /// See also:
 /// - `lib/providers/` for state management using repositories
 /// - `lib/data/mock/` for mock data during development
-/// - `lib/core/config/supabase_config.dart` for Supabase setup
+/// - `lib/core/api/api_client.dart` for API setup
 library;
 
 export 'auth_repository.dart';

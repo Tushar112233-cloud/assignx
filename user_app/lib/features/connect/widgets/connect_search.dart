@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/connect_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -130,7 +131,7 @@ class _ConnectSearchBarState extends ConsumerState<ConnectSearchBar> {
                           focusNode: _focusNode,
                           style: AppTextStyles.bodyMedium,
                           decoration: InputDecoration(
-                            hintText: 'Search tutors, groups, resources...',
+                            hintText: 'Search tutors, groups, resources...'.tr(context),
                             hintStyle: AppTextStyles.bodyMedium.copyWith(
                               color: AppColors.textTertiary,
                             ),
@@ -274,7 +275,7 @@ class _ConnectSearchBarState extends ConsumerState<ConnectSearchBar> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Recent Searches',
+                      'Recent Searches'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.textTertiary,
                         fontWeight: FontWeight.w600,
@@ -283,7 +284,7 @@ class _ConnectSearchBarState extends ConsumerState<ConnectSearchBar> {
                     GestureDetector(
                       onTap: _clearRecentSearches,
                       child: Text(
-                        'Clear',
+                        'Clear'.tr(context),
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w500,
@@ -406,9 +407,9 @@ class _ConnectSearchBarState extends ConsumerState<ConnectSearchBar> {
   void _handleVoiceInput() {
     // TODO: Implement voice input
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Voice search coming soon!'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text('Voice search coming soon!'.tr(context)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -481,7 +482,7 @@ class _ConnectHeroSearchBarState extends ConsumerState<ConnectHeroSearchBar> {
                     color: Colors.white,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Search tutors, groups, resources...',
+                    hintText: 'Search tutors, groups, resources...'.tr(context),
                     hintStyle: AppTextStyles.bodyMedium.copyWith(
                       color: Colors.white.withAlpha(153),
                     ),

@@ -188,16 +188,22 @@ enum OnboardingStep {
     switch (value.toLowerCase()) {
       case 'role_selection':
       case 'roleselection':
+      case '0':
+      case '1':
         return OnboardingStep.roleSelection;
       case 'basic_info':
       case 'basicinfo':
+      case '2':
         return OnboardingStep.basicInfo;
       case 'academic_info':
       case 'academicinfo':
+      case '3':
         return OnboardingStep.academicInfo;
       case 'verification':
+      case '4':
         return OnboardingStep.verification;
       case 'complete':
+      case '5':
         return OnboardingStep.complete;
       default:
         return null;

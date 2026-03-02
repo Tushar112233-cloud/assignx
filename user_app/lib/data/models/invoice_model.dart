@@ -199,36 +199,36 @@ class InvoiceModel {
   /// Use this when fetching invoice data from an API endpoint.
   factory InvoiceModel.fromJson(Map<String, dynamic> json) {
     return InvoiceModel(
-      invoiceNumber: json['invoice_number'] as String? ?? '',
-      projectNumber: json['project_number'] as String? ?? '',
-      projectId: json['project_id'] as String? ?? '',
-      projectTitle: json['project_title'] as String? ?? '',
-      serviceType: json['service_type'] as String? ?? 'Project Service',
-      subjectName: json['subject_name'] as String?,
-      wordCount: json['word_count'] as int?,
-      pageCount: json['page_count'] as int?,
-      invoiceDate: json['invoice_date'] != null
-          ? DateTime.parse(json['invoice_date'] as String)
+      invoiceNumber: (json['invoice_number'] ?? json['invoiceNumber']) as String? ?? '',
+      projectNumber: (json['project_number'] ?? json['projectNumber']) as String? ?? '',
+      projectId: (json['project_id'] ?? json['projectId'] ?? '').toString(),
+      projectTitle: (json['project_title'] ?? json['projectTitle']) as String? ?? '',
+      serviceType: (json['service_type'] ?? json['serviceType']) as String? ?? 'Project Service',
+      subjectName: (json['subject_name'] ?? json['subjectName']) as String?,
+      wordCount: (json['word_count'] ?? json['wordCount']) as int?,
+      pageCount: (json['page_count'] ?? json['pageCount']) as int?,
+      invoiceDate: (json['invoice_date'] ?? json['invoiceDate']) != null
+          ? DateTime.tryParse((json['invoice_date'] ?? json['invoiceDate']).toString()) ?? DateTime.now()
           : DateTime.now(),
-      projectDate: json['project_date'] != null
-          ? DateTime.parse(json['project_date'] as String)
+      projectDate: (json['project_date'] ?? json['projectDate']) != null
+          ? DateTime.tryParse((json['project_date'] ?? json['projectDate']).toString()) ?? DateTime.now()
           : DateTime.now(),
-      dueDate: json['due_date'] != null
-          ? DateTime.parse(json['due_date'] as String)
+      dueDate: (json['due_date'] ?? json['dueDate']) != null
+          ? DateTime.tryParse((json['due_date'] ?? json['dueDate']).toString()) ?? DateTime.now()
           : DateTime.now(),
-      paidAt: json['paid_at'] != null
-          ? DateTime.parse(json['paid_at'] as String)
+      paidAt: (json['paid_at'] ?? json['paidAt']) != null
+          ? DateTime.tryParse((json['paid_at'] ?? json['paidAt']).toString())
           : null,
-      customerName: json['customer_name'] as String? ?? 'Customer',
-      customerEmail: json['customer_email'] as String? ?? '',
-      customerPhone: json['customer_phone'] as String?,
+      customerName: (json['customer_name'] ?? json['customerName']) as String? ?? 'Customer',
+      customerEmail: (json['customer_email'] ?? json['customerEmail']) as String? ?? '',
+      customerPhone: (json['customer_phone'] ?? json['customerPhone']) as String?,
       subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
-      platformFee: (json['platform_fee'] as num?)?.toDouble(),
+      platformFee: ((json['platform_fee'] ?? json['platformFee']) as num?)?.toDouble(),
       gst: (json['gst'] as num?)?.toDouble() ?? 0.0,
-      totalAmount: (json['total_amount'] as num?)?.toDouble() ?? 0.0,
-      paymentMethod: json['payment_method'] as String? ?? 'Unknown',
-      transactionId: json['transaction_id'] as String?,
-      paymentStatus: json['payment_status'] as String? ?? 'pending',
+      totalAmount: ((json['total_amount'] ?? json['totalAmount']) as num?)?.toDouble() ?? 0.0,
+      paymentMethod: (json['payment_method'] ?? json['paymentMethod']) as String? ?? 'Unknown',
+      transactionId: (json['transaction_id'] ?? json['transactionId']) as String?,
+      paymentStatus: (json['payment_status'] ?? json['paymentStatus']) as String? ?? 'pending',
       description: json['description'] as String?,
     );
   }

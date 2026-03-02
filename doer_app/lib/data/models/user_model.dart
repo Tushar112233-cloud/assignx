@@ -380,69 +380,116 @@ class UserModel {
   ///
   /// @throws FormatException if required fields are missing or malformed.
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    // Handle nested doer data if present
-    final doerData = json['doer'] as Map<String, dynamic>?;
+    // Handle nested doer data if present (supports both camelCase and snake_case keys)
+    final doerData = (json['doer'] ?? json['doerProfile']) as Map<String, dynamic>?;
 
-    // Parse skills if present (from nested join)
+    // Parse skills if present (from nested join or flat array)
     final skillsList = <SkillModel>[];
-    if (json['doer_skills'] != null) {
-      for (final item in json['doer_skills'] as List) {
-        if (item['skill'] != null) {
-          skillsList.add(SkillModel.fromJson(item['skill'] as Map<String, dynamic>));
+    final rawSkills = json['doer_skills'] ?? json['doerSkills'] ?? json['skills'];
+    if (rawSkills != null && rawSkills is List) {
+      for (final item in rawSkills) {
+        if (item is Map<String, dynamic>) {
+          if (item['skill'] != null && item['skill'] is Map<String, dynamic>) {
+            skillsList.add(SkillModel.fromJson(item['skill'] as Map<String, dynamic>));
+          } else if (item['name'] != null) {
+            skillsList.add(SkillModel.fromJson(item));
+          }
         }
       }
     }
 
-    // Parse subjects if present (from nested join)
+    // Parse subjects if present (from nested join or flat array)
     final subjectsList = <SubjectModel>[];
-    if (json['doer_subjects'] != null) {
-      for (final item in json['doer_subjects'] as List) {
-        if (item['subject'] != null) {
-          subjectsList.add(SubjectModel.fromJson(item['subject'] as Map<String, dynamic>));
+    final rawSubjects = json['doer_subjects'] ?? json['doerSubjects'] ?? json['subjects'];
+    if (rawSubjects != null && rawSubjects is List) {
+      for (final item in rawSubjects) {
+        if (item is Map<String, dynamic>) {
+          if (item['subject'] != null && item['subject'] is Map<String, dynamic>) {
+            subjectsList.add(SubjectModel.fromJson(item['subject'] as Map<String, dynamic>));
+          } else if (item['name'] != null) {
+            subjectsList.add(SubjectModel.fromJson(item));
+          }
         }
       }
     }
+
+    // Helper to extract a string field with dual-format fallback
+    String? _str(String snake, String camel, [Map<String, dynamic>? nested]) {
+      return nested?[camel] as String? ?? nested?[snake] as String?
+          ?? json[camel] as String? ?? json[snake] as String?;
+    }
+
+    // Helper to extract a bool field with dual-format fallback
+    bool _bool(String snake, String camel, bool fallback, [Map<String, dynamic>? nested]) {
+      return nested?[camel] as bool? ?? nested?[snake] as bool?
+          ?? json[camel] as bool? ?? json[snake] as bool? ?? fallback;
+    }
+
+    // Helper to extract an int field with dual-format fallback
+    int _int(String snake, String camel, int fallback, [Map<String, dynamic>? nested]) {
+      return nested?[camel] as int? ?? nested?[snake] as int?
+          ?? json[camel] as int? ?? json[snake] as int? ?? fallback;
+    }
+
+    // Helper to extract a double field with dual-format fallback
+    double _dbl(String snake, String camel, double fallback, [Map<String, dynamic>? nested]) {
+      return (nested?[camel] as num?)?.toDouble() ?? (nested?[snake] as num?)?.toDouble()
+          ?? (json[camel] as num?)?.toDouble() ?? (json[snake] as num?)?.toDouble() ?? fallback;
+    }
+
+    // Extract doer ID - could be in nested doer object or flat
+    String? doerId = doerData?['_id']?.toString() ?? doerData?['id']?.toString()
+        ?? (json['doerId'] ?? json['doer_id']) as String?;
+
+    // Bank details may be nested inside doer.bankDetails
+    final bankDetails = doerData?['bankDetails'] as Map<String, dynamic>?;
 
     return UserModel(
-      // Profile fields
-      id: json['id'] as String,
-      email: json['email'] as String,
-      fullName: json['full_name'] as String,
+      // Profile fields - handle both _id/id and camelCase/snake_case
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      fullName: (json['fullName'] ?? json['full_name'] ?? '').toString(),
       phone: json['phone'] as String?,
-      phoneVerified: json['phone_verified'] as bool? ?? false,
-      avatarUrl: json['avatar_url'] as String?,
-      userType: json['user_type'] as String? ?? 'doer',
-      isActive: json['is_active'] as bool? ?? true,
+      phoneVerified: _bool('phone_verified', 'phoneVerified', false),
+      avatarUrl: json['avatarUrl'] as String? ?? json['avatar_url'] as String?,
+      userType: (json['userType'] ?? json['user_type'] ?? 'doer').toString(),
+      isActive: _bool('is_active', 'isActive', true),
       city: json['city'] as String?,
       state: json['state'] as String?,
-      country: json['country'] as String? ?? 'India',
-      onboardingStep: json['onboarding_step'] as String? ?? 'role_selection',
-      onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
-      referralCode: json['referral_code'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
-      // Doer fields - from nested doer object or flat structure
-      doerId: doerData?['id'] as String? ?? json['doer_id'] as String?,
-      qualification: doerData?['qualification'] as String? ?? json['qualification'] as String?,
-      universityName: doerData?['university_name'] as String? ?? json['university_name'] as String?,
-      experienceLevel: doerData?['experience_level'] as String? ?? json['experience_level'] as String? ?? 'beginner',
-      yearsOfExperience: doerData?['years_of_experience'] as int? ?? json['years_of_experience'] as int? ?? 0,
-      bio: doerData?['bio'] as String? ?? json['bio'] as String?,
-      isAvailable: doerData?['is_available'] as bool? ?? json['is_available'] as bool? ?? true,
-      isActivated: doerData?['is_activated'] as bool? ?? json['is_activated'] as bool? ?? false,
-      activatedAt: _parseDateTime(doerData?['activated_at'] ?? json['activated_at']),
-      totalProjectsCompleted: doerData?['total_projects_completed'] as int? ?? json['total_projects_completed'] as int? ?? 0,
-      totalEarnings: (doerData?['total_earnings'] as num?)?.toDouble() ?? (json['total_earnings'] as num?)?.toDouble() ?? 0.0,
-      averageRating: (doerData?['average_rating'] as num?)?.toDouble() ?? (json['average_rating'] as num?)?.toDouble() ?? 0.0,
-      totalReviews: doerData?['total_reviews'] as int? ?? json['total_reviews'] as int? ?? 0,
-      bankAccountName: doerData?['bank_account_name'] as String? ?? json['bank_account_name'] as String?,
-      bankAccountNumber: doerData?['bank_account_number'] as String? ?? json['bank_account_number'] as String?,
-      bankIfscCode: doerData?['bank_ifsc_code'] as String? ?? json['bank_ifsc_code'] as String?,
-      bankName: doerData?['bank_name'] as String? ?? json['bank_name'] as String?,
-      upiId: doerData?['upi_id'] as String? ?? json['upi_id'] as String?,
-      bankVerified: doerData?['bank_verified'] as bool? ?? json['bank_verified'] as bool? ?? false,
+      country: (json['country'] ?? 'India').toString(),
+      onboardingStep: (json['onboardingStep'] ?? json['onboarding_step'] ?? 'role_selection').toString(),
+      onboardingCompleted: _bool('onboarding_completed', 'onboardingCompleted', false),
+      referralCode: json['referralCode'] as String? ?? json['referral_code'] as String?,
+      createdAt: _parseDateTime(json['createdAt'] ?? json['created_at']) ?? DateTime.now(),
+      updatedAt: _parseDateTime(json['updatedAt'] ?? json['updated_at']),
+      // Doer fields - from nested doer object or flat structure, supporting both formats
+      doerId: doerId,
+      qualification: _str('qualification', 'qualification', doerData),
+      universityName: _str('university_name', 'universityName', doerData),
+      experienceLevel: (doerData?['experienceLevel'] ?? doerData?['experience_level']
+          ?? json['experienceLevel'] ?? json['experience_level'] ?? 'beginner').toString(),
+      yearsOfExperience: _int('years_of_experience', 'yearsOfExperience', 0, doerData),
+      bio: _str('bio', 'bio', doerData),
+      isAvailable: _bool('is_available', 'isAvailable', true, doerData),
+      isActivated: _bool('is_activated', 'isActivated', false, doerData),
+      activatedAt: _parseDateTime(doerData?['activatedAt'] ?? doerData?['activated_at']
+          ?? json['activatedAt'] ?? json['activated_at']),
+      totalProjectsCompleted: _int('total_projects_completed', 'totalProjectsCompleted', 0, doerData),
+      totalEarnings: _dbl('total_earnings', 'totalEarnings', 0.0, doerData),
+      averageRating: _dbl('average_rating', 'averageRating', 0.0, doerData),
+      totalReviews: _int('total_reviews', 'totalReviews', 0, doerData),
+      bankAccountName: bankDetails?['accountName'] as String?
+          ?? _str('bank_account_name', 'bankAccountName', doerData),
+      bankAccountNumber: bankDetails?['accountNumber'] as String?
+          ?? _str('bank_account_number', 'bankAccountNumber', doerData),
+      bankIfscCode: bankDetails?['ifscCode'] as String?
+          ?? _str('bank_ifsc_code', 'bankIfscCode', doerData),
+      bankName: bankDetails?['bankName'] as String?
+          ?? _str('bank_name', 'bankName', doerData),
+      upiId: bankDetails?['upiId'] as String?
+          ?? _str('upi_id', 'upiId', doerData),
+      bankVerified: bankDetails?['verified'] as bool?
+          ?? _bool('bank_verified', 'bankVerified', false, doerData),
       skills: skillsList,
       subjects: subjectsList,
     );

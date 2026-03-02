@@ -125,7 +125,8 @@ function TimelineNode({ project, index, total, onClick }: TimelineNodeProps) {
   const Icon = config.icon
   const deadline = formatDeadline(project.deadline)
   const payout = project.price ?? project.doer_payout ?? 0
-  const isUrgent = project.is_urgent
+  const hoursLeft = (new Date(project.deadline).getTime() - Date.now()) / (1000 * 60 * 60)
+  const isUrgent = hoursLeft < 24 && hoursLeft > 0
 
   return (
     <motion.div

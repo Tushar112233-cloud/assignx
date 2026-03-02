@@ -2,24 +2,24 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { signInWithGoogle } from "@/lib/actions/auth";
 import { Loader2 } from "lucide-react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 /**
  * Google Sign-in button component
- * Triggers OAuth flow via server action
+ * Redirects to Express API's Google OAuth endpoint
  */
 export function GoogleSignInButton() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignIn = async () => {
+  const handleSignIn = () => {
     setIsLoading(true);
-    try {
-      await signInWithGoogle();
-    } catch {
-      // Sign-in failed - reset loading state
-      setIsLoading(false);
-    }
+    const params = new URLSearchParams({
+      role: "user",
+      redirect: window.location.origin + "/auth/callback",
+    });
+    window.location.href = `${API_URL}/api/auth/google?${params}`;
   };
 
   return (

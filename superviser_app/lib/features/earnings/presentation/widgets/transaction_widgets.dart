@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../shared/widgets/misc/status_badge.dart';
 import '../../data/models/transaction_model.dart';
 
@@ -236,14 +237,14 @@ class _EmptyTransactions extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No transactions yet',
+              'No transactions yet'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Your earnings and withdrawals will appear here',
+              'Your earnings and withdrawals will appear here'.tr(context),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
@@ -298,14 +299,14 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Filter Transactions',
+                'Filter Transactions'.tr(context),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
               TextButton(
                 onPressed: _clearFilters,
-                child: const Text('Clear All'),
+                child: Text('Clear All'.tr(context)),
               ),
             ],
           ),
@@ -313,7 +314,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
 
           // Transaction Types
           Text(
-            'Transaction Type',
+            'Transaction Type'.tr(context),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -346,7 +347,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
 
           // Transaction Status
           Text(
-            'Status',
+            'Status'.tr(context),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -378,7 +379,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
 
           // Date Range
           Text(
-            'Date Range',
+            'Date Range'.tr(context),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -388,7 +389,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
             children: [
               Expanded(
                 child: _DateButton(
-                  label: 'From',
+                  label: 'From'.tr(context),
                   date: _startDate,
                   onTap: () => _selectDate(true),
                 ),
@@ -396,7 +397,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: _DateButton(
-                  label: 'To',
+                  label: 'To'.tr(context),
                   date: _endDate,
                   onTap: () => _selectDate(false),
                 ),
@@ -410,7 +411,7 @@ class _TransactionFilterSheetState extends State<TransactionFilterSheet> {
             width: double.infinity,
             child: FilledButton(
               onPressed: _applyFilters,
-              child: const Text('Apply Filters'),
+              child: Text('Apply Filters'.tr(context)),
             ),
           ),
           const SizedBox(height: 16),
@@ -558,36 +559,36 @@ class TransactionDetailSheet extends StatelessWidget {
 
           // Details
           _DetailRow(
-            label: 'Status',
+            label: 'Status'.tr(context),
             value: transaction.status.displayName,
             valueColor: transaction.status.color,
           ),
           _DetailRow(
-            label: 'Date',
+            label: 'Date'.tr(context),
             value: transaction.formattedDate,
           ),
           _DetailRow(
-            label: 'Time',
+            label: 'Time'.tr(context),
             value: transaction.formattedTime,
           ),
           if (transaction.description != null && transaction.description!.isNotEmpty)
             _DetailRow(
-              label: 'Description',
+              label: 'Description'.tr(context),
               value: transaction.description!,
             ),
           if (transaction.projectTitle != null)
             _DetailRow(
-              label: 'Project',
+              label: 'Project'.tr(context),
               value: transaction.projectTitle!,
             ),
           if (transaction.reference != null)
             _DetailRow(
-              label: 'Reference',
+              label: 'Reference'.tr(context),
               value: transaction.reference!,
             ),
           if (transaction.balanceAfter != null)
             _DetailRow(
-              label: 'Balance After',
+              label: 'Balance After'.tr(context),
               value: '₹${transaction.balanceAfter!.toStringAsFixed(2)}',
             ),
           const SizedBox(height: 24),
@@ -597,7 +598,7 @@ class TransactionDetailSheet extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text('Close'.tr(context)),
             ),
           ),
           const SizedBox(height: 16),

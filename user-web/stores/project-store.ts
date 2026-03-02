@@ -6,7 +6,7 @@ import type { ProjectStatus, ProjectTab } from "@/types/project";
 export type { ProjectStatus, ProjectTab } from "@/types/project";
 
 /**
- * Project interface matching Supabase schema
+ * Project interface matching API schema
  */
 export interface Project {
   id: string;
@@ -191,7 +191,7 @@ function transformProject(p: Project): Project {
 }
 
 /**
- * Project store for managing project state with Supabase integration
+ * Project store for managing project state with API integration
  */
 export const useProjectStore = create<ProjectState>((set, get) => ({
   projects: [],
@@ -205,7 +205,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   pageSize: PAGE_SIZE,
 
   /**
-   * Fetches projects from Supabase
+   * Fetches projects from API
    */
   fetchProjects: async (status?: string) => {
     set({ isLoading: true, error: null });
@@ -215,7 +215,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
       // Check for unpaid quotes
       const unpaidProject = projects.find(
-        (p) => p.status === "payment_pending" || p.status === "quoted"
+        (p: any) => p.status === "payment_pending" || p.status === "quoted"
       );
 
       set({

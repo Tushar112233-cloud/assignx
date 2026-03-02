@@ -44,7 +44,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
+import { getStoredUser } from "@/lib/api/auth"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import type { PaidProject } from "./ready-to-assign-card"
@@ -101,60 +102,23 @@ export function AssignDoerModal({
   const loadDoers = async () => {
     setIsLoading(true)
     try {
-      const supabase = createClient()
+      const data = await apiFetch<{ doers?: Doer[]; data?: Doer[] }>("/api/doers?activated=true&limit=50")
+      const doersList = (data as any)?.doers || (data as any)?.data || (Array.isArray(data) ? data : [])
 
-      // Fetch doers with their profiles and subjects
-      const { data, error } = await supabase
-        .from("doers")
-        .select(`
-          id,
-          is_available,
-          average_rating,
-          total_projects_completed,
-          profiles!profile_id (
-            full_name,
-            email,
-            avatar_url
-          ),
-          doer_subjects (
-            subjects (
-              name
-            )
-          )
-        `)
-        .eq("is_activated", true)
-        .order("average_rating", { ascending: false, nullsFirst: false })
-        .limit(50)
-
-      if (error) throw error
-
-      // Transform data to match Doer interface
-      const formattedDoers: Doer[] = (data || []).map((doer) => {
-        const profile = doer.profiles as { full_name?: string; email?: string; avatar_url?: string } | null
-        const subjects = (doer.doer_subjects as { subjects?: { name?: string } }[] || [])
-          .map((ds) => ds.subjects?.name)
-          .filter(Boolean) as string[]
-
-        // Calculate success rate from completed projects (default to 95% if not enough data)
-        const successRate = doer.total_projects_completed && doer.total_projects_completed > 0
-          ? Math.min(95 + Math.floor(Math.random() * 5), 100) // Placeholder until we have actual failure data
-          : 95
-
-        return {
-          id: doer.id,
-          full_name: profile?.full_name || "Unknown",
-          email: profile?.email || "",
-          avatar_url: profile?.avatar_url || null,
-          rating: doer.average_rating || 0,
-          total_projects: doer.total_projects_completed || 0,
-          success_rate: successRate,
-          is_available: doer.is_available ?? true,
-          skills: [], // Skills not stored separately in current schema
-          subjects: subjects,
-          response_time_hours: 2, // Default, could be calculated from actual response data
-          last_active: new Date().toISOString(), // Would need activity tracking
-        }
-      })
+      const formattedDoers: Doer[] = doersList.map((doer: any) => ({
+        id: doer.id,
+        full_name: doer.full_name || doer.profiles?.full_name || "Unknown",
+        email: doer.email || doer.profiles?.email || "",
+        avatar_url: doer.avatar_url || doer.profiles?.avatar_url || null,
+        rating: doer.average_rating || doer.rating || 0,
+        total_projects: doer.total_projects_completed || doer.total_projects || 0,
+        success_rate: doer.success_rate || 95,
+        is_available: doer.is_available ?? true,
+        skills: doer.skills || [],
+        subjects: doer.subjects || [],
+        response_time_hours: doer.response_time_hours || 2,
+        last_active: doer.last_active || new Date().toISOString(),
+      }))
 
       setDoers(formattedDoers)
     } catch (error) {
@@ -168,7 +132,6 @@ export function AssignDoerModal({
   const filteredDoers = useMemo(() => {
     let result = [...doers]
 
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       result = result.filter(
@@ -179,14 +142,12 @@ export function AssignDoerModal({
       )
     }
 
-    // Filter by availability
     if (filterAvailable === "available") {
       result = result.filter((doer) => doer.is_available)
     } else if (filterAvailable === "busy") {
       result = result.filter((doer) => !doer.is_available)
     }
 
-    // Sort
     switch (sortBy) {
       case "rating":
         result.sort((a, b) => b.rating - a.rating)
@@ -210,46 +171,10 @@ export function AssignDoerModal({
 
     setIsAssigning(true)
     try {
-      const supabase = createClient()
-
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        toast.error("You must be logged in to assign a doer")
-        return
-      }
-
-      // Create assignment record for tracking
-      const { error: assignmentError } = await supabase
-        .from("project_assignments")
-        .insert({
-          project_id: project.id,
-          assignment_type: "doer",
-          assignee_id: selectedDoer.id,
-          assigned_by: user.id,
-          assigned_at: new Date().toISOString(),
-        })
-
-      if (assignmentError) {
-        console.error("Error creating assignment record:", assignmentError)
-        // Don't throw - assignment record is optional tracking
-      }
-
-      // Update project status and assign doer
-      const { error: updateError } = await supabase
-        .from("projects")
-        .update({
-          status: "assigned",
-          doer_id: selectedDoer.id,
-          doer_assigned_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", project.id)
-
-      if (updateError) {
-        console.error("Error updating project:", updateError)
-        throw updateError
-      }
+      await apiFetch(`/api/projects/${project.id}/assign`, {
+        method: "POST",
+        body: JSON.stringify({ doerId: selectedDoer.id }),
+      })
 
       toast.success(`Project assigned to ${selectedDoer.full_name}`)
       onAssign(project.id, selectedDoer.id)
@@ -267,46 +192,11 @@ export function AssignDoerModal({
 
     setIsAssigning(true)
     try {
-      const supabase = createClient()
-
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        toast.error("You must be logged in to send to open pool")
-        return
-      }
-
-      // Ensure project stays as status='paid' with doer_id=null
-      // This is the exact state that doer-web's getOpenPoolTasks queries for
-      const { error: updateError } = await supabase
-        .from("projects")
-        .update({
-          doer_id: null,
-          status: "paid",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", project.id)
-
-      if (updateError) {
-        console.error("Error sending to open pool:", updateError)
-        throw updateError
-      }
-
-      // Create notification for the supervisor confirming the action
-      await supabase.from("notifications").insert({
-        profile_id: user.id,
-        notification_type: "project_assigned",
-        title: "Project Sent to Open Pool",
-        body: `Project${project.project_number ? ` #${project.project_number}` : ""} "${project.title}" has been sent to the open pool. The first qualified expert to accept will be assigned.`,
-        reference_type: "project",
-        reference_id: project.id,
-        action_url: `/projects/${project.id}`,
-        target_role: "supervisor",
+      await apiFetch(`/api/projects/${project.id}/open-pool`, {
+        method: "POST",
       })
 
       toast.success("Project sent to the open pool successfully")
-      // Signal the parent that assignment was handled; use empty string to
-      // indicate no specific doer was assigned (open pool)
       onAssign(project.id, "")
       onClose()
     } catch (error) {
@@ -390,7 +280,6 @@ export function AssignDoerModal({
 
             {/* Select Expert Tab Content */}
             <TabsContent value="select-expert" className="mt-4 space-y-4">
-              {/* Search and Filters */}
               <div className="flex flex-wrap gap-3">
                 <div className="relative flex-1 min-w-[200px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -435,7 +324,6 @@ export function AssignDoerModal({
                 </Select>
               </div>
 
-              {/* Doer List */}
               <ScrollArea className="h-[350px] pr-4">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-12">
@@ -464,7 +352,6 @@ export function AssignDoerModal({
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start gap-4">
-                            {/* Avatar */}
                             <Avatar className="h-12 w-12">
                               <AvatarImage src={doer.avatar_url || undefined} />
                               <AvatarFallback>
@@ -476,7 +363,6 @@ export function AssignDoerModal({
                               </AvatarFallback>
                             </Avatar>
 
-                            {/* Info */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <h4 className="font-semibold truncate">
@@ -495,7 +381,6 @@ export function AssignDoerModal({
                                 </Badge>
                               </div>
 
-                              {/* Stats Row */}
                               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-2">
                                 <div className="flex items-center gap-1">
                                   <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
@@ -514,7 +399,6 @@ export function AssignDoerModal({
                                 <span>{doer.total_projects} projects</span>
                               </div>
 
-                              {/* Skills */}
                               <div className="flex flex-wrap gap-1.5">
                                 {doer.subjects.slice(0, 2).map((subject) => (
                                   <Badge
@@ -542,7 +426,6 @@ export function AssignDoerModal({
                               </div>
                             </div>
 
-                            {/* Selection Indicator */}
                             {selectedDoer?.id === doer.id && (
                               <div className="flex-shrink-0">
                                 <CheckCircle2 className="h-6 w-6 text-primary" />
@@ -560,7 +443,6 @@ export function AssignDoerModal({
             {/* Open Pool Tab Content */}
             <TabsContent value="open-pool" className="mt-4">
               <div className="space-y-4">
-                {/* Open Pool Explanation Card */}
                 <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl shadow-sm">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
@@ -580,7 +462,6 @@ export function AssignDoerModal({
                   </CardContent>
                 </Card>
 
-                {/* How It Works */}
                 <Card className="rounded-xl border-gray-200 shadow-sm">
                   <CardContent className="p-6">
                     <h4 className="text-sm font-semibold text-[#1C1C1C] mb-4 flex items-center gap-2">
@@ -625,7 +506,6 @@ export function AssignDoerModal({
                   </CardContent>
                 </Card>
 
-                {/* Confirmation Notice */}
                 <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
                   <Users className="h-5 w-5 text-blue-600 flex-shrink-0" />
                   <p className="text-sm text-blue-800">

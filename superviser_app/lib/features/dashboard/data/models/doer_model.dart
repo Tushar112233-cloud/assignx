@@ -283,19 +283,54 @@ class DoerModel {
   ///
   /// Throws [FormatException] if required fields are missing or malformed.
   factory DoerModel.fromJson(Map<String, dynamic> json) {
-    // Extract profile data from join
+    // Helper to extract ID from a field that may be a string or populated object.
+    String _extractProfileId(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return (value['_id'] ?? value['id'] ?? '').toString();
+      }
+      return value.toString();
+    }
+
+    // Extract profile data from join or populated profileId object
     String name = 'Unknown';
     String email = '';
     String? avatarUrl;
+    String profileId = '';
 
     if (json['profile'] is Map) {
       final profile = json['profile'] as Map<String, dynamic>;
-      name = profile['full_name'] as String? ?? 'Unknown';
+      name = (profile['fullName'] ?? profile['full_name']) as String? ?? 'Unknown';
       email = profile['email'] as String? ?? '';
-      avatarUrl = profile['avatar_url'] as String?;
+      avatarUrl = (profile['avatarUrl'] ?? profile['avatar_url']) as String?;
     }
 
-    // Extract subject names from doer_subjects join
+    // Handle populated profileId object (MongoDB)
+    final profileIdRaw = json['profileId'] ?? json['profile_id'];
+    if (profileIdRaw is Map<String, dynamic>) {
+      profileId = (profileIdRaw['_id'] ?? profileIdRaw['id'] ?? '').toString();
+      if (name == 'Unknown') {
+        name = (profileIdRaw['fullName'] ?? profileIdRaw['full_name']) as String? ?? 'Unknown';
+      }
+      if (email.isEmpty) {
+        email = profileIdRaw['email'] as String? ?? '';
+      }
+      avatarUrl ??= (profileIdRaw['avatarUrl'] ?? profileIdRaw['avatar_url']) as String?;
+    } else {
+      profileId = _extractProfileId(profileIdRaw);
+    }
+
+    // Fallback: try top-level name/email fields (flat API response)
+    if (name == 'Unknown') {
+      name = (json['fullName'] ?? json['full_name'] ?? json['name']) as String? ?? 'Unknown';
+    }
+    if (email.isEmpty) {
+      email = json['email'] as String? ?? '';
+    }
+    avatarUrl ??= (json['avatarUrl'] ?? json['avatar_url']) as String?;
+
+    // Extract subject names from doer_subjects join or flat expertise array
     List<String> expertise = [];
     if (json['subjects'] is List) {
       for (final subjectEntry in json['subjects'] as List) {
@@ -304,33 +339,43 @@ class DoerModel {
           if (subjectName != null) {
             expertise.add(subjectName);
           }
+        } else if (subjectEntry is String) {
+          expertise.add(subjectEntry);
         }
       }
     }
+    if (expertise.isEmpty && json['expertise'] is List) {
+      expertise = (json['expertise'] as List).map((e) => e.toString()).toList();
+    }
 
     return DoerModel(
-      id: json['id'] as String,
-      profileId: json['profile_id'] as String? ?? '',
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      profileId: profileId,
       name: name,
       email: email,
       expertise: expertise,
       avatarUrl: avatarUrl,
-      rating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
-      completedProjects: json['total_projects_completed'] as int? ?? 0,
-      isAvailable: json['is_available'] as bool? ?? true,
-      isActivated: json['is_activated'] as bool? ?? false,
+      rating: ((json['averageRating'] ?? json['average_rating'] ?? json['rating']) as num?)?.toDouble() ?? 0.0,
+      completedProjects: (json['totalProjectsCompleted'] ?? json['total_projects_completed'] ?? json['completedProjects']) as int? ?? 0,
+      isAvailable: (json['isAvailable'] ?? json['is_available']) as bool? ?? true,
+      isActivated: (json['isActivated'] ?? json['is_activated']) as bool? ?? false,
       qualification: json['qualification'] as String?,
-      experienceLevel: json['experience_level'] as String?,
-      yearsOfExperience: json['years_of_experience'] as int? ?? 0,
+      experienceLevel: (json['experienceLevel'] ?? json['experience_level']) as String?,
+      yearsOfExperience: (json['yearsOfExperience'] ?? json['years_of_experience']) as int? ?? 0,
       bio: json['bio'] as String?,
-      successRate: (json['success_rate'] as num?)?.toDouble() ?? 100.0,
-      onTimeDeliveryRate: (json['on_time_delivery_rate'] as num?)?.toDouble() ?? 100.0,
-      totalReviews: json['total_reviews'] as int? ?? 0,
-      activeProjects: json['active_projects'] as int? ?? json['total_active_projects'] as int? ?? 0,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String)
-          : null,
+      successRate: ((json['successRate'] ?? json['success_rate']) as num?)?.toDouble() ?? 100.0,
+      onTimeDeliveryRate: ((json['onTimeDeliveryRate'] ?? json['on_time_delivery_rate']) as num?)?.toDouble() ?? 100.0,
+      totalReviews: (json['totalReviews'] ?? json['total_reviews']) as int? ?? 0,
+      activeProjects: (json['activeProjects'] ?? json['active_projects'] ?? json['totalActiveProjects'] ?? json['total_active_projects']) as int? ?? 0,
+      createdAt: _tryParseDate(json['createdAt'] ?? json['created_at']),
     );
+  }
+
+  /// Safely parse a DateTime from dynamic value.
+  static DateTime? _tryParseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   /// Converts this [DoerModel] to a JSON map for Supabase operations.
@@ -430,14 +475,36 @@ class DoerReview {
   ///
   /// Throws [FormatException] if required fields are missing or malformed.
   factory DoerReview.fromJson(Map<String, dynamic> json) {
+    // Handle populated project and reviewer objects
+    String? projectTitle;
+    if (json['project'] is Map<String, dynamic>) {
+      projectTitle = json['project']['title'] as String?;
+    }
+    projectTitle ??= (json['projectTitle'] ?? json['project_title']) as String?;
+
+    String? reviewerName;
+    if (json['reviewer'] is Map<String, dynamic>) {
+      reviewerName = (json['reviewer']['fullName'] ?? json['reviewer']['full_name']) as String?;
+    }
+    reviewerName ??= (json['reviewerName'] ?? json['reviewer_name']) as String?;
+
+    // Handle doerId which may be populated
+    String doerId = '';
+    final doerIdRaw = json['doerId'] ?? json['doer_id'];
+    if (doerIdRaw is String) {
+      doerId = doerIdRaw;
+    } else if (doerIdRaw is Map<String, dynamic>) {
+      doerId = (doerIdRaw['_id'] ?? doerIdRaw['id'] ?? '').toString();
+    }
+
     return DoerReview(
-      id: json['id'] as String,
-      doerId: json['doer_id'] as String,
-      rating: json['rating'] as int,
-      comment: json['comment'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      projectTitle: json['project_title'] as String?,
-      reviewerName: json['reviewer_name'] as String?,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      doerId: doerId,
+      rating: ((json['overallRating'] ?? json['overall_rating'] ?? json['rating']) as num?)?.toInt() ?? 0,
+      comment: (json['reviewText'] ?? json['review_text'] ?? json['comment']) as String? ?? '',
+      createdAt: DateTime.tryParse((json['createdAt'] ?? json['created_at'] ?? '').toString()) ?? DateTime.now(),
+      projectTitle: projectTitle,
+      reviewerName: reviewerName,
     );
   }
 }

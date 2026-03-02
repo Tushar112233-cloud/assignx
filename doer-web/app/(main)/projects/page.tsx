@@ -53,7 +53,7 @@ const staggerContainer = {
  * 5. Bottom: Tabbed details section - ActiveProjectsTab, UnderReviewTab, CompletedProjectsTab
  *
  * All existing functionality preserved:
- * - Data fetching from Supabase via getProjectsByCategory
+ * - Data fetching from API via getProjectsByCategory
  * - Search filtering
  * - Status filtering
  * - Sort options
@@ -84,7 +84,7 @@ export default function ProjectsPage() {
   })
 
   /**
-   * Load projects from Supabase
+   * Load projects from the API
    * Preserves existing data fetching logic
    */
   const loadProjects = useCallback(async (showRefresh = false) => {

@@ -43,9 +43,13 @@ const String _langCodeKey = 'selected_language_code';
 const String _langNameKey = 'selected_language_name';
 
 /// Manages translation state: language selection, model downloads, and caching.
-class TranslationNotifier extends StateNotifier<TranslationState> {
-  TranslationNotifier() : super(const TranslationState()) {
-    _loadSavedLanguage();
+///
+/// Uses Riverpod v3 Notifier pattern (matching doer_app's flutter_riverpod ^3.0.3).
+class TranslationNotifier extends Notifier<TranslationState> {
+  @override
+  TranslationState build() {
+    Future.microtask(() => _loadSavedLanguage());
+    return const TranslationState();
   }
 
   Future<void> _loadSavedLanguage() async {
@@ -141,6 +145,6 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
 }
 
 final translationProvider =
-    StateNotifierProvider<TranslationNotifier, TranslationState>((ref) {
-  return TranslationNotifier();
-});
+    NotifierProvider<TranslationNotifier, TranslationState>(
+  TranslationNotifier.new,
+);

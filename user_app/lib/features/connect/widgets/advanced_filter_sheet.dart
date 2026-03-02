@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/connect_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -95,13 +96,13 @@ class _AdvancedFilterSheetState extends ConsumerState<AdvancedFilterSheet> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Filters',
+                      'Filters'.tr(context),
                       style: AppTextStyles.headingMedium,
                     ),
                     GestureDetector(
                       onTap: _resetFilters,
                       child: Text(
-                        'Reset',
+                        'Reset'.tr(context),
                         style: AppTextStyles.labelMedium.copyWith(
                           color: AppColors.primary,
                         ),
@@ -119,35 +120,35 @@ class _AdvancedFilterSheetState extends ConsumerState<AdvancedFilterSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Subject dropdown
-                      _buildSectionTitle('Subject'),
+                      _buildSectionTitle('Subject'.tr(context)),
                       const SizedBox(height: 8),
                       _buildSubjectDropdown(subjects),
 
                       const SizedBox(height: 24),
 
                       // Rating slider
-                      _buildSectionTitle('Minimum Rating'),
+                      _buildSectionTitle('Minimum Rating'.tr(context)),
                       const SizedBox(height: 8),
                       _buildRatingSlider(),
 
                       const SizedBox(height: 24),
 
                       // Availability
-                      _buildSectionTitle('Availability'),
+                      _buildSectionTitle('Availability'.tr(context)),
                       const SizedBox(height: 8),
                       _buildAvailabilityChips(),
 
                       const SizedBox(height: 24),
 
                       // Price range
-                      _buildSectionTitle('Maximum Price (per hour)'),
+                      _buildSectionTitle('Maximum Price (per hour)'.tr(context)),
                       const SizedBox(height: 8),
                       _buildPriceSlider(),
 
                       const SizedBox(height: 24),
 
                       // Sort by
-                      _buildSectionTitle('Sort By'),
+                      _buildSectionTitle('Sort By'.tr(context)),
                       const SizedBox(height: 8),
                       _buildSortOptions(),
 
@@ -187,7 +188,7 @@ class _AdvancedFilterSheetState extends ConsumerState<AdvancedFilterSheet> {
           value: _selectedSubject,
           isExpanded: true,
           hint: Text(
-            'Select subject',
+            'Select subject'.tr(context),
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -202,7 +203,7 @@ class _AdvancedFilterSheetState extends ConsumerState<AdvancedFilterSheet> {
             DropdownMenuItem<String?>(
               value: null,
               child: Text(
-                'All Subjects',
+                'All Subjects'.tr(context),
                 style: AppTextStyles.bodyMedium,
               ),
             ),
@@ -241,7 +242,7 @@ class _AdvancedFilterSheetState extends ConsumerState<AdvancedFilterSheet> {
               }),
             ),
             Text(
-              _minRating == 0 ? 'Any' : '${_minRating.toStringAsFixed(1)}+',
+              _minRating == 0 ? 'Any'.tr(context) : '${_minRating.toStringAsFixed(1)}+',
               style: AppTextStyles.labelMedium.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -300,7 +301,7 @@ class _AdvancedFilterSheetState extends ConsumerState<AdvancedFilterSheet> {
               ),
             ),
             child: Text(
-              option,
+              option.tr(context),
               style: AppTextStyles.labelSmall.copyWith(
                 color: isSelected ? Colors.white : AppColors.textPrimary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -323,7 +324,7 @@ class _AdvancedFilterSheetState extends ConsumerState<AdvancedFilterSheet> {
               style: AppTextStyles.caption,
             ),
             Text(
-              _maxPrice >= 2000 ? 'No limit' : '\u20B9${_maxPrice.toStringAsFixed(0)}',
+              _maxPrice >= 2000 ? 'No limit'.tr(context) : '\u20B9${_maxPrice.toStringAsFixed(0)}',
               style: AppTextStyles.labelMedium.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
@@ -368,7 +369,8 @@ class _AdvancedFilterSheetState extends ConsumerState<AdvancedFilterSheet> {
 
     return Column(
       children: options.map((option) {
-        final (value, label, icon) = option;
+        final (value, rawLabel, icon) = option;
+        final label = rawLabel.tr(context);
         final isSelected = _selectedSort == value;
 
         return GestureDetector(
@@ -429,7 +431,7 @@ class _AdvancedFilterSheetState extends ConsumerState<AdvancedFilterSheet> {
 
   Widget _buildApplyButton() {
     return GlassButton(
-      label: 'Apply Filters',
+      label: 'Apply Filters'.tr(context),
       onPressed: _applyFilters,
       backgroundColor: AppColors.primary,
       foregroundColor: Colors.white,

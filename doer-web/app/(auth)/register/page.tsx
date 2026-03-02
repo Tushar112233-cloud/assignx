@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { createClient } from '@/lib/supabase/client'
+import { apiClient } from '@/lib/api/client'
 import { QUALIFICATION_OPTIONS, EXPERIENCE_LEVELS } from '@/lib/constants'
 import {
   doerEmailNameSchema, doerProfileSchema, doerBankingSchema,
@@ -95,16 +95,13 @@ export default function RegisterPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const supabase = createClient()
-        const { data: existing } = await supabase
-          .from('email_access_requests' as any)
-          .select('id, status')
-          .eq('email', email.trim().toLowerCase())
-          .eq('role', 'doer')
-          .maybeSingle()
+        const existing = await apiClient<{ id: string; status: string }>(
+          `/api/access-requests/check?email=${encodeURIComponent(email.trim().toLowerCase())}&role=doer`,
+          { skipAuth: true }
+        )
 
         if (existing) {
-          const s = (existing as any).status
+          const s = existing.status
           if (s === 'approved') {
             setError('This email is already approved. Please sign in instead.')
             return
@@ -119,7 +116,7 @@ export default function RegisterPage() {
           }
         }
       } catch {
-        // continue to next step even if check fails
+        // continue to next step even if check fails (404 means no existing request)
       } finally {
         setIsLoading(false)
       }
@@ -138,7 +135,6 @@ export default function RegisterPage() {
     setError(null)
 
     try {
-      const supabase = createClient()
       const trimmedEmail = email.trim().toLowerCase()
 
       const metadata = {
@@ -152,17 +148,16 @@ export default function RegisterPage() {
         upiId: upiId || null,
       }
 
-      const { error: insertError } = await supabase
-        .from('email_access_requests' as any)
-        .insert({
+      await apiClient('/api/access-requests', {
+        method: 'POST',
+        body: JSON.stringify({
           email: trimmedEmail,
           role: 'doer',
-          status: 'pending',
           full_name: fullName.trim(),
           metadata,
-        })
-
-      if (insertError) throw insertError
+        }),
+        skipAuth: true,
+      })
 
       router.push(`/pending?email=${encodeURIComponent(trimmedEmail)}`)
     } catch (err: unknown) {

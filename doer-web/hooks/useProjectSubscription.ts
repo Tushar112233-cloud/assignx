@@ -1,32 +1,22 @@
 /**
- * @fileoverview Real-time subscription hook for project updates
+ * @fileoverview Real-time subscription hook for project updates via Socket.IO
  * @module hooks/useProjectSubscription
  */
 
 "use client"
 
-import { useEffect, useRef, useCallback, useMemo } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import type { RealtimeChannel } from '@supabase/supabase-js'
+import { useEffect, useRef, useCallback } from 'react'
+import { getSocket } from '@/lib/socket/client'
 import type { Project } from '@/types/database'
 
 interface UseProjectSubscriptionOptions {
-  /** The doer ID to subscribe to project updates for */
   doerId: string | undefined
-  /** Callback when a project is assigned to this doer */
   onProjectAssigned?: (project: Project) => void
-  /** Callback when any project update occurs */
   onProjectUpdate?: (project: Project) => void
-  /** Callback when project status changes */
   onStatusChange?: (project: Project, oldStatus: string, newStatus: string) => void
-  /** Whether the subscription is enabled */
   enabled?: boolean
 }
 
-/**
- * Hook to subscribe to real-time project updates for a doer.
- * Uses refs for callbacks to prevent subscription recreation on every render.
- */
 export function useProjectSubscription({
   doerId,
   onProjectAssigned,
@@ -34,10 +24,6 @@ export function useProjectSubscription({
   onStatusChange,
   enabled = true,
 }: UseProjectSubscriptionOptions) {
-  const channelRef = useRef<RealtimeChannel | null>(null)
-  const previousProjectsRef = useRef<Map<string, Project>>(new Map())
-
-  // Store callbacks in refs to prevent effect re-runs
   const onProjectAssignedRef = useRef(onProjectAssigned)
   onProjectAssignedRef.current = onProjectAssigned
   const onProjectUpdateRef = useRef(onProjectUpdate)
@@ -45,73 +31,45 @@ export function useProjectSubscription({
   const onStatusChangeRef = useRef(onStatusChange)
   onStatusChangeRef.current = onStatusChange
 
-  const supabase = useMemo(() => createClient(), [])
-
   useEffect(() => {
-    if (!doerId || !enabled) {
-      return
+    if (!doerId || !enabled) return
+
+    const socket = getSocket()
+
+    const handleProjectUpdate = (data: { project: Project; oldStatus?: string }) => {
+      const { project, oldStatus } = data
+
+      if (oldStatus && oldStatus !== project.status) {
+        onStatusChangeRef.current?.(project, oldStatus, project.status)
+      }
+
+      onProjectUpdateRef.current?.(project)
     }
 
-    // Create channel for this doer's project updates
-    const channel = supabase
-      .channel(`doer_projects_${doerId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'projects',
-          filter: `doer_id=eq.${doerId}`,
-        },
-        (payload) => {
-          const { eventType, new: newProject, old: oldProject } = payload as unknown as {
-            eventType: 'INSERT' | 'UPDATE' | 'DELETE'
-            new: Project
-            old: Partial<Project>
-          }
+    const handleProjectAssigned = (project: Project) => {
+      onProjectAssignedRef.current?.(project)
+      onProjectUpdateRef.current?.(project)
+    }
 
-          if (eventType === 'UPDATE') {
-            if (!oldProject.doer_id && newProject.doer_id === doerId) {
-              onProjectAssignedRef.current?.(newProject)
-            }
-            if (oldProject.status && oldProject.status !== newProject.status) {
-              onStatusChangeRef.current?.(newProject, oldProject.status, newProject.status)
-            }
-            onProjectUpdateRef.current?.(newProject)
-          } else if (eventType === 'INSERT' && newProject.doer_id === doerId) {
-            onProjectAssignedRef.current?.(newProject)
-            onProjectUpdateRef.current?.(newProject)
-          }
-
-          previousProjectsRef.current.set(newProject.id, newProject)
-        }
-      )
-      .subscribe()
-
-    channelRef.current = channel
+    socket.on(`projects:${doerId}`, handleProjectUpdate)
+    socket.on(`projects:assigned:${doerId}`, handleProjectAssigned)
 
     return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe()
-        channelRef.current = null
-      }
+      socket.off(`projects:${doerId}`, handleProjectUpdate)
+      socket.off(`projects:assigned:${doerId}`, handleProjectAssigned)
     }
-  }, [doerId, enabled, supabase])
+  }, [doerId, enabled])
 
   return {
     unsubscribe: useCallback(() => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe()
-        channelRef.current = null
-      }
-    }, []),
+      if (!doerId) return
+      const socket = getSocket()
+      socket.off(`projects:${doerId}`)
+      socket.off(`projects:assigned:${doerId}`)
+    }, [doerId]),
   }
 }
 
-/**
- * Hook to subscribe to NEW project assignments (for pool/available projects).
- * Uses refs for callbacks to prevent subscription recreation on every render.
- */
 export function useNewProjectsSubscription({
   enabled = true,
   onNewProject,
@@ -119,39 +77,24 @@ export function useNewProjectsSubscription({
   enabled?: boolean
   onNewProject?: (project: Project) => void
 }) {
-  const channelRef = useRef<RealtimeChannel | null>(null)
   const onNewProjectRef = useRef(onNewProject)
   onNewProjectRef.current = onNewProject
-
-  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     if (!enabled) return
 
-    const channel = supabase
-      .channel('available_projects')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'projects',
-          filter: 'status=eq.paid',
-        },
-        (payload) => {
-          const project = payload.new as Project
-          if (!project.doer_id) {
-            onNewProjectRef.current?.(project)
-          }
-        }
-      )
-      .subscribe()
+    const socket = getSocket()
 
-    channelRef.current = channel
+    const handleNewProject = (project: Project) => {
+      if (!project.doer_id) {
+        onNewProjectRef.current?.(project)
+      }
+    }
+
+    socket.on('available_projects', handleNewProject)
 
     return () => {
-      channelRef.current?.unsubscribe()
-      channelRef.current = null
+      socket.off('available_projects', handleNewProject)
     }
-  }, [enabled, supabase])
+  }, [enabled])
 }

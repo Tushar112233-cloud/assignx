@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/earnings_model.dart';
 
 /// Stats card for displaying a single metric.
@@ -172,7 +173,7 @@ class BalanceCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Available Balance',
+                'Available Balance'.tr(context),
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 14,
@@ -183,7 +184,7 @@ class BalanceCard extends StatelessWidget {
                 TextButton.icon(
                   onPressed: onWithdraw,
                   icon: const Icon(Icons.account_balance_wallet, size: 16),
-                  label: const Text('Withdraw'),
+                  label: Text('Withdraw'.tr(context)),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.white.withValues(alpha: 0.2),
@@ -208,12 +209,12 @@ class BalanceCard extends StatelessWidget {
           Row(
             children: [
               _BalanceItem(
-                label: 'Total Earned',
+                label: 'Total Earned'.tr(context),
                 value: '₹${totalEarnings.toStringAsFixed(2)}',
               ),
               const SizedBox(width: 24),
               _BalanceItem(
-                label: 'Pending',
+                label: 'Pending'.tr(context),
                 value: '₹${pendingEarnings.toStringAsFixed(2)}',
               ),
             ],
@@ -289,7 +290,7 @@ class PerformanceMetricsWidget extends StatelessWidget {
                 Icon(Icons.analytics, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
-                  'Performance Metrics',
+                  'Performance Metrics'.tr(context),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -341,7 +342,7 @@ class PerformanceMetricsWidget extends StatelessWidget {
                 Expanded(
                   child: _MetricItem(
                     icon: Icons.check_circle,
-                    label: 'Approval Rate',
+                    label: 'Approval Rate'.tr(context),
                     value: '${metrics.approvalRate.toStringAsFixed(1)}%',
                     color: Colors.green,
                   ),
@@ -349,7 +350,7 @@ class PerformanceMetricsWidget extends StatelessWidget {
                 Expanded(
                   child: _MetricItem(
                     icon: Icons.schedule,
-                    label: 'Response Time',
+                    label: 'Response Time'.tr(context),
                     value: '${metrics.averageResponseTime.toStringAsFixed(1)}h',
                     color: Colors.blue,
                   ),
@@ -362,7 +363,7 @@ class PerformanceMetricsWidget extends StatelessWidget {
                 Expanded(
                   child: _MetricItem(
                     icon: Icons.star,
-                    label: 'Satisfaction',
+                    label: 'Satisfaction'.tr(context),
                     value: '${metrics.clientSatisfaction.toStringAsFixed(1)}/5',
                     color: Colors.amber,
                   ),
@@ -370,7 +371,7 @@ class PerformanceMetricsWidget extends StatelessWidget {
                 Expanded(
                   child: _MetricItem(
                     icon: Icons.access_time_filled,
-                    label: 'On-Time',
+                    label: 'On-Time'.tr(context),
                     value: '${metrics.onTimeDelivery.toStringAsFixed(1)}%',
                     color: Colors.purple,
                   ),
@@ -386,7 +387,7 @@ class PerformanceMetricsWidget extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Projects Completed',
+                      'Projects Completed'.tr(context),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondaryLight,
                           ),

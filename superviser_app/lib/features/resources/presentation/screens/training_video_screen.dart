@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/training_video_model.dart';
 import '../providers/resources_provider.dart';
 
@@ -48,7 +49,7 @@ class _TrainingVideoPlayerScreenState
 
     if (video == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Training Video')),
+        appBar: AppBar(title: Text('Training Video'.tr(context))),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -134,13 +135,13 @@ class _TrainingVideoPlayerScreenState
                         color: AppColors.success,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.check, color: Colors.white, size: 16),
-                          SizedBox(width: 4),
+                          const Icon(Icons.check, color: Colors.white, size: 16),
+                          const SizedBox(width: 4),
                           Text(
-                            'Completed',
+                            'Completed'.tr(context),
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -262,7 +263,7 @@ class _TrainingVideoPlayerScreenState
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Instructor',
+                                'Instructor'.tr(context),
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelSmall
@@ -284,7 +285,7 @@ class _TrainingVideoPlayerScreenState
                     // Tags
                     if (video.tags.isNotEmpty) ...[
                       Text(
-                        'Topics',
+                        'Topics'.tr(context),
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -327,8 +328,8 @@ class _TrainingVideoPlayerScreenState
                           icon: const Icon(Icons.check_circle),
                           label: Text(
                             _progress >= 0.9
-                                ? 'Mark as Complete'
-                                : 'Watch ${((0.9 - _progress) * 100).round()}% more to complete',
+                                ? 'Mark as Complete'.tr(context)
+                                : '${'Watch'.tr(context)} ${((0.9 - _progress) * 100).round()}% ${'more to complete'.tr(context)}',
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.success,
@@ -403,8 +404,8 @@ class _TrainingVideoPlayerScreenState
           isCompleted: true,
         );
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Video marked as complete!'),
+      SnackBar(
+        content: Text('Video marked as complete!'.tr(context)),
         backgroundColor: Colors.green,
       ),
     );

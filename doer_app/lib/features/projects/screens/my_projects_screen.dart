@@ -1,7 +1,7 @@
 /// My Projects screen showing all doer projects organized by status tabs.
 ///
-/// Displays a hero stats banner, search/filter bar, and three tabs:
-/// Active Projects, Under Review, and Completed.
+/// Displays a hero stats banner, insights row, search/filter/sort bar,
+/// and three tabs: Active Projects, Under Review, and Completed.
 library;
 
 import 'package:flutter/material.dart';
@@ -18,6 +18,7 @@ import '../../../shared/widgets/loading_indicator.dart';
 import '../../dashboard/widgets/app_header.dart';
 import '../widgets/project_filter_bar.dart';
 import '../widgets/project_hero_banner.dart';
+import '../widgets/project_insights_row.dart';
 import '../widgets/project_list_card.dart';
 
 /// Main My Projects screen with tabbed project lists.
@@ -75,24 +76,53 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
                             child: ProjectHeroBanner(stats: stats),
                           ),
 
-                          // Filter bar
+                          // Insights row (collapsible)
+                          SliverToBoxAdapter(
+                            child: ProjectInsightsRow(stats: stats),
+                          ),
+
+                          const SliverToBoxAdapter(
+                            child: SizedBox(height: AppSpacing.md),
+                          ),
+
+                          // Filter bar with sort
                           SliverToBoxAdapter(
                             child: ProjectFilterBar(
                               searchQuery: projectsState.searchQuery,
                               selectedSubject: projectsState.subjectFilter,
                               availableSubjects:
                                   projectsState.availableSubjects,
+                              sortOption: projectsState.sortOption,
                               onSearchChanged: (query) => ref
                                   .read(myProjectsProvider.notifier)
                                   .setSearchQuery(query),
                               onSubjectChanged: (subject) => ref
                                   .read(myProjectsProvider.notifier)
                                   .setSubjectFilter(subject),
+                              onSortChanged: (option) => ref
+                                  .read(myProjectsProvider.notifier)
+                                  .setSortOption(option),
                             ),
                           ),
 
                           const SliverToBoxAdapter(
                             child: SizedBox(height: AppSpacing.md),
+                          ),
+
+                          // Pipeline stats bar
+                          SliverToBoxAdapter(
+                            child: _PipelineStatsBar(
+                              activeCount: projectsState
+                                  .filteredActiveProjects.length,
+                              reviewCount: projectsState
+                                  .filteredUnderReviewProjects.length,
+                              completedCount: projectsState
+                                  .filteredCompletedProjects.length,
+                            ),
+                          ),
+
+                          const SliverToBoxAdapter(
+                            child: SizedBox(height: AppSpacing.sm),
                           ),
 
                           // Tab bar
@@ -119,7 +149,8 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
                             emptyIcon: Icons.assignment_outlined,
                             emptyTitle: 'No Active Projects'.tr(context),
                             emptyDescription:
-                                'You don\'t have any active projects right now. Check the dashboard for available projects.'.tr(context),
+                                'You don\'t have any active projects right now. Check the dashboard for available projects.'
+                                    .tr(context),
                           ),
 
                           // Under review tab
@@ -129,7 +160,8 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
                             emptyIcon: Icons.rate_review_outlined,
                             emptyTitle: 'Nothing Under Review'.tr(context),
                             emptyDescription:
-                                'No projects are currently being reviewed. Submit your work to see them here.'.tr(context),
+                                'No projects are currently being reviewed. Submit your work to see them here.'
+                                    .tr(context),
                           ),
 
                           // Completed tab
@@ -138,7 +170,8 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
                             emptyIcon: Icons.check_circle_outline,
                             emptyTitle: 'No Completed Projects'.tr(context),
                             emptyDescription:
-                                'Completed projects will appear here once they are approved.'.tr(context),
+                                'Completed projects will appear here once they are approved.'
+                                    .tr(context),
                           ),
                         ],
                       ),
@@ -147,6 +180,113 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Pipeline stats bar showing counts per status as a visual bar.
+class _PipelineStatsBar extends StatelessWidget {
+  final int activeCount;
+  final int reviewCount;
+  final int completedCount;
+
+  const _PipelineStatsBar({
+    required this.activeCount,
+    required this.reviewCount,
+    required this.completedCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final total = activeCount + reviewCount + completedCount;
+    if (total == 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Visual pipeline bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: SizedBox(
+              height: 6,
+              child: Row(
+                children: [
+                  if (activeCount > 0)
+                    Expanded(
+                      flex: activeCount,
+                      child: Container(color: AppColors.info),
+                    ),
+                  if (reviewCount > 0)
+                    Expanded(
+                      flex: reviewCount,
+                      child: Container(color: AppColors.warning),
+                    ),
+                  if (completedCount > 0)
+                    Expanded(
+                      flex: completedCount,
+                      child: Container(color: AppColors.success),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          // Labels row
+          Row(
+            children: [
+              _PipelineDot(
+                color: AppColors.info,
+                label: '$activeCount ${'Active'.tr(context)}',
+              ),
+              const SizedBox(width: AppSpacing.md),
+              _PipelineDot(
+                color: AppColors.warning,
+                label: '$reviewCount ${'Review'.tr(context)}',
+              ),
+              const SizedBox(width: AppSpacing.md),
+              _PipelineDot(
+                color: AppColors.success,
+                label: '$completedCount ${'Done'.tr(context)}',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PipelineDot extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _PipelineDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 }

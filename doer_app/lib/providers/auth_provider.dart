@@ -58,9 +58,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
-import '../core/config/supabase_config.dart';
+import '../core/api/api_client.dart';
+import '../core/storage/token_storage.dart';
 import '../data/models/doer_model.dart';
 import '../data/models/user_model.dart';
 import '../data/repositories/auth_repository.dart';
@@ -81,7 +81,7 @@ export '../data/models/doer_model.dart' show SkillModel, SubjectModel;
 /// final skills = await repository.getAvailableSkills();
 /// ```
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return SupabaseAuthRepository();
+  return ApiAuthRepository();
 });
 
 /// Enumeration of possible authentication states.
@@ -255,97 +255,48 @@ class AuthNotifier extends Notifier<AuthState> {
   /// The authentication repository for data operations.
   late AuthRepository _repository;
 
-  /// Subscription to Supabase auth state changes.
-  StreamSubscription<supabase.AuthState>? _authSubscription;
-
   /// Builds and initializes the authentication state.
   ///
   /// This method is called when the provider is first read. It:
   /// 1. Injects the [AuthRepository] dependency
-  /// 2. Sets up the Supabase auth state listener
-  /// 3. Checks for an existing session
+  /// 2. Checks for an existing token-based session
   ///
   /// ## Returns
   ///
   /// The initial [AuthState] based on current session status:
-  /// - [AuthStatus.loading] if a session exists (profile fetch pending)
-  /// - [AuthStatus.unauthenticated] if no session exists
+  /// - [AuthStatus.loading] if tokens exist (profile fetch pending)
+  /// - [AuthStatus.unauthenticated] if no tokens exist
   @override
   AuthState build() {
     _repository = ref.watch(authRepositoryProvider);
 
-    // Listen for auth state changes from Supabase
-    _authSubscription?.cancel();
-    _authSubscription = SupabaseConfig.authStateChanges.listen(_onAuthStateChange);
+    // Check for existing session via stored tokens
+    Future.microtask(() => _checkExistingSession());
 
-    // Clean up subscription when provider is disposed
-    ref.onDispose(() => _authSubscription?.cancel());
-
-    // Check initial session synchronously to avoid race condition
-    final session = _repository.currentSession;
-    if (session != null) {
-      // Schedule profile fetch after build completes
-      Future.microtask(() => _fetchUserProfile(session.user.id));
-      return const AuthState(status: AuthStatus.loading);
-    }
-
-    return const AuthState(status: AuthStatus.unauthenticated);
+    return const AuthState(status: AuthStatus.loading);
   }
 
-  /// Handles authentication state changes from Supabase.
-  ///
-  /// This callback is invoked whenever Supabase auth state changes,
-  /// including sign-in, sign-out, token refresh, and user updates.
-  ///
-  /// ## Parameters
-  ///
-  /// - [authState]: The new Supabase auth state containing event and session
-  void _onAuthStateChange(supabase.AuthState authState) {
-    final event = authState.event;
-    final session = authState.session;
-
-    switch (event) {
-      case supabase.AuthChangeEvent.initialSession:
-        // Initial session check on app start
-        if (session != null) {
-          _fetchUserProfile(session.user.id);
-        } else {
-          state = const AuthState(status: AuthStatus.unauthenticated);
-        }
-
-      case supabase.AuthChangeEvent.signedIn:
-        if (session != null) {
-          _fetchUserProfile(session.user.id);
-        }
-
-      case supabase.AuthChangeEvent.signedOut:
+  /// Checks if stored tokens represent a valid session.
+  Future<void> _checkExistingSession() async {
+    try {
+      final hasTokens = await TokenStorage.hasTokens();
+      if (!hasTokens) {
         state = const AuthState(status: AuthStatus.unauthenticated);
+        return;
+      }
 
-      case supabase.AuthChangeEvent.tokenRefreshed:
-        // Session is still valid, no action needed
-        // Token refresh is handled automatically by Supabase SDK
-        break;
-
-      case supabase.AuthChangeEvent.userUpdated:
-        // User metadata was updated, refresh profile
-        if (session != null) {
-          _fetchUserProfile(session.user.id);
-        }
-
-      case supabase.AuthChangeEvent.passwordRecovery:
-        // Password recovery initiated, could navigate to reset screen
-        // For now, keep current state
-        break;
-
-      case supabase.AuthChangeEvent.mfaChallengeVerified:
-        // MFA verified, treat as signed in
-        if (session != null) {
-          _fetchUserProfile(session.user.id);
-        }
-
-      // Handle any future auth events
-      default:
-        break;
+      // Try to get the current user ID from the API
+      final userId = await _repository.getCurrentUserId();
+      if (userId != null) {
+        await _fetchUserProfile(userId);
+      } else {
+        // Tokens are expired or invalid
+        await TokenStorage.clearTokens();
+        state = const AuthState(status: AuthStatus.unauthenticated);
+      }
+    } catch (e) {
+      await TokenStorage.clearTokens();
+      state = const AuthState(status: AuthStatus.unauthenticated);
     }
   }
 
@@ -372,19 +323,15 @@ class AuthNotifier extends Notifier<AuthState> {
       );
     } else {
       // User profile doesn't exist yet (new user) - create basic user model
-      final authUser = _repository.currentUser;
-      if (authUser != null) {
-        state = state.copyWith(
-          status: AuthStatus.authenticated,
-          user: UserModel(
-            id: authUser.id,
-            email: authUser.email ?? '',
-            fullName: authUser.userMetadata?['full_name'] as String? ?? '',
-            phone: authUser.phone,
-            createdAt: DateTime.now(),
-          ),
-        );
-      }
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: UserModel(
+          id: userId,
+          email: '',
+          fullName: '',
+          createdAt: DateTime.now(),
+        ),
+      );
     }
   }
 
@@ -447,16 +394,18 @@ class AuthNotifier extends Notifier<AuthState> {
         phone: phone,
       );
 
-      if (response.user != null) {
+      if (response.hasSession && response.user != null) {
+        final userId = (response.user!['_id'] ?? response.user!['id'] ?? '').toString();
+
         // Create profile in database
         await _repository.createProfile(
-          userId: response.user!.id,
+          userId: userId,
           email: email,
           fullName: fullName,
           phone: phone,
         );
 
-        await _fetchUserProfile(response.user!.id);
+        await _fetchUserProfile(userId);
         return true;
       }
 
@@ -465,7 +414,7 @@ class AuthNotifier extends Notifier<AuthState> {
         errorMessage: 'Registration failed',
       );
       return false;
-    } on supabase.AuthException catch (e) {
+    } on ApiException catch (e) {
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.message,
@@ -519,8 +468,8 @@ class AuthNotifier extends Notifier<AuthState> {
         password: password,
       );
 
-      if (response.user != null) {
-        await _fetchUserProfile(response.user!.id);
+      if (response.hasSession && response.user != null) {
+        await _fetchUserProfile((response.user!['_id'] ?? response.user!['id'] ?? '').toString());
         return true;
       }
 
@@ -529,7 +478,7 @@ class AuthNotifier extends Notifier<AuthState> {
         errorMessage: 'Sign in failed',
       );
       return false;
-    } on supabase.AuthException catch (e) {
+    } on ApiException catch (e) {
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.message,
@@ -794,7 +743,7 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<bool> verifyOtp(String phone, String otp) async {
     try {
       final response = await _repository.verifyOtp(phone, otp);
-      return response.user != null;
+      return response.hasSession;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('AuthNotifier.verifyOtp error: $e');
@@ -983,7 +932,7 @@ class AuthNotifier extends Notifier<AuthState> {
       // Clear any previous error messages
       state = state.copyWith(errorMessage: null);
       return true;
-    } on supabase.AuthException catch (e) {
+    } on ApiException catch (e) {
       String errorMessage = 'Failed to send reset email';
       if (e.message.toLowerCase().contains('rate limit')) {
         errorMessage = 'Too many attempts. Please try again later.';

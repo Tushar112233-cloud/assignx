@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../shared/widgets/misc/status_badge.dart';
 import '../../data/models/ticket_model.dart';
 
@@ -274,14 +275,14 @@ class EmptyTickets extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No support tickets',
+              'No support tickets'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Need help? Create a support ticket and we\'ll get back to you.',
+              'Need help? Create a support ticket and we\'ll get back to you.'.tr(context),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
@@ -292,7 +293,7 @@ class EmptyTickets extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onCreateTicket,
                 icon: const Icon(Icons.add),
-                label: const Text('Create Ticket'),
+                label: Text('Create Ticket'.tr(context)),
               ),
             ],
           ],
@@ -330,7 +331,7 @@ class TicketStatusFilter extends StatelessWidget {
       child: Row(
         children: _statuses.map((status) {
           final isSelected = selectedStatus == status;
-          final label = status?.displayName ?? 'All';
+          final label = status?.displayName ?? 'All'.tr(context);
           final color = status?.color ?? AppColors.primary;
 
           return Padding(

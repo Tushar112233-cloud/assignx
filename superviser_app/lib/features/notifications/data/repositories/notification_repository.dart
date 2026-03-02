@@ -1,16 +1,9 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/network/supabase_client.dart';
+import '../../../../core/api/api_client.dart';
 import '../models/notification_model.dart';
 
 /// Repository for notification operations.
 class NotificationRepository {
-  NotificationRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
-
-  final SupabaseClient _client;
-
-  /// Get current user ID.
-  String? get _currentUserId => getCurrentUserId();
+  NotificationRepository();
 
   /// Fetch notifications with pagination.
   Future<List<NotificationModel>> getNotifications({
@@ -19,133 +12,83 @@ class NotificationRepository {
     bool? isRead,
     NotificationType? type,
   }) async {
-    if (_currentUserId == null) return [];
+    final params = <String, String>{
+      'limit': '$limit',
+      'offset': '$offset',
+      if (isRead != null) 'isRead': '$isRead',
+      if (type != null) 'type': type.name,
+    };
+    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
 
-    var query = _client
-        .from('notifications')
-        .select()
-        .eq('profile_id', _currentUserId!);
+    final response = await ApiClient.get('/notifications?$query');
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['notifications'] as List? ?? [];
 
-    if (isRead != null) {
-      query = query.eq('is_read', isRead);
-    }
-
-    if (type != null) {
-      query = query.eq('notification_type', type.name);
-    }
-
-    final response = await query
-        .order('created_at', ascending: false)
-        .range(offset, offset + limit - 1);
-
-    return (response as List)
-        .map((json) => NotificationModel.fromJson(json))
+    return list
+        .map((json) => NotificationModel.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
   /// Get unread notification count.
   Future<int> getUnreadCount() async {
-    if (_currentUserId == null) return 0;
-
-    final response = await _client
-        .from('notifications')
-        .select('id')
-        .eq('profile_id', _currentUserId!)
-        .eq('is_read', false);
-
-    return (response as List).length;
+    final response = await ApiClient.get('/notifications/unread-count');
+    if (response is Map<String, dynamic>) {
+      return response['count'] as int? ?? 0;
+    }
+    return 0;
   }
 
   /// Mark notification as read.
   Future<void> markAsRead(String notificationId) async {
-    await _client.from('notifications').update({
-      'is_read': true,
-      'read_at': DateTime.now().toIso8601String(),
-    }).eq('id', notificationId);
+    await ApiClient.put('/notifications/$notificationId/read', {});
   }
 
   /// Mark all notifications as read.
   Future<void> markAllAsRead() async {
-    if (_currentUserId == null) return;
-
-    await _client
-        .from('notifications')
-        .update({
-          'is_read': true,
-          'read_at': DateTime.now().toIso8601String(),
-        })
-        .eq('profile_id', _currentUserId!)
-        .eq('is_read', false);
+    await ApiClient.put('/notifications/mark-all-read', {});
   }
 
   /// Delete a notification.
   Future<void> deleteNotification(String notificationId) async {
-    await _client.from('notifications').delete().eq('id', notificationId);
+    await ApiClient.delete('/notifications/$notificationId');
   }
 
   /// Delete all notifications.
   Future<void> deleteAllNotifications() async {
-    if (_currentUserId == null) return;
-
-    await _client
-        .from('notifications')
-        .delete()
-        .eq('profile_id', _currentUserId!);
+    await ApiClient.delete('/notifications/all');
   }
 
   /// Stream notifications in real-time.
+  /// Note: Real-time notifications handled via Socket.IO in the app.
   Stream<List<NotificationModel>> watchNotifications() {
-    if (_currentUserId == null) {
-      return Stream.value([]);
-    }
-
-    return _client
-        .from('notifications')
-        .stream(primaryKey: ['id'])
-        .eq('profile_id', _currentUserId!)
-        .order('created_at', ascending: false)
-        .map((data) => data.map(NotificationModel.fromJson).toList());
+    // Socket.IO based real-time is handled at the provider level
+    return Stream.value([]);
   }
 
-  /// Get notification settings.
+  /// Get notification settings from user preferences.
   Future<NotificationSettings> getSettings() async {
-    if (_currentUserId == null) return const NotificationSettings();
-
-    final response = await _client
-        .from('notification_settings')
-        .select()
-        .eq('profile_id', _currentUserId!)
-        .maybeSingle();
-
-    if (response == null) return const NotificationSettings();
-    return NotificationSettings.fromJson(response);
+    try {
+      final response = await ApiClient.get('/profiles/me/preferences');
+      if (response != null && response is Map<String, dynamic>) {
+        return NotificationSettings.fromJson(response);
+      }
+    } catch (_) {}
+    return const NotificationSettings();
   }
 
-  /// Update notification settings.
+  /// Update notification settings in user preferences.
   Future<void> updateSettings(NotificationSettings settings) async {
-    if (_currentUserId == null) return;
-
-    await _client.from('notification_settings').upsert({
-      'user_id': _currentUserId!,
-      ...settings.toJson(),
-      'updated_at': DateTime.now().toIso8601String(),
-    });
+    await ApiClient.put('/profiles/me/preferences', settings.toJson());
   }
 
   /// Register device token for push notifications.
   Future<void> registerDeviceToken(String token, {String? platform}) async {
-    if (_currentUserId == null) return;
-
-    await _client.from('device_tokens').upsert({
-      'user_id': _currentUserId!,
-      'token': token,
-      'platform': platform ?? 'unknown',
-      'updated_at': DateTime.now().toIso8601String(),
-    });
+    // Push token management handled externally
   }
 
   /// Unregister device token.
   Future<void> unregisterDeviceToken(String token) async {
-    await _client.from('device_tokens').delete().eq('token', token);
+    // Push token management handled externally
   }
 }

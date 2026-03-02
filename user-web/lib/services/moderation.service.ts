@@ -10,7 +10,7 @@
  * @module moderation.service
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { apiClient } from '@/lib/api/client';
 import {
   moderateContent,
   moderateContentEnhanced,
@@ -108,7 +108,6 @@ const WARNING_MESSAGES: Record<string, string> = {
  * Handles all moderation-related functionality
  */
 export class ModerationService {
-  private supabase = createClient();
   private rateLimitConfig: RateLimitConfig;
   private violationCache: Map<string, UserViolationSummary> = new Map();
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes
@@ -225,42 +224,13 @@ export class ModerationService {
     }
 
     try {
-      const now = new Date();
-      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      // Get violation summary from API
+      const data = await apiClient(`/api/moderation/users/${userId}/summary`);
 
-      // Get total violations
-      const { count: totalCount } = await this.supabase
-        .from('moderation_logs')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
-
-      // Get violations in last hour
-      const { count: recentCount } = await this.supabase
-        .from('moderation_logs')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .gte('created_at', oneHourAgo.toISOString());
-
-      // Get violations in last day
-      const { count: dayCount } = await this.supabase
-        .from('moderation_logs')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .gte('created_at', oneDayAgo.toISOString());
-
-      // Get last violation
-      const { data: lastViolation } = await this.supabase
-        .from('moderation_logs')
-        .select('created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      const recentViolations = recentCount || 0;
-      const dailyViolations = dayCount || 0;
-      const totalViolations = totalCount || 0;
+      const recentViolations = data?.recentViolations || 0;
+      const dailyViolations = data?.dailyViolations || 0;
+      const totalViolations = data?.totalViolations || 0;
+      const lastViolation = data?.lastViolationAt ? { created_at: data.lastViolationAt } : null;
 
       // Determine if rate limited
       const isRateLimited =
@@ -310,23 +280,21 @@ export class ModerationService {
    */
   async logViolation(entry: ModerationLogEntry): Promise<boolean> {
     try {
-      const { error } = await this.supabase.from('moderation_logs').insert({
-        user_id: entry.user_id,
-        project_id: entry.project_id,
-        chat_id: entry.chat_id,
-        original_content: entry.original_content,
-        sanitized_content: entry.sanitized_content,
-        violation_types: entry.violation_types,
-        violation_count: entry.violation_count,
-        severity: entry.severity,
-        action_taken: entry.action_taken,
-        metadata: entry.metadata,
+      await apiClient('/api/moderation/logs', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: entry.user_id,
+          project_id: entry.project_id,
+          chat_id: entry.chat_id,
+          original_content: entry.original_content,
+          sanitized_content: entry.sanitized_content,
+          violation_types: entry.violation_types,
+          violation_count: entry.violation_count,
+          severity: entry.severity,
+          action_taken: entry.action_taken,
+          metadata: entry.metadata,
+        }),
       });
-
-      if (error) {
-        console.error('Error logging violation:', error);
-        return false;
-      }
 
       // Invalidate cache for this user
       this.violationCache.delete(entry.user_id);
@@ -373,18 +341,7 @@ export class ModerationService {
     limit = 50
   ): Promise<ModerationLogEntry[]> {
     try {
-      const { data, error } = await this.supabase
-        .from('moderation_logs')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error('Error fetching violation history:', error);
-        return [];
-      }
-
+      const data = await apiClient(`/api/moderation/users/${userId}/history?limit=${limit}`);
       return data || [];
     } catch (error) {
       console.error('Error fetching violation history:', error);
@@ -404,29 +361,12 @@ export class ModerationService {
     recentViolations: ModerationLogEntry[];
   }> {
     try {
-      const { data, error } = await this.supabase
-        .from('moderation_logs')
-        .select('*')
-        .eq('project_id', projectId);
-
-      if (error || !data) {
-        throw error;
-      }
-
-      const uniqueUsers = new Set(data.map((d: any) => d.user_id)).size;
-
-      const violationsByType: Record<string, number> = {};
-      data.forEach((entry: any) => {
-        (entry.violation_types as ViolationType[]).forEach(type => {
-          violationsByType[type] = (violationsByType[type] || 0) + 1;
-        });
-      });
-
+      const data = await apiClient(`/api/moderation/projects/${projectId}/stats`);
       return {
-        totalViolations: data.length,
-        uniqueUsers,
-        violationsByType: violationsByType as Record<ViolationType, number>,
-        recentViolations: data.slice(0, 10),
+        totalViolations: data?.totalViolations || 0,
+        uniqueUsers: data?.uniqueUsers || 0,
+        violationsByType: (data?.violationsByType || {}) as Record<ViolationType, number>,
+        recentViolations: data?.recentViolations || [],
       };
     } catch (error) {
       console.error('Error fetching project violation stats:', error);

@@ -45,7 +45,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/translation/translation_extensions.dart';
@@ -197,18 +196,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     // Admin bypass: sign in with password instead of magic link
     if (email.toLowerCase() == 'admin@gmail.com') {
-      try {
-        final response = await Supabase.instance.client.auth.signInWithPassword(
-          email: 'admin@gmail.com',
-          password: 'Admin@123',
-        );
-        if (response.session != null) {
-          // Auth state listener handles navigation
-          return;
-        }
-      } catch (e) {
-        if (mounted) {
-          context.showErrorSnackBar('Login failed: ${e.toString()}');
+      final success = await ref.read(authProvider.notifier).signIn(
+        email: 'admin@gmail.com',
+        password: 'Admin@123',
+      );
+      if (!mounted) return;
+      if (!success) {
+        final error = ref.read(authProvider).error;
+        if (error != null) {
+          context.showErrorSnackBar('Login failed: $error');
         }
       }
       return;

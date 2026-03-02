@@ -1,8 +1,8 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/api/api_client.dart';
 import '../../data/models/community_comment_model.dart';
 import '../../data/models/community_post_model.dart';
 import '../../data/repositories/community_repository.dart';
@@ -39,62 +39,42 @@ final savedCommunityPostsProvider =
 final communityCommentsProvider =
     FutureProvider.autoDispose.family<List<CommunityComment>, String>(
   (ref, postId) async {
-    final supabase = Supabase.instance.client;
+    final response = await ApiClient.get(
+      '/community/business-hub/$postId/comments',
+    );
 
-    final response = await supabase
-        .from('community_comments')
-        .select('''
-          *,
-          author:profiles (
-            id,
-            full_name,
-            avatar_url,
-            is_verified
-          )
-        ''')
-        .eq('post_id', postId)
-        .isFilter('parent_id', null)
-        .order('created_at', ascending: false);
+    final commentsData = response is List
+        ? response
+        : (response as Map<String, dynamic>)['comments'] as List? ?? [];
 
-    // Fetch replies for each comment
     final comments = <CommunityComment>[];
-    for (final data in response as List) {
-      final replies = await supabase
-          .from('community_comments')
-          .select('''
-            *,
-            author:profiles (
-              id,
-              full_name,
-              avatar_url,
-              is_verified
-            )
-          ''')
-          .eq('parent_id', data['id'])
-          .order('created_at', ascending: true);
+    for (final data in commentsData) {
+      final commentMap = data as Map<String, dynamic>;
+      final repliesList = commentMap['replies'] as List? ?? [];
 
       comments.add(CommunityComment(
-        id: data['id'],
-        content: data['content'] ?? '',
-        authorId: data['author_id'] ?? '',
-        authorName: data['author']?['full_name'] ?? 'Anonymous',
-        authorAvatar: data['author']?['avatar_url'],
-        isAuthorVerified: data['author']?['is_verified'] ?? false,
-        createdAt: DateTime.parse(data['created_at']),
-        likeCount: data['likes_count'] ?? 0,
+        id: commentMap['id'] as String? ?? '',
+        content: commentMap['content'] as String? ?? '',
+        authorId: commentMap['user_id'] as String? ?? '',
+        authorName: (commentMap['author'] as Map<String, dynamic>?)?['full_name'] as String? ?? 'Anonymous',
+        authorAvatar: (commentMap['author'] as Map<String, dynamic>?)?['avatar_url'] as String?,
+        isAuthorVerified: false,
+        createdAt: DateTime.parse(commentMap['created_at'] as String),
+        likeCount: commentMap['likes_count'] as int? ?? 0,
         isLiked: false,
-        replies: (replies as List).map((r) {
+        replies: repliesList.map((r) {
+          final replyMap = r as Map<String, dynamic>;
           return CommunityComment(
-            id: r['id'],
-            content: r['content'] ?? '',
-            authorId: r['author_id'] ?? '',
-            authorName: r['author']?['full_name'] ?? 'Anonymous',
-            authorAvatar: r['author']?['avatar_url'],
-            isAuthorVerified: r['author']?['is_verified'] ?? false,
-            createdAt: DateTime.parse(r['created_at']),
-            likeCount: r['likes_count'] ?? 0,
+            id: replyMap['id'] as String? ?? '',
+            content: replyMap['content'] as String? ?? '',
+            authorId: replyMap['user_id'] as String? ?? '',
+            authorName: (replyMap['author'] as Map<String, dynamic>?)?['full_name'] as String? ?? 'Anonymous',
+            authorAvatar: (replyMap['author'] as Map<String, dynamic>?)?['avatar_url'] as String?,
+            isAuthorVerified: false,
+            createdAt: DateTime.parse(replyMap['created_at'] as String),
+            likeCount: replyMap['likes_count'] as int? ?? 0,
             isLiked: false,
-            parentId: data['id'],
+            parentId: commentMap['id'] as String?,
           );
         }).toList(),
       ));

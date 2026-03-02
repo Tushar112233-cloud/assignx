@@ -112,28 +112,28 @@ class Tutor {
   /// Create from JSON.
   factory Tutor.fromJson(Map<String, dynamic> json) {
     return Tutor(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
       name: json['name'] as String? ?? 'Anonymous',
       avatar: json['avatar'] as String?,
       bio: json['bio'] as String?,
       subjects: (json['subjects'] as List<dynamic>?)?.cast<String>() ?? [],
       qualifications:
           (json['qualifications'] as List<dynamic>?)?.cast<String>() ?? [],
-      hourlyRate: (json['hourly_rate'] as num?)?.toDouble() ?? 0,
+      hourlyRate: ((json['hourly_rate'] ?? json['hourlyRate']) as num?)?.toDouble() ?? 0,
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
-      reviewCount: json['review_count'] as int? ?? 0,
-      sessionsCompleted: json['sessions_completed'] as int? ?? 0,
-      isAvailable: json['is_available'] as bool? ?? true,
-      isVerified: json['is_verified'] as bool? ?? false,
+      reviewCount: (json['review_count'] ?? json['reviewCount']) as int? ?? 0,
+      sessionsCompleted: (json['sessions_completed'] ?? json['sessionsCompleted']) as int? ?? 0,
+      isAvailable: (json['is_available'] ?? json['isAvailable']) as bool? ?? true,
+      isVerified: (json['is_verified'] ?? json['isVerified']) as bool? ?? false,
       university: json['university'] as String?,
-      yearOfStudy: json['year_of_study'] as String?,
-      responseTimeMinutes: json['response_time_minutes'] as int?,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+      yearOfStudy: (json['year_of_study'] ?? json['yearOfStudy']) as String?,
+      responseTimeMinutes: (json['response_time_minutes'] ?? json['responseTimeMinutes']) as int?,
+      createdAt: (json['created_at'] ?? json['createdAt']) != null
+          ? DateTime.tryParse((json['created_at'] ?? json['createdAt']).toString()) ?? DateTime.now()
           : DateTime.now(),
-      lastActiveAt: json['last_active_at'] != null
-          ? DateTime.parse(json['last_active_at'] as String)
+      lastActiveAt: (json['last_active_at'] ?? json['lastActiveAt']) != null
+          ? DateTime.tryParse((json['last_active_at'] ?? json['lastActiveAt']).toString())
           : null,
     );
   }
@@ -247,9 +247,9 @@ class TimeSlot {
 
   factory TimeSlot.fromJson(Map<String, dynamic> json) {
     return TimeSlot(
-      id: json['id'] as String,
-      time: json['time'] as String,
-      isAvailable: json['is_available'] as bool? ?? true,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      time: (json['time'] as String?) ?? '',
+      isAvailable: (json['is_available'] ?? json['isAvailable']) as bool? ?? true,
       period: json['period'] as String? ?? 'morning',
     );
   }
@@ -287,24 +287,24 @@ class BookedSession {
 
   factory BookedSession.fromJson(Map<String, dynamic> json) {
     return BookedSession(
-      id: json['id'] as String,
-      tutorId: json['tutor_id'] as String,
-      studentId: json['student_id'] as String,
-      date: DateTime.parse(json['date'] as String),
-      timeSlot: json['time_slot'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      tutorId: (json['tutor_id'] ?? json['tutorId'] ?? '').toString(),
+      studentId: (json['student_id'] ?? json['studentId'] ?? '').toString(),
+      date: DateTime.tryParse((json['date'] ?? '').toString()) ?? DateTime.now(),
+      timeSlot: (json['time_slot'] ?? json['timeSlot'] ?? '').toString(),
       sessionType: SessionType.values.firstWhere(
-        (t) => t.name == json['session_type'],
+        (t) => t.name == (json['session_type'] ?? json['sessionType']),
         orElse: () => SessionType.oneOnOne,
       ),
       duration: SessionDuration.values.firstWhere(
-        (d) => d.minutes == json['duration_minutes'],
+        (d) => d.minutes == (json['duration_minutes'] ?? json['durationMinutes']),
         orElse: () => SessionDuration.oneHour,
       ),
       topic: json['topic'] as String?,
       notes: json['notes'] as String?,
-      totalPrice: (json['total_price'] as num).toDouble(),
+      totalPrice: ((json['total_price'] ?? json['totalPrice'] ?? 0) as num).toDouble(),
       status: json['status'] as String? ?? 'pending',
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 
@@ -350,14 +350,14 @@ class TutorReview {
 
   factory TutorReview.fromJson(Map<String, dynamic> json) {
     return TutorReview(
-      id: json['id'] as String,
-      tutorId: json['tutor_id'] as String,
-      studentId: json['student_id'] as String,
-      studentName: json['student_name'] as String? ?? 'Anonymous',
-      studentAvatar: json['student_avatar'] as String?,
-      rating: (json['rating'] as num).toDouble(),
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      tutorId: (json['tutor_id'] ?? json['tutorId'] ?? '').toString(),
+      studentId: (json['student_id'] ?? json['studentId'] ?? '').toString(),
+      studentName: (json['student_name'] ?? json['studentName']) as String? ?? 'Anonymous',
+      studentAvatar: (json['student_avatar'] ?? json['studentAvatar']) as String?,
+      rating: ((json['rating'] ?? 0) as num).toDouble(),
       comment: json['comment'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 }

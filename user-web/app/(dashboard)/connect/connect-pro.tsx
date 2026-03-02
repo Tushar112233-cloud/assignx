@@ -39,6 +39,7 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api/client";
 import { useUserStore } from "@/stores/user-store";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -52,6 +53,7 @@ import { BookSessionSheet } from "@/components/connect/book-session-sheet";
 import { TutorProfileSheet } from "@/components/connect/tutor-profile-sheet";
 import { AskQuestionSheet } from "@/components/connect/ask-question-sheet";
 import { QuestionDetailSheet } from "@/components/connect/question-detail-sheet";
+import { ConnectTabs } from "@/components/connect/connect-tabs";
 import { PageSkeletonProvider, StaggerItem } from "@/components/skeletons";
 import { MarketplaceSkeleton } from "@/components/skeletons/pages";
 
@@ -151,10 +153,44 @@ export function ConnectPro() {
   const tutorScrollRef = useRef<HTMLDivElement>(null);
 
   // Q&A state
-  const [qaList] = useState<Question[]>([]);
+  const [qaList, setQaList] = useState<Question[]>([]);
   const [showAskQuestion, setShowAskQuestion] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [showQuestionDetail, setShowQuestionDetail] = useState(false);
+
+  // Fetch Q&A questions from API
+  useEffect(() => {
+    async function loadQuestions() {
+      try {
+        const data = await apiClient("/api/community/posts?category=questions&limit=10&sort=created_at:desc");
+
+        if (Array.isArray(data)) {
+          setQaList(
+            data.map((post: any) => ({
+              id: post.id || post._id,
+              title: post.title || "",
+              content: post.content || "",
+              subject: "General",
+              author: {
+                id: post.user_id || post.userId || "",
+                name: post.profile?.full_name || post.userName || "Anonymous",
+                avatar: post.profile?.avatar_url || post.userAvatar || undefined,
+              },
+              answerCount: 0,
+              upvotes: 0,
+              createdAt: new Date(post.created_at || post.createdAt),
+              isAnswered: false,
+              tags: [],
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn("Error loading Q&A questions:", err);
+      }
+    }
+
+    loadQuestions();
+  }, []);
 
   // Stats calculations
   const stats = useMemo(() => ({
@@ -552,6 +588,13 @@ export function ConnectPro() {
               </Button>
             </motion.div>
           </div>
+        </div>
+      </StaggerItem>
+
+      {/* Connect Tabs Section - Tutors, Study Groups, Resources */}
+      <StaggerItem>
+        <div className="px-4 md:px-6 lg:px-10 xl:px-12 pt-8 pb-8">
+          <ConnectTabs />
         </div>
       </StaggerItem>
 

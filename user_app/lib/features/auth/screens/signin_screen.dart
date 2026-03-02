@@ -6,8 +6,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../core/api/api_client.dart';
+import '../../../core/storage/token_storage.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
@@ -75,7 +75,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
     });
 
     try {
-      await ref.read(authStateProvider.notifier).signInWithGoogle();
+      // Google sign-in is not yet implemented in the API-based auth system.
+      // For now, show a message directing users to use magic link instead.
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Google sign-in is not available yet. Please use email sign-in.';
+        });
+      }
+      return;
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -116,11 +123,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
         _magicLinkError = null;
       });
       try {
-        final response = await Supabase.instance.client.auth.signInWithPassword(
-          email: 'admin@gmail.com',
-          password: 'Admin@123',
-        );
-        if (response.session != null) {
+        final response = await ApiClient.post('/auth/login', {
+          'email': 'admin@gmail.com',
+          'password': 'Admin@123',
+        });
+        if (response != null && response['accessToken'] != null) {
+          await TokenStorage.saveTokens(
+            response['accessToken'] as String,
+            response['refreshToken'] as String,
+          );
           // Auth state listener handles navigation
           return;
         }

@@ -303,7 +303,7 @@ class _ResourceFiltersContentState extends State<_ResourceFiltersContent> {
                   const Icon(Icons.menu_book_outlined, size: 24),
                   const SizedBox(width: 12),
                   Text(
-                    'Resource Filters',
+                    'Resource Filters'.tr(context),
                     style: AppTextStyles.headingSmall.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -337,7 +337,7 @@ class _ResourceFiltersContentState extends State<_ResourceFiltersContent> {
                   });
                 },
                 child: Text(
-                  'Reset',
+                  'Reset'.tr(context),
                   style: AppTextStyles.labelMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -356,7 +356,7 @@ class _ResourceFiltersContentState extends State<_ResourceFiltersContent> {
             padding: const EdgeInsets.all(20),
             children: [
               // Subject Section
-              _buildSectionHeader('Subject', Icons.school_outlined),
+              _buildSectionHeader('Subject'.tr(context), Icons.school_outlined),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -364,7 +364,7 @@ class _ResourceFiltersContentState extends State<_ResourceFiltersContent> {
                 children: subjects.map((subject) {
                   final isSelected = _filters.subject.contains(subject.id);
                   return _FilterChip(
-                    label: subject.label,
+                    label: subject.label.tr(context),
                     icon: subject.icon,
                     isSelected: isSelected,
                     onTap: () => _toggleSubject(subject.id),
@@ -375,7 +375,7 @@ class _ResourceFiltersContentState extends State<_ResourceFiltersContent> {
               const SizedBox(height: 24),
 
               // Resource Type Section
-              _buildSectionHeader('Resource Type', Icons.folder_outlined),
+              _buildSectionHeader('Resource Type'.tr(context), Icons.folder_outlined),
               const SizedBox(height: 12),
               GridView.builder(
                 shrinkWrap: true,
@@ -391,7 +391,7 @@ class _ResourceFiltersContentState extends State<_ResourceFiltersContent> {
                   final type = resourceTypes[index];
                   final isSelected = _filters.resourceType.contains(type.id);
                   return _ResourceTypeCard(
-                    type: type,
+                    type: type, // Labels translated inside _ResourceTypeCard
                     isSelected: isSelected,
                     onTap: () => _toggleResourceType(type.id),
                   );
@@ -401,7 +401,7 @@ class _ResourceFiltersContentState extends State<_ResourceFiltersContent> {
               const SizedBox(height: 24),
 
               // Difficulty Level Section
-              _buildSectionHeader('Difficulty Level', Icons.speed_outlined),
+              _buildSectionHeader('Difficulty Level'.tr(context), Icons.speed_outlined),
               const SizedBox(height: 12),
               Row(
                 children: difficultyLevels.map((level) {
@@ -426,7 +426,7 @@ class _ResourceFiltersContentState extends State<_ResourceFiltersContent> {
               const SizedBox(height: 24),
 
               // Rating Section
-              _buildSectionHeader('Minimum Rating', Icons.star_outline),
+              _buildSectionHeader('Minimum Rating'.tr(context), Icons.star_outline),
               const SizedBox(height: 12),
               Row(
                 children: ratingOptions.map((option) {
@@ -482,7 +482,7 @@ class _ResourceFiltersContentState extends State<_ResourceFiltersContent> {
                     side: BorderSide(color: AppColors.border),
                   ),
                   child: Text(
-                    'Cancel',
+                    'Cancel'.tr(context),
                     style: AppTextStyles.labelMedium.copyWith(
                       color: AppColors.textPrimary,
                     ),
@@ -506,7 +506,7 @@ class _ResourceFiltersContentState extends State<_ResourceFiltersContent> {
                       const Icon(Icons.check, color: Colors.white, size: 18),
                       const SizedBox(width: 8),
                       Text(
-                        'Apply',
+                        'Apply'.tr(context),
                         style: AppTextStyles.labelMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -656,7 +656,7 @@ class _ResourceTypeCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    type.label,
+                    type.label.tr(context),
                     style: AppTextStyles.labelMedium.copyWith(
                       color: isSelected ? Colors.white : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
@@ -667,7 +667,7 @@ class _ResourceTypeCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              type.description,
+              type.description.tr(context),
               style: AppTextStyles.bodySmall.copyWith(
                 color: isSelected
                     ? Colors.white.withAlpha(180)
@@ -723,7 +723,7 @@ class _DifficultyButton extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              level.label,
+              level.label.tr(context),
               style: AppTextStyles.labelSmall.copyWith(
                 color: isSelected ? Colors.white : AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
@@ -774,7 +774,7 @@ class _RatingButton extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              label,
+              label.tr(context),
               style: AppTextStyles.labelSmall.copyWith(
                 color: isSelected ? Colors.white : AppColors.textPrimary,
                 fontWeight: FontWeight.w600,

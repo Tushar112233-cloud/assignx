@@ -283,66 +283,127 @@ class RequestModel {
     );
   }
 
-  /// Creates a [RequestModel] from Supabase projects table JSON response.
+  /// Creates a [RequestModel] from JSON response.
   ///
-  /// Expects joined data with the following structure:
+  /// Handles both flat Supabase-style and nested MongoDB/Mongoose-style responses.
+  /// MongoDB may return populated objects for userId/supervisorId/doerId and
+  /// nested sub-documents for pricing, payment, delivery, etc.
+  ///
+  /// Supabase format expects joined data:
   /// - `user`: Object with `full_name` from profiles table
   /// - `subject`: Object with `name` from subjects table, or a string
   /// - `doer`: Object with nested `profile` containing `full_name`
   ///
-  /// Example query that produces compatible JSON:
-  /// ```sql
-  /// SELECT *,
-  ///   user:profiles!user_id(id, full_name, email),
-  ///   subject:subjects!subject_id(id, name),
-  ///   doer:doers!doer_id(id, profile:profiles!profile_id(full_name))
-  /// FROM projects
-  /// ```
-  ///
-  /// Throws [FormatException] if required fields are missing or malformed.
+  /// MongoDB format may include:
+  /// - `userId`: Populated object `{_id, fullName, email, ...}`
+  /// - `supervisorId`: Populated object `{_id, fullName, ...}`
+  /// - `doerId`: Populated object `{_id, fullName, ...}`
+  /// - `pricing`: Sub-document `{userQuote, doerPayout, supervisorCommission, platformFee}`
+  /// - `payment`: Sub-document `{isPaid, paidAt, paymentId}`
   factory RequestModel.fromJson(Map<String, dynamic> json) {
-    // Extract client name from joined profiles table
+    // Helper to extract ID from a field that may be a string or populated object.
+    String? _extractIdOrNull(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        final id = value['_id'] ?? value['id'];
+        return id?.toString();
+      }
+      return value.toString();
+    }
+
+    // Helper to extract a display name from a populated object.
+    String? _extractName(dynamic value) {
+      if (value == null) return null;
+      if (value is Map<String, dynamic>) {
+        return (value['fullName'] ?? value['full_name'] ?? value['name']) as String?;
+      }
+      return null;
+    }
+
+    // Helper to safely parse a double from various types.
+    double? _parseDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
+    // Helper to safely parse DateTime.
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Extract nested sub-documents (MongoDB Mongoose style).
+    final pricing = json['pricing'] as Map<String, dynamic>? ?? {};
+    final payment = json['payment'] as Map<String, dynamic>? ?? {};
+
+    // Extract client name from multiple possible formats.
     String clientName = 'Unknown Client';
     if (json['user'] is Map) {
-      clientName = json['user']['full_name'] as String? ?? 'Unknown Client';
+      clientName = (json['user']['fullName'] ?? json['user']['full_name']) as String?
+          ?? 'Unknown Client';
+    }
+    // Also try populated userId object from MongoDB.
+    final userIdRaw = json['user_id'] ?? json['userId'];
+    if (clientName == 'Unknown Client') {
+      clientName = _extractName(userIdRaw) ?? json['clientName'] as String? ?? 'Unknown Client';
     }
 
-    // Extract subject name from joined subjects table
+    // Extract subject name from multiple possible formats.
     String subjectName = 'General';
-    if (json['subject'] is Map) {
-      subjectName = json['subject']['name'] as String? ?? 'General';
-    } else if (json['subject'] is String) {
-      subjectName = json['subject'] as String;
+    final subjectRaw = json['subject'] ?? json['subjectId'] ?? json['subject_id'];
+    if (subjectRaw is Map<String, dynamic>) {
+      subjectName = (subjectRaw['name'] as String?) ?? 'General';
+    } else if (subjectRaw is String) {
+      subjectName = subjectRaw;
     }
 
-    // Extract doer name from joined doers -> profiles
+    // Extract doer info from multiple possible formats.
     String? doerName;
-    if (json['doer'] is Map && json['doer']['profile'] is Map) {
-      doerName = json['doer']['profile']['full_name'] as String?;
+    if (json['doer'] is Map) {
+      final doerObj = json['doer'] as Map<String, dynamic>;
+      if (doerObj['profile'] is Map) {
+        doerName = doerObj['profile']['full_name'] as String?;
+      }
+      doerName ??= (doerObj['fullName'] ?? doerObj['full_name']) as String?;
     }
+    // Also try populated doerId object from MongoDB.
+    final doerIdRaw = json['doer_id'] ?? json['doerId'];
+    doerName ??= _extractName(doerIdRaw);
+    doerName ??= json['doer_name'] as String?;
+    doerName ??= json['doerName'] as String?;
 
     return RequestModel(
-      id: json['id'] as String,
-      projectNumber: json['project_number'] as String? ?? '',
-      title: json['title'] as String,
-      description: json['description'] as String? ?? '',
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      projectNumber: (json['project_number'] ?? json['projectNumber'] ?? '').toString(),
+      title: (json['title'] as String?) ?? '',
+      description: (json['description'] as String?) ?? '',
       clientName: clientName,
       subject: subjectName,
-      deadline: DateTime.parse(json['deadline'] as String),
-      status: ProjectStatus.fromString(json['status'] as String?),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      userQuote: (json['user_quote'] as num?)?.toDouble(),
-      doerPayout: (json['doer_payout'] as num?)?.toDouble(),
-      supervisorCommission: (json['supervisor_commission'] as num?)?.toDouble(),
-      doerId: json['doer_id'] as String?,
+      deadline: _parseDate(json['deadline']) ?? DateTime.now(),
+      status: ProjectStatus.fromString((json['status'] ?? '').toString()),
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      // Pricing: check nested pricing object, then flat fields.
+      userQuote: _parseDouble(json['user_quote'] ?? json['userQuote']
+          ?? pricing['userQuote']),
+      doerPayout: _parseDouble(json['doer_payout'] ?? json['doerPayout']
+          ?? pricing['doerPayout']),
+      supervisorCommission: _parseDouble(json['supervisor_commission']
+          ?? json['supervisorCommission'] ?? pricing['supervisorCommission']),
+      // Extract IDs from potentially populated objects.
+      doerId: _extractIdOrNull(doerIdRaw),
       doerName: doerName,
-      wordCount: json['word_count'] as int?,
-      pageCount: json['page_count'] as int?,
-      isPaid: json['is_paid'] as bool? ?? false,
-      userId: json['user_id'] as String?,
-      serviceType: json['service_type'] as String?,
+      wordCount: (json['word_count'] ?? json['wordCount']) as int?,
+      pageCount: (json['page_count'] ?? json['pageCount']) as int?,
+      // Payment: check nested payment object, then flat fields.
+      isPaid: (json['is_paid'] ?? json['isPaid'] ?? payment['isPaid']) as bool? ?? false,
+      userId: _extractIdOrNull(userIdRaw),
+      serviceType: (json['service_type'] ?? json['serviceType']) as String?,
       topic: json['topic'] as String?,
-      specificInstructions: json['specific_instructions'] as String?,
+      specificInstructions: (json['specific_instructions']
+          ?? json['specificInstructions']) as String?,
     );
   }
 

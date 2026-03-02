@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../api/api_client.dart';
+import '../storage/token_storage.dart';
 
 /// Notification types matching web implementation
 enum NotificationType {
@@ -178,18 +179,13 @@ class NotificationService {
       final token = await getFcmToken();
       if (token == null) return;
 
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
-      if (user == null) return;
+      final hasAuth = await TokenStorage.hasTokens();
+      if (!hasAuth) return;
 
-      // Store token in database
-      await supabase.from('push_subscriptions').upsert({
-        'profile_id': user.id,
+      await ApiClient.post('/notifications/register-device', {
         'endpoint': token,
         'platform': Platform.isIOS ? 'ios' : 'android',
-        'is_active': true,
-        'updated_at': DateTime.now().toIso8601String(),
-      }, onConflict: 'endpoint');
+      });
 
       debugPrint('FCM token registered');
     } catch (e) {
@@ -203,12 +199,9 @@ class NotificationService {
       final token = await getFcmToken();
       if (token == null) return;
 
-      final supabase = Supabase.instance.client;
-
-      await supabase
-          .from('push_subscriptions')
-          .update({'is_active': false})
-          .eq('endpoint', token);
+      await ApiClient.post('/notifications/unregister-device', {
+        'endpoint': token,
+      });
 
       debugPrint('FCM token unregistered');
     } catch (e) {

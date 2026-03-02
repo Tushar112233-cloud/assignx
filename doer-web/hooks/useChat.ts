@@ -1,6 +1,6 @@
 /**
  * Chat management hook using Zustand
- * Manages real-time chat state and operations
+ * Manages real-time chat state and operations via Socket.IO
  */
 
 import { create } from 'zustand'
@@ -22,49 +22,30 @@ import {
   unsubscribeFromMessages,
   joinChatRoom,
 } from '@/services/chat.service'
-import type { RealtimeChannel } from '@supabase/supabase-js'
 
 interface ChatState {
-  /** Current chat room */
   currentRoom: ChatRoom | null
-  /** Messages in current room */
   messages: ChatMessage[]
-  /** Participants in current room */
   participants: ChatParticipant[]
-  /** Unread count */
   unreadCount: number
-  /** Loading state */
   isLoading: boolean
-  /** Sending state */
   isSending: boolean
-  /** Error state */
   error: string | null
-  /** Has more messages to load */
   hasMore: boolean
 
-  /** Initialize chat room for a project */
   initializeProjectChat: (projectId: string) => Promise<ChatRoom>
-  /** Load messages */
   loadMessages: (roomId: string, loadMore?: boolean) => Promise<void>
-  /** Send a text message (uses authenticated user) */
   sendTextMessage: (roomId: string, content: string) => Promise<void>
-  /** Send a file message (uses authenticated user) */
   sendFile: (roomId: string, file: File) => Promise<void>
-  /** Add a new message (from subscription) */
   addMessage: (message: ChatMessage) => void
-  /** Mark messages as read (uses authenticated user) */
   markAsRead: (roomId: string) => Promise<void>
-  /** Join a room as participant */
   joinRoom: (
     roomId: string,
     userId: string,
     role: 'user' | 'supervisor' | 'doer' | 'admin'
   ) => Promise<void>
-  /** Get unread count (uses authenticated user) */
   fetchUnreadCount: (roomId: string) => Promise<void>
-  /** Clear current room */
   clearRoom: () => void
-  /** Clear error */
   clearError: () => void
 }
 
@@ -130,10 +111,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sendTextMessage: async (roomId: string, content: string) => {
     set({ isSending: true, error: null })
     try {
-      // sendMessage now uses authenticated user's ID internally
       const message = await sendMessage(roomId, content)
 
-      // Message will be added via subscription, but add locally for immediate feedback
       set((state) => ({
         messages: [...state.messages, message],
         isSending: false,
@@ -150,7 +129,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sendFile: async (roomId: string, file: File) => {
     set({ isSending: true, error: null })
     try {
-      // sendFileMessage now uses authenticated user's ID internally
       const message = await sendFileMessage(roomId, file)
 
       set((state) => ({
@@ -168,7 +146,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   addMessage: (message: ChatMessage) => {
     set((state) => {
-      // Avoid duplicates
       if (state.messages.some((m) => m.id === message.id)) {
         return state
       }
@@ -180,7 +157,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   markAsRead: async (roomId: string) => {
     try {
-      // markMessagesAsRead now uses authenticated user's ID internally
       await markMessagesAsRead(roomId)
       set({ unreadCount: 0 })
     } catch (error) {
@@ -194,14 +170,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     role: 'user' | 'supervisor' | 'doer' | 'admin'
   ) => {
     try {
-      const participant = await joinChatRoom(
-        roomId,
-        userId,
-        role
-      )
+      const participant = await joinChatRoom(roomId, userId, role)
 
       set((state) => {
-        // Avoid duplicates
         if (state.participants.some((p) => p.profile_id === userId)) {
           return state
         }
@@ -216,7 +187,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   fetchUnreadCount: async (roomId: string) => {
     try {
-      // getUnreadCount now uses authenticated user's ID internally
       const count = await getUnreadCount(roomId)
       set({ unreadCount: count })
     } catch (error) {
@@ -239,38 +209,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 }))
 
-/**
- * Hook to manage chat subscription
- * Handles real-time message updates
- */
 export function useChat(roomId: string | null, userId: string | null) {
-  const channelRef = useRef<RealtimeChannel | null>(null)
+  const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null)
   const store = useChatStore()
 
   useEffect(() => {
     if (!roomId) return
 
-    // Load initial messages
     store.loadMessages(roomId)
 
-    // Subscribe to new messages
-    channelRef.current = subscribeToMessages(roomId, (message) => {
-      // Only add if not from current user (to avoid duplicates)
+    subscriptionRef.current = subscribeToMessages(roomId, (message) => {
       if (message.sender_id !== userId) {
         store.addMessage(message)
       }
     })
 
-    // Cleanup subscription
     return () => {
-      if (channelRef.current) {
-        unsubscribeFromMessages(channelRef.current)
-        channelRef.current = null
+      if (subscriptionRef.current) {
+        unsubscribeFromMessages(subscriptionRef.current)
+        subscriptionRef.current = null
       }
     }
   }, [roomId, userId])
 
-  // Mark as read when messages change
   useEffect(() => {
     if (roomId && store.messages.length > 0) {
       store.markAsRead(roomId)

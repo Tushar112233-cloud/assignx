@@ -71,36 +71,76 @@ class ChatRoomModel {
   final DateTime? updatedAt;
 
   /// Creates a ChatRoomModel from JSON.
+  /// Handles both camelCase (MongoDB/Express) and snake_case (Supabase) fields.
   factory ChatRoomModel.fromJson(Map<String, dynamic> json) {
+    // Extract project info - may be populated object or flat fields
+    String projectId = '';
+    String? projectTitle;
+    String? projectNumber;
+
+    final projectRaw = json['projectId'] ?? json['project_id'] ?? json['project'];
+    if (projectRaw is Map<String, dynamic>) {
+      projectId = (projectRaw['_id'] ?? projectRaw['id'] ?? '').toString();
+      projectTitle = projectRaw['title'] as String?;
+      projectNumber = (projectRaw['projectNumber'] ?? projectRaw['project_number']) as String?;
+    } else if (projectRaw is String) {
+      projectId = projectRaw;
+    }
+    // Fallback to separate project object
+    if (json['project'] is Map && projectTitle == null) {
+      final proj = json['project'] as Map<String, dynamic>;
+      projectTitle = proj['title'] as String?;
+      projectNumber ??= (proj['projectNumber'] ?? proj['project_number']) as String?;
+      if (projectId.isEmpty) {
+        projectId = (proj['_id'] ?? proj['id'] ?? '').toString();
+      }
+    }
+    projectTitle ??= (json['projectTitle'] ?? json['project_title'] ?? json['name']) as String?;
+    projectNumber ??= (json['projectNumber'] ?? json['project_number']) as String?;
+
+    // Extract participants - may be list of strings or list of populated objects
+    List<String>? participants;
+    if (json['participants'] is List) {
+      participants = (json['participants'] as List).map((p) {
+        if (p is String) return p;
+        if (p is Map<String, dynamic>) {
+          // Could be a populated profileId object
+          final profileId = p['profileId'] ?? p['profile_id'];
+          if (profileId is Map<String, dynamic>) {
+            return (profileId['_id'] ?? profileId['id'] ?? '').toString();
+          }
+          return (p['_id'] ?? p['id'] ?? p['profileId'] ?? p['profile_id'] ?? '').toString();
+        }
+        return p.toString();
+      }).toList();
+    }
+
     return ChatRoomModel(
-      id: json['id'] as String,
-      projectId: json['project_id'] as String? ?? '',
-      projectTitle: json['project'] is Map
-          ? json['project']['title'] as String?
-          : json['project_title'] as String? ?? json['name'] as String?,
-      projectNumber: json['project'] is Map
-          ? json['project']['project_number'] as String?
-          : json['project_number'] as String?,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      projectId: projectId,
+      projectTitle: projectTitle,
+      projectNumber: projectNumber,
       type: ChatRoomType.fromString(
-          json['room_type'] as String? ?? json['type'] as String?),
-      participants: (json['participants'] as List?)?.cast<String>(),
-      lastMessage: json['last_message'] as String?,
-      lastMessageAt: json['last_message_at'] != null
-          ? DateTime.parse(json['last_message_at'] as String)
-          : null,
-      lastMessageBy: json['last_message_by'] as String?,
-      unreadCount: json['unread_count'] as int? ?? 0,
-      isSuspended: json['is_suspended'] as bool? ?? false,
-      suspendedBy: json['suspended_by'] as String?,
-      suspendedAt: json['suspended_at'] != null
-          ? DateTime.parse(json['suspended_at'] as String)
-          : null,
-      suspensionReason: json['suspension_reason'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+          (json['roomType'] ?? json['room_type'] ?? json['type']) as String?),
+      participants: participants,
+      lastMessage: (json['lastMessage'] ?? json['last_message']) as String?,
+      lastMessageAt: _tryParseDate(json['lastMessageAt'] ?? json['last_message_at']),
+      lastMessageBy: (json['lastMessageBy'] ?? json['last_message_by']) as String?,
+      unreadCount: (json['unreadCount'] ?? json['unread_count']) as int? ?? 0,
+      isSuspended: (json['isSuspended'] ?? json['is_suspended']) as bool? ?? false,
+      suspendedBy: (json['suspendedBy'] ?? json['suspended_by']) as String?,
+      suspendedAt: _tryParseDate(json['suspendedAt'] ?? json['suspended_at']),
+      suspensionReason: (json['suspensionReason'] ?? json['suspension_reason']) as String?,
+      createdAt: _tryParseDate(json['createdAt'] ?? json['created_at']) ?? DateTime.now(),
+      updatedAt: _tryParseDate(json['updatedAt'] ?? json['updated_at']),
     );
+  }
+
+  /// Safely parse a DateTime from dynamic value.
+  static DateTime? _tryParseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   /// Converts to JSON.

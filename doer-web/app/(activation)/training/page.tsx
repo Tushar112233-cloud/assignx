@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, PlayCircle, Loader2, ArrowRight, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
+import { apiClient, getAccessToken } from '@/lib/api/client'
 import { getTrainingModules, getTrainingProgress, markModuleComplete, isTrainingComplete } from '@/lib/services/training'
 
 interface TrainingModule {
@@ -36,10 +36,13 @@ export default function TrainingPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const user = session?.user
+      const token = getAccessToken()
+      if (!token) {
+        router.push('/login')
+        return
+      }
 
+      const user = await apiClient<{ id: string }>('/api/auth/me')
       if (!user) {
         router.push('/login')
         return

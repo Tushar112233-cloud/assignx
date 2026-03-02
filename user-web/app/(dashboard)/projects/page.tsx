@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { PaymentPromptModal } from "@/components/projects";
 import { RazorpayCheckout } from "@/components/payments/razorpay-checkout";
-import { createClient } from "@/lib/supabase/client";
+import { getStoredUser } from "@/lib/api/auth";
 import { walletService } from "@/services";
 import { useProjectStore, type Project } from "@/stores";
 import { ProjectsPro } from "./projects-pro";
@@ -33,22 +33,19 @@ export default function ProjectsPage() {
     hasFetched.current = true;
 
     const loadData = async () => {
-      const supabase = createClient();
+      const user = getStoredUser();
 
-      // Fetch user data and projects in parallel
-      const [userResult] = await Promise.all([
-        supabase.auth.getUser(),
-        fetchProjects(),
-      ]);
+      // Fetch projects
+      await fetchProjects();
 
-      if (userResult.data.user) {
-        setUserId(userResult.data.user.id);
-        setUserEmail(userResult.data.user.email);
-        setUserName(userResult.data.user.user_metadata?.full_name);
+      if (user) {
+        setUserId(user.id);
+        setUserEmail(user.email);
+        setUserName(user.full_name || user.fullName);
 
         // Get wallet balance
         try {
-          const balance = await walletService.getBalance(userResult.data.user.id);
+          const balance = await walletService.getBalance(user.id);
           setWalletBalance(balance);
         } catch (error) {
           console.error("Failed to get wallet balance:", error);

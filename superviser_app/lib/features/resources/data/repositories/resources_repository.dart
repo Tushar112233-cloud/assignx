@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/network/supabase_client.dart';
+
+import '../../../../core/api/api_client.dart';
 import '../models/tool_model.dart';
 import '../models/training_video_model.dart';
 import '../models/pricing_model.dart';
@@ -9,24 +9,20 @@ import '../models/pricing_model.dart';
 ///
 /// Handles fetching tools, training videos, and pricing data.
 class ResourcesRepository {
-  ResourcesRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
-
-  final SupabaseClient _client;
+  ResourcesRepository();
 
   // ==================== TOOLS ====================
 
   /// Get all available tools.
   Future<List<ToolModel>> getTools() async {
     try {
-      final response = await _client
-          .from('tools')
-          .select()
-          .eq('is_active', true)
-          .order('name');
+      final response = await ApiClient.get('/resources/tools');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['tools'] as List? ?? [];
 
-      return (response as List)
-          .map((json) => ToolModel.fromJson(json))
+      return list
+          .map((json) => ToolModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       if (kDebugMode) {
@@ -40,10 +36,8 @@ class ResourcesRepository {
   /// Get a specific tool by ID.
   Future<ToolModel?> getTool(String id) async {
     try {
-      final response =
-          await _client.from('tools').select().eq('id', id).single();
-
-      return ToolModel.fromJson(response);
+      final response = await ApiClient.get('/resources/tools/$id');
+      return ToolModel.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ResourcesRepository.getTool error: $e');
@@ -56,13 +50,9 @@ class ResourcesRepository {
   /// Track tool usage.
   Future<void> trackToolUsage(String toolId) async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) return;
-
-      await _client.from('tool_usage').insert({
-        'tool_id': toolId,
-        'user_id': userId,
-        'used_at': DateTime.now().toIso8601String(),
+      await ApiClient.post('/resources/tools/$toolId/track', {
+        'action': 'tool_usage',
+        'source_role': 'supervisor',
       });
     } catch (e) {
       // Ignore tracking errors
@@ -77,19 +67,25 @@ class ResourcesRepository {
     bool? isRequired,
   }) async {
     try {
-      var query = _client.from('training_videos').select();
-
+      final params = <String, String>{};
       if (category != null) {
-        query = query.eq('category', category.id);
+        params['category'] = category.id;
       }
       if (isRequired != null) {
-        query = query.eq('is_required', isRequired);
+        params['isRequired'] = '$isRequired';
       }
+      final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
+      final path = query.isNotEmpty
+          ? '/resources/training?$query'
+          : '/resources/training';
 
-      final response = await query.order('order');
+      final response = await ApiClient.get(path);
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['videos'] as List? ?? [];
 
-      return (response as List)
-          .map((json) => TrainingVideoModel.fromJson(json))
+      return list
+          .map((json) => TrainingVideoModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       if (kDebugMode) {
@@ -116,13 +112,8 @@ class ResourcesRepository {
   /// Get a specific video.
   Future<TrainingVideoModel?> getVideo(String id) async {
     try {
-      final response = await _client
-          .from('training_videos')
-          .select()
-          .eq('id', id)
-          .single();
-
-      return TrainingVideoModel.fromJson(response);
+      final response = await ApiClient.get('/resources/training/$id');
+      return TrainingVideoModel.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ResourcesRepository.getVideo error: $e');
@@ -139,15 +130,9 @@ class ResourcesRepository {
     bool? isCompleted,
   }) async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) return;
-
-      await _client.from('video_progress').upsert({
-        'video_id': videoId,
-        'user_id': userId,
-        'watch_progress': progress,
-        'is_completed': isCompleted ?? (progress >= 0.95),
-        'updated_at': DateTime.now().toIso8601String(),
+      await ApiClient.put('/resources/training/$videoId/progress', {
+        'progress_percentage': (progress * 100).round(),
+        'status': (isCompleted ?? (progress >= 0.95)) ? 'completed' : 'in_progress',
       });
     } catch (e) {
       // Ignore progress errors
@@ -159,15 +144,14 @@ class ResourcesRepository {
   /// Get the pricing guide.
   Future<PricingGuide> getPricingGuide() async {
     try {
-      final response = await _client
-          .from('pricing')
-          .select()
-          .eq('is_active', true)
-          .order('work_type');
+      final response = await ApiClient.get('/resources/pricing');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['pricings'] as List? ?? [];
 
       return PricingGuide(
-        pricings: (response as List)
-            .map((json) => PricingModel.fromJson(json))
+        pricings: list
+            .map((json) => PricingModel.fromJson(json as Map<String, dynamic>))
             .toList(),
         lastUpdated: DateTime.now(),
       );
@@ -183,14 +167,15 @@ class ResourcesRepository {
   /// Get pricing for a specific work type.
   Future<List<PricingModel>> getPricingForWorkType(WorkType type) async {
     try {
-      final response = await _client
-          .from('pricing')
-          .select()
-          .eq('work_type', type.id)
-          .eq('is_active', true);
+      final response = await ApiClient.get(
+        '/resources/pricing?workType=${type.id}',
+      );
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['pricings'] as List? ?? [];
 
-      return (response as List)
-          .map((json) => PricingModel.fromJson(json))
+      return list
+          .map((json) => PricingModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       if (kDebugMode) {
@@ -287,7 +272,7 @@ class ResourcesRepository {
         category: VideoCategory.qcBasics,
         thumbnailUrl: 'https://picsum.photos/seed/qc1/400/225',
         videoUrl: 'https://example.com/videos/intro-qc.mp4',
-        duration: 720, // 12 minutes
+        duration: 720,
         difficulty: DifficultyLevel.beginner,
         isRequired: true,
         isCompleted: true,
@@ -303,7 +288,7 @@ class ResourcesRepository {
         category: VideoCategory.qcBasics,
         thumbnailUrl: 'https://picsum.photos/seed/qc2/400/225',
         videoUrl: 'https://example.com/videos/reviewing-papers.mp4',
-        duration: 1080, // 18 minutes
+        duration: 1080,
         difficulty: DifficultyLevel.beginner,
         isRequired: true,
         isCompleted: true,
@@ -319,7 +304,7 @@ class ResourcesRepository {
         category: VideoCategory.plagiarism,
         thumbnailUrl: 'https://picsum.photos/seed/plag1/400/225',
         videoUrl: 'https://example.com/videos/plagiarism-detection.mp4',
-        duration: 900, // 15 minutes
+        duration: 900,
         difficulty: DifficultyLevel.intermediate,
         isRequired: true,
         isCompleted: false,
@@ -335,7 +320,7 @@ class ResourcesRepository {
         category: VideoCategory.advancedQc,
         thumbnailUrl: 'https://picsum.photos/seed/advqc1/400/225',
         videoUrl: 'https://example.com/videos/advanced-qc.mp4',
-        duration: 1500, // 25 minutes
+        duration: 1500,
         difficulty: DifficultyLevel.advanced,
         isRequired: false,
         isCompleted: false,
@@ -351,7 +336,7 @@ class ResourcesRepository {
         category: VideoCategory.formatting,
         thumbnailUrl: 'https://picsum.photos/seed/fmt1/400/225',
         videoUrl: 'https://example.com/videos/apa-formatting.mp4',
-        duration: 1200, // 20 minutes
+        duration: 1200,
         difficulty: DifficultyLevel.beginner,
         isRequired: false,
         isCompleted: false,
@@ -367,7 +352,7 @@ class ResourcesRepository {
         category: VideoCategory.communication,
         thumbnailUrl: 'https://picsum.photos/seed/comm1/400/225',
         videoUrl: 'https://example.com/videos/client-communication.mp4',
-        duration: 840, // 14 minutes
+        duration: 840,
         difficulty: DifficultyLevel.beginner,
         isRequired: true,
         isCompleted: false,
@@ -383,7 +368,7 @@ class ResourcesRepository {
         category: VideoCategory.tools,
         thumbnailUrl: 'https://picsum.photos/seed/tools1/400/225',
         videoUrl: 'https://example.com/videos/tools-dashboard.mp4',
-        duration: 600, // 10 minutes
+        duration: 600,
         difficulty: DifficultyLevel.beginner,
         isRequired: true,
         isCompleted: false,
@@ -399,7 +384,7 @@ class ResourcesRepository {
         category: VideoCategory.bestPractices,
         thumbnailUrl: 'https://picsum.photos/seed/bp1/400/225',
         videoUrl: 'https://example.com/videos/best-practices.mp4',
-        duration: 1320, // 22 minutes
+        duration: 1320,
         difficulty: DifficultyLevel.intermediate,
         isRequired: false,
         isCompleted: false,
@@ -420,7 +405,6 @@ class ResourcesRepository {
   PricingGuide _getMockPricingGuide() {
     return PricingGuide(
       pricings: [
-        // Essays
         PricingModel(
           id: 'price_1',
           workType: WorkType.essay,
@@ -449,7 +433,6 @@ class ResourcesRepository {
           basePrice: 25.00,
           description: 'Standard essay, PhD level',
         ),
-        // Research Papers
         PricingModel(
           id: 'price_5',
           workType: WorkType.researchPaper,
@@ -471,7 +454,6 @@ class ResourcesRepository {
           basePrice: 30.00,
           description: 'Research paper, doctoral level',
         ),
-        // Thesis/Dissertation
         PricingModel(
           id: 'price_8',
           workType: WorkType.thesis,
@@ -488,7 +470,6 @@ class ResourcesRepository {
           description: 'PhD dissertation',
           minimumPages: 100,
         ),
-        // Case Studies
         PricingModel(
           id: 'price_10',
           workType: WorkType.casestudy,
@@ -503,7 +484,6 @@ class ResourcesRepository {
           basePrice: 26.00,
           description: 'MBA case study analysis',
         ),
-        // Reports
         PricingModel(
           id: 'price_12',
           workType: WorkType.report,
@@ -511,7 +491,6 @@ class ResourcesRepository {
           basePrice: 16.00,
           description: 'Standard academic report',
         ),
-        // Presentations
         PricingModel(
           id: 'price_13',
           workType: WorkType.presentation,
@@ -520,7 +499,6 @@ class ResourcesRepository {
           description: 'Per slide, with speaker notes',
           notes: 'Minimum 10 slides',
         ),
-        // Editing
         PricingModel(
           id: 'price_14',
           workType: WorkType.editing,

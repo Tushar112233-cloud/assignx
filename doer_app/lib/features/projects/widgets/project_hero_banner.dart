@@ -1,7 +1,8 @@
 /// Hero banner widget for the My Projects screen.
 ///
 /// Displays a gradient banner with project statistics including
-/// active count, completed count, and total earnings.
+/// active count, completed count, and total earnings, with improved
+/// visual polish and consistent design.
 library;
 
 import 'package:flutter/material.dart';
@@ -30,19 +31,19 @@ class ProjectHeroBanner extends StatelessWidget {
         AppSpacing.md,
         AppSpacing.md,
       ),
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryLight],
+          colors: [AppColors.primary, AppColors.primaryLight, Color(0xFF3B6CB5)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: AppSpacing.borderRadiusLg,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -51,19 +52,30 @@ class ProjectHeroBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.work_outline, color: Colors.white70, size: 20),
-              SizedBox(width: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.work_outline,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 'My Projects Overview'.tr(context),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white70,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: 20),
           Row(
             children: [
               Expanded(
@@ -75,7 +87,7 @@ class ProjectHeroBanner extends StatelessWidget {
               ),
               Container(
                 width: 1,
-                height: 40,
+                height: 44,
                 color: Colors.white24,
               ),
               Expanded(
@@ -87,7 +99,7 @@ class ProjectHeroBanner extends StatelessWidget {
               ),
               Container(
                 width: 1,
-                height: 40,
+                height: 44,
                 color: Colors.white24,
               ),
               Expanded(
@@ -120,12 +132,19 @@ class _StatItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: Colors.white70, size: 18),
-        const SizedBox(height: AppSpacing.xs),
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 18),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -133,9 +152,10 @@ class _StatItem extends StatelessWidget {
         const SizedBox(height: AppSpacing.xxs),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: Colors.white70,
+            color: Colors.white.withValues(alpha: 0.75),
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],

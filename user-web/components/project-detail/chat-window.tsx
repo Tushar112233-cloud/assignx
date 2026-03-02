@@ -25,7 +25,6 @@ import { cn } from "@/lib/utils"
 import { useChat } from "@/hooks/useChat"
 import { validateChatContent, getValidationErrorMessage } from "@/lib/validations/chat-content"
 import { flagUserForViolation, type FlagReason } from "@/lib/actions/user-flagging"
-import { createClient } from "@/lib/supabase/client"
 import type { MessageWithSender } from "@/services"
 import {
   MessageApprovalBadge,
@@ -367,9 +366,6 @@ export function ChatWindow({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Create Supabase client for realtime features
-  const supabase = createClient()
-
   // Determine effective role
   const effectiveRole: UserRole = isSupervisor ? "supervisor" : userRole
 
@@ -387,7 +383,6 @@ export function ChatWindow({
   const { isAnyoneTyping, typingDisplayName, broadcastTyping } = useTypingIndicator(
     isOpen ? projectId : null,
     isOpen ? userId : null,
-    supabase
   )
 
   // Presence hook
@@ -396,7 +391,6 @@ export function ChatWindow({
     isOpen ? userId : null,
     userName,
     effectiveRole,
-    supabase
   )
 
   // Cast messages to include approval fields

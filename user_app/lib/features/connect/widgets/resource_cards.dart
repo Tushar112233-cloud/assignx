@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/connect_models.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -95,7 +96,7 @@ class ResourceCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            resource.type.label,
+                            resource.type.label.tr(context),
                             style: AppTextStyles.caption.copyWith(
                               fontSize: 10,
                               color: _getTypeColor(),
@@ -271,7 +272,7 @@ class ResourceCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          _getDownloadLabel(),
+                          _getDownloadLabel(context),
                           style: AppTextStyles.buttonSmall.copyWith(
                             color: Colors.white,
                           ),
@@ -342,15 +343,15 @@ class ResourceCard extends StatelessWidget {
     }
   }
 
-  String _getDownloadLabel() {
+  String _getDownloadLabel(BuildContext context) {
     switch (resource.type) {
       case ResourceType.notes:
       case ResourceType.pastPaper:
-        return 'Download';
+        return 'Download'.tr(context);
       case ResourceType.video:
-        return 'Watch';
+        return 'Watch'.tr(context);
       case ResourceType.link:
-        return 'Open';
+        return 'Open'.tr(context);
     }
   }
 
@@ -460,7 +461,7 @@ class CompactResourceCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                resource.type.label,
+                resource.type.label.tr(context),
                 style: AppTextStyles.caption.copyWith(
                   fontSize: 10,
                   color: _getTypeColor(),
@@ -576,7 +577,7 @@ class ResourceTypeChips extends StatelessWidget {
         children: [
           // All chip
           _buildChip(
-            label: 'All',
+            label: 'All'.tr(context),
             icon: Icons.apps,
             isSelected: selectedType == null,
             onTap: () => onTypeSelected(null),
@@ -588,7 +589,7 @@ class ResourceTypeChips extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: _buildChip(
-                label: type.label,
+                label: type.label.tr(context),
                 icon: _getTypeIcon(type),
                 isSelected: selectedType == type,
                 onTap: () => onTypeSelected(type),

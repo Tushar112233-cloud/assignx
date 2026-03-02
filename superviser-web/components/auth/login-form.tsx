@@ -1,6 +1,6 @@
 /**
- * @fileoverview Supervisor login form — email-only magic link authentication.
- * No password required. Supabase sends a sign-in link to the user's email.
+ * @fileoverview Supervisor login form -- email-only magic link authentication.
+ * No password required. API sends a sign-in link to the user's email.
  * @module components/auth/login-form
  */
 
@@ -12,7 +12,7 @@ import { useSearchParams } from "next/navigation"
 import { Loader2, Mail, ArrowRight, Inbox, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { createClient } from "@/lib/supabase/client"
+import { sendMagicLink, checkAccessRequest, devLogin, isDevBypassEmail } from "@/lib/api/auth"
 
 export function LoginForm() {
   const searchParams = useSearchParams()
@@ -37,36 +37,22 @@ export function LoginForm() {
     setError(null)
 
     try {
-      const supabase = createClient()
-
-      // TEST BYPASS: admin@gmail.com logs in directly
-      if (trimmed === "admin@gmail.com") {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: "admin@gmail.com",
-          password: "Admin@123",
-        })
-        if (signInError) {
-          setError(signInError.message)
-          return
-        }
-        window.location.href = "/dashboard"
+      // Dev bypass: direct login without OTP
+      if (isDevBypassEmail(trimmed)) {
+        await devLogin(trimmed)
+        window.location.href = '/dashboard'
         return
       }
 
       // Check email_access_requests to give specific feedback
-      const { data: request } = await supabase
-        .from("email_access_requests" as any)
-        .select("status")
-        .eq("email", trimmed)
-        .eq("role", "supervisor")
-        .maybeSingle()
+      const request = await checkAccessRequest(trimmed, "supervisor")
 
       if (!request) {
         setError("No account found for this email. You need to create an account first.")
         return
       }
 
-      const status = (request as any).status
+      const status = request.status
       if (status === "pending") {
         setError("Your access request is still pending admin verification. Please wait for approval.")
         return
@@ -76,24 +62,8 @@ export function LoginForm() {
         return
       }
 
-      // Status is approved — proceed with magic link.
-      // shouldCreateUser: true because the Supabase auth user may not exist yet
-      // (it's created on first magic-link login after admin approval).
-      // This is safe because we already verified the email is approved above.
-      // Redirect directly to the client-side confirm page so the browser client
-      // (which holds the PKCE code verifier) handles the code exchange.
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: trimmed,
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
-        },
-      })
-
-      if (otpError) {
-        setError(otpError.message)
-        return
-      }
+      // Status is approved -- send magic link via API
+      await sendMagicLink(trimmed)
 
       setSent(true)
     } catch {

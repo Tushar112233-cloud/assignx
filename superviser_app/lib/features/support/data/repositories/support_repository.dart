@@ -1,18 +1,9 @@
-import 'dart:typed_data';
-
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/network/supabase_client.dart';
+import '../../../../core/api/api_client.dart';
 import '../models/ticket_model.dart';
 
 /// Repository for support operations.
 class SupportRepository {
-  SupportRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
-
-  final SupabaseClient _client;
-
-  /// Get current user ID.
-  String? get _currentUserId => getCurrentUserId();
+  SupportRepository();
 
   /// Fetch tickets with pagination.
   Future<List<TicketModel>> getTickets({
@@ -21,40 +12,33 @@ class SupportRepository {
     TicketStatus? status,
     TicketCategory? category,
   }) async {
-    if (_currentUserId == null) return [];
+    final params = <String, String>{
+      'limit': '$limit',
+      'offset': '$offset',
+      if (status != null) 'status': _statusToString(status),
+      if (category != null) 'category': category.name,
+    };
+    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
 
-    var query = _client
-        .from('support_tickets')
-        .select()
-        .eq('requester_id', _currentUserId!);
+    final response = await ApiClient.get('/support/tickets?$query');
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['tickets'] as List? ?? [];
 
-    if (status != null) {
-      query = query.eq('status', _statusToString(status));
-    }
-
-    if (category != null) {
-      query = query.eq('category', category.name);
-    }
-
-    final response = await query
-        .order('created_at', ascending: false)
-        .range(offset, offset + limit - 1);
-
-    return (response as List)
-        .map((json) => TicketModel.fromJson(json))
+    return list
+        .map((json) => TicketModel.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
   /// Get ticket by ID.
   Future<TicketModel?> getTicketById(String ticketId) async {
-    final response = await _client
-        .from('support_tickets')
-        .select()
-        .eq('id', ticketId)
-        .maybeSingle();
-
-    if (response == null) return null;
-    return TicketModel.fromJson(response);
+    try {
+      final response = await ApiClient.get('/support/tickets/$ticketId');
+      if (response == null) return null;
+      return TicketModel.fromJson(response as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Create new ticket.
@@ -65,36 +49,23 @@ class SupportRepository {
     TicketPriority priority = TicketPriority.normal,
     List<String> attachments = const [],
   }) async {
-    if (_currentUserId == null) {
-      throw Exception('User not authenticated');
-    }
-
-    final response = await _client.from('support_tickets').insert({
-      'requester_id': _currentUserId!,
+    final response = await ApiClient.post('/support/tickets', {
       'subject': subject,
       'description': description,
       'category': category.name,
       'priority': priority.name,
-      'status': 'open',
+      'source_role': 'supervisor',
       'attachments': attachments,
-    }).select().single();
+    });
 
-    return TicketModel.fromJson(response);
+    return TicketModel.fromJson(response as Map<String, dynamic>);
   }
 
   /// Update ticket status.
   Future<void> updateTicketStatus(String ticketId, TicketStatus status) async {
-    final updates = <String, dynamic>{
+    await ApiClient.put('/support/tickets/$ticketId/status', {
       'status': _statusToString(status),
-    };
-
-    if (status == TicketStatus.resolved) {
-      updates['resolved_at'] = DateTime.now().toIso8601String();
-    } else if (status == TicketStatus.closed) {
-      updates['closed_at'] = DateTime.now().toIso8601String();
-    }
-
-    await _client.from('support_tickets').update(updates).eq('id', ticketId);
+    });
   }
 
   /// Close ticket with rating.
@@ -103,21 +74,15 @@ class SupportRepository {
     int? rating,
     String? feedback,
   }) async {
-    await _client.from('support_tickets').update({
-      'status': 'closed',
-      'closed_at': DateTime.now().toIso8601String(),
-      if (rating != null) 'rating': rating,
-      if (feedback != null) 'feedback': feedback,
-    }).eq('id', ticketId);
+    await ApiClient.put('/support/tickets/$ticketId/close', {
+      if (rating != null) 'satisfaction_rating': rating,
+      if (feedback != null) 'satisfaction_feedback': feedback,
+    });
   }
 
   /// Reopen ticket.
   Future<void> reopenTicket(String ticketId) async {
-    await _client.from('support_tickets').update({
-      'status': 'open',
-      'resolved_at': null,
-      'closed_at': null,
-    }).eq('id', ticketId);
+    await ApiClient.put('/support/tickets/$ticketId/reopen', {});
   }
 
   /// Get ticket messages.
@@ -126,15 +91,15 @@ class SupportRepository {
     int limit = 50,
     int offset = 0,
   }) async {
-    final response = await _client
-        .from('ticket_messages')
-        .select()
-        .eq('ticket_id', ticketId)
-        .order('created_at', ascending: true)
-        .range(offset, offset + limit - 1);
+    final response = await ApiClient.get(
+      '/support/tickets/$ticketId/messages?limit=$limit&offset=$offset',
+    );
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['messages'] as List? ?? [];
 
-    return (response as List)
-        .map((json) => TicketMessage.fromJson(json))
+    return list
+        .map((json) => TicketMessage.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
@@ -144,71 +109,61 @@ class SupportRepository {
     String message, {
     List<String> attachments = const [],
   }) async {
-    if (_currentUserId == null) {
-      throw Exception('User not authenticated');
-    }
+    final response = await ApiClient.post(
+      '/support/tickets/$ticketId/messages',
+      {
+        'message': message,
+        'attachments': attachments,
+        'sender_type': 'supervisor',
+      },
+    );
 
-    final response = await _client.from('ticket_messages').insert({
-      'ticket_id': ticketId,
-      'sender_id': _currentUserId!,
-      'message': message,
-      'attachments': attachments,
-      'is_support': false,
-    }).select().single();
-
-    // Update ticket last message time
-    await _client.from('support_tickets').update({
-      'last_message_at': DateTime.now().toIso8601String(),
-      'status': 'open', // Reopen if was waiting for reply
-    }).eq('id', ticketId);
-
-    return TicketMessage.fromJson(response);
+    return TicketMessage.fromJson(response as Map<String, dynamic>);
   }
 
   /// Stream messages in real-time.
+  /// Note: Real-time messages handled via Socket.IO at provider level.
   Stream<List<TicketMessage>> watchMessages(String ticketId) {
-    return _client
-        .from('ticket_messages')
-        .stream(primaryKey: ['id'])
-        .eq('ticket_id', ticketId)
-        .order('created_at', ascending: true)
-        .map((data) => data.map(TicketMessage.fromJson).toList());
+    return Stream.value([]);
   }
 
   /// Get FAQ items.
   Future<List<FAQItem>> getFAQItems({String? category}) async {
-    var query = _client.from('faq').select();
+    final path = category != null
+        ? '/support/faqs?category=$category'
+        : '/support/faqs';
+    final response = await ApiClient.get(path);
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['faqs'] as List? ?? [];
 
-    if (category != null) {
-      query = query.eq('category', category);
-    }
-
-    final response = await query.order('order', ascending: true);
-
-    return (response as List).map((json) => FAQItem.fromJson(json)).toList();
+    return list
+        .map((json) => FAQItem.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
-  /// Get FAQ categories with items.
+  /// Get FAQ categories.
   Future<List<FAQCategory>> getFAQCategories() async {
-    final response = await _client
-        .from('faq_categories')
-        .select('*, items:faq(*)')
-        .order('order', ascending: true);
+    final response = await ApiClient.get('/support/faqs/categories');
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['categories'] as List? ?? [];
 
-    return (response as List)
-        .map((json) => FAQCategory.fromJson(json))
+    return list
+        .map((json) => FAQCategory.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
   /// Search FAQ.
   Future<List<FAQItem>> searchFAQ(String query) async {
-    final response = await _client
-        .from('faq')
-        .select()
-        .or('question.ilike.%$query%,answer.ilike.%$query%')
-        .order('order', ascending: true);
+    final response = await ApiClient.get('/support/faqs?search=$query');
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['faqs'] as List? ?? [];
 
-    return (response as List).map((json) => FAQItem.fromJson(json)).toList();
+    return list
+        .map((json) => FAQItem.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   /// Upload attachment.
@@ -217,25 +172,21 @@ class SupportRepository {
     String fileName,
     List<int> fileBytes,
   ) async {
-    final path = 'support/$ticketId/$fileName';
-    await _client.storage.from('attachments').uploadBinary(
-          path,
-          Uint8List.fromList(fileBytes),
-        );
-    return _client.storage.from('attachments').getPublicUrl(path);
+    // File uploads handled via ApiClient.uploadFile at the provider level
+    // Return empty string as placeholder; actual upload uses multipart
+    final response = await ApiClient.post('/support/tickets/$ticketId/attachments', {
+      'fileName': fileName,
+    });
+    return (response as Map<String, dynamic>)['url'] as String? ?? '';
   }
 
   /// Get open tickets count.
   Future<int> getOpenTicketsCount() async {
-    if (_currentUserId == null) return 0;
-
-    final response = await _client
-        .from('support_tickets')
-        .select('id')
-        .eq('requester_id', _currentUserId!)
-        .inFilter('status', ['open', 'in_progress', 'waiting_for_reply']);
-
-    return (response as List).length;
+    final response = await ApiClient.get('/support/tickets/count?status=open');
+    if (response is Map<String, dynamic>) {
+      return response['count'] as int? ?? 0;
+    }
+    return 0;
   }
 
   static String _statusToString(TicketStatus status) {

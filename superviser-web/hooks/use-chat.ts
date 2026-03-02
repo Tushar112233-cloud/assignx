@@ -1,16 +1,17 @@
 /**
  * @fileoverview Custom hooks for chat and messaging functionality.
+ * Uses Express API + Socket.IO instead of Supabase.
  * @module hooks/use-chat
  */
 
 "use client"
 
 import { useEffect, useState, useCallback, useRef } from "react"
-import { createClient, getAuthUser } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
+import { getStoredUser } from "@/lib/api/auth"
+import { getSocket } from "@/lib/socket/client"
 import type {
-  ChatRoom,
   ChatRoomWithParticipants,
-  ChatMessage,
   ChatMessageWithSender,
   ChatRoomType,
   MessageType
@@ -35,47 +36,25 @@ export function useChatRooms(options: UseChatRoomsOptions = {}): UseChatRoomsRet
   const [error, setError] = useState<Error | null>(null)
 
   const fetchRooms = useCallback(async () => {
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
       setError(null)
 
-      const user = await getAuthUser()
-      if (!user) throw new Error("Not authenticated")
+      const params = new URLSearchParams()
+      if (roomType) params.set("roomType", roomType)
+      if (projectId) params.set("projectId", projectId)
 
-      // Get rooms where user is a participant
-      const query = supabase
-        .from("chat_participants")
-        .select(`
-          chat_rooms (
-            *,
-            projects (*),
-            chat_participants (
-              *,
-              profiles (*)
-            )
-          )
-        `)
-        .eq("profile_id", user.id)
+      const data = await apiFetch<{ rooms: ChatRoomWithParticipants[] }>(
+        `/api/chat/rooms?${params.toString()}`
+      )
 
-      const { data: participations, error: queryError } = await query
-
-      if (queryError) throw queryError
-
-      let chatRooms = participations
-        ?.map(p => p.chat_rooms)
-        .filter(Boolean) as ChatRoomWithParticipants[]
-
-      // Filter by room type
-      if (roomType) {
-        chatRooms = chatRooms.filter(r => r.room_type === roomType)
-      }
-
-      // Filter by project ID
-      if (projectId) {
-        chatRooms = chatRooms.filter(r => r.project_id === projectId)
-      }
+      let chatRooms = (data.rooms || []).map((room: Record<string, unknown>) => ({
+        ...room,
+        id: room._id || room.id,
+        room_type: room.roomType || room.room_type,
+        last_message_at: room.lastMessageAt || room.last_message_at,
+        created_at: room.createdAt || room.created_at,
+      })) as ChatRoomWithParticipants[]
 
       // Sort by last message
       chatRooms.sort((a, b) => {
@@ -96,23 +75,15 @@ export function useChatRooms(options: UseChatRoomsOptions = {}): UseChatRoomsRet
     fetchRooms()
   }, [fetchRooms])
 
-  // Set up real-time subscription for new rooms
+  // Real-time: new rooms via Socket.IO
   useEffect(() => {
-    const supabase = createClient()
-
-    const channel = supabase
-      .channel("chat_rooms_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "chat_rooms" },
-        () => {
-          fetchRooms()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
+    try {
+      const socket = getSocket()
+      const handler = () => fetchRooms()
+      socket.on("chat:rooms", handler)
+      return () => { socket.off("chat:rooms", handler) }
+    } catch {
+      return undefined
     }
   }, [fetchRooms])
 
@@ -145,25 +116,19 @@ export function useChatMessages(roomId: string): UseChatMessagesReturn {
   const fetchMessages = useCallback(async (append = false) => {
     if (!roomId) return
 
-    const supabase = createClient()
-
     try {
       if (!append) setIsLoading(true)
       setError(null)
 
-      const { data, error: queryError } = await supabase
-        .from("chat_messages")
-        .select(`
-          *,
-          profiles (*)
-        `)
-        .eq("chat_room_id", roomId)
-        .order("created_at", { ascending: false })
-        .range(offsetRef.current, offsetRef.current + limit - 1)
+      const params = new URLSearchParams()
+      params.set("limit", String(limit))
+      params.set("offset", String(offsetRef.current))
 
-      if (queryError) throw queryError
+      const data = await apiFetch<{ messages: ChatMessageWithSender[] }>(
+        `/api/chat/rooms/${roomId}/messages?${params.toString()}`
+      )
 
-      const newMessages = (data || []).reverse()
+      const newMessages = (data.messages || []).reverse()
 
       if (append) {
         setMessages(prev => [...newMessages, ...prev])
@@ -171,8 +136,8 @@ export function useChatMessages(roomId: string): UseChatMessagesReturn {
         setMessages(newMessages)
       }
 
-      setHasMore((data?.length || 0) === limit)
-      offsetRef.current += data?.length || 0
+      setHasMore((data.messages?.length || 0) === limit)
+      offsetRef.current += data.messages?.length || 0
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch messages"))
     } finally {
@@ -187,44 +152,22 @@ export function useChatMessages(roomId: string): UseChatMessagesReturn {
   const sendMessage = useCallback(async (content: string, messageType: MessageType = "text") => {
     if (!roomId || !content.trim()) return
 
-    const supabase = createClient()
-    const user = await getAuthUser()
-    if (!user) throw new Error("Not authenticated")
-
-    const { error: sendError } = await supabase
-      .from("chat_messages")
-      .insert({
-        chat_room_id: roomId,
-        sender_id: user.id,
+    await apiFetch(`/api/chat/rooms/${roomId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({
         content: content.trim(),
-        message_type: messageType,
-        action_metadata: { sender_role: "supervisor" },
-      })
-
-    if (sendError) throw sendError
-
-    // Update last_message_at on room
-    await supabase
-      .from("chat_rooms")
-      .update({ last_message_at: new Date().toISOString() })
-      .eq("id", roomId)
+        messageType,
+        senderRole: "supervisor",
+      }),
+    })
   }, [roomId])
 
   const sendFile = useCallback(async (file: File) => {
     if (!roomId) return
 
-    const supabase = createClient()
-    const user = await getAuthUser()
-    if (!user) throw new Error("Not authenticated")
-
     // File validation
     const ALLOWED_FILE_TYPES = [
-      // Images
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-      // Documents
+      "image/jpeg", "image/png", "image/gif", "image/webp",
       "application/pdf",
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -232,67 +175,28 @@ export function useChatMessages(roomId: string): UseChatMessagesReturn {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "application/vnd.ms-powerpoint",
       "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      // Text
-      "text/plain",
-      "text/csv",
-      // Archives
-      "application/zip",
-      "application/x-rar-compressed",
+      "text/plain", "text/csv",
+      "application/zip", "application/x-rar-compressed",
     ]
 
-    const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+    const MAX_FILE_SIZE = 10 * 1024 * 1024
 
-    // Validate file type
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      throw new Error(`File type "${file.type}" is not allowed. Allowed types: images, PDF, Office documents, text files, and archives.`)
+      throw new Error(`File type "${file.type}" is not allowed.`)
     }
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      throw new Error(`File size exceeds the maximum limit of 10MB.`)
+      throw new Error("File size exceeds the maximum limit of 10MB.")
     }
 
-    // Upload file to storage
-    const fileExt = file.name.split(".").pop()?.toLowerCase()
-    const fileName = `${roomId}/${Date.now()}.${fileExt}`
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("senderRole", "supervisor")
 
-    const { error: uploadError } = await supabase.storage
-      .from("chat-files")
-      .upload(fileName, file)
-
-    if (uploadError) throw uploadError
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from("chat-files")
-      .getPublicUrl(fileName)
-
-    // Determine message type
-    const isImage = file.type.startsWith("image/")
-    const messageType: MessageType = isImage ? "image" : "file"
-
-    // Send message with file URL
-    const { error: sendError } = await supabase
-      .from("chat_messages")
-      .insert({
-        chat_room_id: roomId,
-        sender_id: user.id,
-        content: file.name,
-        message_type: messageType,
-        file_url: urlData.publicUrl,
-        file_name: file.name,
-        file_size: file.size,
-        file_type: file.type,
-        action_metadata: { sender_role: "supervisor" },
-      })
-
-    if (sendError) throw sendError
-
-    // Update last_message_at on room
-    await supabase
-      .from("chat_rooms")
-      .update({ last_message_at: new Date().toISOString() })
-      .eq("id", roomId)
+    await apiFetch(`/api/chat/rooms/${roomId}/files`, {
+      method: "POST",
+      body: formData,
+    })
   }, [roomId])
 
   useEffect(() => {
@@ -300,42 +204,31 @@ export function useChatMessages(roomId: string): UseChatMessagesReturn {
     fetchMessages()
   }, [fetchMessages])
 
-  // Real-time subscription for new messages
+  // Real-time: new messages via Socket.IO
   useEffect(() => {
     if (!roomId) return
 
-    const supabase = createClient()
+    try {
+      const socket = getSocket()
 
-    const channel = supabase
-      .channel(`room_${roomId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `chat_room_id=eq.${roomId}`,
-        },
-        async (payload) => {
-          // Fetch the new message with profile
-          const { data } = await supabase
-            .from("chat_messages")
-            .select(`
-              *,
-              profiles (*)
-            `)
-            .eq("id", payload.new.id)
-            .single()
+      // Join the room
+      socket.emit("join-room", roomId)
 
-          if (data) {
-            setMessages(prev => [...prev, data])
-          }
-        }
-      )
-      .subscribe()
+      const handleNewMessage = (message: ChatMessageWithSender) => {
+        setMessages(prev => {
+          if (prev.some(m => m.id === message.id)) return prev
+          return [...prev, message]
+        })
+      }
 
-    return () => {
-      supabase.removeChannel(channel)
+      socket.on(`chat:${roomId}`, handleNewMessage)
+
+      return () => {
+        socket.off(`chat:${roomId}`, handleNewMessage)
+        socket.emit("leave-room", roomId)
+      }
+    } catch {
+      return undefined
     }
   }, [roomId])
 
@@ -362,96 +255,42 @@ export function useUnreadMessages(): UseUnreadMessagesReturn {
   const [unreadByRoom, setUnreadByRoom] = useState<Record<string, number>>({})
 
   const fetchUnreadCounts = useCallback(async () => {
-    const supabase = createClient()
-
     try {
-      const user = await getAuthUser()
-      if (!user) return
-
-      // Get all rooms the user is part of
-      const { data: participants } = await supabase
-        .from("chat_participants")
-        .select("chat_room_id, last_read_at")
-        .eq("profile_id", user.id)
-
-      if (!participants) return
-
-      // Count unread messages for each room
-      const counts: Record<string, number> = {}
-      let total = 0
-
-      for (const p of participants) {
-        const { count } = await supabase
-          .from("chat_messages")
-          .select("*", { count: "exact", head: true })
-          .eq("chat_room_id", p.chat_room_id)
-          .neq("sender_id", user.id)
-          .gt("created_at", p.last_read_at || "1970-01-01")
-
-        counts[p.chat_room_id] = count || 0
-        total += count || 0
-      }
-
-      setUnreadByRoom(counts)
-      setUnreadCount(total)
+      const data = await apiFetch<{ total: number; byRoom: Record<string, number> }>(
+        "/api/chat/unread"
+      )
+      setUnreadCount(data.total || 0)
+      setUnreadByRoom(data.byRoom || {})
     } catch (err) {
       console.error("Failed to fetch unread counts:", err)
     }
   }, [])
 
   const markAsRead = useCallback(async (roomId: string) => {
-    const supabase = createClient()
-    const user = await getAuthUser()
-    if (!user) return
-
-    await supabase
-      .from("chat_participants")
-      .update({ last_read_at: new Date().toISOString() })
-      .eq("chat_room_id", roomId)
-      .eq("profile_id", user.id)
-
+    await apiFetch(`/api/chat/rooms/${roomId}/read`, {
+      method: "PUT",
+    })
     await fetchUnreadCounts()
   }, [fetchUnreadCounts])
 
   const markAllAsRead = useCallback(async () => {
-    const supabase = createClient()
-    const user = await getAuthUser()
-    if (!user) return
-
-    await supabase
-      .from("chat_participants")
-      .update({ last_read_at: new Date().toISOString() })
-      .eq("profile_id", user.id)
-
+    await apiFetch("/api/chat/read-all", {
+      method: "PUT",
+    })
     await fetchUnreadCounts()
   }, [fetchUnreadCounts])
 
   useEffect(() => {
-    // Initial fetch
-    void (async () => {
-      await fetchUnreadCounts()
-    })()
+    fetchUnreadCounts()
 
-    // Real-time subscription for new messages — replaces 60s polling
-    const supabase = createClient()
-    const channel = supabase
-      .channel("unread_messages_realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-        },
-        () => {
-          // Re-fetch unread counts when any new message arrives
-          fetchUnreadCounts()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
+    // Real-time: unread count updates via Socket.IO
+    try {
+      const socket = getSocket()
+      const handler = () => fetchUnreadCounts()
+      socket.on("chat:unread", handler)
+      return () => { socket.off("chat:unread", handler) }
+    } catch {
+      return undefined
     }
   }, [fetchUnreadCounts])
 

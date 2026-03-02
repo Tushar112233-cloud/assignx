@@ -60,7 +60,7 @@ export function NotificationList() {
 
   // Map database notifications to the component's Notification type
   const dbNotifications: Notification[] = rawNotifications.map((n) => {
-    const raw = n as Record<string, unknown>
+    const raw = n as unknown as Record<string, unknown>
     return {
       id: n.id,
       type: (raw.notification_type as NotificationType) || "system_alert",

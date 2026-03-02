@@ -8,7 +8,7 @@
 import { useState } from "react"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 
@@ -34,16 +34,10 @@ export function AvailabilityToggle({
     setIsAvailable(checked)
 
     try {
-      const supabase = createClient()
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
-        .from("supervisors")
-        .update({
-          is_available: checked,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId)
+      await apiFetch("/api/supervisors/me", {
+        method: "PUT",
+        body: JSON.stringify({ is_available: checked }),
+      })
 
       toast.success(checked ? "You are now available" : "You are now busy")
     } catch (error) {

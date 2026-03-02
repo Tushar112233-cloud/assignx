@@ -45,9 +45,9 @@ export default function ChatPage() {
   const stats = useMemo(() => {
     const totalConversations = rooms.length
     const unreadMessages = Object.values(unreadByRoom).reduce((sum, count) => sum + count, 0)
-    const clientChats = rooms.filter((room) => room.room_type === "project_user_supervisor").length
-    const expertChats = rooms.filter((room) => room.room_type === "project_supervisor_doer").length
-    const groupChats = rooms.filter((room) => room.room_type === "project_all").length
+    const clientChats = rooms.filter((room) => (room.room_type || room.type) === "project_user_supervisor").length
+    const expertChats = rooms.filter((room) => (room.room_type || room.type) === "project_supervisor_doer").length
+    const groupChats = rooms.filter((room) => (room.room_type || room.type) === "project_all").length
 
     return {
       totalConversations,
@@ -108,11 +108,11 @@ export default function ChatPage() {
     if (activeTab === "unread") {
       filtered = filtered.filter((room) => (unreadByRoom[room.id] || 0) > 0)
     } else if (activeTab === "project_user_supervisor") {
-      filtered = filtered.filter((room) => room.room_type === "project_user_supervisor")
+      filtered = filtered.filter((room) => (room.room_type || room.type) === "project_user_supervisor")
     } else if (activeTab === "project_supervisor_doer") {
-      filtered = filtered.filter((room) => room.room_type === "project_supervisor_doer")
+      filtered = filtered.filter((room) => (room.room_type || room.type) === "project_supervisor_doer")
     } else if (activeTab === "project_all") {
-      filtered = filtered.filter((room) => room.room_type === "project_all")
+      filtered = filtered.filter((room) => (room.room_type || room.type) === "project_all")
     }
 
     if (searchQuery.trim()) {

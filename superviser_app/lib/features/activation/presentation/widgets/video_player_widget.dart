@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Video player widget for training videos.
 ///
@@ -44,8 +45,8 @@ class _TrainingVideoPlayerState extends State<TrainingVideoPlayer> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open video. Please try again.'),
+            SnackBar(
+              content: Text('Could not open video. Please try again.'.tr(context)),
               backgroundColor: Colors.red,
             ),
           );
@@ -119,7 +120,7 @@ class _TrainingVideoPlayerState extends State<TrainingVideoPlayer> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Duration: ${_formatDuration(widget.duration)}',
+                        '${'Duration'.tr(context)}: ${_formatDuration(widget.duration)}',
                         style: AppTypography.bodySmall.copyWith(
                           color: Colors.white70,
                         ),
@@ -138,7 +139,7 @@ class _TrainingVideoPlayerState extends State<TrainingVideoPlayer> {
                                   ),
                                 )
                               : const Icon(Icons.play_arrow),
-                          label: Text(_isLoading ? 'Opening...' : 'Watch Video'),
+                          label: Text(_isLoading ? 'Opening...'.tr(context) : 'Watch Video'.tr(context)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
@@ -152,7 +153,7 @@ class _TrainingVideoPlayerState extends State<TrainingVideoPlayer> {
                         Column(
                           children: [
                             Text(
-                              'Video completed!',
+                              'Video completed!'.tr(context),
                               style: AppTypography.bodyMedium.copyWith(
                                 color: AppColors.success,
                                 fontWeight: FontWeight.bold,
@@ -166,7 +167,7 @@ class _TrainingVideoPlayerState extends State<TrainingVideoPlayer> {
                                 color: Colors.white70,
                               ),
                               label: Text(
-                                'Watch Again',
+                                'Watch Again'.tr(context),
                                 style: AppTypography.bodySmall.copyWith(
                                   color: Colors.white70,
                                 ),
@@ -190,7 +191,7 @@ class _TrainingVideoPlayerState extends State<TrainingVideoPlayer> {
             child: ElevatedButton.icon(
               onPressed: widget.onComplete,
               icon: const Icon(Icons.check_circle_outline),
-              label: const Text('Mark as Complete'),
+              label: Text('Mark as Complete'.tr(context)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
                 foregroundColor: Colors.white,
@@ -237,8 +238,8 @@ class _PDFDocumentViewerState extends State<PDFDocumentViewer> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open PDF. Please try again.'),
+            SnackBar(
+              content: Text('Could not open PDF. Please try again.'.tr(context)),
               backgroundColor: Colors.red,
             ),
           );
@@ -341,7 +342,7 @@ class _PDFDocumentViewerState extends State<PDFDocumentViewer> {
                               ),
                               const SizedBox(height: 20),
                               Text(
-                                _hasViewed ? 'Document Reviewed' : 'PDF Document',
+                                _hasViewed ? 'Document Reviewed'.tr(context) : 'PDF Document'.tr(context),
                                 style: AppTypography.titleMedium.copyWith(
                                   color: AppColors.textPrimaryLight,
                                 ),
@@ -349,8 +350,8 @@ class _PDFDocumentViewerState extends State<PDFDocumentViewer> {
                               const SizedBox(height: 8),
                               Text(
                                 _hasViewed
-                                    ? 'You have viewed this document'
-                                    : 'Tap to open and read',
+                                    ? 'You have viewed this document'.tr(context)
+                                    : 'Tap to open and read'.tr(context),
                                 style: AppTypography.bodySmall.copyWith(
                                   color: AppColors.textSecondaryLight,
                                 ),
@@ -374,10 +375,10 @@ class _PDFDocumentViewerState extends State<PDFDocumentViewer> {
                                       ),
                                 label: Text(
                                   _isLoading
-                                      ? 'Opening...'
+                                      ? 'Opening...'.tr(context)
                                       : _hasViewed
-                                          ? 'View Again'
-                                          : 'Open PDF',
+                                          ? 'View Again'.tr(context)
+                                          : 'Open PDF'.tr(context),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: _hasViewed
@@ -407,7 +408,7 @@ class _PDFDocumentViewerState extends State<PDFDocumentViewer> {
             child: ElevatedButton.icon(
               onPressed: widget.onComplete,
               icon: const Icon(Icons.check_circle_outline),
-              label: const Text('Mark as Complete'),
+              label: Text('Mark as Complete'.tr(context)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
                 foregroundColor: Colors.white,

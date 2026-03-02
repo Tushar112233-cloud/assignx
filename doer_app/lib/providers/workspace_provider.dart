@@ -8,9 +8,8 @@ library;
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../core/config/supabase_config.dart';
+import '../core/api/api_client.dart';
 import '../data/models/chat_model.dart';
 import '../data/models/deliverable_model.dart';
 import '../data/models/doer_project_model.dart';
@@ -173,8 +172,6 @@ class WorkspaceNotifier {
     _chatSubscription?.cancel();
   }
 
-  SupabaseClient get _client => SupabaseConfig.client;
-
   /// Loads all workspace data.
   Future<void> _loadWorkspace() async {
     _updateState(_state.copyWith(isLoading: true, errorMessage: null));
@@ -263,26 +260,35 @@ class WorkspaceNotifier {
   }
 
   /// Loads total time spent from work sessions.
+  ///
+  /// Note: work_sessions endpoint may not exist yet. This method fails
+  /// gracefully and returns Duration.zero until the endpoint is created.
   Future<void> _loadTimeSpent() async {
     try {
-      final response = await _client
-          .from('work_sessions')
-          .select()
-          .eq('project_id', _projectId);
+      final response = await ApiClient.get('/doer/projects/$_projectId/time-spent');
 
-      var total = Duration.zero;
-      for (final session in response as List) {
-        final start = DateTime.parse(session['start_time'] as String);
-        final end = session['end_time'] != null
-            ? DateTime.parse(session['end_time'] as String)
-            : DateTime.now();
-        total += end.difference(start);
+      if (response is Map<String, dynamic>) {
+        final totalSeconds = response['totalSeconds'] as int? ?? 0;
+        _updateState(_state.copyWith(totalTimeSpent: Duration(seconds: totalSeconds)));
+      } else if (response is List) {
+        var total = Duration.zero;
+        for (final session in response) {
+          final startRaw = (session['start_time'] ?? session['startTime'] ?? '').toString();
+          final endRaw = (session['end_time'] ?? session['endTime'])?.toString();
+          final start = DateTime.tryParse(startRaw) ?? DateTime.now();
+          final end = endRaw != null
+              ? (DateTime.tryParse(endRaw) ?? DateTime.now())
+              : DateTime.now();
+          total += end.difference(start);
+        }
+        _updateState(_state.copyWith(totalTimeSpent: total));
       }
-      _updateState(_state.copyWith(totalTimeSpent: total));
     } catch (e) {
+      // work_sessions endpoint may not exist yet - fail gracefully
       if (kDebugMode) {
-        debugPrint('WorkspaceNotifier._loadTimeSpent error: $e');
+        debugPrint('WorkspaceNotifier._loadTimeSpent: endpoint may not exist, using default. $e');
       }
+      _updateState(_state.copyWith(totalTimeSpent: Duration.zero));
     }
   }
 
@@ -303,6 +309,9 @@ class WorkspaceNotifier {
   }
 
   /// Starts a work session.
+  ///
+  /// Note: work_sessions table does not exist yet. Session tracking
+  /// works locally but database persistence fails gracefully.
   Future<void> startSession() async {
     if (_state.activeSession != null) return;
 
@@ -322,22 +331,24 @@ class WorkspaceNotifier {
       }
     });
 
-    // Save session start to database
+    // Save session start to API (endpoint may not exist yet)
     try {
-      await _client.from('work_sessions').insert({
+      await ApiClient.post('/doer/projects/$_projectId/sessions', {
         'id': session.id,
-        'project_id': _projectId,
-        'doer_id': _client.auth.currentUser?.id,
-        'start_time': session.startTime.toIso8601String(),
+        'startTime': session.startTime.toIso8601String(),
       });
     } catch (e) {
+      // Endpoint may not exist yet - session still tracked locally
       if (kDebugMode) {
-        debugPrint('WorkspaceNotifier.startSession error: $e');
+        debugPrint('WorkspaceNotifier.startSession: endpoint may not exist, tracking locally. $e');
       }
     }
   }
 
   /// Ends the current work session.
+  ///
+  /// Note: work_sessions table does not exist yet. Session end is
+  /// tracked locally but database persistence fails gracefully.
   Future<void> endSession() async {
     _sessionTimer?.cancel();
     _sessionTimer = null;
@@ -346,14 +357,15 @@ class WorkspaceNotifier {
 
     final endTime = DateTime.now();
 
-    // Save session end to database
+    // Save session end to API (endpoint may not exist yet)
     try {
-      await _client.from('work_sessions').update({
-        'end_time': endTime.toIso8601String(),
-      }).eq('id', _state.activeSession!.id);
+      await ApiClient.put('/doer/projects/$_projectId/sessions/${_state.activeSession!.id}', {
+        'endTime': endTime.toIso8601String(),
+      });
     } catch (e) {
+      // Endpoint may not exist yet - session still tracked locally
       if (kDebugMode) {
-        debugPrint('WorkspaceNotifier.endSession error: $e');
+        debugPrint('WorkspaceNotifier.endSession: endpoint may not exist, tracking locally. $e');
       }
     }
 
@@ -421,11 +433,8 @@ class WorkspaceNotifier {
   /// Removes a file from the workspace.
   Future<void> removeFile(String deliverableId) async {
     try {
-      // Remove from database
-      await _client
-          .from('deliverables')
-          .delete()
-          .eq('id', deliverableId);
+      // Remove via API
+      await ApiClient.delete('/projects/$_projectId/deliverables/$deliverableId');
 
       // Update state
       _updateState(_state.copyWith(
@@ -443,16 +452,8 @@ class WorkspaceNotifier {
   /// Sets a file as the primary submission file.
   Future<void> setPrimaryFile(String deliverableId) async {
     try {
-      // Update in database - set all to not final, then set target to final
-      await _client
-          .from('deliverables')
-          .update({'is_final': false})
-          .eq('project_id', _projectId);
-
-      await _client
-          .from('deliverables')
-          .update({'is_final': true})
-          .eq('id', deliverableId);
+      // Update via API
+      await ApiClient.put('/projects/$_projectId/deliverables/$deliverableId/set-primary', {});
 
       // Update state
       final updatedDeliverables = _state.deliverables.map((d) {

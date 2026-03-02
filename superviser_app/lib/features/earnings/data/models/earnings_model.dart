@@ -75,23 +75,26 @@ class EarningsSummary {
 
   factory EarningsSummary.fromJson(Map<String, dynamic> json) {
     return EarningsSummary(
-      totalEarnings: (json['total_earnings'] as num?)?.toDouble() ?? 0,
-      pendingEarnings: (json['pending_earnings'] as num?)?.toDouble() ?? 0,
-      withdrawnAmount: (json['withdrawn_amount'] as num?)?.toDouble() ?? 0,
-      availableBalance: (json['available_balance'] as num?)?.toDouble() ?? 0,
-      projectsCompleted: json['projects_completed'] as int? ?? 0,
-      averagePerProject: (json['average_per_project'] as num?)?.toDouble() ?? 0,
+      totalEarnings: ((json['totalEarnings'] ?? json['total_earnings']) as num?)?.toDouble() ?? 0,
+      pendingEarnings: ((json['pendingEarnings'] ?? json['pending_earnings']) as num?)?.toDouble() ?? 0,
+      withdrawnAmount: ((json['withdrawnAmount'] ?? json['withdrawn_amount']) as num?)?.toDouble() ?? 0,
+      availableBalance: ((json['availableBalance'] ?? json['available_balance']) as num?)?.toDouble() ?? 0,
+      projectsCompleted: (json['projectsCompleted'] ?? json['projects_completed']) as int? ?? 0,
+      averagePerProject: ((json['averagePerProject'] ?? json['average_per_project']) as num?)?.toDouble() ?? 0,
       period: EarningsPeriod.fromId(json['period'] as String? ?? 'monthly'),
-      periodStart: json['period_start'] != null
-          ? DateTime.parse(json['period_start'] as String)
-          : null,
-      periodEnd: json['period_end'] != null
-          ? DateTime.parse(json['period_end'] as String)
-          : null,
-      growthPercentage: (json['growth_percentage'] as num?)?.toDouble(),
+      periodStart: _tryParseDate(json['periodStart'] ?? json['period_start']),
+      periodEnd: _tryParseDate(json['periodEnd'] ?? json['period_end']),
+      growthPercentage: ((json['growthPercentage'] ?? json['growth_percentage']) as num?)?.toDouble(),
       previousPeriodEarnings:
-          (json['previous_period_earnings'] as num?)?.toDouble(),
+          ((json['previousPeriodEarnings'] ?? json['previous_period_earnings']) as num?)?.toDouble(),
     );
+  }
+
+  /// Safely parse a DateTime from dynamic value.
+  static DateTime? _tryParseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   Map<String, dynamic> toJson() {
@@ -148,9 +151,9 @@ class EarningsDataPoint {
 
   factory EarningsDataPoint.fromJson(Map<String, dynamic> json) {
     return EarningsDataPoint(
-      date: DateTime.parse(json['date'] as String),
+      date: DateTime.tryParse((json['date'] ?? '').toString()) ?? DateTime.now(),
       amount: (json['amount'] as num?)?.toDouble() ?? 0,
-      projectCount: json['project_count'] as int? ?? 0,
+      projectCount: (json['projectCount'] ?? json['project_count']) as int? ?? 0,
       labelText: json['label'] as String?,
     );
   }
@@ -186,7 +189,7 @@ class CommissionBreakdown {
       category: json['category'] as String? ?? 'Other',
       amount: (json['amount'] as num?)?.toDouble() ?? 0,
       percentage: (json['percentage'] as num?)?.toDouble() ?? 0,
-      projectCount: json['project_count'] as int? ?? 0,
+      projectCount: (json['projectCount'] ?? json['project_count']) as int? ?? 0,
     );
   }
 }
@@ -242,18 +245,18 @@ class PerformanceMetrics {
 
   factory PerformanceMetrics.fromJson(Map<String, dynamic> json) {
     return PerformanceMetrics(
-      totalProjects: json['total_projects'] as int? ?? 0,
-      completedProjects: json['completed_projects'] as int? ?? 0,
-      approvalRate: (json['approval_rate'] as num?)?.toDouble() ?? 0,
+      totalProjects: (json['totalProjects'] ?? json['total_projects']) as int? ?? 0,
+      completedProjects: (json['completedProjects'] ?? json['completed_projects']) as int? ?? 0,
+      approvalRate: ((json['approvalRate'] ?? json['approval_rate']) as num?)?.toDouble() ?? 0,
       averageResponseTime:
-          (json['average_response_time'] as num?)?.toDouble() ?? 0,
+          ((json['averageResponseTime'] ?? json['average_response_time']) as num?)?.toDouble() ?? 0,
       clientSatisfaction:
-          (json['client_satisfaction'] as num?)?.toDouble() ?? 0,
-      onTimeDelivery: (json['on_time_delivery'] as num?)?.toDouble() ?? 0,
-      revisionRate: (json['revision_rate'] as num?)?.toDouble(),
-      repeatClientRate: (json['repeat_client_rate'] as num?)?.toDouble(),
+          ((json['clientSatisfaction'] ?? json['client_satisfaction']) as num?)?.toDouble() ?? 0,
+      onTimeDelivery: ((json['onTimeDelivery'] ?? json['on_time_delivery']) as num?)?.toDouble() ?? 0,
+      revisionRate: ((json['revisionRate'] ?? json['revision_rate']) as num?)?.toDouble(),
+      repeatClientRate: ((json['repeatClientRate'] ?? json['repeat_client_rate']) as num?)?.toDouble(),
       rank: json['rank'] as int?,
-      totalRank: json['total_rank'] as int?,
+      totalRank: (json['totalRank'] ?? json['total_rank']) as int?,
     );
   }
 

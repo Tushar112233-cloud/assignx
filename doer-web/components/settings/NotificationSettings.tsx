@@ -1,32 +1,128 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Bell, Mail, MessageSquare, Calendar } from 'lucide-react'
+import { Bell, Mail, MessageSquare, Save, Loader2 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { apiClient } from '@/lib/api/client'
+import { toast } from 'sonner'
+
+type NotificationSettingsProps = {
+  userId: string
+}
+
+/** Notification preferences matching user_preferences table columns */
+interface NotificationPrefs {
+  push_notifications: boolean
+  email_notifications: boolean
+  project_updates: boolean
+  marketing_emails: boolean
+}
 
 /**
  * NotificationSettings - Manage notification preferences
+ * Loads and persists settings to the user_preferences table
  */
-export function NotificationSettings() {
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    projectUpdates: true,
-    paymentAlerts: true,
-    messageNotifications: true,
-    deadlineReminders: true,
-    weeklyDigest: false,
+export function NotificationSettings({ userId }: NotificationSettingsProps) {
+  const [prefs, setPrefs] = useState<NotificationPrefs>({
+    push_notifications: true,
+    email_notifications: true,
+    project_updates: true,
+    marketing_emails: false,
   })
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
+  const [savedPrefs, setSavedPrefs] = useState<NotificationPrefs | null>(null)
 
-  const handleToggle = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }))
+  /**
+   * Load notification preferences from user_preferences table
+   */
+  const loadPreferences = useCallback(async () => {
+    if (!userId) {
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const data = await apiClient<NotificationPrefs>('/api/profiles/me/preferences')
+      if (data) {
+        const loaded: NotificationPrefs = {
+          push_notifications: data.push_notifications ?? true,
+          email_notifications: data.email_notifications ?? true,
+          project_updates: data.project_updates ?? true,
+          marketing_emails: data.marketing_emails ?? false,
+        }
+        setPrefs(loaded)
+        setSavedPrefs(loaded)
+      }
+    } catch {
+      console.error('Failed to load notification preferences')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [userId])
+
+  useEffect(() => {
+    loadPreferences()
+  }, [loadPreferences])
+
+  /**
+   * Toggle a notification preference
+   */
+  const handleToggle = (key: keyof NotificationPrefs) => {
+    setPrefs(prev => {
+      const updated = { ...prev, [key]: !prev[key] }
+      setHasChanges(
+        savedPrefs === null ||
+        Object.keys(updated).some(
+          (k) => updated[k as keyof NotificationPrefs] !== savedPrefs[k as keyof NotificationPrefs]
+        )
+      )
+      return updated
+    })
   }
 
-  const notificationItems = [
+  /**
+   * Save notification preferences to user_preferences table
+   */
+  const handleSave = async () => {
+    if (!userId) return
+
+    setIsSaving(true)
+    try {
+      await apiClient('/api/profiles/me/preferences', {
+        method: 'PUT',
+        body: JSON.stringify({
+          push_notifications: prefs.push_notifications,
+          email_notifications: prefs.email_notifications,
+          project_updates: prefs.project_updates,
+          marketing_emails: prefs.marketing_emails,
+        }),
+      })
+
+      setSavedPrefs({ ...prefs })
+      setHasChanges(false)
+      toast.success('Notification preferences saved')
+    } catch {
+      toast.error('Failed to save notification preferences')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const notificationItems: {
+    key: keyof NotificationPrefs
+    icon: typeof Bell
+    title: string
+    description: string
+    iconBg: string
+    iconColor: string
+  }[] = [
     {
-      key: 'emailNotifications' as const,
+      key: 'email_notifications',
       icon: Mail,
       title: 'Email Notifications',
       description: 'Receive notifications via email',
@@ -34,7 +130,7 @@ export function NotificationSettings() {
       iconColor: 'text-[#4F6CF7]',
     },
     {
-      key: 'pushNotifications' as const,
+      key: 'push_notifications',
       icon: Bell,
       title: 'Push Notifications',
       description: 'Enable browser push notifications',
@@ -42,7 +138,7 @@ export function NotificationSettings() {
       iconColor: 'text-[#4B9BFF]',
     },
     {
-      key: 'projectUpdates' as const,
+      key: 'project_updates',
       icon: MessageSquare,
       title: 'Project Updates',
       description: 'Get notified about project status changes',
@@ -50,36 +146,12 @@ export function NotificationSettings() {
       iconColor: 'text-[#6B5BFF]',
     },
     {
-      key: 'paymentAlerts' as const,
-      icon: Bell,
-      title: 'Payment Alerts',
-      description: 'Receive alerts for payments and payouts',
+      key: 'marketing_emails',
+      icon: Mail,
+      title: 'Marketing Emails',
+      description: 'Receive promotional content and feature announcements',
       iconBg: 'bg-[#FFE7E1]',
       iconColor: 'text-[#FF8B6A]',
-    },
-    {
-      key: 'messageNotifications' as const,
-      icon: MessageSquare,
-      title: 'New Messages',
-      description: 'Get notified when you receive new messages',
-      iconBg: 'bg-[#E3E9FF]',
-      iconColor: 'text-[#4F6CF7]',
-    },
-    {
-      key: 'deadlineReminders' as const,
-      icon: Calendar,
-      title: 'Deadline Reminders',
-      description: 'Reminders for upcoming project deadlines',
-      iconBg: 'bg-[#E6F4FF]',
-      iconColor: 'text-[#4B9BFF]',
-    },
-    {
-      key: 'weeklyDigest' as const,
-      icon: Mail,
-      title: 'Weekly Digest',
-      description: 'Receive a weekly summary of your activity',
-      iconBg: 'bg-[#ECE9FF]',
-      iconColor: 'text-[#6B5BFF]',
     },
   ]
 
@@ -98,31 +170,61 @@ export function NotificationSettings() {
           </p>
         </div>
 
-        <div className="space-y-4">
-          {notificationItems.map((item) => (
-            <div
-              key={item.key}
-              className="flex items-center justify-between rounded-2xl bg-slate-50/80 p-5 transition hover:bg-slate-50"
-            >
-              <div className="flex items-center gap-4">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${item.iconBg}`}>
-                  <item.icon className={`h-5 w-5 ${item.iconColor}`} />
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-[#5A7CFF]" />
+            <span className="ml-2 text-sm text-slate-500">Loading preferences...</span>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-4">
+              {notificationItems.map((item) => (
+                <div
+                  key={item.key}
+                  className="flex items-center justify-between rounded-2xl bg-slate-50/80 p-5 transition hover:bg-slate-50"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${item.iconBg}`}>
+                      <item.icon className={`h-5 w-5 ${item.iconColor}`} />
+                    </div>
+                    <div>
+                      <Label htmlFor={item.key} className="text-sm font-semibold text-slate-900 cursor-pointer">
+                        {item.title}
+                      </Label>
+                      <p className="text-xs text-slate-500">{item.description}</p>
+                    </div>
+                  </div>
+                  <Switch
+                    id={item.key}
+                    checked={prefs[item.key]}
+                    onCheckedChange={() => handleToggle(item.key)}
+                  />
                 </div>
-                <div>
-                  <Label htmlFor={item.key} className="text-sm font-semibold text-slate-900 cursor-pointer">
-                    {item.title}
-                  </Label>
-                  <p className="text-xs text-slate-500">{item.description}</p>
-                </div>
-              </div>
-              <Switch
-                id={item.key}
-                checked={notifications[item.key]}
-                onCheckedChange={() => handleToggle(item.key)}
-              />
+              ))}
             </div>
-          ))}
-        </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || !hasChanges}
+                className="h-12 rounded-2xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] px-8 text-white shadow-[0_12px_28px_rgba(90,124,255,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_35px_rgba(90,124,255,0.45)] disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-5 w-5" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </motion.div>
   )

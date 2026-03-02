@@ -130,7 +130,7 @@ export type FinancialSummary = {
 export type TransactionLedgerItem = {
   id: string;
   wallet_id: string;
-  type: string;
+  transaction_type: string;
   amount: number;
   status: string;
   description: string | null;

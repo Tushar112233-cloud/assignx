@@ -21,7 +21,7 @@ import {
   FileText,
   Clock,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -46,41 +46,38 @@ export default function UserDetailPage() {
   const [error, setError] = useState<Error | null>(null)
 
   const fetchUser = useCallback(async () => {
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
       setError(null)
 
       // Fetch user profile
-      const { data: userData, error: userError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single()
+      const rawProfile = await apiFetch<{ profile: Profile } | Profile>(`/api/profiles/${userId}`)
 
-      if (userError) throw userError
+      // API returns { profile: {...} } — extract the inner object
+      const userData = (rawProfile && typeof rawProfile === 'object' && 'profile' in rawProfile)
+        ? (rawProfile as { profile: Profile }).profile
+        : rawProfile as Profile
+
       if (!userData) throw new Error("User not found")
 
-      setUser(userData)
+      // Normalize camelCase → snake_case aliases
+      const normalized = {
+        ...userData,
+        full_name: userData.full_name || (userData as Record<string, unknown>).fullName as string,
+        avatar_url: userData.avatar_url || (userData as Record<string, unknown>).avatarUrl as string,
+        created_at: userData.created_at || (userData as Record<string, unknown>).createdAt as string,
+        user_sub_type: userData.user_sub_type || (userData as Record<string, unknown>).userSubType as string,
+      } as Profile
+
+      setUser(normalized)
 
       // Fetch projects for this user
       if (supervisor?.id) {
-        const { data: projectsData } = await supabase
-          .from("projects")
-          .select(`
-            *,
-            subjects (*),
-            doers (
-              *,
-              profiles!profile_id (*)
-            )
-          `)
-          .eq("user_id", userId)
-          .eq("supervisor_id", supervisor.id)
-          .order("created_at", { ascending: false })
+        const projectsData = await apiFetch<{ projects: ProjectWithRelations[] }>(
+          `/api/projects?userId=${userId}&supervisorId=me&sort=-created_at`
+        )
 
-        setProjects((projectsData as ProjectWithRelations[]) || [])
+        setProjects(projectsData.projects || [])
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch user"))
@@ -118,7 +115,11 @@ export default function UserDetailPage() {
   }
 
   // Calculate user stats
-  const totalSpent = projects.reduce((sum, p) => sum + (p.user_quote || 0), 0)
+  const totalSpent = projects.reduce((sum, p) => {
+    const proj = p as Record<string, unknown>
+    const pricing = proj.pricing as Record<string, unknown> | undefined
+    return sum + ((proj.userQuote as number) || p.user_quote || (pricing?.userQuote as number) || 0)
+  }, 0)
   const completedProjects = projects.filter(p =>
     p.status === "completed" || p.status === "auto_approved"
   ).length

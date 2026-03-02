@@ -7,10 +7,14 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Keys to clear from localStorage on logout
- * Includes Supabase auth tokens and app-specific cached data
+ * Includes JWT auth tokens and app-specific cached data
  */
 export const APP_STORAGE_KEYS = [
-  // Supabase auth token (project-specific)
+  // JWT tokens
+  'access_token',
+  'refresh_token',
+
+  // Legacy Supabase auth token (cleanup for migrated users)
   'sb-gtryzxeofrvjbfbojuhx-auth-token',
 
   // Zustand persisted auth store
@@ -42,7 +46,7 @@ export function clearAppStorage(): void {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
     if (key && (
-      key.startsWith('sb-') ||           // All Supabase tokens
+      key.startsWith('sb-') ||           // Legacy Supabase tokens (cleanup)
       key.startsWith('cached') ||         // All cached data
       key.startsWith('onboarding_') ||    // Onboarding state
       key.startsWith('doer_')             // Doer-specific data

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/external_actions_service.dart';
 import '../../../../core/services/snackbar_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/message_input.dart';
@@ -33,7 +33,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    _currentUserId = ref.read(currentUserProvider)?.id;
 
     // Open chat room by project ID
     WidgetsBinding.instance.addPostFrameCallback((_) {

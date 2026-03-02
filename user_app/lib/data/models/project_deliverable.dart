@@ -63,24 +63,24 @@ class ProjectDeliverable {
   /// Creates a [ProjectDeliverable] from JSON data.
   factory ProjectDeliverable.fromJson(Map<String, dynamic> json) {
     return ProjectDeliverable(
-      id: json['id'] as String,
-      projectId: json['project_id'] as String,
-      fileName: json['file_name'] as String,
-      fileUrl: json['file_url'] as String,
-      fileType: json['file_type'] as String?,
-      fileSizeBytes: json['file_size_bytes'] != null
-          ? (json['file_size_bytes'] as num).toInt()
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      projectId: (json['project_id'] ?? json['projectId'] ?? '').toString(),
+      fileName: (json['file_name'] ?? json['fileName'] ?? '').toString(),
+      fileUrl: (json['file_url'] ?? json['fileUrl'] ?? '').toString(),
+      fileType: (json['file_type'] ?? json['fileType']) as String?,
+      fileSizeBytes: (json['file_size_bytes'] ?? json['fileSizeBytes']) != null
+          ? ((json['file_size_bytes'] ?? json['fileSizeBytes']) as num).toInt()
           : null,
       version: json['version'] as int? ?? 1,
-      isFinal: json['is_final'] as bool? ?? false,
-      qcStatus: json['qc_status'] as String?,
-      qcNotes: json['qc_notes'] as String?,
-      qcBy: json['qc_by'] as String?,
-      qcAt: json['qc_at'] != null
-          ? DateTime.parse(json['qc_at'] as String)
+      isFinal: (json['is_final'] ?? json['isFinal']) as bool? ?? false,
+      qcStatus: (json['qc_status'] ?? json['qcStatus']) as String?,
+      qcNotes: (json['qc_notes'] ?? json['qcNotes']) as String?,
+      qcBy: (json['qc_by'] ?? json['qcBy']) as String?,
+      qcAt: (json['qc_at'] ?? json['qcAt']) != null
+          ? DateTime.tryParse((json['qc_at'] ?? json['qcAt']).toString())
           : null,
-      uploadedBy: json['uploaded_by'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      uploadedBy: (json['uploaded_by'] ?? json['uploadedBy'] ?? '').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/ticket_model.dart';
 import '../providers/support_provider.dart';
 import '../widgets/ticket_form.dart';
@@ -60,31 +61,31 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
       appBar: AppBar(
         title: state.ticket != null
             ? Text('#${state.ticket!.ticketNumber ?? state.ticket!.id.substring(0, 8)}')
-            : const Text('Ticket'),
+            : Text('Ticket'.tr(context)),
         actions: [
           if (state.ticket != null) ...[
             PopupMenuButton<String>(
               onSelected: (value) => _handleMenuAction(value, state.ticket!),
               itemBuilder: (context) => [
                 if (state.ticket!.isActive) ...[
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'close',
                     child: Row(
                       children: [
-                        Icon(Icons.check_circle_outline, size: 20),
-                        SizedBox(width: 12),
-                        Text('Close Ticket'),
+                        const Icon(Icons.check_circle_outline, size: 20),
+                        const SizedBox(width: 12),
+                        Text('Close Ticket'.tr(context)),
                       ],
                     ),
                   ),
                 ] else ...[
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'reopen',
                     child: Row(
                       children: [
-                        Icon(Icons.refresh, size: 20),
-                        SizedBox(width: 12),
-                        Text('Reopen Ticket'),
+                        const Icon(Icons.refresh, size: 20),
+                        const SizedBox(width: 12),
+                        Text('Reopen Ticket'.tr(context)),
                       ],
                     ),
                   ),
@@ -171,8 +172,8 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
 
           if (success && context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Ticket closed successfully'),
+              SnackBar(
+                content: Text('Ticket closed successfully'.tr(context)),
                 backgroundColor: Colors.green,
               ),
             );
@@ -189,8 +190,8 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ticket reopened'),
+        SnackBar(
+          content: Text('Ticket reopened'.tr(context)),
           backgroundColor: Colors.green,
         ),
       );
@@ -338,7 +339,7 @@ class _TicketHeader extends StatelessWidget {
           // Date
           const SizedBox(height: 4),
           Text(
-            'Created ${ticket.formattedDate}',
+            '${'Created'.tr(context)} ${ticket.formattedDate}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondaryLight,
                 ),
@@ -368,14 +369,14 @@ class _EmptyMessages extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No messages yet',
+              'No messages yet'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Send a message to start the conversation',
+              'Send a message to start the conversation'.tr(context),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
@@ -424,7 +425,7 @@ class _ClosedTicketBanner extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'This ticket has been ${ticket.status.displayName.toLowerCase()}',
+                  '${'This ticket has been'.tr(context)} ${ticket.status.displayName.toLowerCase()}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
@@ -448,7 +449,7 @@ class _ClosedTicketBanner extends StatelessWidget {
           ),
           TextButton(
             onPressed: onReopen,
-            child: const Text('Reopen'),
+            child: Text('Reopen'.tr(context)),
           ),
         ],
       ),
@@ -477,7 +478,7 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Something went wrong',
+              'Something went wrong'.tr(context),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -514,7 +515,7 @@ class _NotFoundState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Ticket not found',
+              'Ticket not found'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),

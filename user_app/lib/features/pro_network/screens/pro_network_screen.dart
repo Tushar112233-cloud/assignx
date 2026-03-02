@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
-import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../data/models/pro_network_post_model.dart';
 import '../providers/pro_network_provider.dart';
 import '../widgets/pro_filter_tabs_bar.dart';
@@ -56,8 +55,6 @@ class _ProNetworkScreenState extends ConsumerState<ProNetworkScreen> {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          const SliverToBoxAdapter(child: DashboardAppBar()),
-
           // Hero section
           const SliverToBoxAdapter(child: ProNetworkHero()),
 

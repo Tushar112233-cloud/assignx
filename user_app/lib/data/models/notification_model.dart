@@ -94,31 +94,31 @@ class AppNotification {
   /// Creates an [AppNotification] from a JSON map (Supabase row).
   factory AppNotification.fromJson(Map<String, dynamic> json) {
     return AppNotification(
-      id: json['id'] as String,
-      profileId: json['profile_id'] as String,
-      notificationType: _parseNotificationType(json['notification_type'] as String?),
-      title: json['title'] as String,
-      body: json['body'] as String,
-      referenceType: json['reference_type'] as String?,
-      referenceId: json['reference_id'] as String?,
-      actionUrl: json['action_url'] as String?,
-      pushSent: json['push_sent'] as bool? ?? false,
-      pushSentAt: json['push_sent_at'] != null
-          ? DateTime.parse(json['push_sent_at'] as String)
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      profileId: (json['profile_id'] ?? json['profileId'] ?? '').toString(),
+      notificationType: _parseNotificationType((json['notification_type'] ?? json['notificationType']) as String?),
+      title: (json['title'] as String?) ?? '',
+      body: (json['body'] as String?) ?? '',
+      referenceType: (json['reference_type'] ?? json['referenceType']) as String?,
+      referenceId: (json['reference_id'] ?? json['referenceId']) as String?,
+      actionUrl: (json['action_url'] ?? json['actionUrl']) as String?,
+      pushSent: (json['push_sent'] ?? json['pushSent']) as bool? ?? false,
+      pushSentAt: (json['push_sent_at'] ?? json['pushSentAt']) != null
+          ? DateTime.tryParse((json['push_sent_at'] ?? json['pushSentAt']).toString())
           : null,
-      whatsappSent: json['whatsapp_sent'] as bool? ?? false,
-      whatsappSentAt: json['whatsapp_sent_at'] != null
-          ? DateTime.parse(json['whatsapp_sent_at'] as String)
+      whatsappSent: (json['whatsapp_sent'] ?? json['whatsappSent']) as bool? ?? false,
+      whatsappSentAt: (json['whatsapp_sent_at'] ?? json['whatsappSentAt']) != null
+          ? DateTime.tryParse((json['whatsapp_sent_at'] ?? json['whatsappSentAt']).toString())
           : null,
-      emailSent: json['email_sent'] as bool? ?? false,
-      emailSentAt: json['email_sent_at'] != null
-          ? DateTime.parse(json['email_sent_at'] as String)
+      emailSent: (json['email_sent'] ?? json['emailSent']) as bool? ?? false,
+      emailSentAt: (json['email_sent_at'] ?? json['emailSentAt']) != null
+          ? DateTime.tryParse((json['email_sent_at'] ?? json['emailSentAt']).toString())
           : null,
-      isRead: json['is_read'] as bool? ?? false,
-      readAt: json['read_at'] != null
-          ? DateTime.parse(json['read_at'] as String)
+      isRead: (json['is_read'] ?? json['isRead']) as bool? ?? false,
+      readAt: (json['read_at'] ?? json['readAt']) != null
+          ? DateTime.tryParse((json['read_at'] ?? json['readAt']).toString())
           : null,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 

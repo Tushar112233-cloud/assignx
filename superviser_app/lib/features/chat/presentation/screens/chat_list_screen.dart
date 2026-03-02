@@ -111,7 +111,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             child: Text(
               'No chats in this category'.tr(context),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondaryLight,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
           ),
@@ -171,7 +171,14 @@ class _ChatHeroSection extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -267,13 +274,22 @@ class _CategoryChips extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.accent
-                    : AppColors.surfaceVariantLight,
-                borderRadius: BorderRadius.circular(12),
+                    : Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSelected
                       ? AppColors.accent
-                      : AppColors.borderLight,
+                      : Theme.of(context).colorScheme.outline,
                 ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.accent.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -283,7 +299,7 @@ class _CategoryChips extends StatelessWidget {
                     size: 16,
                     color: isSelected
                         ? Colors.white
-                        : AppColors.textSecondaryLight,
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -291,7 +307,7 @@ class _CategoryChips extends StatelessWidget {
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: isSelected
                               ? Colors.white
-                              : AppColors.textSecondaryLight,
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
                           fontWeight:
                               isSelected ? FontWeight.bold : FontWeight.w500,
                         ),

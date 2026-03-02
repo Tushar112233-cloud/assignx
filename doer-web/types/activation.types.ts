@@ -57,7 +57,9 @@ export interface TrainingModule {
 
 /**
  * Training progress interface
- * Tracks user progress through training
+ * Tracks user progress through training.
+ * DB columns: id, profile_id, module_id, started_at, completed_at,
+ * progress_percentage, status
  */
 export interface TrainingProgress {
   /** Unique identifier */
@@ -72,8 +74,8 @@ export interface TrainingProgress {
   completed_at: string | null
   /** Progress percentage (0-100) */
   progress_percentage: number
-  /** Completion status */
-  is_completed: boolean
+  /** Progress status ('not_started' | 'in_progress' | 'completed') */
+  status: string
 }
 
 /**

@@ -267,111 +267,150 @@ class Project {
   }
 
   /// Creates a [Project] from JSON data.
+  ///
+  /// Handles both flat Supabase-style and nested MongoDB/Mongoose-style responses.
+  /// MongoDB may return populated objects for userId/supervisorId/doerId and
+  /// nested sub-documents for pricing, payment, delivery, qualityCheck, userApproval.
   factory Project.fromJson(Map<String, dynamic> json) {
+    // Helper to extract ID from a field that may be a string or populated object.
+    String _extractId(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return (value['_id'] ?? value['id'] ?? '').toString();
+      }
+      return value.toString();
+    }
+
+    // Helper to extract string ID or null from a possibly populated field.
+    String? _extractIdOrNull(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return (value['_id'] ?? value['id'] ?? '').toString();
+      }
+      return value.toString();
+    }
+
+    // Helper to safely parse a double from various types.
+    double? _parseDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
+    // Helper to safely parse DateTime.
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Extract nested sub-documents (MongoDB Mongoose style).
+    final pricing = json['pricing'] as Map<String, dynamic>? ?? {};
+    final payment = json['payment'] as Map<String, dynamic>? ?? {};
+    final delivery = json['delivery'] as Map<String, dynamic>? ?? {};
+    final qualityCheck = json['qualityCheck'] as Map<String, dynamic>? ?? {};
+    final userApproval = json['userApproval'] as Map<String, dynamic>? ?? {};
+
+    // Extract subject info from populated subjectId.
+    final subjectRaw = json['subjectId'] ?? json['subject_id'];
+    String? subjectId;
+    String? subjectName;
+    if (subjectRaw is Map<String, dynamic>) {
+      subjectId = (subjectRaw['_id'] ?? subjectRaw['id'] ?? '').toString();
+      subjectName = subjectRaw['name'] as String?;
+    } else if (subjectRaw is String) {
+      subjectId = subjectRaw;
+    }
+    // Override with explicit fields if present.
+    subjectId = (json['subject_id'] is String ? json['subject_id'] : null) ?? subjectId;
+    subjectName = (json['subject_name'] ?? json['subjectName']) as String? ??
+        subjectName ??
+        (json['subjects'] is Map<String, dynamic>
+            ? (json['subjects'] as Map<String, dynamic>)['name'] as String?
+            : null);
+
+    // Extract referenceStyleId (may be populated).
+    final refStyleRaw = json['referenceStyleId'] ?? json['reference_style_id'];
+    String? referenceStyleId;
+    if (refStyleRaw is Map<String, dynamic>) {
+      referenceStyleId = (refStyleRaw['_id'] ?? refStyleRaw['id'] ?? '').toString();
+    } else if (refStyleRaw is String) {
+      referenceStyleId = refStyleRaw;
+    }
+
     return Project(
-      id: json['id'] as String,
-      projectNumber: json['project_number'] as String,
-      userId: json['user_id'] as String,
-      serviceType: ServiceTypeX.fromString(json['service_type'] as String),
-      title: json['title'] as String,
-      subjectId: json['subject_id'] as String?,
-      subjectName: json['subject_name'] as String? ??
-          (json['subjects'] != null
-              ? (json['subjects'] as Map<String, dynamic>)['name'] as String?
-              : null),
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      projectNumber: (json['project_number'] ?? json['projectNumber'] ?? '').toString(),
+      userId: _extractId(json['user_id'] ?? json['userId']),
+      serviceType: ServiceTypeX.fromString((json['service_type'] ?? json['serviceType'] ?? '').toString()),
+      title: (json['title'] as String?) ?? '',
+      subjectId: subjectId,
+      subjectName: subjectName,
       topic: json['topic'] as String?,
       description: json['description'] as String?,
-      wordCount: json['word_count'] as int?,
-      pageCount: json['page_count'] as int?,
-      referenceStyleId: json['reference_style_id'] as String?,
-      specificInstructions: json['specific_instructions'] as String?,
-      focusAreas: (json['focus_areas'] as List<dynamic>?)
-          ?.map((e) => e as String)
+      wordCount: (json['word_count'] ?? json['wordCount']) as int?,
+      pageCount: (json['page_count'] ?? json['pageCount']) as int?,
+      referenceStyleId: referenceStyleId,
+      specificInstructions: (json['specific_instructions'] ?? json['specificInstructions']) as String?,
+      focusAreas: ((json['focus_areas'] ?? json['focusAreas']) as List<dynamic>?)
+          ?.map((e) => e.toString())
           .toList(),
-      deadline: DateTime.parse(json['deadline'] as String),
-      originalDeadline: json['original_deadline'] != null
-          ? DateTime.parse(json['original_deadline'] as String)
-          : null,
-      deadlineExtended: json['deadline_extended'] as bool? ?? false,
-      deadlineExtensionReason: json['deadline_extension_reason'] as String?,
-      status: ProjectStatusX.fromString(json['status'] as String),
-      statusUpdatedAt: json['status_updated_at'] != null
-          ? DateTime.parse(json['status_updated_at'] as String)
-          : null,
-      supervisorId: json['supervisor_id'] as String?,
-      supervisorAssignedAt: json['supervisor_assigned_at'] != null
-          ? DateTime.parse(json['supervisor_assigned_at'] as String)
-          : null,
-      doerId: json['doer_id'] as String?,
-      doerAssignedAt: json['doer_assigned_at'] != null
-          ? DateTime.parse(json['doer_assigned_at'] as String)
-          : null,
-      userQuote: json['user_quote'] != null
-          ? (json['user_quote'] as num).toDouble()
-          : null,
-      doerPayout: json['doer_payout'] != null
-          ? (json['doer_payout'] as num).toDouble()
-          : null,
-      supervisorCommission: json['supervisor_commission'] != null
-          ? (json['supervisor_commission'] as num).toDouble()
-          : null,
-      platformFee: json['platform_fee'] != null
-          ? (json['platform_fee'] as num).toDouble()
-          : null,
-      isPaid: json['is_paid'] as bool? ?? false,
-      paidAt: json['paid_at'] != null
-          ? DateTime.parse(json['paid_at'] as String)
-          : null,
-      paymentId: json['payment_id'] as String?,
-      deliveredAt: json['delivered_at'] != null
-          ? DateTime.parse(json['delivered_at'] as String)
-          : null,
-      expectedDeliveryAt: json['expected_delivery_at'] != null
-          ? DateTime.parse(json['expected_delivery_at'] as String)
-          : null,
-      autoApproveAt: json['auto_approve_at'] != null
-          ? DateTime.parse(json['auto_approve_at'] as String)
-          : null,
-      aiReportUrl: json['ai_report_url'] as String?,
-      aiScore: json['ai_score'] != null
-          ? (json['ai_score'] as num).toDouble()
-          : null,
-      plagiarismReportUrl: json['plagiarism_report_url'] as String?,
-      plagiarismScore: json['plagiarism_score'] != null
-          ? (json['plagiarism_score'] as num).toDouble()
-          : null,
-      liveDocumentUrl: json['live_document_url'] as String?,
-      progressPercentage: json['progress_percentage'] as int? ?? 0,
-      completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'] as String)
-          : null,
-      completionNotes: json['completion_notes'] as String?,
-      userApproved: json['user_approved'] as bool?,
-      userApprovedAt: json['user_approved_at'] != null
-          ? DateTime.parse(json['user_approved_at'] as String)
-          : null,
-      userFeedback: json['user_feedback'] as String?,
-      userGrade: json['user_grade'] as String?,
-      cancelledAt: json['cancelled_at'] != null
-          ? DateTime.parse(json['cancelled_at'] as String)
-          : null,
-      cancelledBy: json['cancelled_by'] as String?,
-      cancellationReason: json['cancellation_reason'] as String?,
+      deadline: _parseDate(json['deadline']) ?? DateTime.now(),
+      originalDeadline: _parseDate(json['original_deadline'] ?? json['originalDeadline']),
+      deadlineExtended: (json['deadline_extended'] ?? json['deadlineExtended']) as bool? ?? false,
+      deadlineExtensionReason: (json['deadline_extension_reason'] ?? json['deadlineExtensionReason']) as String?,
+      status: ProjectStatusX.fromString((json['status'] ?? '').toString()),
+      statusUpdatedAt: _parseDate(json['status_updated_at'] ?? json['statusUpdatedAt']),
+      supervisorId: _extractIdOrNull(json['supervisor_id'] ?? json['supervisorId']),
+      supervisorAssignedAt: _parseDate(json['supervisor_assigned_at'] ?? json['supervisorAssignedAt']),
+      doerId: _extractIdOrNull(json['doer_id'] ?? json['doerId']),
+      doerAssignedAt: _parseDate(json['doer_assigned_at'] ?? json['doerAssignedAt']),
+      // Pricing: check nested pricing object, then flat fields.
+      userQuote: _parseDouble(json['user_quote'] ?? json['userQuote'] ?? pricing['userQuote']),
+      doerPayout: _parseDouble(json['doer_payout'] ?? json['doerPayout'] ?? pricing['doerPayout']),
+      supervisorCommission: _parseDouble(json['supervisor_commission'] ?? json['supervisorCommission'] ?? pricing['supervisorCommission']),
+      platformFee: _parseDouble(json['platform_fee'] ?? json['platformFee'] ?? pricing['platformFee']),
+      // Payment: check nested payment object, then flat fields.
+      isPaid: (json['is_paid'] ?? json['isPaid'] ?? payment['isPaid']) as bool? ?? false,
+      paidAt: _parseDate(json['paid_at'] ?? json['paidAt'] ?? payment['paidAt']),
+      paymentId: (json['payment_id'] ?? json['paymentId'] ?? payment['paymentId']) as String?,
+      // Delivery: check nested delivery object, then flat fields.
+      deliveredAt: _parseDate(json['delivered_at'] ?? json['deliveredAt'] ?? delivery['deliveredAt']),
+      expectedDeliveryAt: _parseDate(json['expected_delivery_at'] ?? json['expectedDeliveryAt'] ?? delivery['expectedDeliveryAt']),
+      autoApproveAt: _parseDate(json['auto_approve_at'] ?? json['autoApproveAt'] ?? delivery['autoApproveAt']),
+      // Quality check: check nested qualityCheck object, then flat fields.
+      aiReportUrl: (json['ai_report_url'] ?? json['aiReportUrl'] ?? qualityCheck['aiReportUrl']) as String?,
+      aiScore: _parseDouble(json['ai_score'] ?? json['aiScore'] ?? qualityCheck['aiScore']),
+      plagiarismReportUrl: (json['plagiarism_report_url'] ?? json['plagiarismReportUrl'] ?? qualityCheck['plagiarismReportUrl']) as String?,
+      plagiarismScore: _parseDouble(json['plagiarism_score'] ?? json['plagiarismScore'] ?? qualityCheck['plagiarismScore']),
+      liveDocumentUrl: (json['live_document_url'] ?? json['liveDocumentUrl']) as String?,
+      progressPercentage: (json['progress_percentage'] ?? json['progressPercentage']) as int? ?? 0,
+      // Completion: check nested delivery object for completedAt, then flat fields.
+      completedAt: _parseDate(json['completed_at'] ?? json['completedAt'] ?? delivery['completedAt']),
+      completionNotes: (json['completion_notes'] ?? json['completionNotes']) as String?,
+      // User approval: check nested userApproval object, then flat fields.
+      userApproved: (json['user_approved'] ?? json['userApproved'] ?? userApproval['approved']) as bool?,
+      userApprovedAt: _parseDate(json['user_approved_at'] ?? json['userApprovedAt'] ?? userApproval['approvedAt']),
+      userFeedback: (json['user_feedback'] ?? json['userFeedback'] ?? userApproval['feedback']) as String?,
+      userGrade: (json['user_grade'] ?? json['userGrade'] ?? userApproval['grade']) as String?,
+      cancelledAt: _parseDate(json['cancelled_at'] ?? json['cancelledAt']),
+      cancelledBy: (json['cancelled_by'] ?? json['cancelledBy']) as String?,
+      cancellationReason: (json['cancellation_reason'] ?? json['cancellationReason']) as String?,
       source: json['source'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDate(json['updated_at'] ?? json['updatedAt']),
       deliverables: (json['deliverables'] as List<dynamic>?)
               ?.map(
                   (e) => ProjectDeliverable.fromJson(e as Map<String, dynamic>))
               .toList() ??
-          (json['project_deliverables'] as List<dynamic>?)
+          ((json['project_deliverables'] ?? json['projectDeliverables']) as List<dynamic>?)
               ?.map(
                   (e) => ProjectDeliverable.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      referenceFiles: (json['reference_files'] as List<dynamic>?)
+      referenceFiles: ((json['reference_files'] ?? json['referenceFiles']) as List<dynamic>?)
               ?.map(
                   (e) => ProjectDeliverable.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -380,12 +419,12 @@ class Project {
               ?.map((e) =>
                   ProjectTimelineEvent.fromJson(e as Map<String, dynamic>))
               .toList() ??
-          (json['project_timeline'] as List<dynamic>?)
+          ((json['project_timeline'] ?? json['projectTimeline']) as List<dynamic>?)
               ?.map((e) =>
                   ProjectTimelineEvent.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      revisionFeedback: json['revision_feedback'] as String?,
+      revisionFeedback: (json['revision_feedback'] ?? json['revisionFeedback']) as String?,
     );
   }
 

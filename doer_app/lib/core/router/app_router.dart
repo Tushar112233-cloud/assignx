@@ -112,13 +112,13 @@ const _activationRoutes = [
 /// 3. Authenticated but unactivated users are restricted to activation routes
 /// 4. Activated users trying to access activation routes are redirected to dashboard
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
-
   return GoRouter(
     initialLocation: RouteNames.splash,
     debugLogDiagnostics: false,
     refreshListenable: _AuthStateNotifier(ref),
     redirect: (context, state) {
+      // Read current auth state at redirect time (not captured at provider creation)
+      final authState = ref.read(authProvider);
       final path = state.matchedLocation;
       final isPublicRoute = _publicRoutes.contains(path);
       final isActivationRoute = _activationRoutes.contains(path);

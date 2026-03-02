@@ -17,7 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { TrainingVideo, TrainingCategory, TrainingProgress, TRAINING_CATEGORIES } from "./types"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
+import { getStoredUser } from "@/lib/api/auth"
 
 const DIFFICULTY_COLORS = {
   beginner: "bg-green-100 text-green-700",
@@ -209,44 +210,39 @@ export function TrainingLibrary() {
   const [playerOpen, setPlayerOpen] = useState(false)
 
   const fetchTrainingData = useCallback(async () => {
-    const supabase = createClient()
-
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = getStoredUser()
 
       // Fetch training modules
-      const { data: modules, error: modulesError } = await supabase
-        .from("training_modules")
-        .select("*")
-        .eq("is_active", true)
-        .order("sequence_order", { ascending: true })
+      const modulesData = await apiFetch<{ modules: any[] }>(
+        "/api/training/modules?is_active=true&sort=sequence_order"
+      )
 
-      if (modulesError) {
-        console.error("Error fetching training modules:", modulesError)
-        return
-      }
+      const modules = modulesData.modules || []
 
       // Fetch user's progress if logged in
       let progressMap: Record<string, { status: string; completed_at: string | null }> = {}
 
       if (user) {
-        const { data: progressData, error: progressError } = await supabase
-          .from("training_progress")
-          .select("module_id, status, completed_at")
-          .eq("profile_id", user.id)
+        try {
+          const progressData = await apiFetch<{ progress: any[] }>(
+            `/api/training/progress/${user.id}`
+          )
 
-        if (!progressError && progressData) {
-          progressMap = progressData.reduce((acc, p) => {
-            acc[p.module_id] = { status: p.status || "not_started", completed_at: p.completed_at }
-            return acc
-          }, {} as Record<string, { status: string; completed_at: string | null }>)
+          if (progressData.progress) {
+            progressMap = progressData.progress.reduce((acc: any, p: any) => {
+              acc[p.module_id] = { status: p.status || "not_started", completed_at: p.completed_at }
+              return acc
+            }, {} as Record<string, { status: string; completed_at: string | null }>)
+          }
+        } catch {
+          // No progress data yet
         }
       }
 
       // Transform to TrainingVideo format
-      const transformedVideos: TrainingVideo[] = (modules || []).map((module) => ({
-        id: module.id,
+      const transformedVideos: TrainingVideo[] = (modules || []).map((module: any) => ({
+        id: module.id || module._id,
         title: module.title,
         description: module.description || "",
         duration: formatDuration(module.duration_minutes),
@@ -255,8 +251,8 @@ export function TrainingLibrary() {
         category: mapContentTypeToCategory(module.content_type, module.sequence_order),
         difficulty: getDifficulty(module.sequence_order),
         is_required: module.is_mandatory || false,
-        is_completed: progressMap[module.id]?.status === "completed",
-        completed_at: progressMap[module.id]?.completed_at || undefined,
+        is_completed: progressMap[module.id || module._id]?.status === "completed",
+        completed_at: progressMap[module.id || module._id]?.completed_at || undefined,
         order: module.sequence_order,
       }))
 
@@ -313,34 +309,23 @@ export function TrainingLibrary() {
   }
 
   const handleMarkComplete = async (videoId: string) => {
-    const supabase = createClient()
     setIsMarkingComplete(true)
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = getStoredUser()
 
       if (!user) {
         console.error("User not authenticated")
         return
       }
 
-      // Upsert training progress
-      const { error } = await supabase
-        .from("training_progress")
-        .upsert({
-          profile_id: user.id,
-          module_id: videoId,
+      await apiFetch(`/api/training/progress/${user.id}/${videoId}`, {
+        method: "PUT",
+        body: JSON.stringify({
           status: "completed",
           progress_percentage: 100,
-          completed_at: new Date().toISOString(),
-        }, {
-          onConflict: "profile_id,module_id"
-        })
-
-      if (error) {
-        console.error("Error updating training progress:", error)
-        return
-      }
+        }),
+      })
 
       // Update local state
       setVideos((prev) => prev.map((v) =>

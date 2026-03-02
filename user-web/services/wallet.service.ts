@@ -1,24 +1,53 @@
-import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/types/database'
+import { apiClient } from '@/lib/api/client'
 
 /**
- * Type aliases for wallet-related tables
+ * Wallet type
  */
-type Wallet = Database['public']['Tables']['wallets']['Row']
-type WalletTransaction = Database['public']['Tables']['wallet_transactions']['Row']
-type PaymentMethod = Database['public']['Tables']['payment_methods']['Row']
-type PaymentMethodInsert = Database['public']['Tables']['payment_methods']['Insert']
+interface Wallet {
+  id: string
+  profile_id: string
+  wallet_type: string | null
+  balance: number
+  created_at: string | null
+  [key: string]: any
+}
 
 /**
- * Transaction type
+ * Wallet transaction type
  */
-type TransactionType = Database['public']['Enums']['transaction_type']
+interface WalletTransaction {
+  id: string
+  wallet_id: string
+  amount: number
+  transaction_type: string | null
+  description: string | null
+  created_at: string | null
+  [key: string]: any
+}
+
+/**
+ * Payment method type
+ */
+interface PaymentMethod {
+  id: string
+  profile_id: string
+  method_type: string | null
+  is_default: boolean | null
+  is_active: boolean | null
+  role_context: string | null
+  [key: string]: any
+}
+
+/**
+ * Payment method insert type
+ */
+type PaymentMethodInsert = Partial<PaymentMethod>
 
 /**
  * Transaction filters
  */
 interface TransactionFilters {
-  type?: TransactionType
+  type?: string
   fromDate?: string
   toDate?: string
   limit?: number
@@ -44,37 +73,27 @@ interface PaymentVerification {
   razorpay_signature: string
 }
 
-const supabase = createClient()
-
 /**
  * Wallet service for managing user wallet and transactions.
- * Handles balance queries, top-ups, and payment methods.
+ * Uses API client instead of API.
  */
 export const walletService = {
   /**
    * Gets the user's wallet information.
-   * @param profileId - The user's profile ID
-   * @returns Wallet data or null
    */
   async getWallet(profileId: string): Promise<Wallet | null> {
-    const { data, error } = await supabase
-      .from('wallets')
-      .select('*')
-      .eq('profile_id', profileId)
-      .eq('wallet_type', 'user')
-      .single()
-
-    if (error) {
-      if (error.code === 'PGRST116') return null
-      throw error
+    try {
+      const result = await apiClient<{ wallet: Wallet }>(
+        `/api/wallets?profileId=${profileId}&walletType=user`
+      )
+      return result.wallet || null
+    } catch {
+      return null
     }
-    return data
   },
 
   /**
    * Gets the user's wallet balance.
-   * @param profileId - The user's profile ID
-   * @returns Balance amount
    */
   async getBalance(profileId: string): Promise<number> {
     const wallet = await this.getWallet(profileId)
@@ -83,70 +102,36 @@ export const walletService = {
 
   /**
    * Gets wallet transaction history.
-   * @param profileId - The user's profile ID
-   * @param filters - Optional filters
-   * @returns Array of transactions
    */
   async getTransactions(
     profileId: string,
     filters?: TransactionFilters
   ): Promise<WalletTransaction[]> {
-    // First get the wallet ID
-    const wallet = await this.getWallet(profileId)
-    if (!wallet) return []
+    const params = new URLSearchParams({ profileId, walletType: 'user' })
+    if (filters?.type) params.set('type', filters.type)
+    if (filters?.fromDate) params.set('fromDate', filters.fromDate)
+    if (filters?.toDate) params.set('toDate', filters.toDate)
+    if (filters?.limit) params.set('limit', String(filters.limit))
+    if (filters?.offset) params.set('offset', String(filters.offset))
 
-    let query = supabase
-      .from('wallet_transactions')
-      .select('*')
-      .eq('wallet_id', wallet.id)
-      .order('created_at', { ascending: false })
-
-    // Apply type filter
-    if (filters?.type) {
-      query = query.eq('transaction_type', filters.type)
-    }
-
-    // Apply date filters
-    if (filters?.fromDate) {
-      query = query.gte('created_at', filters.fromDate)
-    }
-    if (filters?.toDate) {
-      query = query.lte('created_at', filters.toDate)
-    }
-
-    // Apply pagination
-    if (filters?.limit) {
-      query = query.limit(filters.limit)
-    }
-    if (filters?.offset) {
-      query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1)
-    }
-
-    const { data, error } = await query
-
-    if (error) throw error
-    return data
+    const result = await apiClient<{ transactions: WalletTransaction[] }>(
+      `/api/wallets/transactions?${params.toString()}`
+    )
+    return result.transactions || result as any
   },
 
   /**
    * Creates a Razorpay order for wallet top-up.
-   * @param profileId - The user's profile ID
-   * @param amount - Amount in INR (will be converted to paise)
-   * @returns Razorpay order details
    */
   async createTopUpOrder(profileId: string, amount: number): Promise<RazorpayOrder> {
-    // Generate short receipt (max 40 chars for Razorpay)
-    // Format: tu_<first 8 chars of UUID>_<timestamp last 10 digits>
     const shortId = profileId.substring(0, 8)
     const shortTime = Date.now().toString().slice(-10)
     const receipt = `tu_${shortId}_${shortTime}`
 
-    // Call server action/API route to create Razorpay order
-    const response = await fetch('/api/payments/create-order', {
+    const result = await apiClient<RazorpayOrder>('/api/payments/create-order', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        amount: amount * 100, // Convert to paise
+        amount: amount * 100,
         currency: 'INR',
         receipt,
         notes: {
@@ -155,21 +140,11 @@ export const walletService = {
         },
       }),
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.error || `Failed to create order (${response.status})`)
-    }
-
-    return response.json()
+    return result
   },
 
   /**
    * Verifies payment and credits wallet.
-   * @param profileId - The user's profile ID
-   * @param paymentData - Razorpay payment verification data
-   * @param amount - Amount to credit
-   * @param projectId - Optional project ID for project payments
    */
   async verifyAndCreditWallet(
     profileId: string,
@@ -177,10 +152,8 @@ export const walletService = {
     amount: number,
     projectId?: string
   ): Promise<WalletTransaction> {
-    // Verify payment on server
-    const response = await fetch('/api/payments/verify', {
+    const result = await apiClient<WalletTransaction>('/api/payments/verify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...paymentData,
         profile_id: profileId,
@@ -188,34 +161,22 @@ export const walletService = {
         project_id: projectId,
       }),
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.error || `Payment verification failed (${response.status})`)
-    }
-
-    return response.json()
+    return result
   },
 
   /**
    * Creates a payment order for a project.
-   * @param projectId - The project UUID
-   * @param amount - Amount in INR
-   * @returns Razorpay order details
    */
   async createProjectPaymentOrder(
     projectId: string,
     amount: number
   ): Promise<RazorpayOrder> {
-    // Generate short receipt (max 40 chars for Razorpay)
-    // Format: pj_<first 8 chars of UUID>_<timestamp last 10 digits>
     const shortId = projectId.substring(0, 8)
     const shortTime = Date.now().toString().slice(-10)
     const receipt = `pj_${shortId}_${shortTime}`
 
-    const response = await fetch('/api/payments/create-order', {
+    const result = await apiClient<RazorpayOrder>('/api/payments/create-order', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         amount: amount * 100,
         currency: 'INR',
@@ -226,49 +187,30 @@ export const walletService = {
         },
       }),
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.error || `Failed to create order (${response.status})`)
-    }
-
-    return response.json()
+    return result
   },
 
   /**
    * Pays for a project using wallet balance.
-   * @param profileId - The user's profile ID
-   * @param projectId - The project UUID
-   * @param amount - Amount to deduct
    */
   async payFromWallet(
     profileId: string,
     projectId: string,
     amount: number
   ): Promise<WalletTransaction> {
-    const response = await fetch('/api/payments/wallet-pay', {
+    const result = await apiClient<WalletTransaction>('/api/payments/wallet-pay', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         profile_id: profileId,
         project_id: projectId,
         amount,
       }),
     })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Payment failed')
-    }
-
-    return response.json()
+    return result
   },
 
   /**
    * Creates a partial payment order (wallet + Razorpay).
-   * @param projectId - The project UUID
-   * @param razorpayAmount - Amount to charge via Razorpay in INR
-   * @returns Razorpay order details
    */
   async createPartialPaymentOrder(
     projectId: string,
@@ -276,13 +218,12 @@ export const walletService = {
   ): Promise<RazorpayOrder> {
     const shortId = projectId.substring(0, 8)
     const shortTime = Date.now().toString().slice(-10)
-    const receipt = `pp_${shortId}_${shortTime}` // pp = partial payment
+    const receipt = `pp_${shortId}_${shortTime}`
 
-    const response = await fetch('/api/payments/create-order', {
+    const result = await apiClient<RazorpayOrder>('/api/payments/create-order', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        amount: razorpayAmount * 100, // Convert to paise
+        amount: razorpayAmount * 100,
         currency: 'INR',
         receipt,
         notes: {
@@ -291,23 +232,11 @@ export const walletService = {
         },
       }),
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.error || `Failed to create order (${response.status})`)
-    }
-
-    return response.json()
+    return result
   },
 
   /**
    * Processes partial payment (wallet + Razorpay).
-   * @param profileId - The user's profile ID
-   * @param projectId - The project UUID
-   * @param paymentData - Razorpay payment verification data
-   * @param totalAmount - Total project amount
-   * @param walletAmount - Amount to deduct from wallet
-   * @param razorpayAmount - Amount charged via Razorpay
    */
   async processPartialPayment(
     profileId: string,
@@ -317,9 +246,8 @@ export const walletService = {
     walletAmount: number,
     razorpayAmount: number
   ): Promise<any> {
-    const response = await fetch('/api/payments/partial-pay', {
+    const result = await apiClient('/api/payments/partial-pay', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...paymentData,
         profile_id: profileId,
@@ -329,122 +257,69 @@ export const walletService = {
         razorpay_amount: razorpayAmount,
       }),
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.error || `Partial payment failed (${response.status})`)
-    }
-
-    return response.json()
+    return result
   },
 
   /**
    * Gets user's saved payment methods.
-   * @param profileId - The user's profile ID
-   * @returns Array of payment methods
    */
   async getPaymentMethods(profileId: string): Promise<PaymentMethod[]> {
-    const { data, error } = await supabase
-      .from('payment_methods')
-      .select('*')
-      .eq('profile_id', profileId)
-      .eq('role_context', 'user')
-      .eq('is_active', true)
-      .order('is_default', { ascending: false })
-
-    if (error) throw error
-    return data
+    const result = await apiClient<{ paymentMethods: PaymentMethod[] }>(
+      `/api/wallets/payment-methods?profileId=${profileId}&roleContext=user`
+    )
+    return result.paymentMethods || result as any
   },
 
   /**
    * Adds a new payment method.
-   * @param paymentMethod - Payment method data
-   * @returns The created payment method
    */
   async addPaymentMethod(paymentMethod: PaymentMethodInsert): Promise<PaymentMethod> {
-    const { data, error } = await supabase
-      .from('payment_methods')
-      .insert({ ...paymentMethod, role_context: 'user' })
-      .select()
-      .single()
-
-    if (error) throw error
-    return data
+    const result = await apiClient<{ paymentMethod: PaymentMethod }>('/api/wallets/payment-methods', {
+      method: 'POST',
+      body: JSON.stringify({ ...paymentMethod, role_context: 'user' }),
+    })
+    return result.paymentMethod || result as any
   },
 
   /**
-   * Removes a payment method.
-   * @param paymentMethodId - The payment method UUID
+   * Removes a payment method (soft delete).
    */
   async removePaymentMethod(paymentMethodId: string): Promise<void> {
-    const { error } = await supabase
-      .from('payment_methods')
-      .update({ is_active: false })
-      .eq('id', paymentMethodId)
-      .eq('role_context', 'user')
-
-    if (error) throw error
+    await apiClient(`/api/wallets/payment-methods/${paymentMethodId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ roleContext: 'user' }),
+    })
   },
 
   /**
    * Sets a payment method as default.
-   * @param profileId - The user's profile ID
-   * @param paymentMethodId - The payment method UUID
    */
   async setDefaultPaymentMethod(
     profileId: string,
     paymentMethodId: string
   ): Promise<void> {
-    // First, unset all defaults for this role
-    await supabase
-      .from('payment_methods')
-      .update({ is_default: false })
-      .eq('profile_id', profileId)
-      .eq('role_context', 'user')
-
-    // Set the new default
-    const { error } = await supabase
-      .from('payment_methods')
-      .update({ is_default: true })
-      .eq('id', paymentMethodId)
-      .eq('role_context', 'user')
-
-    if (error) throw error
+    await apiClient(`/api/wallets/payment-methods/${paymentMethodId}/default`, {
+      method: 'PATCH',
+      body: JSON.stringify({ profileId, roleContext: 'user' }),
+    })
   },
 
   /**
    * Gets transaction summary for a period.
-   * @param profileId - The user's profile ID
-   * @param fromDate - Start date
-   * @param toDate - End date
    */
   async getTransactionSummary(
     profileId: string,
     fromDate: string,
     toDate: string
   ): Promise<{ credits: number; debits: number }> {
-    const wallet = await this.getWallet(profileId)
-    if (!wallet) return { credits: 0, debits: 0 }
-
-    const { data, error } = await supabase
-      .from('wallet_transactions')
-      .select('amount, transaction_type')
-      .eq('wallet_id', wallet.id)
-      .gte('created_at', fromDate)
-      .lte('created_at', toDate)
-
-    if (error) throw error
-
-    const summary = { credits: 0, debits: 0 }
-    data.forEach((txn: any) => {
-      if (txn.transaction_type === 'credit' || txn.transaction_type === 'topup') {
-        summary.credits += txn.amount
-      } else {
-        summary.debits += txn.amount
-      }
-    })
-
-    return summary
+    try {
+      const result = await apiClient<{ credits: number; debits: number }>(
+        `/api/wallets/transaction-summary?profileId=${profileId}&walletType=user&fromDate=${fromDate}&toDate=${toDate}`
+      )
+      return result
+    } catch {
+      return { credits: 0, debits: 0 }
+    }
   },
 }
 

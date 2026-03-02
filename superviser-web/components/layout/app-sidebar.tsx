@@ -49,7 +49,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { APP_NAME } from "@/lib/constants"
 import { cn } from "@/lib/utils"
-import { createClient } from "@/lib/supabase/client"
 import { useI18n } from "@/lib/i18n/context"
 
 const MAIN_NAV_STATIC = [

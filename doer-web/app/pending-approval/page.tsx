@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Clock, Shield, CheckCircle2, FileCheck, UserCheck, Zap, LogOut, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
+import { apiClient, getAccessToken } from '@/lib/api/client'
 import { useAuth } from '@/hooks/useAuth'
 
 const steps = [
@@ -42,22 +42,19 @@ export default function PendingApprovalPage() {
   const handleCheckStatus = async () => {
     setIsChecking(true)
     try {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const user = session?.user
-      if (!user) {
+      const token = getAccessToken()
+      if (!token) {
         router.push('/login')
         return
       }
 
-      const { data: doer } = await supabase
-        .from('doers')
-        .select('is_access_granted')
-        .eq('profile_id', user.id)
-        .maybeSingle()
-
-      if (doer?.is_access_granted) {
-        router.push('/dashboard')
+      try {
+        const doer = await apiClient<{ is_access_granted: boolean }>('/api/doers/me/status')
+        if (doer?.is_access_granted) {
+          router.push('/dashboard')
+        }
+      } catch {
+        router.push('/login')
       }
     } catch {
       // ignore

@@ -131,8 +131,8 @@ export function UnderReviewTab({
 }: UnderReviewTabProps) {
   // Sort by submission time (most recent first)
   const sortedProjects = [...projects].sort((a, b) => {
-    const aTime = a.submitted_at ? new Date(a.submitted_at).getTime() : 0
-    const bTime = b.submitted_at ? new Date(b.submitted_at).getTime() : 0
+    const aTime = a.status_updated_at ? new Date(a.status_updated_at).getTime() : 0
+    const bTime = b.status_updated_at ? new Date(b.status_updated_at).getTime() : 0
     return bTime - aTime
   })
 
@@ -282,7 +282,7 @@ export function UnderReviewTab({
                             </div>
                             <div className="flex items-center gap-2 text-xs text-slate-500">
                               <Timer className="h-3.5 w-3.5" />
-                              <span>Submitted {formatRelativeTime(project.submitted_at)}</span>
+                              <span>Submitted {formatRelativeTime(project.status_updated_at)}</span>
                             </div>
                             <p className="text-xs italic text-slate-500">{statusInfo.description}</p>
                           </div>

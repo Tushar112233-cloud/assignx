@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/router/route_names.dart';
+import '../../core/storage/token_storage.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/translation/translation_extensions.dart';
 
@@ -77,10 +78,48 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     await Future.delayed(const Duration(milliseconds: 2500));
     if (!mounted) return;
 
-    // Wait for auth state to resolve if still loading
-    var authState = ref.read(authProvider);
+    // Check if already has tokens
+    final hasTokens = await TokenStorage.hasTokens();
+    if (hasTokens) {
+      // Wait for auth state to resolve if still loading
+      var authState = ref.read(authProvider);
+      int retries = 0;
+      while ((authState.status == AuthStatus.initial ||
+              authState.status == AuthStatus.loading) &&
+             retries < 10) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        if (!mounted) return;
+        authState = ref.read(authProvider);
+        retries++;
+      }
+      if (!mounted) return;
+      _navigateBasedOnAuth(authState);
+      return;
+    }
 
-    // Give auth provider time to complete initial check
+    // DEV: Auto-login with testdoer@gmail.com for testing
+    try {
+      debugPrint('SplashScreen: DEV auto-login with testdoer@gmail.com');
+      final success = await ref.read(authProvider.notifier).signIn(
+        email: 'testdoer@gmail.com',
+        password: 'admin123',
+      );
+      debugPrint('SplashScreen: DEV auto-login result: $success');
+      if (!mounted) return;
+      if (success) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (!mounted) return;
+        // DEV: Change this route to test different pages
+        context.go(RouteNames.dashboard);
+        return;
+      }
+    } catch (e) {
+      debugPrint('SplashScreen: DEV auto-login failed: $e');
+    }
+
+    if (!mounted) return;
+    // Fallback - original flow
+    var authState = ref.read(authProvider);
     int retries = 0;
     while ((authState.status == AuthStatus.initial ||
             authState.status == AuthStatus.loading) &&
@@ -90,10 +129,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       authState = ref.read(authProvider);
       retries++;
     }
-
     if (!mounted) return;
-
-    // Navigate based on auth state
     _navigateBasedOnAuth(authState);
   }
 

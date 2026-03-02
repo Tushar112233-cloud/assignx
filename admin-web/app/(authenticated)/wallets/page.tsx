@@ -7,7 +7,7 @@ export const metadata = { title: "Wallets & Payments - AssignX Admin" };
 
 interface TransactionRecord {
   created_at: string;
-  type: string;
+  transaction_type: string;
   status: string;
   amount: number | string;
 }
@@ -20,10 +20,10 @@ function buildRevenueChartData(
   txns.forEach((txn) => {
     const date = new Date(txn.created_at).toISOString().split("T")[0];
     if (!grouped[date]) grouped[date] = { revenue: 0, refunds: 0 };
-    if (txn.type === "project_payment" && txn.status === "completed") {
+    if (txn.transaction_type === "project_payment" && txn.status === "completed") {
       grouped[date].revenue += Number(txn.amount);
     }
-    if (txn.type === "refund" && txn.status === "completed") {
+    if (txn.transaction_type === "refund" && txn.status === "completed") {
       grouped[date].refunds += Number(txn.amount);
     }
   });

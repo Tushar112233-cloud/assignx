@@ -1,46 +1,61 @@
-import { createClient } from '@/lib/supabase/client'
-import type { Supervisor, SupervisorActivation } from '@/types'
-
-const supabase = createClient()
+import { apiFetch, setTokens, clearTokens, getAccessToken } from "@/lib/api/client"
+import { getStoredUser, storeUser, clearStoredUser } from "@/lib/api/auth"
+import type { Supervisor, SupervisorActivation } from "@/types"
 
 /**
- * Authentication service for managing user auth operations
+ * Authentication service for managing user auth operations.
+ * Backed by Express API at /api/auth/*.
  */
 export const authService = {
   /**
-   * Get current session
+   * Get current session (checks if access token exists)
    */
   async getSession() {
-    const { data: { session }, error } = await supabase.auth.getSession()
-    if (error) throw error
-    return session
+    const token = getAccessToken()
+    if (!token) return null
+    try {
+      const data = await apiFetch<{ user: any; token: string }>("/api/auth/me")
+      return { user: data.user, access_token: token }
+    } catch {
+      return null
+    }
   },
 
   /**
-   * Get current user
+   * Get current user from stored data or API
    */
   async getUser() {
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error) throw error
-    return user
+    const stored = getStoredUser()
+    if (stored) return stored
+    try {
+      const data = await apiFetch<{ user: any }>("/api/auth/me")
+      if (data?.user) {
+        storeUser(data.user)
+        return data.user
+      }
+      return null
+    } catch {
+      return null
+    }
   },
 
   /**
    * Sign up with email and password
    */
   async signUp(email: string, password: string, fullName: string, phone: string) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          phone,
-        },
-      },
-    })
+    const data = await apiFetch<{ user: any; access_token: string; refresh_token: string }>(
+      "/api/auth/signup",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password, full_name: fullName, phone, role: "supervisor" }),
+      }
+    )
 
-    if (error) throw error
+    if (data?.access_token) {
+      setTokens(data.access_token, data.refresh_token)
+      if (data.user) storeUser(data.user)
+    }
+
     return data
   },
 
@@ -48,12 +63,19 @@ export const authService = {
    * Sign in with email and password
    */
   async signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const data = await apiFetch<{ user: any; access_token: string; refresh_token: string }>(
+      "/api/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      }
+    )
 
-    if (error) throw error
+    if (data?.access_token) {
+      setTokens(data.access_token, data.refresh_token)
+      if (data.user) storeUser(data.user)
+    }
+
     return data
   },
 
@@ -61,31 +83,32 @@ export const authService = {
    * Sign in with Google OAuth
    */
   async signInWithGoogle() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-
-    if (error) throw error
-    return data
+    // Redirect to the Express API OAuth endpoint
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/auth/google?redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
+    return { url: "" }
   },
 
   /**
    * Sign out
    */
   async signOut() {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    try {
+      await apiFetch("/api/auth/logout", { method: "POST" })
+    } catch {
+      // Ignore - clear tokens anyway
+    }
+    clearTokens()
+    clearStoredUser()
   },
 
   /**
    * Reset password
    */
   async resetPassword(email: string) {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email)
-    if (error) throw error
+    const data = await apiFetch("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    })
     return data
   },
 
@@ -93,10 +116,10 @@ export const authService = {
    * Update password
    */
   async updatePassword(newPassword: string) {
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword,
+    const data = await apiFetch("/api/auth/update-password", {
+      method: "POST",
+      body: JSON.stringify({ password: newPassword }),
     })
-    if (error) throw error
     return data
   },
 }
@@ -109,28 +132,26 @@ export const supervisorService = {
    * Get supervisor profile by profile ID
    */
   async getSupervisorByProfileId(profileId: string): Promise<Supervisor | null> {
-    const { data, error } = await supabase
-      .from('supervisors')
-      .select('*')
-      .eq('profile_id', profileId)
-      .single()
-
-    if (error && error.code !== 'PGRST116') throw error
-    return data
+    try {
+      const data = await apiFetch<Supervisor>(`/api/supervisors/by-profile/${profileId}`)
+      return data
+    } catch {
+      return null
+    }
   },
 
   /**
    * Get supervisor activation record by supervisor ID
    */
   async getSupervisorActivation(supervisorId: string): Promise<SupervisorActivation | null> {
-    const { data, error } = await supabase
-      .from('supervisor_activation')
-      .select('*')
-      .eq('supervisor_id', supervisorId)
-      .single()
-
-    if (error && error.code !== 'PGRST116') throw error
-    return data
+    try {
+      const data = await apiFetch<SupervisorActivation>(
+        `/api/supervisors/${supervisorId}/activation`
+      )
+      return data
+    } catch {
+      return null
+    }
   },
 
   /**
@@ -145,29 +166,15 @@ export const supervisorService = {
       cv_url?: string
     }
   ): Promise<Supervisor> {
-    const { data: supervisor, error } = await supabase
-      .from('supervisors')
-      .insert({
+    const supervisor = await apiFetch<Supervisor>("/api/supervisors", {
+      method: "POST",
+      body: JSON.stringify({
         profile_id: profileId,
         qualification: data.qualification,
         years_of_experience: data.years_of_experience,
         cv_url: data.cv_url || null,
-        is_available: false,
-        max_concurrent_projects: 5,
-        is_activated: false,
-        total_earnings: 0,
-        total_projects_managed: 0,
-        average_rating: 0,
-        total_reviews: 0,
-        success_rate: 0,
-        average_response_time_hours: 0,
-        bank_verified: false,
-        cv_verified: false,
-      })
-      .select()
-      .single()
-
-    if (error) throw error
+      }),
+    })
     return supervisor
   },
 
@@ -189,14 +196,10 @@ export const supervisorService = {
       upi_id?: string
     }
   ): Promise<Supervisor> {
-    const { data: supervisor, error } = await supabase
-      .from('supervisors')
-      .update(data)
-      .eq('id', supervisorId)
-      .select()
-      .single()
-
-    if (error) throw error
+    const supervisor = await apiFetch<Supervisor>(`/api/supervisors/${supervisorId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
     return supervisor
   },
 
@@ -205,10 +208,9 @@ export const supervisorService = {
    * Called after supervisor record is created
    */
   async createSupervisorActivation(supervisorId: string): Promise<void> {
-    const { error } = await supabase
-      .from('supervisor_activation')
-      .insert({
-        supervisor_id: supervisorId,
+    await apiFetch(`/api/supervisors/${supervisorId}/activation`, {
+      method: "POST",
+      body: JSON.stringify({
         training_completed: false,
         quiz_passed: false,
         total_quiz_attempts: 0,
@@ -216,9 +218,8 @@ export const supervisorService = {
         cv_verified: false,
         bank_details_added: false,
         is_fully_activated: false,
-      })
-
-    if (error) throw error
+      }),
+    })
   },
 
   /**
@@ -245,14 +246,13 @@ export const supervisorService = {
       activated_at?: string
     }
   ): Promise<SupervisorActivation> {
-    const { data: activation, error } = await supabase
-      .from('supervisor_activation')
-      .update(data)
-      .eq('supervisor_id', supervisorId)
-      .select()
-      .single()
-
-    if (error) throw error
+    const activation = await apiFetch<SupervisorActivation>(
+      `/api/supervisors/${supervisorId}/activation`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }
+    )
     return activation
   },
 }

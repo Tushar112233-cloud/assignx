@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/home_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/widgets/subtle_gradient_scaffold.dart';
-import '../../campus_connect/screens/campus_connect_screen.dart';
+import '../../connect_hub/screens/connect_hub_screen.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../../dashboard/widgets/bottom_nav_bar.dart';
 import '../../experts/screens/experts_screen.dart';
@@ -25,11 +25,30 @@ import '../../projects/screens/my_projects_screen.dart';
 ///
 /// Settings is accessible from the Profile screen.
 /// Features subtle gradient background patches for elegant visual design.
-class MainShell extends ConsumerWidget {
+class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends ConsumerState<MainShell> {
+  // DEV: Set to a tab index (0-5) to auto-start on that tab for testing
+  // Set to -1 to disable auto-navigation
+  static const int _devStartTab = -1; // DEV: disabled
+
+  @override
+  void initState() {
+    super.initState();
+    if (_devStartTab >= 0 && _devStartTab <= 5) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(navigationIndexProvider.notifier).state = _devStartTab;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currentIndex = ref.watch(navigationIndexProvider);
     final profileAsync = ref.watch(userProfileProvider);
 
@@ -45,7 +64,7 @@ class MainShell extends ConsumerWidget {
             children: const [
               DashboardScreen(),      // 0: Home
               MyProjectsScreen(),     // 1: Projects
-              CampusConnectScreen(),  // 2: Campus Connect
+              ConnectHubScreen(),     // 2: ConnectHub (Campus Connect / Pro Network / Business Hub)
               ExpertsScreen(),        // 3: Experts
               WalletScreen(),         // 4: Wallet
               ProfileScreen(),        // 5: Profile

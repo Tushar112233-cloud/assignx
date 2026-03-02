@@ -163,7 +163,8 @@ export type ProfileTab =
   | "academic"
   | "preferences"
   | "security"
-  | "subscription";
+  | "subscription"
+  | "payment";
 
 /**
  * Password change form data

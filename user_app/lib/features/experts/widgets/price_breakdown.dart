@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Price breakdown widget with animated expansion.
 ///
@@ -180,14 +181,14 @@ class _PriceBreakdownState extends State<PriceBreakdown>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.title ?? 'Price Breakdown',
+                              widget.title ?? 'Price Breakdown'.tr(context),
                               style: AppTextStyles.labelLarge.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: textColor,
                               ),
                             ),
                             Text(
-                              'Tap to ${_isExpanded ? 'hide' : 'view'} details',
+                              _isExpanded ? 'Tap to hide details'.tr(context) : 'Tap to view details'.tr(context),
                               style: AppTextStyles.caption.copyWith(
                                 color: tertiaryTextColor,
                               ),
@@ -231,7 +232,7 @@ class _PriceBreakdownState extends State<PriceBreakdown>
 
                       // Base consultation fee
                       _buildPriceRow(
-                        label: 'Consultation Fee',
+                        label: 'Consultation Fee'.tr(context),
                         value: widget.basePrice,
                         textColor: textColor,
                         secondaryColor: secondaryTextColor,
@@ -240,7 +241,7 @@ class _PriceBreakdownState extends State<PriceBreakdown>
 
                       // Platform fee
                       _buildPriceRow(
-                        label: 'Platform Fee (${widget.platformFeePercent.toStringAsFixed(0)}%)',
+                        label: '${'Platform Fee'.tr(context)} (${widget.platformFeePercent.toStringAsFixed(0)}%)',
                         value: platformFee,
                         textColor: textColor,
                         secondaryColor: secondaryTextColor,
@@ -277,7 +278,7 @@ class _PriceBreakdownState extends State<PriceBreakdown>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Total Amount',
+                            'Total Amount'.tr(context),
                             style: AppTextStyles.labelLarge.copyWith(
                               fontWeight: FontWeight.w700,
                               color: textColor,
@@ -314,7 +315,7 @@ class _PriceBreakdownState extends State<PriceBreakdown>
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'All prices are inclusive of applicable taxes',
+                                'All prices are inclusive of applicable taxes'.tr(context),
                                 style: AppTextStyles.caption.copyWith(
                                   color: AppColors.info,
                                 ),
@@ -342,7 +343,7 @@ class _PriceBreakdownState extends State<PriceBreakdown>
     bool showFreeIfZero = false,
   }) {
     final displayValue = showFreeIfZero && value == 0
-        ? 'Free'
+        ? 'Free' // Translated at display context
         : '\u20B9${value.toStringAsFixed(0)}';
     final valueColor = showFreeIfZero && value == 0
         ? AppColors.success
@@ -402,7 +403,7 @@ class PriceBreakdownCompact extends StatelessWidget {
               ),
             ),
             Text(
-              'incl. taxes & fees',
+              'incl. taxes & fees'.tr(context),
               style: AppTextStyles.caption.copyWith(
                 color: AppColors.textTertiary,
               ),

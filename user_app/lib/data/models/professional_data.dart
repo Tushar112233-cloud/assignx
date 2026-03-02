@@ -169,21 +169,21 @@ class ProfessionalData {
   /// ```
   factory ProfessionalData.fromJson(Map<String, dynamic> json) {
     return ProfessionalData(
-      id: json['id'] as String,
-      profileId: json['profile_id'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      profileId: (json['profile_id'] ?? json['profileId'] ?? '').toString(),
       professionalType:
-          ProfessionalType.fromString(json['professional_type'] as String?) ??
+          ProfessionalType.fromString((json['professional_type'] ?? json['professionalType']) as String?) ??
               ProfessionalType.jobSeeker,
-      industryId: json['industry_id'] as String?,
-      industryName: json['industry_name'] as String?,
-      jobTitle: json['job_title'] as String?,
-      companyName: json['company_name'] as String?,
-      linkedinUrl: json['linkedin_url'] as String?,
-      businessType: json['business_type'] as String?,
-      gstNumber: json['gst_number'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+      industryId: (json['industry_id'] ?? json['industryId']) as String?,
+      industryName: (json['industry_name'] ?? json['industryName']) as String?,
+      jobTitle: (json['job_title'] ?? json['jobTitle']) as String?,
+      companyName: (json['company_name'] ?? json['companyName']) as String?,
+      linkedinUrl: (json['linkedin_url'] ?? json['linkedinUrl']) as String?,
+      businessType: (json['business_type'] ?? json['businessType']) as String?,
+      gstNumber: (json['gst_number'] ?? json['gstNumber']) as String?,
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      updatedAt: (json['updated_at'] ?? json['updatedAt']) != null
+          ? DateTime.tryParse((json['updated_at'] ?? json['updatedAt']).toString())
           : null,
     );
   }

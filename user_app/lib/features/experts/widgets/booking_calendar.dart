@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/expert_model.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -112,7 +113,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Select Date',
+                    'Select Date'.tr(context),
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -206,7 +207,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Available Times for ${DateFormat('EEEE, MMM d').format(widget.selectedDate!)}',
+                      '${'Available Times for'.tr(context)} ${DateFormat('EEEE, MMM d').format(widget.selectedDate!)}',
                       style: AppTextStyles.labelLarge.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -229,7 +230,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                     child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Text(
-                        'No available time slots for this date',
+                        'No available time slots for this date'.tr(context),
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textTertiary,
                         ),
@@ -254,7 +255,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
 
                 const SizedBox(height: 12),
                 Text(
-                  'Session duration: 60 minutes',
+                  'Session duration: 60 minutes'.tr(context),
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -287,7 +288,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Selected Session',
+                        'Selected Session'.tr(context),
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -319,7 +320,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'Available',
+                    'Available'.tr(context),
                     style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.success,
                       fontWeight: FontWeight.w600,

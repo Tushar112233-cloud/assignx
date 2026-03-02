@@ -162,20 +162,32 @@ class BankDetails {
   /// @param json The JSON map from the database response.
   /// @returns A new [BankDetails] instance.
   factory BankDetails.fromJson(Map<String, dynamic> json) {
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Handle doerId which may be a populated Mongoose object.
+    String doerId = '';
+    final rawDoerId = json['doer_id'] ?? json['doerId'];
+    if (rawDoerId is String) {
+      doerId = rawDoerId;
+    } else if (rawDoerId is Map<String, dynamic>) {
+      doerId = (rawDoerId['_id'] ?? rawDoerId['id'] ?? '').toString();
+    }
+
     return BankDetails(
-      id: json['id'] as String,
-      doerId: json['doer_id'] as String,
-      accountHolderName: json['account_holder_name'] as String,
-      accountNumber: json['account_number'] as String,
-      ifscCode: json['ifsc_code'] as String,
-      bankName: json['bank_name'] as String?,
-      branchName: json['branch_name'] as String?,
-      upiId: json['upi_id'] as String?,
-      isVerified: json['is_verified'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      doerId: doerId,
+      accountHolderName: (json['account_holder_name'] ?? json['accountHolderName'] ?? json['accountName'] ?? '').toString(),
+      accountNumber: (json['account_number'] ?? json['accountNumber'] ?? '').toString(),
+      ifscCode: (json['ifsc_code'] ?? json['ifscCode'] ?? '').toString(),
+      bankName: json['bank_name'] as String? ?? json['bankName'] as String?,
+      branchName: json['branch_name'] as String? ?? json['branchName'] as String?,
+      upiId: json['upi_id'] as String? ?? json['upiId'] as String?,
+      isVerified: json['is_verified'] as bool? ?? json['isVerified'] as bool? ?? json['verified'] as bool? ?? false,
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDate(json['updated_at'] ?? json['updatedAt']),
     );
   }
 

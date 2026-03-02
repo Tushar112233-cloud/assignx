@@ -124,7 +124,7 @@ export function RegistrationForm({ onSuccess, onLoginClick }: RegistrationFormPr
       return
     }
 
-    // TODO: Implement actual OTP sending via Supabase
+    // TODO: Implement actual OTP sending via API
     setOtpSent(true)
   }
 

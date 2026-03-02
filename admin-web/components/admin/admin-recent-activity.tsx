@@ -90,17 +90,17 @@ export function AdminRecentActivity({
                 </TableCell>
               </TableRow>
             ) : (
-              tickets.map((ticket) => (
-                <TableRow key={ticket.id}>
+              tickets.map((ticket: any) => (
+                <TableRow key={ticket.id || ticket._id}>
                   <TableCell className="font-medium">
-                    {ticket.ticket_number}
+                    {ticket.ticket_number || ticket.ticketNumber || "-"}
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate">
                     {ticket.subject}
                   </TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(ticket.status)}>
-                      {ticket.status.replace("_", " ")}
+                      {(ticket.status || "").replace("_", " ")}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -109,10 +109,10 @@ export function AdminRecentActivity({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {ticket.profiles?.full_name ?? "Unknown"}
+                    {ticket.userName || ticket.fullName || ticket.profiles?.full_name || ticket.user?.fullName || "Unknown"}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(ticket.created_at).toLocaleDateString("en-US", {
+                    {new Date(ticket.createdAt || ticket.created_at).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                     })}

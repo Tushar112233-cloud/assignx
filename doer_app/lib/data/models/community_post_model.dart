@@ -149,12 +149,37 @@ class CommunityPost {
 
   /// Create from JSON.
   factory CommunityPost.fromJson(Map<String, dynamic> json) {
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Handle userId which may be a populated Mongoose object.
+    String userId = '';
+    String userName = 'Anonymous';
+    String? userAvatar;
+    String? userTitle;
+    final rawUserId = json['user_id'] ?? json['userId'];
+    if (rawUserId is String) {
+      userId = rawUserId;
+    } else if (rawUserId is Map<String, dynamic>) {
+      userId = (rawUserId['_id'] ?? rawUserId['id'] ?? '').toString();
+      userName = (rawUserId['full_name'] ?? rawUserId['fullName'] ?? rawUserId['name'] ?? 'Anonymous').toString();
+      userAvatar = rawUserId['avatar_url'] as String? ?? rawUserId['avatarUrl'] as String?;
+      userTitle = rawUserId['user_title'] as String? ?? rawUserId['userTitle'] as String?;
+    }
+
+    // Fall back to flat fields if not populated.
+    userName = (json['user_name'] ?? json['userName'])?.toString() ?? userName;
+    userAvatar = userAvatar ?? json['user_avatar'] as String? ?? json['userAvatar'] as String?;
+    userTitle = userTitle ?? json['user_title'] as String? ?? json['userTitle'] as String?;
+
     return CommunityPost(
-      id: json['id'] as String,
-      userId: json['user_id'] as String? ?? '',
-      userName: json['user_name'] as String? ?? 'Anonymous',
-      userAvatar: json['user_avatar'] as String?,
-      userTitle: json['user_title'] as String?,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      userId: userId,
+      userName: userName,
+      userAvatar: userAvatar,
+      userTitle: userTitle,
       category: ProfessionalCategory.values.firstWhere(
         (c) => c.name == json['category'],
         orElse: () => ProfessionalCategory.all,
@@ -163,23 +188,21 @@ class CommunityPost {
         (t) => t.name == json['type'],
         orElse: () => ProfessionalPostType.discussion,
       ),
-      title: json['title'] as String,
+      title: (json['title'] as String?) ?? '',
       description: json['description'] as String?,
-      images: (json['images'] as List<dynamic>?)?.cast<String>(),
+      images: (json['images'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
       location: json['location'] as String?,
       status: PostStatus.values.firstWhere(
         (s) => s.name == json['status'],
         orElse: () => PostStatus.active,
       ),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      expiresAt: json['expires_at'] != null
-          ? DateTime.parse(json['expires_at'] as String)
-          : null,
-      viewCount: json['view_count'] as int? ?? 0,
-      likeCount: json['like_count'] as int? ?? 0,
-      commentCount: json['comment_count'] as int? ?? 0,
-      isLiked: json['is_liked'] as bool? ?? false,
-      isSaved: json['is_saved'] as bool? ?? false,
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      expiresAt: _parseDate(json['expires_at'] ?? json['expiresAt']),
+      viewCount: (json['view_count'] ?? json['viewCount']) as int? ?? 0,
+      likeCount: (json['like_count'] ?? json['likeCount']) as int? ?? 0,
+      commentCount: (json['comment_count'] ?? json['commentCount']) as int? ?? 0,
+      isLiked: json['is_liked'] as bool? ?? json['isLiked'] as bool? ?? false,
+      isSaved: json['is_saved'] as bool? ?? json['isSaved'] as bool? ?? false,
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }

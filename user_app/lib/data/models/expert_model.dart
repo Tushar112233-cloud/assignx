@@ -111,8 +111,8 @@ class Expert {
   /// Create from JSON.
   factory Expert.fromJson(Map<String, dynamic> json) {
     return Expert(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
       name: json['name'] as String? ?? 'Anonymous',
       avatar: json['avatar'] as String?,
       designation: json['designation'] as String? ?? 'Expert',
@@ -123,23 +123,23 @@ class Expert {
           [],
       qualifications:
           (json['qualifications'] as List<dynamic>?)?.cast<String>() ?? [],
-      pricePerSession: (json['price_per_session'] as num?)?.toDouble() ?? 0,
+      pricePerSession: ((json['price_per_session'] ?? json['pricePerSession']) as num?)?.toDouble() ?? 0,
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
-      reviewCount: json['review_count'] as int? ?? 0,
-      totalSessions: json['total_sessions'] as int? ?? 0,
+      reviewCount: (json['review_count'] ?? json['reviewCount']) as int? ?? 0,
+      totalSessions: (json['total_sessions'] ?? json['totalSessions']) as int? ?? 0,
       availability: ExpertAvailability.fromString(
           json['availability'] as String? ?? 'available'),
       verified: json['verified'] as bool? ?? false,
-      responseTime: json['response_time'] as String? ?? 'Within 24 hours',
+      responseTime: (json['response_time'] ?? json['responseTime']) as String? ?? 'Within 24 hours',
       languages:
           (json['languages'] as List<dynamic>?)?.cast<String>() ?? ['English'],
-      experienceYears: json['experience_years'] as int? ?? 0,
+      experienceYears: (json['experience_years'] ?? json['experienceYears']) as int? ?? 0,
       institution: json['institution'] as String?,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+      createdAt: (json['created_at'] ?? json['createdAt']) != null
+          ? DateTime.tryParse((json['created_at'] ?? json['createdAt']).toString()) ?? DateTime.now()
           : DateTime.now(),
-      lastActiveAt: json['last_active_at'] != null
-          ? DateTime.parse(json['last_active_at'] as String)
+      lastActiveAt: (json['last_active_at'] ?? json['lastActiveAt']) != null
+          ? DateTime.tryParse((json['last_active_at'] ?? json['lastActiveAt']).toString())
           : null,
     );
   }
@@ -284,9 +284,9 @@ class ExpertTimeSlot {
 
   factory ExpertTimeSlot.fromJson(Map<String, dynamic> json) {
     return ExpertTimeSlot(
-      id: json['id'] as String,
-      time: json['time'] as String,
-      displayTime: json['display_time'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      time: (json['time'] as String?) ?? '',
+      displayTime: (json['display_time'] ?? json['displayTime'] ?? '').toString(),
       available: json['available'] as bool? ?? true,
     );
   }
@@ -339,22 +339,22 @@ class ConsultationBooking {
 
   factory ConsultationBooking.fromJson(Map<String, dynamic> json) {
     return ConsultationBooking(
-      id: json['id'] as String,
-      expertId: json['expert_id'] as String,
-      userId: json['user_id'] as String,
-      date: DateTime.parse(json['date'] as String),
-      startTime: json['start_time'] as String,
-      endTime: json['end_time'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      expertId: (json['expert_id'] ?? json['expertId'] ?? '').toString(),
+      userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
+      date: DateTime.tryParse((json['date'] ?? '').toString()) ?? DateTime.now(),
+      startTime: (json['start_time'] ?? json['startTime'] ?? '').toString(),
+      endTime: (json['end_time'] ?? json['endTime'] ?? '').toString(),
       sessionType: ExpertSessionType.values.firstWhere(
-        (t) => t.minutes == json['duration_minutes'],
+        (t) => t.minutes == (json['duration_minutes'] ?? json['durationMinutes']),
         orElse: () => ExpertSessionType.oneHour,
       ),
       topic: json['topic'] as String?,
       notes: json['notes'] as String?,
-      totalAmount: (json['total_amount'] as num).toDouble(),
+      totalAmount: ((json['total_amount'] ?? json['totalAmount'] ?? 0) as num).toDouble(),
       status: BookingStatus.fromString(json['status'] as String? ?? 'upcoming'),
-      meetLink: json['meet_link'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      meetLink: (json['meet_link'] ?? json['meetLink']) as String?,
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 
@@ -422,14 +422,14 @@ class ExpertReview {
 
   factory ExpertReview.fromJson(Map<String, dynamic> json) {
     return ExpertReview(
-      id: json['id'] as String,
-      expertId: json['expert_id'] as String,
-      userId: json['user_id'] as String,
-      userName: json['user_name'] as String? ?? 'Anonymous',
-      userAvatar: json['user_avatar'] as String?,
-      rating: (json['rating'] as num).toDouble(),
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      expertId: (json['expert_id'] ?? json['expertId'] ?? '').toString(),
+      userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
+      userName: (json['user_name'] ?? json['userName']) as String? ?? 'Anonymous',
+      userAvatar: (json['user_avatar'] ?? json['userAvatar']) as String?,
+      rating: ((json['rating'] ?? 0) as num).toDouble(),
       comment: json['comment'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 }

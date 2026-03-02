@@ -3,6 +3,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/expert_model.dart';
 
 /// Expert card widget with glassmorphic styling.
@@ -47,19 +48,24 @@ class ExpertCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.25),
+            color: AppColors.border.withValues(alpha: 0.12),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -155,7 +161,7 @@ class ExpertCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '/session',
+                      '/session'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         fontSize: 9,
                         color: AppColors.textTertiary,
@@ -163,7 +169,7 @@ class ExpertCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                _buildBookButton(small: true),
+                _buildBookButton(context, small: true),
               ],
             ),
           ],
@@ -235,7 +241,7 @@ class ExpertCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Featured',
+                        'Featured'.tr(context),
                         style: AppTextStyles.caption.copyWith(
                           color: Colors.white,
                           fontSize: 10,
@@ -304,7 +310,7 @@ class ExpertCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${expert.totalSessions} sessions',
+                            '${expert.totalSessions} ${'sessions'.tr(context)}',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -336,7 +342,7 @@ class ExpertCard extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    spec.label,
+                    spec.label.tr(context),
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.primary,
                       fontSize: 11,
@@ -364,14 +370,14 @@ class ExpertCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '/session',
+                      '/session'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.textTertiary,
                       ),
                     ),
                   ],
                 ),
-                _buildBookButton(),
+                _buildBookButton(context),
               ],
             ),
           ],
@@ -385,19 +391,24 @@ class ExpertCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.3),
+            color: AppColors.border.withValues(alpha: 0.15),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -505,7 +516,7 @@ class ExpertCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '/session',
+                            '/session'.tr(context),
                             style: AppTextStyles.caption.copyWith(
                               fontSize: 10,
                               color: AppColors.textTertiary,
@@ -513,7 +524,7 @@ class ExpertCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      _buildBookButton(small: true),
+                      _buildBookButton(context, small: true),
                     ],
                   ),
                 ],
@@ -642,20 +653,37 @@ class ExpertCard extends StatelessWidget {
   }
 
   /// Build book button.
-  Widget _buildBookButton({bool small = false}) {
+  Widget _buildBookButton(BuildContext context, {bool small = false}) {
     return Material(
-      color: AppColors.darkBrown,
-      borderRadius: BorderRadius.circular(small ? 8 : 10),
+      color: Colors.transparent,
       child: InkWell(
         onTap: onBook,
-        borderRadius: BorderRadius.circular(small ? 8 : 10),
+        borderRadius: BorderRadius.circular(small ? 10 : 12),
         child: Container(
           padding: EdgeInsets.symmetric(
-            horizontal: small ? 14 : 20,
-            vertical: small ? 8 : 10,
+            horizontal: small ? 16 : 22,
+            vertical: small ? 10 : 12,
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.darkBrown,
+                AppColors.primary,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(small ? 10 : 12),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Text(
-            small ? 'Book' : 'Book Now',
+            small ? 'Book'.tr(context) : 'Book Now'.tr(context),
             style: (small ? AppTextStyles.labelSmall : AppTextStyles.labelMedium)
                 .copyWith(
               color: Colors.white,

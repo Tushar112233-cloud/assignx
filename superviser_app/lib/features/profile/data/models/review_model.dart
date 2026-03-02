@@ -96,23 +96,41 @@ class ReviewModel {
   bool get hasResponse => response != null && response!.isNotEmpty;
 
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
+    // Handle populated project object
+    String? projectTitle;
+    String projectId = '';
+    if (json['project'] is Map<String, dynamic>) {
+      projectTitle = json['project']['title'] as String?;
+      projectId = (json['project']['_id'] ?? json['project']['id'] ?? '').toString();
+    }
+    projectId = projectId.isNotEmpty
+        ? projectId
+        : (json['projectId'] ?? json['project_id'] ?? '').toString();
+    projectTitle ??= (json['projectTitle'] ?? json['project_title']) as String? ?? 'Unknown Project';
+
+    // Handle populated reviewer object
+    String? clientName;
+    String clientId = '';
+    if (json['reviewer'] is Map<String, dynamic>) {
+      clientName = (json['reviewer']['fullName'] ?? json['reviewer']['full_name']) as String?;
+      clientId = (json['reviewer']['_id'] ?? json['reviewer']['id'] ?? '').toString();
+    }
+    clientId = clientId.isNotEmpty
+        ? clientId
+        : (json['reviewerId'] ?? json['reviewer_id'] ?? '').toString();
+    clientName ??= (json['reviewerName'] ?? json['reviewer_name'] ?? json['clientName'] ?? json['client_name']) as String? ?? 'Anonymous';
+
     return ReviewModel(
-      id: json['id'] as String,
-      rating: (json['rating'] as num?)?.toDouble() ?? 0,
-      projectId: json['project_id'] as String? ?? '',
-      projectTitle: json['project_title'] as String? ?? 'Unknown Project',
-      clientId: json['client_id'] as String? ?? '',
-      clientName: json['client_name'] as String? ?? 'Anonymous',
-      createdAt: DateTime.parse(
-          json['created_at'] as String? ?? DateTime.now().toIso8601String()),
-      comment: json['comment'] as String?,
-      response: json['response'] as String?,
-      respondedAt: json['responded_at'] != null
-          ? DateTime.parse(json['responded_at'] as String)
-          : null,
-      isPublic: json['is_public'] as bool? ?? true,
-      tags:
-          (json['tags'] as List?)?.map((e) => e as String).toList() ?? const [],
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      rating: ((json['overallRating'] ?? json['overall_rating'] ?? json['rating']) as num?)?.toDouble() ?? 0,
+      projectId: projectId,
+      projectTitle: projectTitle,
+      clientId: clientId,
+      clientName: clientName,
+      createdAt: DateTime.tryParse(
+          (json['createdAt'] ?? json['created_at'] ?? '').toString()) ?? DateTime.now(),
+      comment: (json['reviewText'] ?? json['review_text'] ?? json['comment']) as String?,
+      isPublic: (json['isPublic'] ?? json['is_public']) as bool? ?? true,
     );
   }
 
@@ -192,13 +210,17 @@ class ReviewsSummary {
   }
 
   factory ReviewsSummary.fromJson(Map<String, dynamic> json) {
+    final rawDist = (json['ratingDistribution'] ?? json['rating_distribution']) as Map<String, dynamic>? ?? {};
+    final distribution = <int, int>{};
+    for (final entry in rawDist.entries) {
+      distribution[int.tryParse(entry.key) ?? 0] = (entry.value as num?)?.toInt() ?? 0;
+    }
+
     return ReviewsSummary(
-      averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0,
-      totalReviews: json['total_reviews'] as int? ?? 0,
-      ratingDistribution: (json['rating_distribution'] as Map<String, dynamic>?)
-              ?.map((key, value) => MapEntry(int.parse(key), value as int)) ??
-          {},
-      recentReviews: (json['recent_reviews'] as List?)
+      averageRating: ((json['averageRating'] ?? json['average_rating']) as num?)?.toDouble() ?? 0,
+      totalReviews: (json['totalReviews'] ?? json['total_reviews']) as int? ?? 0,
+      ratingDistribution: distribution,
+      recentReviews: ((json['recentReviews'] ?? json['recent_reviews']) as List?)
               ?.map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],

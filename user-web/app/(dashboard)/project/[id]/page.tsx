@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { getStoredUser } from "@/lib/api/auth";
 import { getProjectById } from "@/lib/actions/data";
 import { ProjectDetailClient } from "./project-detail-client";
 import type { ProjectDetail } from "@/types/project";
@@ -177,10 +177,8 @@ export default function ProjectDetailPage() {
     hasFetched.current = true;
 
     const loadData = async () => {
-      const supabase = createClient();
-
       // Check auth first
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = getStoredUser();
 
       if (!user) {
         router.push("/login");

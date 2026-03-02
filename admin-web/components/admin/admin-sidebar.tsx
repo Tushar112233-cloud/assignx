@@ -27,6 +27,11 @@ import {
   IconLayersLinked,
   IconUserScan,
   IconTools,
+  IconHeartHandshake,
+  IconUsersGroup,
+  IconSpeakerphone,
+  IconFileText,
+  IconTargetArrow,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
@@ -92,6 +97,16 @@ const mainNav: NavItem[] = [
 ];
 
 const sections: NavSection[] = [
+  {
+    label: "CRM",
+    icon: IconHeartHandshake,
+    items: [
+      { title: "CRM Dashboard", url: "/crm", icon: IconTargetArrow, exact: true },
+      { title: "Segments", url: "/crm/segments", icon: IconUsersGroup },
+      { title: "Communications", url: "/crm/communications", icon: IconSpeakerphone },
+      { title: "Content Control", url: "/crm/content", icon: IconFileText },
+    ],
+  },
   {
     label: "Management",
     icon: IconLayersLinked,
@@ -419,6 +434,7 @@ export function AdminSidebar({
 
   // Auto-open sections that have an active child
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    CRM: true,
     Management: true,
     People: true,
     "Content & Tools": true,

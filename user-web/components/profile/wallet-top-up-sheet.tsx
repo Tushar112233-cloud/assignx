@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { RazorpayCheckout } from "@/components/payments/razorpay-checkout";
-import { createClient } from "@/lib/supabase/client";
+import { getStoredUser } from "@/lib/api/auth";
 
 /**
  * Preset amounts for quick selection
@@ -49,14 +49,12 @@ export function WalletTopUpSheet({
 
   // Get user data on mount
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }: any) => {
-      if (data.user) {
-        setUserId(data.user.id);
-        setUserEmail(data.user.email);
-        setUserName(data.user.user_metadata?.full_name);
-      }
-    });
+    const user = getStoredUser();
+    if (user) {
+      setUserId(user.id);
+      setUserEmail(user.email);
+      setUserName(user.full_name || user.fullName);
+    }
   }, []);
 
   const effectiveAmount = selectedAmount || (customAmount ? parseInt(customAmount, 10) : 0);

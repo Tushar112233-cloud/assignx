@@ -7,7 +7,7 @@ import { format, subMonths, startOfMonth } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { getDoerProfile } from '@/services/profile.service'
 import { getEarningsData } from '@/services/wallet.service'
-import { createClient } from '@/lib/supabase/client'
+import { apiClient, getAccessToken } from '@/lib/api/client'
 import { toast } from 'sonner'
 import type { DoerStats, EarningsData } from '@/types/database'
 
@@ -112,15 +112,11 @@ export default function StatisticsPage() {
 
         // Load project data and calculate statistics
         if (doer?.id) {
-          const supabase = createClient()
-
           // Fetch all projects for the doer
-          const { data: projects, error } = await supabase
-            .from('projects')
-            .select('topic, doer_payout, status')
-            .eq('doer_id', doer.id)
+          const projects = await apiClient<Array<{ topic: string; doer_payout: number; status: string }>>(
+            `/api/projects?doer_id=${doer.id}&fields=topic,doer_payout,status`
+          )
 
-          if (error) throw error
           if (stale) return
 
           if (projects && projects.length > 0) {

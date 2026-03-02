@@ -63,9 +63,8 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../core/config/supabase_config.dart';
+import '../core/api/api_client.dart';
 
 /// Training module model representing educational content.
 ///
@@ -145,17 +144,17 @@ class TrainingModule {
   /// A new [TrainingModule] instance with parsed data.
   factory TrainingModule.fromJson(Map<String, dynamic> json) {
     return TrainingModule(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String? ?? '',
-      category: json['category'] as String? ?? 'General',
-      durationMinutes: json['duration_minutes'] as int? ?? 10,
-      videoUrl: json['video_url'] as String?,
-      contentMarkdown: json['content_markdown'] as String?,
-      isCompleted: json['is_completed'] as bool? ?? false,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      category: (json['category'] ?? 'General').toString(),
+      durationMinutes: (json['duration_minutes'] ?? json['durationMinutes'] as num?)?.toInt() ?? 10,
+      videoUrl: (json['video_url'] ?? json['videoUrl'])?.toString(),
+      contentMarkdown: (json['content_markdown'] ?? json['contentMarkdown'])?.toString(),
+      isCompleted: json['is_completed'] ?? json['isCompleted'] ?? false,
       progress: (json['progress'] as num?)?.toDouble(),
-      orderIndex: json['order_index'] as int? ?? 0,
-      isRequired: json['is_required'] as bool? ?? false,
+      orderIndex: (json['order_index'] ?? json['orderIndex'] as num?)?.toInt() ?? 0,
+      isRequired: json['is_required'] ?? json['isRequired'] ?? false,
     );
   }
 
@@ -626,32 +625,28 @@ class ResourcesNotifier extends Notifier<ResourcesState> {
   /// An empty [ResourcesState] while data loads in the background.
   @override
   ResourcesState build() {
-    _loadTrainingModules();
+    Future.microtask(() => _loadTrainingModules());
     return const ResourcesState();
   }
 
-  /// The Supabase client instance for database operations.
-  SupabaseClient get _client => SupabaseConfig.client;
-
-  /// Loads training modules from the database.
+  /// Loads training modules from the API.
   ///
   /// Fetches all training modules ordered by their display index.
   ///
   /// ## State Updates
   ///
   /// Sets [isLoading] to true during load, false on completion.
-  /// Falls back to mock data on database errors.
   Future<void> _loadTrainingModules() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final response = await _client
-          .from('training_modules')
-          .select()
-          .order('order_index');
+      final response = await ApiClient.get('/training/modules');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['modules'] as List? ?? [];
 
-      final modules = (response as List)
-          .map((e) => TrainingModule.fromJson(e))
+      final modules = list
+          .map((e) => TrainingModule.fromJson(e as Map<String, dynamic>))
           .toList();
 
       state = state.copyWith(
@@ -697,13 +692,10 @@ class ResourcesNotifier extends Notifier<ResourcesState> {
 
     state = state.copyWith(trainingModules: modules);
 
-    // Save to database
+    // Save to API
     try {
-      await _client.from('training_progress').upsert({
-        'module_id': moduleId,
-        'is_completed': true,
-        'progress': 1.0,
-        'completed_at': DateTime.now().toIso8601String(),
+      await ApiClient.post('/training/progress/complete', {
+        'moduleId': moduleId,
       });
     } catch (e) {
       // Continue anyway for testing

@@ -193,31 +193,34 @@ class NotificationModel {
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     // Build data map from reference fields if direct data not available
     Map<String, dynamic>? data = json['data'] as Map<String, dynamic>?;
-    if (data == null && json['reference_id'] != null) {
+    final referenceId = json['referenceId'] ?? json['reference_id'];
+    if (data == null && referenceId != null) {
       data = {
-        'reference_type': json['reference_type'],
-        'reference_id': json['reference_id'],
+        'reference_type': json['referenceType'] ?? json['reference_type'],
+        'reference_id': referenceId,
       };
     }
 
     return NotificationModel(
-      id: json['id'] as String,
-      userId: json['profile_id'] as String? ?? json['user_id'] as String? ?? '',
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: (json['profileId'] ?? json['profile_id'] ?? json['userId'] ?? json['user_id'] ?? '').toString(),
       type: _parseType(
-          json['notification_type'] as String? ?? json['type'] as String?),
+          (json['notificationType'] ?? json['notification_type'] ?? json['type']) as String?),
       title: json['title'] as String? ?? '',
-      body: json['body'] as String? ?? '',
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
+      body: json['body'] as String? ?? json['message'] as String? ?? '',
+      createdAt: _tryParseDateStatic(json['createdAt'] ?? json['created_at']) ?? DateTime.now(),
       data: data,
-      imageUrl: json['image_url'] as String?,
-      isRead: json['is_read'] as bool? ?? false,
-      readAt: json['read_at'] != null
-          ? DateTime.parse(json['read_at'] as String)
-          : null,
-      actionUrl: json['action_url'] as String?,
+      imageUrl: (json['imageUrl'] ?? json['image_url']) as String?,
+      isRead: (json['isRead'] ?? json['is_read']) as bool? ?? false,
+      readAt: _tryParseDateStatic(json['readAt'] ?? json['read_at']),
+      actionUrl: (json['actionUrl'] ?? json['action_url']) as String?,
     );
+  }
+
+  static DateTime? _tryParseDateStatic(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   Map<String, dynamic> toJson() {
@@ -332,23 +335,26 @@ class NotificationSettings {
 
   factory NotificationSettings.fromJson(Map<String, dynamic> json) {
     return NotificationSettings(
-      pushEnabled: json['push_enabled'] as bool? ?? true,
-      emailEnabled: json['email_enabled'] as bool? ?? true,
-      projectUpdates: json['project_updates'] as bool? ?? true,
-      chatMessages: json['chat_messages'] as bool? ?? true,
-      paymentAlerts: json['payment_alerts'] as bool? ?? true,
-      systemAlerts: json['system_alerts'] as bool? ?? true,
-      marketingEmails: json['marketing_emails'] as bool? ?? false,
-      quietHoursEnabled: json['quiet_hours_enabled'] as bool? ?? false,
-      quietHoursStart: json['quiet_hours_start'] as String?,
-      quietHoursEnd: json['quiet_hours_end'] as String?,
+      pushEnabled: (json['pushNotifications'] ?? json['push_notifications'] ??
+          json['pushEnabled'] ?? json['push_enabled']) as bool? ?? true,
+      emailEnabled: (json['emailNotifications'] ?? json['email_notifications'] ??
+          json['emailEnabled'] ?? json['email_enabled']) as bool? ?? true,
+      projectUpdates: (json['projectUpdates'] ?? json['project_updates']) as bool? ?? true,
+      chatMessages: (json['chatMessages'] ?? json['chat_messages']) as bool? ?? true,
+      paymentAlerts: (json['paymentAlerts'] ?? json['payment_alerts']) as bool? ?? true,
+      systemAlerts: (json['systemAlerts'] ?? json['system_alerts']) as bool? ?? true,
+      marketingEmails: (json['marketingEmails'] ?? json['marketing_emails']) as bool? ?? false,
+      quietHoursEnabled: (json['quietHoursEnabled'] ?? json['quiet_hours_enabled']) as bool? ?? false,
+      quietHoursStart: (json['quietHoursStart'] ?? json['quiet_hours_start']) as String?,
+      quietHoursEnd: (json['quietHoursEnd'] ?? json['quiet_hours_end']) as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'push_enabled': pushEnabled,
-      'email_enabled': emailEnabled,
+      // Use correct DB column names
+      'push_notifications': pushEnabled,
+      'email_notifications': emailEnabled,
       'project_updates': projectUpdates,
       'chat_messages': chatMessages,
       'payment_alerts': paymentAlerts,

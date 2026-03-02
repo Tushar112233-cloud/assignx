@@ -61,7 +61,7 @@ export function TicketList({ onTicketSelect, onCreateNew }: TicketListProps) {
       const query = searchQuery.toLowerCase()
       result = result.filter(
         (ticket) =>
-          ticket.ticket_number.toLowerCase().includes(query) ||
+          (ticket.ticket_number || "").toLowerCase().includes(query) ||
           ticket.subject.toLowerCase().includes(query)
       )
     }

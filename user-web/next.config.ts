@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+const API_HOST = process.env.NEXT_PUBLIC_API_URL
+  ? new URL(process.env.NEXT_PUBLIC_API_URL).host
+  : "localhost:4000";
+
 const nextConfig: NextConfig = {
   /**
    * Performance optimizations
@@ -16,18 +20,23 @@ const nextConfig: NextConfig = {
 
   /**
    * Image optimization configuration
-   * Configure remote patterns for Supabase storage
+   * Configure remote patterns for Cloudinary and other image hosts
    */
   images: {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "*.supabase.co",
-        pathname: "/storage/v1/object/public/**",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "api.dicebear.com",
         pathname: "/**",
       },
     ],
@@ -72,11 +81,11 @@ const nextConfig: NextConfig = {
               // Styles: self + unsafe-inline (required for CSS-in-JS and Tailwind)
               "style-src 'self' 'unsafe-inline'",
               // Images: self + data URIs + blob + trusted domains
-              "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com https://*.razorpay.com https://i.pravatar.cc https://api.qrserver.com",
+              "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://*.razorpay.com https://i.pravatar.cc https://api.qrserver.com https://api.dicebear.com",
               // Fonts: self + data URIs + Google Fonts
               "font-src 'self' data: https://fonts.gstatic.com",
-              // API connections: self + Supabase + Razorpay
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.razorpay.com https://lumberjack.razorpay.com",
+              // API connections: self + Express API + Razorpay + Socket.IO
+              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"} ws://${API_HOST} wss://${API_HOST} https://api.razorpay.com https://lumberjack.razorpay.com`,
               // Frames: only Razorpay checkout iframe
               "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
               // Prevent clickjacking

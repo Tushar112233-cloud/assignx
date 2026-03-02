@@ -82,6 +82,14 @@ class _NotificationsTab extends ConsumerWidget {
               value: settings.pushNotifications,
               onChanged: notifier.setPushNotifications,
             ),
+            const Divider(height: 1),
+            _ToggleTile(
+              icon: Icons.campaign_outlined,
+              title: 'Marketing Emails'.tr(context),
+              subtitle: 'Receive promotional offers and updates'.tr(context),
+              value: settings.marketingEmails,
+              onChanged: notifier.setMarketingEmails,
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -210,7 +218,18 @@ class _PrivacyTab extends ConsumerWidget {
               title: 'Two-Factor Authentication'.tr(context),
               subtitle: 'Add an extra layer of security'.tr(context),
               value: settings.twoFactorEnabled,
-              onChanged: notifier.setTwoFactorEnabled,
+              onChanged: (value) => _showComingSoonDialog(context),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _SettingsCard(
+          title: 'Session Management'.tr(context),
+          children: [
+            _SessionInfoTile(
+              deviceName: 'This Device'.tr(context),
+              loginTime: DateTime.now(),
+              isCurrentDevice: true,
             ),
           ],
         ),
@@ -235,6 +254,35 @@ class _PrivacyTab extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+
+  void _showComingSoonDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline, color: AppColors.info),
+            const SizedBox(width: 12),
+            Text('Coming Soon'.tr(ctx)),
+          ],
+        ),
+        content: Text(
+          'Two-factor authentication will be available in a future update. Stay tuned!'.tr(ctx),
+        ),
+        actions: [
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Got it'.tr(ctx)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -401,18 +449,20 @@ class _SettingsCard extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondaryLight,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
         ),
         Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: AppColors.borderLight),
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             child: Column(
               children: children,
             ),
@@ -590,6 +640,116 @@ class _DropdownTile extends StatelessWidget {
         onChanged: onChanged,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+    );
+  }
+}
+
+/// Session info tile showing current device and login time.
+///
+/// Used in the session management section to show active sessions.
+class _SessionInfoTile extends StatelessWidget {
+  const _SessionInfoTile({
+    required this.deviceName,
+    required this.loginTime,
+    this.isCurrentDevice = false,
+  });
+
+  final String deviceName;
+  final DateTime loginTime;
+  final bool isCurrentDevice;
+
+  String _formatLoginTime(DateTime time) {
+    final now = DateTime.now();
+    final diff = now.difference(time);
+
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+    if (diff.inDays < 1) return '${diff.inHours}h ago';
+    return '${time.day}/${time.month}/${time.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.phone_iphone,
+              color: AppColors.success,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      deviceName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (isCurrentDevice) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Active'.tr(context),
+                          style: TextStyle(
+                            color: AppColors.success,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${'Logged in'.tr(context)}: ${_formatLoginTime(loginTime)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondaryLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: AppColors.success,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.success.withValues(alpha: 0.4),
+                  blurRadius: 6,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,12 +1,12 @@
 /**
- * @fileoverview Hook for managing user preferences with Supabase persistence.
+ * @fileoverview Hook for managing user preferences with API persistence.
  * @module hooks/use-user-preferences
  */
 
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { apiClient } from "@/lib/api/client";
 import { useUserStore } from "@/stores/user-store";
 
 export interface NotificationPreferences {
@@ -52,7 +52,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 };
 
 /**
- * Hook to manage user preferences with Supabase persistence
+ * Hook to manage user preferences with API persistence
  */
 export function useUserPreferences() {
   const { user } = useUserStore();
@@ -60,7 +60,7 @@ export function useUserPreferences() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load preferences from Supabase on mount
+  // Load preferences from API on mount
   useEffect(() => {
     if (!user?.id) {
       setIsLoading(false);
@@ -68,19 +68,8 @@ export function useUserPreferences() {
     }
 
     const loadPreferences = async () => {
-      const supabase = createClient();
-
       try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("notification_preferences, settings")
-          .eq("id", user.id)
-          .single();
-
-        if (error) {
-          console.error("Error loading preferences:", error);
-          return;
-        }
+        const data = await apiClient(`/api/profiles/${user.id}/preferences`);
 
         if (data) {
           const notificationPrefs = data.notification_preferences as Partial<NotificationPreferences> | null;
@@ -102,30 +91,23 @@ export function useUserPreferences() {
     loadPreferences();
   }, [user?.id]);
 
-  // Save preferences to Supabase
+  // Save preferences via API
   const savePreferences = useCallback(async (newPreferences: UserPreferences) => {
     if (!user?.id) return false;
 
     setIsSaving(true);
-    const supabase = createClient();
 
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
+      await apiClient(`/api/profiles/${user.id}/preferences`, {
+        method: "PUT",
+        body: JSON.stringify({
           notification_preferences: newPreferences.notifications,
           settings: {
             privacy: newPreferences.privacy,
             appearance: newPreferences.appearance,
           },
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
-
-      if (error) {
-        console.error("Error saving preferences:", error);
-        return false;
-      }
+        }),
+      });
 
       setPreferences(newPreferences);
       return true;

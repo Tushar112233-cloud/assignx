@@ -27,7 +27,7 @@ import {
   startProject,
   submitProject,
 } from '@/services/project.service'
-import { createClient } from '@/lib/supabase/client'
+import { apiClient, getAccessToken } from '@/lib/api/client'
 import {
   getOrCreateProjectChatRoom,
   getChatMessages,
@@ -47,7 +47,8 @@ import type {
   ProjectRevision,
   ChatMessage,
 } from '@/types/database'
-import type { RealtimeChannel } from '@supabase/supabase-js'
+/** Subscription handle returned by subscribeToMessages */
+type ChatSubscription = { unsubscribe: () => void }
 
 /**
  * Project workspace page
@@ -68,10 +69,10 @@ export default function ProjectWorkspacePage() {
   const [chatRoomId, setChatRoomId] = useState<string | null>(null)
   const [isChatLoading, setIsChatLoading] = useState(false)
   const [isChatSending, setIsChatSending] = useState(false)
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null)
+  const [channel, setChannel] = useState<ChatSubscription | null>(null)
 
   /**
-   * Load project data from Supabase.
+   * Load project data from the API.
    * Gated on auth readiness to avoid AuthenticationError when session
    * hasn't been initialized yet.
    */
@@ -159,7 +160,7 @@ export default function ProjectWorkspacePage() {
 
     return () => {
       if (newChannel) {
-        unsubscribeFromMessages(newChannel)
+        newChannel.unsubscribe()
       }
     }
   }, [chatRoomId, doer?.id])
@@ -258,13 +259,10 @@ export default function ProjectWorkspacePage() {
   /** Handle update live document URL */
   const handleUpdateLiveDocUrl = useCallback(async (url: string) => {
     try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from('projects')
-        .update({ live_document_url: url, updated_at: new Date().toISOString() })
-        .eq('id', projectId)
-
-      if (error) throw error
+      await apiClient(`/api/projects/${projectId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ live_document_url: url }),
+      })
 
       setProject((prev) => (prev ? { ...prev, live_document_url: url } : null))
       toast.success(url ? 'Google Docs link saved' : 'Google Docs link removed')

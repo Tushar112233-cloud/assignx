@@ -23,6 +23,9 @@ export { AppInfoFooter } from "./app-info-footer";
 export { AccountUpgradeSection } from "./account-upgrade-section";
 export { UpgradeDialog } from "./upgrade-dialog";
 
+// Payment methods
+export { PaymentMethodsSection } from "./payment-methods-section";
+
 // Account type badge
 export {
   AccountBadge,

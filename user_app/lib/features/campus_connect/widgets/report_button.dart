@@ -95,7 +95,7 @@ class _ReportButtonState extends State<ReportButton>
     final config = _getSizeConfig(widget.size);
 
     return Tooltip(
-      message: _isReported ? 'Already reported' : 'Report this listing',
+      message: _isReported ? 'Already reported'.tr(context) : 'Report this listing'.tr(context),
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: Material(
@@ -124,7 +124,7 @@ class _ReportButtonState extends State<ReportButton>
                   if (widget.showLabel) ...[
                     const SizedBox(width: 6),
                     Text(
-                      _isReported ? 'Reported' : 'Report',
+                      _isReported ? 'Reported'.tr(context) : 'Report'.tr(context),
                       style: AppTextStyles.labelMedium.copyWith(
                         fontSize: config.fontSize,
                         fontWeight: FontWeight.w500,
@@ -263,7 +263,7 @@ class _ReportButtonOutlineState extends State<ReportButtonOutline> {
               ),
               const SizedBox(width: 8),
               Text(
-                _isReported ? 'Reported' : 'Report',
+                _isReported ? 'Reported'.tr(context) : 'Report'.tr(context),
                 style: AppTextStyles.labelMedium.copyWith(
                   fontWeight: FontWeight.w500,
                   color: _isReported

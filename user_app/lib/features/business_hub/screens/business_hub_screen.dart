@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
-import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../data/models/business_hub_post_model.dart';
 import '../providers/business_hub_provider.dart';
 import '../widgets/business_filter_tabs_bar.dart';
@@ -57,8 +56,6 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          const SliverToBoxAdapter(child: DashboardAppBar()),
-
           // Hero section
           const SliverToBoxAdapter(child: BusinessHubHero()),
 

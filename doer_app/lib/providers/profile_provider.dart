@@ -54,9 +54,9 @@
 /// The provider interacts with several Supabase tables:
 /// - `profiles`: User profile information
 /// - `payments`: Payment transaction history
-/// - `bank_accounts`: Bank account details
+/// - `doers`: Bank account details (stored on doers table)
 /// - `notifications`: App notifications
-/// - `notification_preferences`: User notification settings
+/// - `user_preferences`: User notification settings
 ///
 /// See also:
 /// - [AuthNotifier] for authentication state
@@ -68,10 +68,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../core/config/supabase_config.dart';
-import '../core/constants/api_constants.dart';
+import '../core/api/api_client.dart';
 import '../shared/utils/masking_utils.dart';
 
 /// User profile data model.
@@ -178,22 +176,20 @@ class UserProfile {
   /// A new [UserProfile] instance with parsed data.
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      id: json['id'] as String,
-      email: json['email'] as String? ?? '',
-      fullName: json['full_name'] as String? ?? 'User',
-      avatarUrl: json['avatar_url'] as String?,
-      phone: json['phone'] as String?,
-      bio: json['bio'] as String?,
-      education: json['education'] as String?,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      fullName: (json['full_name'] ?? json['fullName'] ?? 'User').toString(),
+      avatarUrl: (json['avatar_url'] ?? json['avatarUrl'])?.toString(),
+      phone: (json['phone'])?.toString(),
+      bio: (json['bio'])?.toString(),
+      education: (json['education'])?.toString(),
       skills: (json['skills'] as List<dynamic>?)?.cast<String>() ?? [],
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      completedProjects: json['completed_projects'] as int? ?? 0,
-      totalEarnings: json['total_earnings'] as int? ?? 0,
-      joinedAt: json['joined_at'] != null
-          ? DateTime.parse(json['joined_at'] as String)
-          : DateTime.now(),
-      isVerified: json['is_verified'] as bool? ?? false,
-      isAvailable: json['is_available'] as bool? ?? true,
+      completedProjects: (json['completed_projects'] ?? json['completedProjects'] as num?)?.toInt() ?? 0,
+      totalEarnings: (json['total_earnings'] ?? json['totalEarnings'] as num?)?.toInt() ?? 0,
+      joinedAt: DateTime.tryParse((json['joined_at'] ?? json['joinedAt'] ?? json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      isVerified: json['is_verified'] ?? json['isVerified'] ?? false,
+      isAvailable: json['is_available'] ?? json['isAvailable'] ?? true,
     );
   }
 
@@ -335,26 +331,31 @@ class PaymentTransaction {
   ///
   /// A new [PaymentTransaction] instance with parsed data.
   factory PaymentTransaction.fromJson(Map<String, dynamic> json) {
+    // Handle projectId as a populated Mongoose object or string
+    String projectId = '';
+    final rawProjectId = json['project_id'] ?? json['projectId'];
+    if (rawProjectId is String) {
+      projectId = rawProjectId;
+    } else if (rawProjectId is Map<String, dynamic>) {
+      projectId = (rawProjectId['_id'] ?? rawProjectId['id'] ?? '').toString();
+    }
+
     return PaymentTransaction(
-      id: json['id'] as String,
-      projectId: json['project_id'] as String? ?? '',
-      projectTitle: json['project_title'] as String? ?? 'Unknown Project',
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      projectId: projectId,
+      projectTitle: (json['project_title'] ?? json['projectTitle'] ?? 'Unknown Project').toString(),
       amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
       status: PaymentStatus.values.firstWhere(
-        (e) => e.name == json['status'],
+        (e) => e.name == (json['status'] ?? '').toString(),
         orElse: () => PaymentStatus.pending,
       ),
       type: PaymentType.values.firstWhere(
-        (e) => e.name == json['type'],
+        (e) => e.name == (json['type'] ?? '').toString(),
         orElse: () => PaymentType.projectPayment,
       ),
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
-      processedAt: json['processed_at'] != null
-          ? DateTime.parse(json['processed_at'] as String)
-          : null,
-      transactionId: json['transaction_id'] as String?,
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      processedAt: DateTime.tryParse((json['processed_at'] ?? json['processedAt'] ?? '').toString()),
+      transactionId: (json['transaction_id'] ?? json['transactionId'])?.toString(),
     );
   }
 }
@@ -463,13 +464,13 @@ class BankDetails {
   /// A new [BankDetails] instance with parsed data.
   factory BankDetails.fromJson(Map<String, dynamic> json) {
     return BankDetails(
-      id: json['id'] as String,
-      accountName: json['account_name'] as String? ?? '',
-      accountNumber: json['account_number'] as String? ?? '',
-      ifscCode: json['ifsc_code'] as String? ?? '',
-      bankName: json['bank_name'] as String? ?? '',
-      isVerified: json['is_verified'] as bool? ?? false,
-      isPrimary: json['is_primary'] as bool? ?? true,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      accountName: (json['account_name'] ?? json['accountName'] ?? json['accountHolderName'] ?? '').toString(),
+      accountNumber: (json['account_number'] ?? json['accountNumber'] ?? '').toString(),
+      ifscCode: (json['ifsc_code'] ?? json['ifscCode'] ?? '').toString(),
+      bankName: (json['bank_name'] ?? json['bankName'] ?? '').toString(),
+      isVerified: json['is_verified'] ?? json['isVerified'] ?? false,
+      isPrimary: json['is_primary'] ?? json['isPrimary'] ?? true,
     );
   }
 
@@ -538,12 +539,12 @@ class NotificationPreferences {
   /// A new [NotificationPreferences] instance with parsed data.
   factory NotificationPreferences.fromJson(Map<String, dynamic> json) {
     return NotificationPreferences(
-      emailNotifications: json['email_notifications'] as bool? ?? true,
-      pushNotifications: json['push_notifications'] as bool? ?? true,
-      newProjectAlerts: json['new_project_alerts'] as bool? ?? true,
-      deadlineReminders: json['deadline_reminders'] as bool? ?? true,
-      paymentUpdates: json['payment_updates'] as bool? ?? true,
-      marketingEmails: json['marketing_emails'] as bool? ?? false,
+      emailNotifications: json['email_notifications'] ?? json['emailNotifications'] ?? true,
+      pushNotifications: json['push_notifications'] ?? json['pushNotifications'] ?? true,
+      newProjectAlerts: json['new_project_alerts'] ?? json['newProjectAlerts'] ?? true,
+      deadlineReminders: json['deadline_reminders'] ?? json['deadlineReminders'] ?? true,
+      paymentUpdates: json['payment_updates'] ?? json['paymentUpdates'] ?? true,
+      marketingEmails: json['marketing_emails'] ?? json['marketingEmails'] ?? false,
     );
   }
 
@@ -653,18 +654,16 @@ class AppNotification {
   /// A new [AppNotification] instance with parsed data.
   factory AppNotification.fromJson(Map<String, dynamic> json) {
     return AppNotification(
-      id: json['id'] as String,
-      title: json['title'] as String? ?? '',
-      message: json['message'] as String? ?? '',
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      message: (json['message'] ?? json['body'] ?? '').toString(),
       type: NotificationType.values.firstWhere(
-        (e) => e.name == json['type'],
+        (e) => e.name == (json['type'] ?? '').toString(),
         orElse: () => NotificationType.general,
       ),
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
-      isRead: json['is_read'] as bool? ?? false,
-      actionUrl: json['action_url'] as String?,
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      isRead: json['is_read'] ?? json['isRead'] ?? false,
+      actionUrl: (json['action_url'] ?? json['actionUrl'])?.toString(),
       data: json['data'] as Map<String, dynamic>?,
     );
   }
@@ -874,17 +873,14 @@ class ProfileNotifier extends Notifier<ProfileState> {
   /// A [ProfileState] with isLoading set to true.
   @override
   ProfileState build() {
-    _loadProfile();
+    // Defer _loadProfile to avoid reading state during build
+    Future.microtask(() => _loadProfile());
     return const ProfileState(isLoading: true);
   }
 
-  /// The Supabase client instance for database operations.
-  SupabaseClient get _client => SupabaseConfig.client;
-
-  /// Loads the user profile and related data.
+  /// Loads the user profile and related data from the API.
   ///
-  /// Fetches profile from database or falls back to mock data.
-  /// Then loads related data in parallel.
+  /// Fetches profile and related data from API endpoints.
   ///
   /// ## State Updates
   ///
@@ -894,8 +890,9 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final user = _client.auth.currentUser;
-      if (user == null) {
+      final response = await ApiClient.get('/profiles/me?include=doer,skills,subjects');
+
+      if (response == null || response is! Map<String, dynamic>) {
         state = state.copyWith(
           isLoading: false,
           profile: null,
@@ -906,26 +903,17 @@ class ProfileNotifier extends Notifier<ProfileState> {
         return;
       }
 
-      final response = await _client
-          .from('profiles')
-          .select()
-          .eq('id', user.id)
-          .single();
-
-      // Also fetch doer stats (rating, completed projects, earnings, availability)
-      final doerResponse = await _client
-          .from('doers')
-          .select('id, average_rating, total_projects_completed, total_earnings, is_available')
-          .eq('profile_id', user.id)
-          .maybeSingle();
-
       // Merge doer stats into profile JSON before parsing
       final mergedJson = Map<String, dynamic>.from(response);
-      if (doerResponse != null) {
-        mergedJson['rating'] = doerResponse['average_rating'];
-        mergedJson['completed_projects'] = doerResponse['total_projects_completed'];
-        mergedJson['total_earnings'] = doerResponse['total_earnings'];
-        mergedJson['is_available'] = doerResponse['is_available'];
+      // API returns roleData (not doer) for the doer-specific fields
+      final doer = (response['doer'] ?? response['roleData']) as Map<String, dynamic>?;
+      if (doer != null) {
+        mergedJson['rating'] = doer['average_rating'] ?? doer['averageRating'];
+        mergedJson['completed_projects'] = doer['total_projects_completed'] ?? doer['totalProjectsCompleted'];
+        mergedJson['total_earnings'] = doer['total_earnings'] ?? doer['totalEarnings'];
+        mergedJson['is_available'] = doer['is_available'] ?? doer['isAvailable'];
+        mergedJson['bio'] = mergedJson['bio'] ?? doer['bio'];
+        mergedJson['education'] = mergedJson['education'] ?? doer['qualification'] ?? doer['universityName'];
       }
 
       final profile = UserProfile.fromJson(mergedJson);
@@ -957,26 +945,20 @@ class ProfileNotifier extends Notifier<ProfileState> {
     }
   }
 
-  /// Loads payment transaction history.
-  ///
-  /// Fetches all payment records ordered by date descending.
+  /// Loads payment transaction history from the API.
   ///
   /// ## State Updates
   ///
   /// Updates [ProfileState.paymentHistory] with loaded transactions.
   Future<void> _loadPaymentHistory() async {
     try {
-      final user = _client.auth.currentUser;
-      if (user == null) return;
+      final response = await ApiClient.get('/wallets/me/transactions?limit=50');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['transactions'] as List? ?? [];
 
-      final response = await _client
-          .from('payments')
-          .select()
-          .eq('user_id', user.id)
-          .order('created_at', ascending: false);
-
-      final history = (response as List)
-          .map((e) => PaymentTransaction.fromJson(e))
+      final history = list
+          .map((e) => PaymentTransaction.fromJson(e as Map<String, dynamic>))
           .toList();
 
       state = state.copyWith(paymentHistory: history);
@@ -987,22 +969,16 @@ class ProfileNotifier extends Notifier<ProfileState> {
     }
   }
 
-  /// Loads bank account details.
-  ///
-  /// Fetches the primary bank account for the user.
+  /// Loads bank account details from the API.
   ///
   /// ## State Updates
   ///
   /// Updates [ProfileState.bankDetails] with loaded bank details.
   Future<void> _loadBankDetails() async {
     try {
-      final response = await _client
-          .from('bank_accounts')
-          .select()
-          .eq('is_primary', true)
-          .maybeSingle();
+      final response = await ApiClient.get('/doer/bank-details');
 
-      if (response != null) {
+      if (response != null && response is Map<String, dynamic> && (response['account_number'] != null || response['accountNumber'] != null)) {
         state = state.copyWith(bankDetails: BankDetails.fromJson(response));
       }
     } catch (e) {
@@ -1012,23 +988,20 @@ class ProfileNotifier extends Notifier<ProfileState> {
     }
   }
 
-  /// Loads app notifications.
-  ///
-  /// Fetches the 50 most recent notifications.
+  /// Loads app notifications from the API.
   ///
   /// ## State Updates
   ///
   /// Updates [ProfileState.notifications] with loaded notifications.
   Future<void> _loadNotifications() async {
     try {
-      final response = await _client
-          .from('notifications')
-          .select()
-          .order('created_at', ascending: false)
-          .limit(50);
+      final response = await ApiClient.get('/notifications?limit=50');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['notifications'] as List? ?? [];
 
-      final notifications = (response as List)
-          .map((e) => AppNotification.fromJson(e))
+      final notifications = list
+          .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
           .toList();
 
       state = state.copyWith(notifications: notifications);
@@ -1039,25 +1012,16 @@ class ProfileNotifier extends Notifier<ProfileState> {
     }
   }
 
-  /// Loads notification preferences.
-  ///
-  /// Fetches the user's notification preference settings.
+  /// Loads notification preferences from the API.
   ///
   /// ## State Updates
   ///
   /// Updates [ProfileState.notificationPreferences] with loaded preferences.
   Future<void> _loadNotificationPreferences() async {
     try {
-      final user = _client.auth.currentUser;
-      if (user == null) return;
+      final response = await ApiClient.get('/profiles/me/preferences');
 
-      final response = await _client
-          .from('notification_preferences')
-          .select()
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-      if (response != null) {
+      if (response != null && response is Map<String, dynamic>) {
         state = state.copyWith(
           notificationPreferences: NotificationPreferences.fromJson(response),
         );
@@ -1116,10 +1080,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
         skills: skills,
       );
 
-      await _client
-          .from('profiles')
-          .update(updatedProfile.toJson())
-          .eq('id', state.profile!.id);
+      await ApiClient.put('/profiles/me', updatedProfile.toJson());
 
       state = state.copyWith(
         profile: updatedProfile,
@@ -1169,35 +1130,22 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(isSaving: true, errorMessage: null);
 
     try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
+      // Upload avatar via API
+      final response = await ApiClient.uploadFile(
+        '/uploads/avatar',
+        imageFile,
+        fieldName: 'avatar',
+      );
+
+      if (response == null || response is! Map<String, dynamic>) {
         state = state.copyWith(
           isSaving: false,
-          errorMessage: 'User not authenticated',
+          errorMessage: 'Failed to upload avatar',
         );
         return false;
       }
 
-      // Upload to Supabase storage
-      final fileName = 'avatar_$userId.jpg';
-      final path = 'avatars/$fileName';
-
-      await _client.storage.from(ApiConstants.profileImagesBucket).upload(
-            path,
-            imageFile,
-            fileOptions: const FileOptions(upsert: true),
-          );
-
-      // Get public URL
-      final avatarUrl = _client.storage
-          .from(ApiConstants.profileImagesBucket)
-          .getPublicUrl(path);
-
-      // Update profile with new avatar URL
-      await _client
-          .from('profiles')
-          .update({'avatar_url': avatarUrl})
-          .eq('id', userId);
+      final avatarUrl = response['url'] as String? ?? response['avatarUrl'] as String?;
 
       // Update local state
       final updatedProfile = state.profile!.copyWith(avatarUrl: avatarUrl);
@@ -1235,10 +1183,9 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(profile: updatedProfile);
 
     try {
-      await _client
-          .from('doers')
-          .update({'is_available': isAvailable})
-          .eq('profile_id', state.profile!.id);
+      await ApiClient.put('/profiles/me/availability', {
+        'isAvailable': isAvailable,
+      });
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ProfileNotifier.updateAvailability error: $e');
@@ -1269,13 +1216,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(notificationPreferences: preferences);
 
     try {
-      final user = _client.auth.currentUser;
-      if (user == null) return;
-
-      await _client.from('notification_preferences').upsert({
-        'user_id': user.id,
-        ...preferences.toJson(),
-      });
+      await ApiClient.put('/profiles/me/preferences', preferences.toJson());
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ProfileNotifier.updateNotificationPreferences error: $e');
@@ -1312,10 +1253,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(notifications: notifications);
 
     try {
-      await _client
-          .from('notifications')
-          .update({'is_read': true})
-          .eq('id', notificationId);
+      await ApiClient.put('/notifications/$notificationId/read', {});
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ProfileNotifier.markNotificationRead error: $e');
@@ -1345,13 +1283,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(notifications: notifications);
 
     try {
-      final user = _client.auth.currentUser;
-      if (user == null) return;
-
-      await _client
-          .from('notifications')
-          .update({'is_read': true})
-          .eq('user_id', user.id);
+      await ApiClient.put('/notifications/read-all', {});
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ProfileNotifier.markAllNotificationsRead error: $e');

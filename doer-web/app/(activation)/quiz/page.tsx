@@ -18,7 +18,7 @@ const QuizComponent = dynamic(
     ssr: false
   }
 )
-import { createClient } from '@/lib/supabase/client'
+import { apiClient, getAccessToken } from '@/lib/api/client'
 import { activationService } from '@/services/activation.service'
 import { useAuthToken } from '@/hooks/useAuthToken'
 import type { QuizQuestion } from '@/types/database'
@@ -60,36 +60,30 @@ export default function QuizPage() {
 
     const init = async () => {
       try {
-        const supabase = createClient()
-
         // Fetch quiz questions from database
         const quizQuestions = await activationService.getQuizQuestions()
         if (!isMountedRef.current) return
         setQuestions(quizQuestions)
 
-        // Get current user from session (no network call)
-        const { data: { session: initSession } } = await supabase.auth.getSession()
-        const user = initSession?.user
-        const userError = !user ? new Error('No session') : null
-
-        if (userError || !user) {
+        // Get current user from JWT
+        const currentUser = await apiClient<{ id: string }>('/api/auth/me')
+        if (!currentUser) {
           if (isMountedRef.current) setIsLoading(false)
           return
         }
 
         // Get doer record
-        const { data: doer } = await supabase
-          .from('doers')
-          .select('id')
-          .eq('profile_id', user.id)
-          .single()
-
-        if (doer && isMountedRef.current) {
-          // Fetch activation status to get attempt count
-          const activation = await activationService.getActivationStatus(doer.id)
-          if (activation && isMountedRef.current) {
-            setPreviousAttempts(activation.total_quiz_attempts || 0)
+        try {
+          const doer = await apiClient<{ id: string }>(`/api/doers/by-profile/${currentUser.id}`)
+          if (doer && isMountedRef.current) {
+            // Fetch activation status to get attempt count
+            const activation = await activationService.getActivationStatus(doer.id)
+            if (activation && isMountedRef.current) {
+              setPreviousAttempts(activation.total_quiz_attempts || 0)
+            }
           }
+        } catch {
+          // No doer record yet
         }
       } catch (err) {
         console.error('Error initializing quiz:', err)
@@ -110,30 +104,27 @@ export default function QuizPage() {
     setIsSubmitting(true)
 
     try {
-      const supabase = createClient()
-
-      // Get current user from session (no network call)
-      const { data: { session: passSession } } = await supabase.auth.getSession()
-      const user = passSession?.user
-      const userError = !user ? new Error('No session') : null
+      // Get current user from JWT
+      const user = await apiClient<{ id: string }>('/api/auth/me')
 
       if (!isMountedRef.current) return
 
-      if (userError || !user) {
+      if (!user) {
         setError('You must be logged in to complete the quiz')
         return
       }
 
       // Get doer record
-      const { data: doer, error: doerError } = await supabase
-        .from('doers')
-        .select('id')
-        .eq('profile_id', user.id)
-        .single()
+      let doer: { id: string } | null = null
+      try {
+        doer = await apiClient<{ id: string }>(`/api/doers/by-profile/${user.id}`)
+      } catch {
+        // No doer record
+      }
 
       if (!isMountedRef.current) return
 
-      if (doerError || !doer) {
+      if (!doer) {
         setError('Doer profile not found')
         return
       }
@@ -178,11 +169,8 @@ export default function QuizPage() {
     setIsSubmitting(true)
 
     try {
-      const supabase = createClient()
-
-      // Get current user from session (no network call)
-      const { data: { session: failSession } } = await supabase.auth.getSession()
-      const user = failSession?.user
+      // Get current user from JWT
+      const user = await apiClient<{ id: string }>('/api/auth/me').catch(() => null)
 
       if (!isMountedRef.current) return
 
@@ -192,11 +180,7 @@ export default function QuizPage() {
       }
 
       // Get doer record
-      const { data: doer } = await supabase
-        .from('doers')
-        .select('id')
-        .eq('profile_id', user.id)
-        .single()
+      const doer = await apiClient<{ id: string }>(`/api/doers/by-profile/${user.id}`).catch(() => null)
 
       if (!isMountedRef.current) return
 

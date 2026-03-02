@@ -149,34 +149,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _signInWithGoogle() async {
-    if (!_termsAccepted) {
-      setState(() {
-        _errorMessage = 'Please accept the Terms & Conditions to continue';
-      });
-      return;
-    }
-
+    // Google OAuth removed - magic link only
     setState(() {
-      _isLoading = true;
-      _errorMessage = null;
+      _showMagicLink = true;
     });
-
-    try {
-      ref.read(authStateProvider.notifier).setPreSignInRole(_selectedRole);
-      await ref.read(authStateProvider.notifier).signInWithGoogle();
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Sign in failed. Please try again.';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 
   Future<void> _sendMagicLink() async {

@@ -356,7 +356,7 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       /**
        * Only persist essential state that should survive page refresh
-       * User data will be re-fetched from Supabase on load
+       * User data will be re-fetched from API on load
        */
       partialize: (state) => ({
         isOnboarded: state.isOnboarded,

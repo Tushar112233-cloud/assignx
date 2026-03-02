@@ -90,42 +90,63 @@ class MessageModel {
   final DateTime? editedAt;
 
   /// Creates a MessageModel from JSON.
+  /// Handles both camelCase (MongoDB/Express) and snake_case (Supabase) fields.
   factory MessageModel.fromJson(Map<String, dynamic> json) {
+    // Extract sender info from populated object or flat fields
+    String? senderName;
+    String? senderRole;
+    String? senderAvatar;
+    String senderId = '';
+
+    // Handle populated sender/senderId object
+    final senderRaw = json['sender'] ?? json['senderId'] ?? json['sender_id'];
+    if (senderRaw is Map<String, dynamic>) {
+      senderId = (senderRaw['_id'] ?? senderRaw['id'] ?? '').toString();
+      senderName = (senderRaw['fullName'] ?? senderRaw['full_name']) as String?;
+      senderRole = (senderRaw['role'] ?? senderRaw['userType'] ?? senderRaw['user_type']) as String?;
+      senderAvatar = (senderRaw['avatarUrl'] ?? senderRaw['avatar_url']) as String?;
+    } else if (senderRaw is String) {
+      senderId = senderRaw;
+    }
+
+    // Fallback to explicit flat fields
+    senderName ??= (json['senderName'] ?? json['sender_name']) as String?;
+    senderRole ??= (json['senderRole'] ?? json['sender_role']) as String?;
+    senderAvatar ??= (json['senderAvatar'] ?? json['sender_avatar']) as String?;
+
     return MessageModel(
-      id: json['id'] as String,
-      chatRoomId: json['chat_room_id'] as String,
-      senderId: json['sender_id'] as String,
-      senderName: json['sender'] is Map
-          ? json['sender']['full_name'] as String?
-          : json['sender_name'] as String?,
-      senderRole: json['sender'] is Map
-          ? json['sender']['role'] as String?
-          : json['sender_role'] as String?,
-      senderAvatar: json['sender'] is Map
-          ? json['sender']['avatar_url'] as String?
-          : json['sender_avatar'] as String?,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      chatRoomId: (json['chatRoomId'] ?? json['chat_room_id'] ?? '').toString(),
+      senderId: senderId,
+      senderName: senderName,
+      senderRole: senderRole,
+      senderAvatar: senderAvatar,
       content: json['content'] as String?,
       type: MessageType.fromString(
-          json['message_type'] as String? ?? json['type'] as String?),
-      fileUrl: json['file_url'] as String?,
-      fileName: json['file_name'] as String?,
-      fileType: json['file_type'] as String?,
-      fileSize: (json['file_size_bytes'] as num?)?.toInt() ??
-          (json['file_size'] as num?)?.toInt(),
-      replyToId: json['reply_to_id'] as String?,
-      replyToContent: json['reply_to_content'] as String?,
-      isRead: json['is_read'] as bool? ?? false,
-      isEdited: json['is_edited'] as bool? ?? false,
-      isDeleted: json['is_deleted'] as bool? ?? false,
-      isFiltered: json['contains_contact_info'] as bool? ??
-          json['is_filtered'] as bool? ?? false,
-      metadata: json['action_metadata'] as Map<String, dynamic>? ??
-          json['metadata'] as Map<String, dynamic>?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      editedAt: json['edited_at'] != null
-          ? DateTime.parse(json['edited_at'] as String)
-          : null,
+          (json['messageType'] ?? json['message_type'] ?? json['type']) as String?),
+      fileUrl: (json['fileUrl'] ?? json['file_url']) as String?,
+      fileName: (json['fileName'] ?? json['file_name']) as String?,
+      fileType: (json['fileType'] ?? json['file_type']) as String?,
+      fileSize: ((json['fileSizeBytes'] ?? json['file_size_bytes'] ?? json['fileSize'] ?? json['file_size']) as num?)?.toInt(),
+      replyToId: (json['replyToId'] ?? json['reply_to_id']) as String?,
+      replyToContent: (json['replyToContent'] ?? json['reply_to_content']) as String?,
+      isRead: (json['isRead'] ?? json['is_read']) as bool? ?? false,
+      isEdited: (json['isEdited'] ?? json['is_edited']) as bool? ?? false,
+      isDeleted: (json['isDeleted'] ?? json['is_deleted']) as bool? ?? false,
+      isFiltered: (json['containsContactInfo'] ?? json['contains_contact_info'] ??
+          json['isFiltered'] ?? json['is_filtered']) as bool? ?? false,
+      metadata: (json['actionMetadata'] ?? json['action_metadata'] ??
+          json['metadata']) as Map<String, dynamic>?,
+      createdAt: DateTime.tryParse((json['createdAt'] ?? json['created_at'] ?? '').toString()) ?? DateTime.now(),
+      editedAt: _tryParseDate(json['editedAt'] ?? json['edited_at']),
     );
+  }
+
+  /// Safely parse a DateTime from dynamic value.
+  static DateTime? _tryParseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   /// Converts to JSON for sending.

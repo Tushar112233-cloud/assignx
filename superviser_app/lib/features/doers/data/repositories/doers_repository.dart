@@ -1,37 +1,9 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/network/supabase_client.dart';
+import '../../../../core/api/api_client.dart';
 import '../../../dashboard/data/models/doer_model.dart';
 
 /// Repository for doer operations.
 class DoersRepository {
-  DoersRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
-
-  final SupabaseClient _client;
-
-  /// Get current user ID.
-  String? get _currentUserId => getCurrentUserId();
-
-  /// Cached supervisor ID to avoid repeated lookups.
-  String? _cachedSupervisorId;
-
-  /// Gets the supervisor table ID from the supervisors table.
-  Future<String?> _getSupervisorId() async {
-    if (_cachedSupervisorId != null) return _cachedSupervisorId;
-    final userId = getCurrentUserId();
-    if (userId == null) return null;
-    try {
-      final response = await _client
-          .from('supervisors')
-          .select('id')
-          .eq('profile_id', userId)
-          .maybeSingle();
-      _cachedSupervisorId = response?['id'] as String?;
-      return _cachedSupervisorId;
-    } catch (_) {
-      return null;
-    }
-  }
+  DoersRepository();
 
   /// Fetch doers with pagination and filters.
   Future<List<DoerModel>> getDoers({
@@ -44,43 +16,37 @@ class DoersRepository {
     String? sortBy,
     bool ascending = false,
   }) async {
-    var query = _client.from('doers').select();
+    final params = <String, String>{
+      'limit': '$limit',
+      'offset': '$offset',
+      if (search != null && search.isNotEmpty) 'search': search,
+      if (expertise != null) 'expertise': expertise,
+      if (isAvailable != null) 'isAvailable': '$isAvailable',
+      if (minRating != null) 'minRating': '$minRating',
+      if (sortBy != null) 'sortBy': sortBy,
+      'ascending': '$ascending',
+    };
+    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
 
-    if (search != null && search.isNotEmpty) {
-      query = query.or('name.ilike.%$search%,email.ilike.%$search%');
-    }
+    final response = await ApiClient.get('/supervisor/doers?$query');
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['doers'] as List? ?? [];
 
-    if (expertise != null && expertise.isNotEmpty) {
-      query = query.contains('expertise', [expertise]);
-    }
-
-    if (isAvailable != null) {
-      query = query.eq('is_available', isAvailable);
-    }
-
-    if (minRating != null) {
-      query = query.gte('rating', minRating);
-    }
-
-    final response = await query
-        .order(sortBy ?? 'rating', ascending: ascending)
-        .range(offset, offset + limit - 1);
-
-    return (response as List)
-        .map((json) => DoerModel.fromJson(json))
+    return list
+        .map((json) => DoerModel.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
   /// Get doer by ID.
   Future<DoerModel?> getDoerById(String doerId) async {
-    final response = await _client
-        .from('doers')
-        .select()
-        .eq('id', doerId)
-        .maybeSingle();
-
-    if (response == null) return null;
-    return DoerModel.fromJson(response);
+    try {
+      final response = await ApiClient.get('/supervisor/doers/$doerId');
+      if (response == null) return null;
+      return DoerModel.fromJson(response as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Get doer reviews.
@@ -89,15 +55,15 @@ class DoersRepository {
     int limit = 20,
     int offset = 0,
   }) async {
-    final response = await _client
-        .from('doer_reviews')
-        .select()
-        .eq('doer_id', doerId)
-        .order('created_at', ascending: false)
-        .range(offset, offset + limit - 1);
+    final response = await ApiClient.get(
+      '/supervisor/doers/$doerId/reviews?limit=$limit&offset=$offset',
+    );
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['reviews'] as List? ?? [];
 
-    return (response as List)
-        .map((json) => DoerReview.fromJson(json))
+    return list
+        .map((json) => DoerReview.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
@@ -107,64 +73,60 @@ class DoersRepository {
     int limit = 20,
     int offset = 0,
   }) async {
-    final supervisorId = await _getSupervisorId();
-    if (supervisorId == null) return [];
+    final response = await ApiClient.get(
+      '/supervisor/doers/$doerId/projects?limit=$limit&offset=$offset',
+    );
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['projects'] as List? ?? [];
 
-    final response = await _client
-        .from('projects')
-        .select('id, title, status, created_at, completed_at, doer_amount')
-        .eq('doer_id', doerId)
-        .eq('supervisor_id', supervisorId)
-        .order('created_at', ascending: false)
-        .range(offset, offset + limit - 1);
-
-    return (response as List).cast<Map<String, dynamic>>();
+    return list.cast<Map<String, dynamic>>();
   }
 
-  /// Search doers.
+  /// Search doers by name or email.
   Future<List<DoerModel>> searchDoers(String query) async {
     if (query.isEmpty) return [];
 
-    final response = await _client
-        .from('doers')
-        .select()
-        .or('name.ilike.%$query%,email.ilike.%$query%')
-        .limit(10);
+    final response = await ApiClient.get(
+      '/supervisor/doers?search=$query&limit=10',
+    );
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['doers'] as List? ?? [];
 
-    return (response as List)
-        .map((json) => DoerModel.fromJson(json))
+    return list
+        .map((json) => DoerModel.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
-  /// Get all expertise areas.
+  /// Get all expertise areas from subjects.
   Future<List<String>> getExpertiseAreas() async {
-    final response = await _client
-        .from('doers')
-        .select('expertise');
+    final response = await ApiClient.get('/subjects');
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['subjects'] as List? ?? [];
 
-    final expertiseSet = <String>{};
-    for (final row in (response as List)) {
-      final list = row['expertise'] as List?;
-      if (list != null) {
-        expertiseSet.addAll(list.cast<String>());
-      }
-    }
-
-    return expertiseSet.toList()..sort();
+    return list
+        .map((row) => (row is Map ? row['name'] as String? : row as String?) ?? '')
+        .where((name) => name.isNotEmpty)
+        .toList();
   }
 
   /// Get total doers count.
   Future<int> getDoersCount() async {
-    final response = await _client.from('doers').select('id');
-    return (response as List).length;
+    final response = await ApiClient.get('/supervisor/doers/count');
+    if (response is Map<String, dynamic>) {
+      return response['count'] as int? ?? 0;
+    }
+    return 0;
   }
 
   /// Get available doers count.
   Future<int> getAvailableDoersCount() async {
-    final response = await _client
-        .from('doers')
-        .select('id')
-        .eq('is_available', true);
-    return (response as List).length;
+    final response = await ApiClient.get('/supervisor/doers/count?isAvailable=true');
+    if (response is Map<String, dynamic>) {
+      return response['count'] as int? ?? 0;
+    }
+    return 0;
   }
 }

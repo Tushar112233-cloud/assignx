@@ -179,25 +179,25 @@ class StudentData {
   /// ```
   factory StudentData.fromJson(Map<String, dynamic> json) {
     return StudentData(
-      id: json['id'] as String,
-      profileId: json['profile_id'] as String,
-      universityId: json['university_id'] as String?,
-      universityName: json['university_name'] as String?,
-      courseId: json['course_id'] as String?,
-      courseName: json['course_name'] as String?,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      profileId: (json['profile_id'] ?? json['profileId'] ?? '').toString(),
+      universityId: (json['university_id'] ?? json['universityId']) as String?,
+      universityName: (json['university_name'] ?? json['universityName']) as String?,
+      courseId: (json['course_id'] ?? json['courseId']) as String?,
+      courseName: (json['course_name'] ?? json['courseName']) as String?,
       semester: json['semester'] as int?,
-      studentIdNumber: json['student_id_number'] as String?,
-      yearOfStudy: json['year_of_study'] as int?,
-      expectedGraduationYear: json['expected_graduation_year'] as int?,
-      collegeEmail: json['college_email'] as String?,
-      collegeEmailVerified: json['college_email_verified'] as bool? ?? false,
-      studentIdVerified: json['student_id_verified'] as bool? ?? false,
-      preferredSubjects: json['preferred_subjects'] != null
-          ? List<String>.from(json['preferred_subjects'] as List)
+      studentIdNumber: (json['student_id_number'] ?? json['studentIdNumber']) as String?,
+      yearOfStudy: (json['year_of_study'] ?? json['yearOfStudy']) as int?,
+      expectedGraduationYear: (json['expected_graduation_year'] ?? json['expectedGraduationYear']) as int?,
+      collegeEmail: (json['college_email'] ?? json['collegeEmail']) as String?,
+      collegeEmailVerified: (json['college_email_verified'] ?? json['collegeEmailVerified']) as bool? ?? false,
+      studentIdVerified: (json['student_id_verified'] ?? json['studentIdVerified']) as bool? ?? false,
+      preferredSubjects: (json['preferred_subjects'] ?? json['preferredSubjects']) != null
+          ? List<String>.from((json['preferred_subjects'] ?? json['preferredSubjects']) as List)
           : null,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      updatedAt: (json['updated_at'] ?? json['updatedAt']) != null
+          ? DateTime.tryParse((json['updated_at'] ?? json['updatedAt']).toString())
           : null,
     );
   }

@@ -87,36 +87,36 @@ class AppBanner {
   /// Creates an AppBanner instance from JSON (Supabase response).
   factory AppBanner.fromJson(Map<String, dynamic> json) {
     return AppBanner(
-      id: json['id'] as String,
-      title: json['title'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      title: (json['title'] as String?) ?? '',
       subtitle: json['subtitle'] as String?,
-      imageUrl: json['image_url'] as String,
-      imageUrlMobile: json['image_url_mobile'] as String?,
-      ctaText: json['cta_text'] as String?,
-      ctaUrl: json['cta_url'] as String?,
-      ctaAction: json['cta_action'] as String?,
-      targetUserTypes: (json['target_user_types'] as List<dynamic>?)
+      imageUrl: (json['image_url'] ?? json['imageUrl'] ?? '').toString(),
+      imageUrlMobile: (json['image_url_mobile'] ?? json['imageUrlMobile']) as String?,
+      ctaText: (json['cta_text'] ?? json['ctaText']) as String?,
+      ctaUrl: (json['cta_url'] ?? json['ctaUrl']) as String?,
+      ctaAction: (json['cta_action'] ?? json['ctaAction']) as String?,
+      targetUserTypes: ((json['target_user_types'] ?? json['targetUserTypes']) as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      targetRoles: (json['target_roles'] as List<dynamic>?)
+      targetRoles: ((json['target_roles'] ?? json['targetRoles']) as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      displayLocation: json['display_location'] as String,
-      displayOrder: json['display_order'] as int? ?? 0,
-      startDate: json['start_date'] != null
-          ? DateTime.parse(json['start_date'] as String)
+      displayLocation: (json['display_location'] ?? json['displayLocation'] ?? '').toString(),
+      displayOrder: (json['display_order'] ?? json['displayOrder']) as int? ?? 0,
+      startDate: (json['start_date'] ?? json['startDate']) != null
+          ? DateTime.tryParse((json['start_date'] ?? json['startDate']).toString())
           : null,
-      endDate: json['end_date'] != null
-          ? DateTime.parse(json['end_date'] as String)
+      endDate: (json['end_date'] ?? json['endDate']) != null
+          ? DateTime.tryParse((json['end_date'] ?? json['endDate']).toString())
           : null,
-      isActive: json['is_active'] as bool? ?? true,
-      impressionCount: json['impression_count'] as int? ?? 0,
-      clickCount: json['click_count'] as int? ?? 0,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+      isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
+      impressionCount: (json['impression_count'] ?? json['impressionCount']) as int? ?? 0,
+      clickCount: (json['click_count'] ?? json['clickCount']) as int? ?? 0,
+      createdAt: (json['created_at'] ?? json['createdAt']) != null
+          ? DateTime.tryParse((json['created_at'] ?? json['createdAt']).toString())
           : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+      updatedAt: (json['updated_at'] ?? json['updatedAt']) != null
+          ? DateTime.tryParse((json['updated_at'] ?? json['updatedAt']).toString())
           : null,
     );
   }

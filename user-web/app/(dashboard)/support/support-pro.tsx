@@ -278,7 +278,7 @@ export function SupportPro() {
       try {
         const data = await getFAQs();
         setFaqs(data);
-        const uniqueCategories = [...new Set(data.map((f: FAQ) => f.category))];
+        const uniqueCategories = [...new Set(data.map((f: FAQ) => f.category))] as string[];
         setFaqCategories(uniqueCategories);
       } catch {
         // Silently handle

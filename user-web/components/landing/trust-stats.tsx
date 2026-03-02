@@ -91,12 +91,6 @@ function useAnimatedCounter(
     restDelta: 0.01,
   });
 
-  useEffect(() => {
-    if (isInView) {
-      spring.set(end);
-    }
-  }, [isInView, end, spring]);
-
   const rounded = useTransform(spring, (val) => {
     // Handle decimal numbers (like 4.9)
     if (isDecimal) {
@@ -105,24 +99,28 @@ function useAnimatedCounter(
     return Math.round(val).toString();
   });
 
-  // For reduced motion, return the end value immediately
-  const initialValue = isDecimal ? end.toFixed(1) : "0";
   const [displayValue, setDisplayValue] = useState<string>(
-    prefersReducedMotion ? (isDecimal ? end.toFixed(1) : end.toString()) : initialValue
+    prefersReducedMotion ? (isDecimal ? end.toFixed(1) : end.toString()) : "0"
   );
 
+  // Subscribe to spring value changes once and keep alive
   useEffect(() => {
-    if (prefersReducedMotion && isInView) {
-      setDisplayValue(isDecimal ? end.toFixed(1) : end.toString());
-      return;
-    }
-
     const unsubscribe = rounded.on("change", (val) => {
       setDisplayValue(val);
     });
-
     return () => unsubscribe();
-  }, [rounded, prefersReducedMotion, isInView, end, isDecimal]);
+  }, [rounded]);
+
+  // Trigger the animation when the element scrolls into view
+  useEffect(() => {
+    if (isInView) {
+      if (prefersReducedMotion) {
+        setDisplayValue(isDecimal ? end.toFixed(1) : end.toString());
+      } else {
+        spring.set(end);
+      }
+    }
+  }, [isInView, end, spring, prefersReducedMotion, isDecimal]);
 
   return displayValue;
 }

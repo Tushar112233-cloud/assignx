@@ -50,20 +50,45 @@ class CommunityComment {
     final profile = json['profile'] as Map<String, dynamic>?;
     final repliesData = json['replies'] as List<dynamic>?;
 
+    // Handle userId which may be a populated Mongoose object.
+    String userId = '';
+    String userName = 'Anonymous';
+    String? userAvatar;
+    final rawUserId = json['user_id'] ?? json['userId'];
+    if (rawUserId is String) {
+      userId = rawUserId;
+    } else if (rawUserId is Map<String, dynamic>) {
+      userId = (rawUserId['_id'] ?? rawUserId['id'] ?? '').toString();
+      userName = (rawUserId['full_name'] ?? rawUserId['fullName'] ?? rawUserId['name'] ?? 'Anonymous').toString();
+      userAvatar = rawUserId['avatar_url'] as String? ?? rawUserId['avatarUrl'] as String?;
+    }
+
+    // Override with nested profile or flat fields if available.
+    userName = profile?['full_name'] as String? ?? profile?['fullName'] as String?
+        ?? json['user_name'] as String? ?? json['userName'] as String? ?? userName;
+    userAvatar = profile?['avatar_url'] as String? ?? profile?['avatarUrl'] as String?
+        ?? json['user_avatar'] as String? ?? json['userAvatar'] as String? ?? userAvatar;
+
+    // Handle postId which may be a populated Mongoose object.
+    String postId = '';
+    final rawPostId = json['post_id'] ?? json['postId'];
+    if (rawPostId is String) {
+      postId = rawPostId;
+    } else if (rawPostId is Map<String, dynamic>) {
+      postId = (rawPostId['_id'] ?? rawPostId['id'] ?? '').toString();
+    }
+
     return CommunityComment(
-      id: json['id'] as String,
-      postId: json['post_id'] as String,
-      userId: json['user_id'] as String,
-      userName: profile?['full_name'] as String? ??
-          json['user_name'] as String? ??
-          'Anonymous',
-      userAvatar: profile?['avatar_url'] as String? ??
-          json['user_avatar'] as String?,
-      content: json['content'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      parentId: json['parent_id'] as String?,
-      likeCount: json['like_count'] as int? ?? 0,
-      isLiked: json['is_liked'] as bool? ?? false,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      postId: postId,
+      userId: userId,
+      userName: userName,
+      userAvatar: userAvatar,
+      content: (json['content'] as String?) ?? '',
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      parentId: json['parent_id'] as String? ?? json['parentId'] as String?,
+      likeCount: (json['like_count'] ?? json['likeCount']) as int? ?? 0,
+      isLiked: json['is_liked'] as bool? ?? json['isLiked'] as bool? ?? false,
       replies: repliesData
           ?.map((r) =>
               CommunityComment.fromJson(r as Map<String, dynamic>))

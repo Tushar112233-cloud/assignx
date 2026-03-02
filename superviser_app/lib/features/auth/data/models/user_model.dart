@@ -11,15 +11,11 @@
 /// information such as contact details, role, and activation status.
 ///
 /// ## Data Sources
-/// - **Supabase Auth**: Basic user data (id, email, metadata)
-/// - **Profiles Table**: Extended profile data (role, activation status)
+/// - **Express API**: User data from auth and profile endpoints
 ///
 /// ## Usage
 /// ```dart
-/// // From Supabase Auth user
-/// final user = UserModel.fromSupabaseUser(supabaseUser);
-///
-/// // From database JSON
+/// // From API JSON response
 /// final user = UserModel.fromJson(profileData);
 ///
 /// // Create a modified copy
@@ -35,8 +31,6 @@
 /// - [AuthProvider] for state management
 /// {@endtemplate}
 library;
-
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 /// {@macro user_model}
 class UserModel {
@@ -61,7 +55,7 @@ class UserModel {
     this.updatedAt,
   });
 
-  /// User's unique identifier from Supabase Auth.
+  /// User's unique identifier.
   ///
   /// This UUID is the primary key that links authentication data
   /// with the user's profile in the database.
@@ -126,33 +120,7 @@ class UserModel {
   /// Updated whenever profile data is modified in the database.
   final DateTime? updatedAt;
 
-  /// Creates a [UserModel] from a Supabase Auth [User] object.
-  ///
-  /// This factory extracts core user data from the authentication response.
-  /// Additional profile data (role, activation status) must be fetched
-  /// separately from the database.
-  ///
-  /// The [user] parameter is the Supabase Auth user object received
-  /// after successful authentication.
-  ///
-  /// ## Example
-  /// ```dart
-  /// final response = await supabase.auth.signInWithPassword(...);
-  /// final userModel = UserModel.fromSupabaseUser(response.user!);
-  /// ```
-  factory UserModel.fromSupabaseUser(supabase.User user) {
-    return UserModel(
-      id: user.id,
-      email: user.email ?? '',
-      fullName: user.userMetadata?['full_name'] as String?,
-      avatarUrl: user.userMetadata?['avatar_url'] as String?,
-      phone: user.phone,
-      isVerified: user.emailConfirmedAt != null,
-      createdAt: DateTime.tryParse(user.createdAt),
-    );
-  }
-
-  /// Creates a [UserModel] from a JSON map, typically from the `profiles` table.
+  /// Creates a [UserModel] from a JSON map, typically from the API response.
   ///
   /// This factory handles the database schema's snake_case field naming
   /// and provides default values for missing optional fields.
@@ -176,22 +144,28 @@ class UserModel {
   /// final user = UserModel.fromJson(response);
   /// ```
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // Handle both camelCase (MongoDB/Express API) and snake_case (Supabase) field names.
+    // Also handle _id from MongoDB.
+    final role = (json['role'] ?? json['userType'] ?? json['user_type']) as String?;
     return UserModel(
-      id: json['id'] as String,
-      email: json['email'] as String? ?? '',
-      fullName: json['full_name'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      email: (json['email'] as String?) ?? '',
+      fullName: (json['fullName'] ?? json['full_name']) as String?,
+      avatarUrl: (json['avatarUrl'] ?? json['avatar_url']) as String?,
       phone: json['phone'] as String?,
-      role: json['role'] as String?,
-      isActivated: json['is_activated'] as bool? ?? false,
-      isVerified: json['is_verified'] as bool? ?? false,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String)
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'] as String)
-          : null,
+      role: role,
+      isActivated: (json['isActivated'] ?? json['is_activated']) as bool? ?? false,
+      isVerified: (json['isVerified'] ?? json['is_verified']) as bool? ?? false,
+      createdAt: _tryParseDate(json['createdAt'] ?? json['created_at']),
+      updatedAt: _tryParseDate(json['updatedAt'] ?? json['updated_at']),
     );
+  }
+
+  /// Safely parse a DateTime from dynamic value.
+  static DateTime? _tryParseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   /// Converts this [UserModel] to a JSON map for database operations.

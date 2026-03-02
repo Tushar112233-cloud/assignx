@@ -56,20 +56,6 @@ export function RevisionBanner({
     })
   }
 
-  /** Get priority color */
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-500/10 text-red-500 border-red-500/20'
-      case 'medium':
-        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-      case 'low':
-        return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-      default:
-        return 'bg-muted text-muted-foreground'
-    }
-  }
-
   /** Get status badge */
   const getStatusBadge = () => {
     switch (revision.status) {
@@ -147,20 +133,17 @@ export function RevisionBanner({
                 <Clock className="h-4 w-4" />
                 {formatDate(revision.created_at)}
               </span>
-              <Badge
-                variant="outline"
-                className={cn('capitalize', getPriorityColor(revision.priority))}
-              >
-                {revision.priority} Priority
+              <Badge variant="outline" className="capitalize">
+                Revision #{revision.revision_number}
               </Badge>
             </div>
 
-            <p className="mt-2 font-medium">{revision.reason}</p>
+            <p className="mt-2 font-medium">{revision.feedback}</p>
           </AlertDescription>
 
           {/* Expanded details */}
           <AnimatePresence>
-            {isExpanded && revision.details && (
+            {isExpanded && revision.specific_changes && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
@@ -168,9 +151,9 @@ export function RevisionBanner({
                 className="overflow-hidden"
               >
                 <div className="mt-4 p-4 bg-background rounded-lg border">
-                  <h4 className="font-medium mb-2">Detailed Feedback</h4>
+                  <h4 className="font-medium mb-2">Specific Changes Required</h4>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {revision.details}
+                    {revision.specific_changes}
                   </p>
                 </div>
               </motion.div>
@@ -257,7 +240,7 @@ export function RevisionList({
               className="p-3 rounded-lg border bg-muted/30 text-sm"
             >
               <div className="flex items-center justify-between">
-                <span className="font-medium">{revision.reason}</span>
+                <span className="font-medium">{revision.feedback}</span>
                 <Badge
                   variant="outline"
                   className={cn(

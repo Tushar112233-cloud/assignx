@@ -1,55 +1,39 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { verifyAdmin } from "@/lib/admin/auth";
+import { verifyAdmin, serverFetch } from "@/lib/admin/auth";
 
 export async function getSettings() {
   await verifyAdmin();
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("app_settings")
-    .select("*")
-    .order("category", { ascending: true });
-
-  if (error) throw new Error(error.message);
-
-  const grouped: Record<
-    string,
-    { id: string; key: string; value: unknown; description: string | null }[]
-  > = {};
-
-  data?.forEach((s) => {
-    const cat = s.category || "general";
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push({
-      id: s.id,
-      key: s.key,
-      value: s.value,
-      description: s.description,
-    });
-  });
-
-  return grouped;
+  try {
+    const result = await serverFetch(`/api/admin/settings`);
+    const arr = result.settings || result || [];
+    // Group settings by category for SettingsForm component
+    if (Array.isArray(arr)) {
+      const grouped: Record<string, { id: string; key: string; value: unknown; description: string | null }[]> = {};
+      for (const s of arr) {
+        const cat = s.category || "general";
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push({
+          id: s._id || s.id || s.key,
+          key: s.key,
+          value: s.value,
+          description: s.description || null,
+        });
+      }
+      return grouped;
+    }
+    return arr;
+  } catch {
+    return {};
+  }
 }
 
 export async function updateSetting(key: string, value: unknown) {
-  const admin = await verifyAdmin();
-  const supabase = await createClient();
+  await verifyAdmin();
 
-  const { error } = await supabase
-    .from("app_settings")
-    .update({ value, updated_at: new Date().toISOString() })
-    .eq("key", key);
-
-  if (error) throw new Error(error.message);
-
-  await supabase.from("admin_audit_logs").insert({
-    admin_id: admin.id,
-    action: "update_setting",
-    target_type: "app_setting",
-    target_id: key,
-    details: { value },
+  await serverFetch(`/api/admin/settings/${key}`, {
+    method: "PUT",
+    body: JSON.stringify({ value }),
   });
 
   return { success: true };
@@ -58,25 +42,11 @@ export async function updateSetting(key: string, value: unknown) {
 export async function updateSettings(
   settings: { key: string; value: unknown }[]
 ) {
-  const admin = await verifyAdmin();
-  const supabase = await createClient();
+  await verifyAdmin();
 
-  const now = new Date().toISOString();
-
-  for (const setting of settings) {
-    const { error } = await supabase
-      .from("app_settings")
-      .update({ value: setting.value, updated_at: now })
-      .eq("key", setting.key);
-
-    if (error) throw new Error(error.message);
-  }
-
-  await supabase.from("admin_audit_logs").insert({
-    admin_id: admin.id,
-    action: "batch_update_settings",
-    target_type: "app_settings",
-    details: { keys: settings.map((s) => s.key) },
+  await serverFetch(`/api/admin/settings/batch`, {
+    method: "PUT",
+    body: JSON.stringify({ settings }),
   });
 
   return { success: true };

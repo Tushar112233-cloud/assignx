@@ -17,8 +17,7 @@
 /// ```
 library;
 
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../config/supabase_config.dart';
+import '../api/api_client.dart';
 import '../utils/content_validators.dart';
 
 /// Types of personal information violations that can be detected.
@@ -234,9 +233,6 @@ class ModerationService {
 
   /// Get singleton instance.
   static ModerationService get instance => _instance;
-
-  /// Supabase client for database operations.
-  SupabaseClient get _supabase => SupabaseConfig.client;
 
   /// Rate limit configuration.
   RateLimitConfig _config = const RateLimitConfig();
@@ -494,45 +490,16 @@ class ModerationService {
     }
 
     try {
-      final now = DateTime.now();
-      final oneHourAgo = now.subtract(const Duration(hours: 1));
-      final oneDayAgo = now.subtract(const Duration(days: 1));
+      // Fetch moderation summary from API
+      final response = await ApiClient.get('/moderation/summary', queryParams: {
+        'userId': userId,
+      });
 
-      // Get total violations
-      final totalResponse = await _supabase
-          .from('moderation_logs')
-          .select()
-          .eq('user_id', userId)
-          .count();
-
-      // Get violations in last hour
-      final recentResponse = await _supabase
-          .from('moderation_logs')
-          .select()
-          .eq('user_id', userId)
-          .gte('created_at', oneHourAgo.toIso8601String())
-          .count();
-
-      // Get violations in last day
-      final dayResponse = await _supabase
-          .from('moderation_logs')
-          .select()
-          .eq('user_id', userId)
-          .gte('created_at', oneDayAgo.toIso8601String())
-          .count();
-
-      // Get last violation
-      final lastViolationResponse = await _supabase
-          .from('moderation_logs')
-          .select('created_at')
-          .eq('user_id', userId)
-          .order('created_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
-
-      final totalViolations = totalResponse.count;
-      final recentViolations = recentResponse.count;
-      final dailyViolations = dayResponse.count;
+      final data = response as Map<String, dynamic>? ?? {};
+      final totalViolations = data['totalViolations'] as int? ?? 0;
+      final recentViolations = data['recentViolations'] as int? ?? 0;
+      final dailyViolations = data['dailyViolations'] as int? ?? 0;
+      final lastViolationAt = data['lastViolationAt'] as String?;
 
       // Determine if rate limited
       final isRateLimited =
@@ -549,8 +516,8 @@ class ModerationService {
         userId: userId,
         totalViolations: totalViolations,
         recentViolations: recentViolations,
-        lastViolationAt: lastViolationResponse != null
-            ? DateTime.parse(lastViolationResponse['created_at'] as String)
+        lastViolationAt: lastViolationAt != null
+            ? DateTime.parse(lastViolationAt)
             : null,
         isRateLimited: isRateLimited,
         warningLevel: warningLevel,
@@ -581,16 +548,16 @@ class ModerationService {
     Map<String, dynamic>? metadata,
   }) async {
     try {
-      await _supabase.from('moderation_logs').insert({
-        'user_id': userId,
-        'project_id': projectId,
-        'chat_id': chatId,
-        'original_content': originalContent,
-        'sanitized_content': sanitizedContent,
-        'violation_types': violationTypes.map((v) => v.name).toList(),
-        'violation_count': violationCount,
+      await ApiClient.post('/moderation/log', {
+        'userId': userId,
+        'projectId': projectId,
+        'chatId': chatId,
+        'originalContent': originalContent,
+        'sanitizedContent': sanitizedContent,
+        'violationTypes': violationTypes.map((v) => v.name).toList(),
+        'violationCount': violationCount,
         'severity': severity.name,
-        'action_taken': actionTaken,
+        'actionTaken': actionTaken,
         'metadata': metadata,
       });
 

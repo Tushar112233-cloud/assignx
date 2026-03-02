@@ -31,16 +31,21 @@ class ChatRoom {
   });
 
   factory ChatRoom.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDate(String s, String c) {
+      final v = json[s] ?? json[c];
+      return v != null ? DateTime.tryParse(v.toString()) : null;
+    }
+    final lastMsg = json['last_message'] ?? json['lastMessage'];
     return ChatRoom(
-      id: json['id'] as String,
-      projectId: json['project_id'] as String?,
-      roomType: json['room_type'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
-      lastMessage: json['last_message'] != null
-          ? ChatMessage.fromJson(json['last_message'] as Map<String, dynamic>)
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      projectId: (json['project_id'] ?? json['projectId']) as String?,
+      roomType: (json['room_type'] ?? json['roomType'] ?? 'project').toString(),
+      createdAt: parseDate('created_at', 'createdAt') ?? DateTime.now(),
+      updatedAt: parseDate('updated_at', 'updatedAt') ?? DateTime.now(),
+      lastMessage: lastMsg != null
+          ? ChatMessage.fromJson(lastMsg as Map<String, dynamic>)
           : null,
-      unreadCount: json['unread_count'] as int? ?? 0,
+      unreadCount: (json['unread_count'] ?? json['unreadCount']) as int? ?? 0,
     );
   }
 
@@ -92,45 +97,40 @@ class ChatMessage {
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     // Parse read_by jsonb array
     List<String> readByList = [];
-    if (json['read_by'] != null) {
-      if (json['read_by'] is List) {
-        readByList = (json['read_by'] as List).cast<String>();
+    final readByRaw = json['read_by'] ?? json['readBy'];
+    if (readByRaw != null) {
+      if (readByRaw is List) {
+        readByList = readByRaw.cast<String>();
       }
     }
 
-    // Parse moderation status
+    // Parse moderation status from is_flagged and flagged_reason columns
     MessageStatus status = MessageStatus.approved;
-    final moderationStatus = json['moderation_status'] as String?;
-    if (moderationStatus != null) {
-      switch (moderationStatus) {
-        case 'pending':
-          status = MessageStatus.pending;
-          break;
-        case 'rejected':
-          status = MessageStatus.rejected;
-          break;
-        case 'flagged':
-          status = MessageStatus.flagged;
-          break;
-        default:
-          status = MessageStatus.approved;
-      }
+    final isFlagged = (json['is_flagged'] ?? json['isFlagged']) as bool? ?? false;
+    final flaggedReason = (json['flagged_reason'] ?? json['flaggedReason']) as String?;
+    if (isFlagged) {
+      status = MessageStatus.flagged;
+    } else if (flaggedReason != null && flaggedReason.isNotEmpty) {
+      // Previously flagged but now resolved
+      status = MessageStatus.approved;
     }
+
+    final deliveredStr = (json['delivered_at'] ?? json['deliveredAt'])?.toString();
+    final createdStr = (json['created_at'] ?? json['createdAt'] ?? '').toString();
+    final senderData = json['sender'] ?? json['senderProfile'];
 
     return ChatMessage(
-      id: json['id'] as String,
-      chatRoomId: json['chat_room_id'] as String,
-      senderId: json['sender_id'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      chatRoomId: (json['chat_room_id'] ?? json['chatRoomId'] ?? '').toString(),
+      senderId: (json['sender_id'] ?? json['senderId'] ?? '').toString(),
       content: json['content'] as String? ?? '',
-      messageType: json['message_type'] as String? ?? 'text',
-      fileUrl: json['file_url'] as String?,
+      messageType: (json['message_type'] ?? json['messageType']) as String? ?? 'text',
+      fileUrl: (json['file_url'] ?? json['fileUrl']) as String?,
       readBy: readByList,
-      deliveredAt: json['delivered_at'] != null
-          ? DateTime.parse(json['delivered_at'] as String)
-          : null,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      sender: json['sender'] != null
-          ? ChatSender.fromJson(json['sender'] as Map<String, dynamic>)
+      deliveredAt: deliveredStr != null ? DateTime.tryParse(deliveredStr) : null,
+      createdAt: DateTime.tryParse(createdStr) ?? DateTime.now(),
+      sender: senderData != null
+          ? ChatSender.fromJson(senderData as Map<String, dynamic>)
           : null,
       status: status,
     );
@@ -196,9 +196,9 @@ class ChatSender {
 
   factory ChatSender.fromJson(Map<String, dynamic> json) {
     return ChatSender(
-      id: json['id'] as String,
-      fullName: json['full_name'] as String? ?? 'Unknown',
-      avatarUrl: json['avatar_url'] as String?,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      fullName: (json['full_name'] ?? json['fullName']) as String? ?? 'Unknown',
+      avatarUrl: (json['avatar_url'] ?? json['avatarUrl']) as String?,
       email: json['email'] as String?,
     );
   }
@@ -238,18 +238,18 @@ class ChatParticipant {
   });
 
   factory ChatParticipant.fromJson(Map<String, dynamic> json) {
+    final lastReadStr = (json['last_read_at'] ?? json['lastReadAt'])?.toString();
+    final joinedStr = (json['joined_at'] ?? json['joinedAt'] ?? '').toString();
     return ChatParticipant(
-      id: json['id'] as String,
-      chatRoomId: json['chat_room_id'] as String,
-      profileId: json['profile_id'] as String,
-      participantRole: json['participant_role'] as String? ?? 'user',
-      isActive: json['is_active'] as bool? ?? true,
-      lastReadAt: json['last_read_at'] != null
-          ? DateTime.parse(json['last_read_at'] as String)
-          : null,
-      unreadCount: json['unread_count'] as int? ?? 0,
-      notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
-      joinedAt: DateTime.parse(json['joined_at'] as String),
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      chatRoomId: (json['chat_room_id'] ?? json['chatRoomId'] ?? '').toString(),
+      profileId: (json['profile_id'] ?? json['profileId'] ?? '').toString(),
+      participantRole: (json['participant_role'] ?? json['participantRole']) as String? ?? 'user',
+      isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
+      lastReadAt: lastReadStr != null ? DateTime.tryParse(lastReadStr) : null,
+      unreadCount: (json['unread_count'] ?? json['unreadCount']) as int? ?? 0,
+      notificationsEnabled: (json['notifications_enabled'] ?? json['notificationsEnabled']) as bool? ?? true,
+      joinedAt: DateTime.tryParse(joinedStr) ?? DateTime.now(),
     );
   }
 }

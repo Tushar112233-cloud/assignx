@@ -1,47 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { extractToken, serverFetch } from "@/lib/api/server";
 
 /**
  * GET /api/invoices/[projectId]
- * Generate and return invoice PDF for a project
+ * Generate and return invoice HTML for a project.
+ * Data is fetched from the Express API.
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
 ) {
   const { projectId } = await params;
+  const token = extractToken(request);
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fetch project with related data
-  const { data: project, error } = await supabase
-    .from("projects")
-    .select(`
-      *,
-      subject:subjects (name),
-      reference_style:reference_styles (name)
-    `)
-    .eq("id", projectId)
-    .eq("user_id", user.id)
-    .single();
+  // Fetch invoice data from Express API
+  const { data: invoiceData, error, status } = await serverFetch<{
+    project: {
+      id: string;
+      title: string;
+      project_number: string;
+      service_type?: string;
+      word_count?: number;
+      quoted_price?: number;
+      payment_status?: string;
+      created_at: string;
+      subject?: { name: string };
+    };
+    profile: {
+      full_name?: string;
+      email: string;
+      phone?: string;
+    };
+  }>(`/api/invoices/${projectId}`, token);
 
-  if (error || !project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  if (error || !invoiceData) {
+    // If Express API returns the invoice data, use it.
+    // Otherwise fall back to fetching project + profile separately.
+    const { data: project } = await serverFetch<any>(
+      `/api/projects/${projectId}`,
+      token
+    );
+    const { data: profile } = await serverFetch<any>(
+      "/api/auth/me",
+      token
+    );
+
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    return generateInvoiceHtml(project, profile);
   }
 
-  // Fetch user profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, email, phone")
-    .eq("id", user.id)
-    .single();
+  return generateInvoiceHtml(invoiceData.project, invoiceData.profile);
+}
 
-  // Generate invoice HTML
+/**
+ * Generate invoice HTML from project and profile data.
+ */
+function generateInvoiceHtml(project: any, profile: any): NextResponse {
   const invoiceDate = new Date().toLocaleDateString("en-IN", {
     day: "numeric",
     month: "long",
@@ -54,8 +75,7 @@ export async function GET(
     year: "numeric",
   });
 
-  // Calculate amounts (example pricing)
-  const baseAmount = project.quoted_price || project.word_count * 0.5 || 999;
+  const baseAmount = project.quoted_price || (project.word_count ? project.word_count * 0.5 : 999);
   const gst = baseAmount * 0.18;
   const totalAmount = baseAmount + gst;
 
@@ -108,7 +128,7 @@ export async function GET(
       <div class="details-section">
         <h3>Billed To</h3>
         <p><strong>${profile?.full_name || 'Customer'}</strong></p>
-        <p>${profile?.email || user.email}</p>
+        <p>${profile?.email || ''}</p>
         ${profile?.phone ? `<p>${profile.phone}</p>` : ''}
       </div>
       <div class="details-section">
@@ -137,7 +157,7 @@ export async function GET(
             ${project.word_count ? `${project.word_count.toLocaleString()} words` : '-'}<br>
             ${project.subject?.name || '-'}
           </td>
-          <td style="text-align: right;">₹${baseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+          <td style="text-align: right;">\u20B9${baseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
         </tr>
       </tbody>
     </table>
@@ -145,15 +165,15 @@ export async function GET(
     <div class="totals">
       <div class="totals-row">
         <span>Subtotal</span>
-        <span>₹${baseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+        <span>\u20B9${baseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
       </div>
       <div class="totals-row">
         <span>GST (18%)</span>
-        <span>₹${gst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+        <span>\u20B9${gst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
       </div>
       <div class="totals-row total">
         <span>Total</span>
-        <span>₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+        <span>\u20B9${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
       </div>
     </div>
 
@@ -166,8 +186,6 @@ export async function GET(
 </html>
   `;
 
-  // Return as HTML that can be printed to PDF by browser
-  // In production, use a PDF library like puppeteer or jspdf
   return new NextResponse(invoiceHtml, {
     headers: {
       "Content-Type": "text/html",

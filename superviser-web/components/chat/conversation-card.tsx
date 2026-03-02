@@ -23,7 +23,7 @@ interface ConversationCardProps {
 /**
  * Formats a timestamp into a relative or absolute time string
  */
-function formatTimestamp(date: string | null): string {
+function formatTimestamp(date: string | null | undefined): string {
   if (!date) return ""
 
   const now = new Date()
@@ -88,7 +88,7 @@ export function ConversationCard({
   onClick,
 }: ConversationCardProps) {
   const { name, initials } = getParticipantInfo(room)
-  const RoomIcon = getRoomTypeIcon(room.room_type)
+  const RoomIcon = getRoomTypeIcon(room.room_type || room.type || "direct")
   const project = room.projects
 
   return (
@@ -120,7 +120,7 @@ export function ConversationCard({
     >
       {/* Timestamp */}
       <div className="absolute right-4 top-4 text-xs text-gray-400">
-        {formatTimestamp(room.last_message_at)}
+        {formatTimestamp(room.last_message_at ?? null)}
       </div>
 
       {/* Unread Badge */}
@@ -204,14 +204,14 @@ export function ConversationCard({
           {/* Last Message Time */}
           {room.last_message_at && (
             <p className="line-clamp-2 text-sm text-gray-600">
-              Last message: {formatTimestamp(room.last_message_at)}
+              Last message: {formatTimestamp(room.last_message_at ?? null)}
             </p>
           )}
 
           {/* Room Type Label */}
           <div className="mt-1 flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
-              {room.room_type.split("_").join(" ").toUpperCase()}
+              {(room.room_type || room.type || "direct").split("_").join(" ").toUpperCase()}
             </Badge>
           </div>
         </div>

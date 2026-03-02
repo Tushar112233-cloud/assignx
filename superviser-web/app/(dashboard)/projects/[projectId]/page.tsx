@@ -27,7 +27,8 @@ import {
   Loader2,
 } from "lucide-react"
 import Link from "next/link"
-import { createClient, getAuthUser } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
+import { getStoredUser } from "@/lib/api/auth"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -63,20 +64,16 @@ export default function ProjectDetailPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false)
 
   const handleApprove = useCallback(async (projectId: string, message?: string) => {
-    const supabase = createClient()
-
     try {
-      const { error: updateError } = await supabase
-        .from("projects")
-        .update({
+      await apiFetch(`/api/projects/${projectId}`, {
+        method: "PUT",
+        body: JSON.stringify({
           status: "delivered",
           delivered_at: new Date().toISOString(),
           status_updated_at: new Date().toISOString(),
           completion_notes: message || null,
-        })
-        .eq("id", projectId)
-
-      if (updateError) throw updateError
+        }),
+      })
 
       toast.success("Project delivered to client successfully")
       setQcModalState({ open: false, mode: null })
@@ -92,45 +89,15 @@ export default function ProjectDetailPage() {
     feedback: string,
     severity: "minor" | "major" | "critical"
   ) => {
-    const supabase = createClient()
-
     try {
-      // Get current revision count
-      const { count: revisionCount, error: countError } = await supabase
-        .from("project_revisions")
-        .select("*", { count: "exact", head: true })
-        .eq("project_id", projectId)
-
-      if (countError) throw countError
-
-      const newRevisionNumber = (revisionCount || 0) + 1
-
-      // Create revision request
-      const { error: revisionError } = await supabase
-        .from("project_revisions")
-        .insert({
-          project_id: projectId,
-          revision_number: newRevisionNumber,
-          requested_by: project?.supervisor_id || "",
-          requested_by_type: "supervisor",
+      await apiFetch(`/api/projects/${projectId}/revision`, {
+        method: "POST",
+        body: JSON.stringify({
           feedback,
-          status: "pending",
           severity,
-        })
-
-      if (revisionError) throw revisionError
-
-      // Update project status
-      const { error: projectError } = await supabase
-        .from("projects")
-        .update({
-          status: "qc_rejected",
-          status_updated_at: new Date().toISOString(),
-          revision_count: newRevisionNumber,
-        })
-        .eq("id", projectId)
-
-      if (projectError) throw projectError
+          requestedByType: "supervisor",
+        }),
+      })
 
       toast.success("Revision requested successfully")
       setQcModalState({ open: false, mode: null })
@@ -518,7 +485,7 @@ export default function ProjectDetailPage() {
           service_type: project.service_type,
           status: project.status,
           user_name: project.profiles?.full_name || "Unknown User",
-          user_id: project.user_id,
+          user_id: project.user_id || "",
           doer_name: project.doers?.profiles?.full_name || "Unassigned",
           doer_id: project.doer_id || "",
           deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
@@ -619,9 +586,8 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    getAuthUser().then((user) => {
-      if (user) setCurrentUserId(user.id)
-    })
+    const user = getStoredUser()
+    if (user) setCurrentUserId(user.id)
   }, [])
 
   // Auto-scroll to bottom when new messages arrive

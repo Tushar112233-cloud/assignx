@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/tool_model.dart';
 
 /// Card widget for displaying a tool.
@@ -83,7 +84,7 @@ class ToolCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Premium',
+                            'Premium'.tr(context),
                             style: TextStyle(
                               fontSize: 10,
                               color: Colors.amber.shade700,
@@ -132,7 +133,7 @@ class ToolCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '${tool.usageCount} uses',
+                    '${tool.usageCount} ${'uses'.tr(context)}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondaryLight,
                         ),

@@ -24,6 +24,8 @@ import {
   ChevronRight,
   Star,
   Edit3,
+  Settings,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StaggerItem } from "@/components/skeletons";
@@ -104,7 +106,7 @@ function QuickAction({
   icon: React.ElementType;
   label: string;
   description: string;
-  onClick: () => void;
+  onClick?: () => void;
   badge?: string;
 }) {
   return (
@@ -175,8 +177,11 @@ export function ProfilePro({
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "U";
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+  const formatDate = (dateString: string | undefined | null) => {
+    if (!dateString) return "N/A";
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "N/A";
+    return d.toLocaleDateString("en-US", {
       month: "long",
       year: "numeric",
     });
@@ -268,7 +273,7 @@ export function ProfilePro({
               <span className="hidden sm:inline">·</span>
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5" />
-                <span>Joined {formatDate(profile.createdAt)}</span>
+                <span>Joined {formatDate(profile.createdAt || (profile as any).created_at)}</span>
               </div>
             </div>
 
@@ -446,12 +451,32 @@ export function ProfilePro({
             badge="2FA"
           />
           <QuickAction
+            icon={Wallet}
+            label="Payment Methods"
+            description="Manage cards and UPI"
+            onClick={() => onSettingsClick("payment")}
+          />
+          <QuickAction
             icon={CreditCard}
             label="Subscription"
             description="Manage your plan"
             onClick={() => onSettingsClick("subscription")}
             badge={subscription.tier === "free" ? "Upgrade" : undefined}
           />
+          <Link href="/settings">
+            <QuickAction
+              icon={Settings}
+              label="App Settings"
+              description="General app configuration"
+            />
+          </Link>
+          <Link href="/support">
+            <QuickAction
+              icon={HelpCircle}
+              label="Help & Support"
+              description="Get help and contact support"
+            />
+          </Link>
         </div>
           </section>
         </StaggerItem>

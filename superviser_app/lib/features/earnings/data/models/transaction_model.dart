@@ -176,23 +176,28 @@ class TransactionModel {
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
-      id: json['id'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
       type: TransactionType.fromId(
-          json['transaction_type'] as String? ?? json['type'] as String? ?? 'earning'),
+          (json['transactionType'] ?? json['transaction_type'] ?? json['type']) as String? ?? 'earning'),
       amount: (json['amount'] as num?)?.toDouble() ?? 0,
       status: TransactionStatus.fromId(json['status'] as String? ?? 'completed'),
-      createdAt: DateTime.parse(
-          json['created_at'] as String? ?? DateTime.now().toIso8601String()),
-      projectId: json['reference_id'] as String? ?? json['project_id'] as String?,
-      projectTitle: json['project_title'] as String?,
-      description: json['description'] as String? ?? json['notes'] as String?,
-      reference: json['reference_type'] as String? ?? json['reference'] as String?,
-      balanceAfter: (json['balance_after'] as num?)?.toDouble(),
-      processedAt: json['processed_at'] != null
-          ? DateTime.parse(json['processed_at'] as String)
-          : null,
+      createdAt: DateTime.tryParse(
+          (json['createdAt'] ?? json['created_at'] ?? '').toString()) ?? DateTime.now(),
+      projectId: (json['referenceId'] ?? json['reference_id'] ?? json['projectId'] ?? json['project_id']) as String?,
+      projectTitle: (json['projectTitle'] ?? json['project_title']) as String?,
+      description: (json['description'] ?? json['notes']) as String?,
+      reference: (json['referenceType'] ?? json['reference_type'] ?? json['reference']) as String?,
+      balanceAfter: ((json['balanceAfter'] ?? json['balance_after']) as num?)?.toDouble(),
+      processedAt: _tryParseDate(json['processedAt'] ?? json['processed_at']),
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
+  }
+
+  /// Safely parse a DateTime from dynamic value.
+  static DateTime? _tryParseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   Map<String, dynamic> toJson() {

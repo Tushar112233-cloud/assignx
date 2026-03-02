@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../../core/api/api_client.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/translation/translation_extensions.dart';
@@ -102,42 +101,12 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
     });
 
     try {
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
+      final detailsText = _detailsController.text.trim();
 
-      if (user == null) {
-        setState(() {
-          _error = 'Please log in to report listings'; // Translated at display
-          _isSubmitting = false;
-        });
-        return;
-      }
-
-      // Check if already reported
-      final existing = await supabase
-          .from('listing_reports')
-          .select('id')
-          .eq('listing_id', widget.listingId)
-          .eq('reporter_id', user.id)
-          .maybeSingle();
-
-      if (existing != null) {
-        setState(() {
-          _error = 'You have already reported this listing'; // Translated at display
-          _isSubmitting = false;
-        });
-        return;
-      }
-
-      // Submit report
-      await supabase.from('listing_reports').insert({
+      await ApiClient.post('/community/report', {
         'listing_id': widget.listingId,
-        'reporter_id': user.id,
         'reason': _selectedReason!.value,
-        'details': _detailsController.text.trim().isNotEmpty
-            ? _detailsController.text.trim()
-            : null,
-        'status': 'pending',
+        'details': detailsText.isNotEmpty ? detailsText : null,
       });
 
       // Show success state

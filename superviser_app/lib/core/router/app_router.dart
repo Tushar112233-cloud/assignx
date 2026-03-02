@@ -125,15 +125,15 @@ import 'routes.dart';
 /// }
 /// ```
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
-
   return GoRouter(
     initialLocation: RoutePaths.splash,
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(
-      ref.watch(authProvider.notifier).stream,
+      ref.read(authProvider.notifier).stream,
     ),
     redirect: (context, state) {
+      // Read current auth state at redirect time (not captured at provider creation)
+      final authState = ref.read(authProvider);
       final isLoggedIn = authState.isAuthenticated;
       final isActivated = authState.isActivated;
       final isLoading = authState.isLoading;

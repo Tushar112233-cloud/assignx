@@ -121,28 +121,28 @@ class StudyGroup {
 
   factory StudyGroup.fromJson(Map<String, dynamic> json) {
     return StudyGroup(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      subject: json['subject'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      name: (json['name'] as String?) ?? '',
+      subject: (json['subject'] as String?) ?? '',
       description: json['description'] as String?,
-      creatorId: json['creator_id'] as String,
-      creatorName: json['creator_name'] as String? ?? 'Anonymous',
-      creatorAvatar: json['creator_avatar'] as String?,
-      memberIds: (json['member_ids'] as List<dynamic>?)?.cast<String>() ?? [],
-      memberCount: json['member_count'] as int? ?? 0,
-      maxMembers: json['max_members'] as int? ?? 10,
-      nextSessionTime: json['next_session_time'] != null
-          ? DateTime.parse(json['next_session_time'] as String)
+      creatorId: (json['creator_id'] ?? json['creatorId'] ?? '').toString(),
+      creatorName: (json['creator_name'] ?? json['creatorName']) as String? ?? 'Anonymous',
+      creatorAvatar: (json['creator_avatar'] ?? json['creatorAvatar']) as String?,
+      memberIds: ((json['member_ids'] ?? json['memberIds']) as List<dynamic>?)?.cast<String>() ?? [],
+      memberCount: (json['member_count'] ?? json['memberCount']) as int? ?? 0,
+      maxMembers: (json['max_members'] ?? json['maxMembers']) as int? ?? 10,
+      nextSessionTime: (json['next_session_time'] ?? json['nextSessionTime']) != null
+          ? DateTime.tryParse((json['next_session_time'] ?? json['nextSessionTime']).toString())
           : null,
-      meetingLink: json['meeting_link'] as String?,
+      meetingLink: (json['meeting_link'] ?? json['meetingLink']) as String?,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-      isActive: json['is_active'] as bool? ?? true,
-      isPublic: json['is_public'] as bool? ?? true,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+      isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
+      isPublic: (json['is_public'] ?? json['isPublic']) as bool? ?? true,
+      createdAt: (json['created_at'] ?? json['createdAt']) != null
+          ? DateTime.tryParse((json['created_at'] ?? json['createdAt']).toString()) ?? DateTime.now()
           : DateTime.now(),
-      lastActivityAt: json['last_activity_at'] != null
-          ? DateTime.parse(json['last_activity_at'] as String)
+      lastActivityAt: (json['last_activity_at'] ?? json['lastActivityAt']) != null
+          ? DateTime.tryParse((json['last_activity_at'] ?? json['lastActivityAt']).toString())
           : null,
     );
   }
@@ -346,28 +346,28 @@ class SharedResource {
 
   factory SharedResource.fromJson(Map<String, dynamic> json) {
     return SharedResource(
-      id: json['id'] as String,
-      title: json['title'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      title: (json['title'] as String?) ?? '',
       description: json['description'] as String?,
       type: ResourceType.values.firstWhere(
         (t) => t.name == json['type'],
         orElse: () => ResourceType.notes,
       ),
       subject: json['subject'] as String? ?? 'General',
-      uploaderId: json['uploader_id'] as String,
-      uploaderName: json['uploader_name'] as String? ?? 'Anonymous',
-      uploaderAvatar: json['uploader_avatar'] as String?,
+      uploaderId: (json['uploader_id'] ?? json['uploaderId'] ?? '').toString(),
+      uploaderName: (json['uploader_name'] ?? json['uploaderName']) as String? ?? 'Anonymous',
+      uploaderAvatar: (json['uploader_avatar'] ?? json['uploaderAvatar']) as String?,
       url: json['url'] as String?,
-      fileSize: json['file_size'] as int?,
-      fileExtension: json['file_extension'] as String?,
-      downloadCount: json['download_count'] as int? ?? 0,
-      saveCount: json['save_count'] as int? ?? 0,
+      fileSize: (json['file_size'] ?? json['fileSize']) as int?,
+      fileExtension: (json['file_extension'] ?? json['fileExtension']) as String?,
+      downloadCount: (json['download_count'] ?? json['downloadCount']) as int? ?? 0,
+      saveCount: (json['save_count'] ?? json['saveCount']) as int? ?? 0,
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
-      ratingCount: json['rating_count'] as int? ?? 0,
+      ratingCount: (json['rating_count'] ?? json['ratingCount']) as int? ?? 0,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-      isVerified: json['is_verified'] as bool? ?? false,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+      isVerified: (json['is_verified'] ?? json['isVerified']) as bool? ?? false,
+      createdAt: (json['created_at'] ?? json['createdAt']) != null
+          ? DateTime.tryParse((json['created_at'] ?? json['createdAt']).toString()) ?? DateTime.now()
           : DateTime.now(),
     );
   }

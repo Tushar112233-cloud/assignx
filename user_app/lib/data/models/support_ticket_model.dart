@@ -91,13 +91,14 @@ class TicketResponse {
   });
 
   factory TicketResponse.fromJson(Map<String, dynamic> json) {
+    final dateStr = (json['created_at'] ?? json['createdAt'] ?? '').toString();
     return TicketResponse(
-      id: json['id'] as String,
-      ticketId: json['ticket_id'] as String,
-      responderId: json['responder_id'] as String?,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      ticketId: (json['ticket_id'] ?? json['ticketId'] ?? '').toString(),
+      responderId: (json['responder_id'] ?? json['responderId']) as String?,
       message: json['message'] as String? ?? '',
-      isStaffResponse: json['is_staff_response'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      isStaffResponse: (json['is_staff_response'] ?? json['isStaffResponse']) as bool? ?? false,
+      createdAt: DateTime.tryParse(dateStr) ?? DateTime.now(),
     );
   }
 
@@ -186,16 +187,19 @@ class SupportTicket {
           .toList();
     }
 
+    final createdStr = (json['created_at'] ?? json['createdAt'] ?? '').toString();
+    final updatedStr = (json['updated_at'] ?? json['updatedAt'] ?? '').toString();
+
     return SupportTicket(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
       subject: json['subject'] as String? ?? '',
       description: json['description'] as String? ?? '',
       category: TicketCategory.fromDbValue(json['category'] as String?),
       status: TicketStatus.fromDbValue(json['status'] as String?),
       responses: responses,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: DateTime.tryParse(createdStr) ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(updatedStr) ?? DateTime.now(),
     );
   }
 

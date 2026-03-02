@@ -170,25 +170,28 @@ class QuoteModel {
   /// Throws [FormatException] if required fields are missing or malformed.
   factory QuoteModel.fromJson(Map<String, dynamic> json) {
     return QuoteModel(
-      id: json['id'] as String?,
-      requestId: json['project_id'] as String,
-      totalPrice: (json['user_amount'] as num).toDouble(),
-      doerAmount: (json['doer_amount'] as num?)?.toDouble(),
-      supervisorAmount: (json['supervisor_amount'] as num?)?.toDouble(),
-      platformAmount: (json['platform_amount'] as num?)?.toDouble(),
-      basePrice: (json['base_price'] as num?)?.toDouble(),
-      urgencyFee: (json['urgency_fee'] as num?)?.toDouble(),
-      complexityFee: (json['complexity_fee'] as num?)?.toDouble(),
-      discountAmount: (json['discount_amount'] as num?)?.toDouble(),
-      discountCode: json['discount_code'] as String?,
+      id: (json['id'] ?? json['_id'])?.toString(),
+      requestId: (json['projectId'] ?? json['project_id'] ?? '').toString(),
+      totalPrice: ((json['userAmount'] ?? json['user_amount'] ?? json['totalPrice'] ?? 0) as num).toDouble(),
+      doerAmount: ((json['doerAmount'] ?? json['doer_amount']) as num?)?.toDouble(),
+      supervisorAmount: ((json['supervisorAmount'] ?? json['supervisor_amount']) as num?)?.toDouble(),
+      platformAmount: ((json['platformAmount'] ?? json['platform_amount']) as num?)?.toDouble(),
+      basePrice: ((json['basePrice'] ?? json['base_price']) as num?)?.toDouble(),
+      urgencyFee: ((json['urgencyFee'] ?? json['urgency_fee']) as num?)?.toDouble(),
+      complexityFee: ((json['complexityFee'] ?? json['complexity_fee']) as num?)?.toDouble(),
+      discountAmount: ((json['discountAmount'] ?? json['discount_amount']) as num?)?.toDouble(),
+      discountCode: (json['discountCode'] ?? json['discount_code']) as String?,
       status: json['status'] as String? ?? 'pending',
-      validUntil: json['valid_until'] != null
-          ? DateTime.parse(json['valid_until'] as String)
-          : null,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
+      validUntil: _tryParseDate(json['validUntil'] ?? json['valid_until']),
+      createdAt: _tryParseDate(json['createdAt'] ?? json['created_at']),
     );
+  }
+
+  /// Safely parse a DateTime from dynamic value.
+  static DateTime? _tryParseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   /// Converts this [QuoteModel] to a JSON map for Supabase operations.

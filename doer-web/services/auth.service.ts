@@ -1,118 +1,49 @@
-import { createClient } from '@/lib/supabase/client'
+import { apiClient } from '@/lib/api/client'
+import { sendMagicLink, verifyOTP, logout as apiLogout, getCurrentUser } from '@/lib/api/auth'
 import type { Doer, Qualification, ExperienceLevel } from '@/types/database'
-
-/**
- * Get a Supabase client instance.
- * Called per-method instead of at module level to avoid
- * browser API access during SSR/build.
- */
-function getSupabase() {
-  return createClient()
-}
 
 /**
  * Authentication service for managing user auth operations.
  */
 export const authService = {
-  /**
-   * Get current session
-   */
   async getSession() {
-    const supabase = getSupabase()
-    const { data: { session }, error } = await supabase.auth.getSession()
-    if (error) throw error
-    return session
+    const user = await getCurrentUser()
+    if (!user) return null
+    return { user }
   },
 
-  /**
-   * Get current user
-   */
   async getUser() {
-    const supabase = getSupabase()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user) throw new Error('No session')
-    return session.user
+    const user = await getCurrentUser()
+    if (!user) throw new Error('No session')
+    return user
   },
 
-  /**
-   * Sign up with email and password
-   */
-  async signUp(email: string, password: string, fullName: string, phone: string) {
-    const supabase = getSupabase()
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          phone,
-        },
-      },
+  async signUp(email: string, _password: string, fullName: string, phone: string) {
+    return apiClient('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, fullName, phone, role: 'doer' }),
+      skipAuth: true,
     })
-
-    if (error) throw error
-    return data
   },
 
-  /**
-   * Sign in with email and password
-   */
-  async signIn(email: string, password: string) {
-    const supabase = getSupabase()
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) throw error
-    return data
+  async signIn(email: string, _password: string) {
+    return sendMagicLink(email, 'doer')
   },
 
-  /**
-   * Sign in with Google OAuth
-   */
   async signInWithGoogle() {
-    const supabase = getSupabase()
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-
-    if (error) throw error
-    return data
+    throw new Error('Google OAuth not supported with API. Use magic link.')
   },
 
-  /**
-   * Sign out
-   */
   async signOut() {
-    const supabase = getSupabase()
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    await apiLogout()
   },
 
-  /**
-   * Reset password
-   */
-  async resetPassword(email: string) {
-    const supabase = getSupabase()
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email)
-    if (error) throw error
-    return data
+  async resetPassword(_email: string) {
+    throw new Error('Password reset not supported. Use magic link.')
   },
 
-  /**
-   * Update password
-   */
-  async updatePassword(newPassword: string) {
-    const supabase = getSupabase()
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword,
-    })
-    if (error) throw error
-    return data
+  async updatePassword(_newPassword: string) {
+    throw new Error('Password update not supported. Use magic link.')
   },
 }
 
@@ -120,210 +51,84 @@ export const authService = {
  * Doer service for managing doer-specific operations
  */
 export const doerService = {
-  /**
-   * Get doer profile by profile ID
-   */
   async getDoerByProfileId(profileId: string): Promise<Doer | null> {
-    const supabase = getSupabase()
-    const { data, error } = await supabase
-      .from('doers')
-      .select('*')
-      .eq('profile_id', profileId)
-      .single()
-
-    if (error && error.code !== 'PGRST116') throw error
-    return data
+    try {
+      const data = await apiClient<Doer>(`/api/doers/by-profile/${profileId}`)
+      return data
+    } catch {
+      return null
+    }
   },
 
-  /**
-   * Create doer profile with required values
-   * Called from profile-setup page after user provides qualification/experience
-   */
   async createDoer(
     profileId: string,
     data: {
       qualification: Qualification
       experience_level: ExperienceLevel
-      university_id?: string
+      university_name?: string
       bio?: string
     }
   ): Promise<Doer> {
-    const supabase = getSupabase()
-    const { data: doer, error } = await supabase
-      .from('doers')
-      .insert({
+    return apiClient<Doer>('/api/doers', {
+      method: 'POST',
+      body: JSON.stringify({
         profile_id: profileId,
         qualification: data.qualification,
         experience_level: data.experience_level,
-        university_id: data.university_id || null,
+        university_name: data.university_name || null,
         bio: data.bio || null,
-        is_available: false,
-        max_concurrent_projects: 3,
-        is_activated: false,
-        total_earnings: 0,
-        total_projects_completed: 0,
-        average_rating: 0,
-        total_reviews: 0,
-        success_rate: 0,
-        on_time_delivery_rate: 0,
-        bank_verified: false,
-        is_flagged: false,
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-    return doer
+      }),
+    })
   },
 
-  /**
-   * Create doer activation record
-   * Called after doer record is created
-   */
   async createDoerActivation(doerId: string): Promise<void> {
-    const supabase = getSupabase()
-    const { error } = await supabase
-      .from('doer_activation')
-      .insert({
-        doer_id: doerId,
-        training_completed: false,
-        quiz_passed: false,
-        total_quiz_attempts: 0,
-        bank_details_added: false,
-        is_fully_activated: false,
-      })
-
-    if (error) throw error
+    await apiClient(`/api/doers/${doerId}/activation`, {
+      method: 'POST',
+    })
   },
 
-  /**
-   * Update doer profile setup (qualification, skills, experience)
-   */
   async updateProfileSetup(
     doerId: string,
     data: {
       qualification?: Qualification
-      university_id?: string
+      university_name?: string
       experience_level?: ExperienceLevel
       bio?: string
     }
   ): Promise<Doer> {
-    const supabase = getSupabase()
-    const { data: doer, error } = await supabase
-      .from('doers')
-      .update(data)
-      .eq('id', doerId)
-      .select()
-      .single()
-
-    if (error) throw error
-    return doer
+    return apiClient<Doer>(`/api/doers/${doerId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
   },
 
-  /**
-   * Update doer skills
-   */
   async updateSkills(doerId: string, skillIds: string[]): Promise<void> {
-    const supabase = getSupabase()
-    // First, remove existing skills
-    await supabase
-      .from('doer_skills')
-      .delete()
-      .eq('doer_id', doerId)
-
-    // Then, add new skills
-    if (skillIds.length > 0) {
-      const { error } = await supabase
-        .from('doer_skills')
-        .insert(
-          skillIds.map((skillId) => ({
-            doer_id: doerId,
-            skill_id: skillId,
-            proficiency_level: 'beginner' as ExperienceLevel,
-            is_verified: false,
-          }))
-        )
-
-      if (error) throw error
-    }
+    await apiClient(`/api/doers/${doerId}/skills`, {
+      method: 'PUT',
+      body: JSON.stringify({ skillIds }),
+    })
   },
 
-  /**
-   * Update doer subjects
-   */
   async updateSubjects(doerId: string, subjectIds: string[]): Promise<void> {
-    const supabase = getSupabase()
-    // First, remove existing subjects
-    await supabase
-      .from('doer_subjects')
-      .delete()
-      .eq('doer_id', doerId)
-
-    // Then, add new subjects
-    if (subjectIds.length > 0) {
-      const { error } = await supabase
-        .from('doer_subjects')
-        .insert(
-          subjectIds.map((subjectId) => ({
-            doer_id: doerId,
-            subject_id: subjectId,
-          }))
-        )
-
-      if (error) throw error
-    }
+    await apiClient(`/api/doers/${doerId}/subjects`, {
+      method: 'PUT',
+      body: JSON.stringify({ subjectIds }),
+    })
   },
 
-  /**
-   * Get all available skills
-   */
   async getSkills() {
-    const supabase = getSupabase()
-    const { data, error } = await supabase
-      .from('skills')
-      .select('*')
-      .eq('is_active', true)
-      .order('name')
-
-    if (error) throw error
-    return data
+    return apiClient<Array<{ id: string; name: string; is_active: boolean }>>('/api/skills')
   },
 
-  /**
-   * Get all available subjects
-   */
   async getSubjects() {
-    const supabase = getSupabase()
-    const { data, error } = await supabase
-      .from('subjects')
-      .select('*')
-      .eq('is_active', true)
-      .order('name')
-
-    if (error) throw error
-    return data
+    return apiClient<Array<{ id: string; name: string; is_active: boolean }>>('/api/subjects')
   },
 
-  /**
-   * Get all universities
-   */
   async getUniversities() {
-    const supabase = getSupabase()
-    const { data, error } = await supabase
-      .from('universities')
-      .select('*')
-      .eq('is_active', true)
-      .order('name')
-
-    if (error) throw error
-    return data
+    return apiClient<Array<{ id: string; name: string; is_active: boolean }>>('/api/universities')
   },
 }
 
-/**
- * Sign out the current user
- * Standalone export for convenience
- */
 export async function signOut(): Promise<void> {
   await authService.signOut()
 }

@@ -57,7 +57,7 @@ function toActiveSession(session: SessionInfo): ActiveSession {
 /**
  * Security settings section component
  * Manages password, 2FA, and active sessions
- * Fetches real session data from Supabase Auth API
+ * Fetches real session data from API Auth API
  */
 export function SecuritySection({
   security,
@@ -78,11 +78,11 @@ export function SecuritySection({
   const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
   const [isRevokingAll, setIsRevokingAll] = useState(false);
 
-  // Session state - fetched from Supabase Auth API
+  // Session state - fetched from API Auth API
   const [sessions, setSessions] = useState<ActiveSession[]>(security.activeSessions);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
 
-  /** Fetch active sessions from Supabase Auth API */
+  /** Fetch active sessions from API Auth API */
   const fetchSessions = useCallback(async () => {
     setIsLoadingSessions(true);
     try {
@@ -153,7 +153,7 @@ export function SecuritySection({
     }
   };
 
-  /** Handles single session revocation via Supabase Auth API */
+  /** Handles single session revocation via API Auth API */
   const handleRevokeSession = async (sessionId: string) => {
     // Find the session to check if it's current
     const session = sessions.find((s) => s.id === sessionId);
@@ -200,7 +200,7 @@ export function SecuritySection({
     }
   };
 
-  /** Handles all sessions revocation via Supabase Auth API */
+  /** Handles all sessions revocation via API Auth API */
   const handleRevokeAllSessions = async () => {
     setIsRevokingAll(true);
     try {

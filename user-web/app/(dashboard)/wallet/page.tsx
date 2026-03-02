@@ -26,7 +26,7 @@ import { PageSkeletonProvider, StaggerItem, WalletSkeleton } from "@/components/
 import { WalletTopUpSheet } from "@/components/profile/wallet-top-up-sheet";
 import { SendMoneySheet } from "@/components/profile/send-money-sheet";
 import { getWallet, getWalletTransactions } from "@/lib/actions/data";
-import { createClient } from "@/lib/supabase/client";
+import { getStoredUser } from "@/lib/api/auth";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user-store";
 import { toast } from "sonner";
@@ -52,11 +52,16 @@ type TransactionType =
  */
 interface Transaction {
   id: string;
+  _id?: string;
   transaction_type: TransactionType;
+  transactionType?: TransactionType;
   amount: number;
   description: string;
   status: "completed" | "pending" | "failed";
   created_at: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
   reference_id?: string;
 }
 
@@ -462,7 +467,7 @@ function WalletContentInner({
                       <div className="absolute inset-0 bg-gradient-to-br from-violet-100/20 to-purple-50/10 dark:from-violet-900/5 dark:to-transparent pointer-events-none rounded-[20px]" />
                       <div className="relative z-10 space-y-0.5">
                         {lastMonthTransactions.map((tx, index) => {
-                          const isIncoming = isIncomingTransaction(tx.transaction_type);
+                          const isIncoming = isIncomingTransaction(tx.transactionType || tx.transaction_type);
                           const CustomIcon = getTransactionIcon(tx.description);
 
                           return (
@@ -494,7 +499,7 @@ function WalletContentInner({
                                   {tx.description}
                                 </p>
                                 <p className="text-[11px] text-muted-foreground">
-                                  {new Date(tx.created_at).toLocaleDateString("en-US", {
+                                  {new Date(tx.createdAt || tx.created_at).toLocaleDateString("en-US", {
                                     day: "2-digit",
                                     month: "short",
                                     year: "numeric",
@@ -585,90 +590,43 @@ function WalletPageContent() {
     fetchData();
   }, []);
 
-  // Subscribe to realtime wallet and transaction updates
+  // Subscribe to realtime wallet and transaction updates via Socket.IO
   useEffect(() => {
-    const supabase = createClient();
-    let walletChannel: ReturnType<typeof supabase.channel> | null = null;
-    let txChannel: ReturnType<typeof supabase.channel> | null = null;
+    const storedUser = getStoredUser();
+    if (!storedUser?.id) return;
 
-    const setupRealtimeSubscription = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) return;
+    const { getSocket } = require("@/lib/socket/client");
+    const socket = getSocket();
 
-      // Subscribe to wallet balance updates
-      walletChannel = supabase
-        .channel(`wallet_page_balance_${authUser.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "wallets",
-            filter: `profile_id=eq.${authUser.id}`,
-          },
-          async () => {
-            const walletData = await getWallet();
-            if (walletData) {
-              setWallet(walletData);
-            }
-          }
-        )
-        .subscribe();
-
-      // Get the user's wallet ID to subscribe to transactions
-      const { data: walletRow } = await supabase
-        .from("wallets")
-        .select("id")
-        .eq("profile_id", authUser.id)
-        .eq("wallet_type", "user")
-        .single();
-
-      if (walletRow) {
-        txChannel = supabase
-          .channel(`wallet_page_tx_${walletRow.id}`)
-          .on(
-            "postgres_changes",
-            {
-              event: "INSERT",
-              schema: "public",
-              table: "wallet_transactions",
-              filter: `wallet_id=eq.${walletRow.id}`,
-            },
-            async (payload: any) => {
-              // Refresh transactions list
-              const transactionsData = await getWalletTransactions(50);
-              setTransactions(transactionsData as Transaction[]);
-
-              // Show toast for the new transaction
-              const tx = payload.new as {
-                transaction_type?: string;
-                amount?: number;
-                description?: string;
-              };
-              if (tx.amount) {
-                const isCredit = ["credit", "top_up", "refund", "project_earning", "bonus"].includes(
-                  tx.transaction_type || ""
-                );
-                toast(isCredit ? "Wallet Credited" : "Wallet Debited", {
-                  description: tx.description || `${isCredit ? "+" : "-"}${tx.amount}`,
-                });
-              }
-            }
-          )
-          .subscribe();
+    const handleWalletUpdate = async () => {
+      const walletData = await getWallet();
+      if (walletData) {
+        setWallet(walletData);
       }
     };
 
-    setupRealtimeSubscription();
+    const handleTransactionInsert = async (payload: any) => {
+      // Refresh transactions list
+      const transactionsData = await getWalletTransactions(50);
+      setTransactions(transactionsData as Transaction[]);
+
+      // Show toast for the new transaction
+      if (payload?.amount) {
+        const isCredit = ["credit", "top_up", "refund", "project_earning", "bonus"].includes(
+          payload.transactionType || payload.transaction_type || ""
+        );
+        toast(isCredit ? "Wallet Credited" : "Wallet Debited", {
+          description: payload.description || `${isCredit ? "+" : "-"}${payload.amount}`,
+        });
+      }
+    };
+
+    socket.on(`wallet:${storedUser.id}`, handleWalletUpdate);
+    socket.on(`wallet-tx:${storedUser.id}`, handleTransactionInsert);
 
     return () => {
-      const supabaseCleanup = createClient();
-      if (walletChannel) {
-        supabaseCleanup.removeChannel(walletChannel);
-      }
-      if (txChannel) {
-        supabaseCleanup.removeChannel(txChannel);
-      }
+      socket.off(`wallet:${storedUser.id}`, handleWalletUpdate);
+      socket.off(`wallet-tx:${storedUser.id}`, handleTransactionInsert);
     };
   }, []);
 
@@ -681,8 +639,8 @@ function WalletPageContent() {
     let pendingAmount = 0;
 
     transactions.forEach((tx) => {
-      const txDate = new Date(tx.created_at);
-      if (!isIncomingTransaction(tx.transaction_type) && txDate >= startOfMonth) {
+      const txDate = new Date(tx.createdAt || tx.created_at);
+      if (!isIncomingTransaction(tx.transactionType || tx.transaction_type) && txDate >= startOfMonth) {
         monthlySpend += tx.amount;
       }
       if (tx.status === "pending") {

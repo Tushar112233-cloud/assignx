@@ -19,7 +19,7 @@ import {
 } from "@/lib/validations/project";
 import type { ProjectType } from "@/types/add-project";
 import { createProject, createProjectFileRecord } from "@/lib/actions/data";
-import { createClient } from "@/lib/supabase/client";
+import { apiClient } from "@/lib/api/client";
 import { sanitizeFileName } from "@/lib/validations/file-upload";
 import type { UploadedFile } from "@/types/add-project";
 import { toast } from "sonner";
@@ -191,10 +191,9 @@ export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlle
         return;
       }
 
-      // Upload files directly to Supabase Storage (no base64 overhead)
-      if (files.length > 0 && result.projectId) {
-        const supabase = createClient();
-        const projectId = result.projectId;
+      // Upload files via API (Cloudinary)
+      const projectId = result.project?.id || result.project?._id;
+      if (files.length > 0 && projectId) {
 
         // Update file statuses to uploading
         setFiles((prev) =>
@@ -205,21 +204,23 @@ export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlle
           const uploadedFile = files[i];
           try {
             const safeName = sanitizeFileName(uploadedFile.name);
-            const storagePath = `${projectId}/${Date.now()}_${safeName}`;
 
-            // Upload directly to Supabase Storage
-            const { error: uploadError } = await supabase.storage
-              .from("project-files")
-              .upload(storagePath, uploadedFile.file, {
-                contentType: uploadedFile.type,
-                upsert: false,
-              });
+            // Upload via API
+            const formData = new FormData();
+            formData.append("file", uploadedFile.file);
+            formData.append("folder", `project-files/${projectId}`);
 
-            if (uploadError) {
+            const uploadResult = await apiClient("/api/upload", {
+              method: "POST",
+              body: formData,
+              isFormData: true,
+            });
+
+            if (!uploadResult?.url) {
               setFiles((prev) =>
                 prev.map((f) =>
                   f.id === uploadedFile.id
-                    ? { ...f, status: "error" as const, errorMessage: uploadError.message }
+                    ? { ...f, status: "error" as const, errorMessage: "Upload failed" }
                     : f
                 )
               );
@@ -227,15 +228,10 @@ export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlle
               continue;
             }
 
-            // Get public URL
-            const { data: urlData } = supabase.storage
-              .from("project-files")
-              .getPublicUrl(storagePath);
-
             // Create DB record via server action
             const recordResult = await createProjectFileRecord(projectId, {
               fileName: safeName,
-              fileUrl: urlData.publicUrl,
+              fileUrl: uploadResult.url,
               fileType: uploadedFile.type,
               fileSizeBytes: uploadedFile.size,
               fileCategory: "user_upload",
@@ -267,7 +263,8 @@ export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlle
       }
 
       // Success - redirect
-      onSuccess(result.projectId!, result.projectNumber!);
+      const projectNumber = result.project?.project_number || result.project?.projectNumber;
+      onSuccess(projectId || result.project?.id, projectNumber);
     } catch {
       toast.error("Something went wrong. Please try again.");
       setIsSubmitting(false);

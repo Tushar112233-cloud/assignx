@@ -1,19 +1,28 @@
 library;
 
 import 'package:logger/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/api/api_client.dart';
+import '../../../../core/storage/token_storage.dart';
 import '../models/pro_network_post_model.dart';
 
 /// Repository for Pro Network community operations.
 class ProNetworkRepository {
-  final SupabaseClient _supabase;
   final Logger _logger = Logger(printer: PrettyPrinter(methodCount: 0));
 
-  ProNetworkRepository({SupabaseClient? supabase})
-      : _supabase = supabase ?? Supabase.instance.client;
+  ProNetworkRepository();
 
-  String? get _currentUserId => _supabase.auth.currentUser?.id;
+  Future<String?> get _currentUserId async {
+    final hasTokens = await TokenStorage.hasTokens();
+    if (!hasTokens) return null;
+    try {
+      final data = await ApiClient.get('/auth/me');
+      if (data == null) return null;
+      return ((data as Map<String, dynamic>)['_id'] ?? data['id']) as String?;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Get pro network posts with optional filters.
   Future<List<ProNetworkPost>> getPosts({
@@ -23,29 +32,22 @@ class ProNetworkRepository {
     int offset = 0,
   }) async {
     try {
-      var query = _supabase
-          .from('community_posts')
-          .select('''
-            *,
-            author:profiles!user_id(full_name, avatar_url)
-          ''')
-          .eq('user_type', 'doer')
-          .or('status.eq.active,status.eq.published,status.is.null');
-
+      final queryParams = <String, String>{
+        'limit': limit.toString(),
+        'offset': offset.toString(),
+      };
       if (category != null && category != ProfessionalCategory.all) {
-        query = query.eq('category', category.name);
+        queryParams['category'] = category.name;
       }
-
       if (searchQuery != null && searchQuery.isNotEmpty) {
-        query = query.or(
-            'title.ilike.%$searchQuery%,content.ilike.%$searchQuery%');
+        queryParams['search'] = searchQuery;
       }
 
-      final response = await query
-          .order('created_at', ascending: false)
-          .range(offset, offset + limit - 1);
-
-      return (response as List)
+      final response = await ApiClient.get('/community/pro-network', queryParams: queryParams);
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['posts'] as List? ?? [];
+      return list
           .map((row) => ProNetworkPost.fromJson(row as Map<String, dynamic>))
           .toList();
     } catch (e) {
@@ -57,17 +59,9 @@ class ProNetworkRepository {
   /// Get a single post by ID.
   Future<ProNetworkPost?> getPostById(String id) async {
     try {
-      final response = await _supabase
-          .from('community_posts')
-          .select('''
-            *,
-            author:profiles!user_id(full_name, avatar_url)
-          ''')
-          .eq('id', id)
-          .maybeSingle();
-
+      final response = await ApiClient.get('/community/pro-network/$id');
       if (response == null) return null;
-      return ProNetworkPost.fromJson(response);
+      return ProNetworkPost.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       _logger.e('Error fetching pro network post: $e');
       return null;
@@ -81,34 +75,18 @@ class ProNetworkRepository {
     required String title,
     String? description,
     List<String>? images,
-    String? location,
     List<String>? tags,
   }) async {
-    final userId = _currentUserId;
-    if (userId == null) throw Exception('User not authenticated');
-
     try {
-      final response = await _supabase
-          .from('community_posts')
-          .insert({
-            'user_id': userId,
-            'user_type': 'doer',
-            'category': category.name,
-            'post_type': postType.name,
-            'title': title,
-            'content': description,
-            'images': images,
-            'location': location,
-            'tags': tags,
-            'status': 'active',
-          })
-          .select('''
-            *,
-            author:profiles!user_id(full_name, avatar_url)
-          ''')
-          .single();
+      final response = await ApiClient.post('/community/pro-network', {
+        'category': category.name,
+        'title': title,
+        'content': description,
+        'images': images,
+        'tags': tags,
+      });
 
-      return ProNetworkPost.fromJson(response);
+      return ProNetworkPost.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       _logger.e('Error creating pro network post: $e');
       rethrow;
@@ -117,31 +95,9 @@ class ProNetworkRepository {
 
   /// Toggle like on a post.
   Future<bool> toggleLike(String postId) async {
-    final userId = _currentUserId;
-    if (userId == null) throw Exception('User not authenticated');
-
     try {
-      final existing = await _supabase
-          .from('community_post_likes')
-          .select('id')
-          .eq('post_id', postId)
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      if (existing != null) {
-        await _supabase
-            .from('community_post_likes')
-            .delete()
-            .eq('post_id', postId)
-            .eq('user_id', userId);
-        return false;
-      } else {
-        await _supabase.from('community_post_likes').insert({
-          'post_id': postId,
-          'user_id': userId,
-        });
-        return true;
-      }
+      final response = await ApiClient.post('/community/pro-network/$postId/like', {});
+      return (response as Map<String, dynamic>)['liked'] as bool? ?? false;
     } catch (e) {
       _logger.e('Error toggling like: $e');
       rethrow;
@@ -150,31 +106,9 @@ class ProNetworkRepository {
 
   /// Toggle save on a post.
   Future<bool> toggleSave(String postId) async {
-    final userId = _currentUserId;
-    if (userId == null) throw Exception('User not authenticated');
-
     try {
-      final existing = await _supabase
-          .from('saved_listings')
-          .select('id')
-          .eq('listing_id', postId)
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      if (existing != null) {
-        await _supabase
-            .from('saved_listings')
-            .delete()
-            .eq('listing_id', postId)
-            .eq('user_id', userId);
-        return false;
-      } else {
-        await _supabase.from('saved_listings').insert({
-          'listing_id': postId,
-          'user_id': userId,
-        });
-        return true;
-      }
+      final response = await ApiClient.post('/community/pro-network/$postId/save', {});
+      return (response as Map<String, dynamic>)['saved'] as bool? ?? false;
     } catch (e) {
       _logger.e('Error toggling save: $e');
       rethrow;
@@ -183,31 +117,12 @@ class ProNetworkRepository {
 
   /// Get saved pro network posts.
   Future<List<ProNetworkPost>> getSavedPosts() async {
-    final userId = _currentUserId;
-    if (userId == null) return [];
-
     try {
-      final savedItems = await _supabase
-          .from('saved_listings')
-          .select('listing_id')
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
-
-      if (savedItems.isEmpty) return [];
-
-      final listingIds =
-          (savedItems as List).map((s) => s['listing_id']).toList();
-
-      final posts = await _supabase
-          .from('community_posts')
-          .select('''
-            *,
-            author:profiles!user_id(full_name, avatar_url)
-          ''')
-          .inFilter('id', listingIds)
-          .eq('user_type', 'doer');
-
-      return (posts as List)
+      final response = await ApiClient.get('/community/pro-network/saved');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['posts'] as List? ?? [];
+      return list
           .map((row) => ProNetworkPost.fromJson(row as Map<String, dynamic>))
           .toList();
     } catch (e) {

@@ -110,7 +110,7 @@ export function PaymentHistory({
       const query = searchQuery.toLowerCase()
       return (
         tx.description?.toLowerCase().includes(query) ||
-        tx.project_title?.toLowerCase().includes(query)
+        tx.notes?.toLowerCase().includes(query)
       )
     }
     return true
@@ -292,7 +292,7 @@ export function PaymentHistory({
                               <div>
                                 <p className="font-semibold text-gray-900">{typeConfig.label}</p>
                                 <p className="text-sm text-gray-500 line-clamp-1">
-                                  {tx.description || tx.project_title || 'No description'}
+                                  {tx.description || tx.notes || 'No description'}
                                 </p>
                               </div>
                             </div>

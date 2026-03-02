@@ -144,13 +144,26 @@ class QuizQuestion {
             .toList() ??
         [];
 
+    // correct_option_ids / correctOptionIds is an array of option IDs;
+    // find the index of the first correct option ID within the options list.
+    int correctIndex = 0;
+    final correctOptionIds = json['correct_option_ids'] as List<dynamic>?
+        ?? json['correctOptionIds'] as List<dynamic>?;
+    if (correctOptionIds != null && correctOptionIds.isNotEmpty && optionsList.isNotEmpty) {
+      final firstCorrectId = correctOptionIds.first.toString();
+      final idx = optionsList.indexWhere((o) => o.id == firstCorrectId);
+      if (idx >= 0) correctIndex = idx;
+    }
+
     return QuizQuestion(
-      id: json['id'] as String,
-      question: json['question'] as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      question: json['question_text'] as String? ?? json['questionText'] as String?
+          ?? json['question'] as String? ?? '',
       options: optionsList,
-      correctOptionIndex: json['correct_option_index'] as int? ?? 0,
+      correctOptionIndex: correctIndex,
       explanation: json['explanation'] as String?,
-      orderIndex: json['order_index'] as int? ?? 0,
+      orderIndex: (json['sequence_order'] ?? json['sequenceOrder']
+          ?? json['order_index'] ?? json['orderIndex']) as int? ?? 0,
     );
   }
 
@@ -230,8 +243,8 @@ class QuizOption {
   /// @returns A new [QuizOption] instance.
   factory QuizOption.fromJson(Map<String, dynamic> json) {
     return QuizOption(
-      id: json['id'] as String? ?? '',
-      text: json['text'] as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      text: (json['text'] ?? json['option_text'] ?? json['optionText'] ?? '').toString(),
     );
   }
 
@@ -366,14 +379,17 @@ class QuizAttempt {
         [];
 
     return QuizAttempt(
-      id: json['id'] as String,
-      doerId: json['doer_id'] as String,
-      score: json['score'] as int,
-      totalQuestions: json['total_questions'] as int,
-      passed: json['passed'] as bool,
-      attemptNumber: json['attempt_number'] as int? ?? 1,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      doerId: (json['profile_id'] ?? json['profileId'] ?? json['doer_id'] ?? json['doerId'] ?? '').toString(),
+      score: (json['correct_answers'] ?? json['correctAnswers'] ?? json['score']) as int? ?? 0,
+      totalQuestions: (json['total_questions'] ?? json['totalQuestions']) as int? ?? 0,
+      passed: json['is_passed'] as bool? ?? json['isPassed'] as bool? ?? json['passed'] as bool? ?? false,
+      attemptNumber: (json['attempt_number'] ?? json['attemptNumber']) as int? ?? 1,
       answers: answersList,
-      attemptedAt: DateTime.parse(json['attempted_at'] as String),
+      attemptedAt: DateTime.tryParse(
+        (json['completed_at'] ?? json['completedAt']
+            ?? json['attempted_at'] ?? json['attemptedAt'] ?? '').toString(),
+      ) ?? DateTime.now(),
     );
   }
 
@@ -459,9 +475,9 @@ class QuizAnswer {
   /// @returns A new [QuizAnswer] instance.
   factory QuizAnswer.fromJson(Map<String, dynamic> json) {
     return QuizAnswer(
-      questionId: json['question_id'] as String,
-      selectedOptionIndex: json['selected_option_index'] as int,
-      isCorrect: json['is_correct'] as bool,
+      questionId: (json['question_id'] ?? json['questionId'] ?? '').toString(),
+      selectedOptionIndex: (json['selected_option_index'] ?? json['selectedOptionIndex']) as int? ?? 0,
+      isCorrect: json['is_correct'] as bool? ?? json['isCorrect'] as bool? ?? false,
     );
   }
 

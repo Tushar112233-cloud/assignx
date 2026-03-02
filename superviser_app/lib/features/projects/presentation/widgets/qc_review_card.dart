@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/deliverable_model.dart';
 
 /// Card widget for displaying a deliverable in QC review.
@@ -99,7 +100,7 @@ class QCReviewCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Version ${deliverable.version}',
+                            '${'Version'.tr(context)} ${deliverable.version}',
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: AppColors.textSecondaryLight,
@@ -135,7 +136,7 @@ class QCReviewCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          deliverable.isApproved! ? 'Approved' : 'Pending',
+                          deliverable.isApproved! ? 'Approved'.tr(context) : 'Pending'.tr(context),
                           style:
                               Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: deliverable.isApproved!
@@ -161,7 +162,7 @@ class QCReviewCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Uploaded by ${deliverable.uploaderName}',
+                    '${'Uploaded by'.tr(context)} ${deliverable.uploaderName}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondaryLight,
                         ),
@@ -174,7 +175,7 @@ class QCReviewCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    _formatDate(deliverable.createdAt),
+                    _formatDate(deliverable.createdAt, context),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondaryLight,
                         ),
@@ -232,7 +233,7 @@ class QCReviewCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: onDownload,
                     icon: const Icon(Icons.download, size: 18),
-                    label: const Text('Download'),
+                    label: Text('Download'.tr(context)),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
@@ -243,7 +244,7 @@ class QCReviewCard extends StatelessWidget {
                   child: FilledButton.icon(
                     onPressed: onView,
                     icon: const Icon(Icons.visibility, size: 18),
-                    label: const Text('View'),
+                    label: Text('View'.tr(context)),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -272,16 +273,16 @@ class QCReviewCard extends StatelessWidget {
     return AppColors.primary;
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime date, BuildContext context) {
     final now = DateTime.now();
     final diff = now.difference(date);
 
     if (diff.inMinutes < 60) {
-      return '${diff.inMinutes}m ago';
+      return '${diff.inMinutes}m ${'ago'.tr(context)}';
     } else if (diff.inHours < 24) {
-      return '${diff.inHours}h ago';
+      return '${diff.inHours}h ${'ago'.tr(context)}';
     } else if (diff.inDays == 1) {
-      return 'Yesterday';
+      return 'Yesterday'.tr(context);
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }

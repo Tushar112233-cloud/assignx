@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../data/models/community_post_model.dart';
@@ -47,29 +47,15 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   Future<void> _checkUserInteractions() async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
     try {
-      final likeResponse = await supabase
-          .from('community_post_likes')
-          .select('id')
-          .eq('post_id', widget.postId)
-          .eq('user_id', user.id)
-          .maybeSingle();
+      final response = await ApiClient.get(
+        '/community/business-hub/${widget.postId}/interactions',
+      );
 
-      final savedResponse = await supabase
-          .from('community_saved_posts')
-          .select('id')
-          .eq('post_id', widget.postId)
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-      if (mounted) {
+      if (mounted && response is Map<String, dynamic>) {
         setState(() {
-          _isLiked = likeResponse != null;
-          _isSaved = savedResponse != null;
+          _isLiked = response['is_liked'] as bool? ?? false;
+          _isSaved = response['is_saved'] as bool? ?? false;
         });
       }
     } catch (e) {
@@ -78,15 +64,6 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   Future<void> _toggleLike() async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login to like posts')),
-      );
-      return;
-    }
-
     final wasLiked = _isLiked;
     setState(() {
       _isLiked = !_isLiked;
@@ -94,18 +71,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     });
 
     try {
-      if (_isLiked) {
-        await supabase.from('community_post_likes').insert({
-          'post_id': widget.postId,
-          'user_id': user.id,
-        });
-      } else {
-        await supabase
-            .from('community_post_likes')
-            .delete()
-            .eq('post_id', widget.postId)
-            .eq('user_id', user.id);
-      }
+      await ApiClient.post(
+        '/community/business-hub/${widget.postId}/like',
+        {'liked': _isLiked},
+      );
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -117,33 +86,16 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   Future<void> _toggleSave() async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login to save posts')),
-      );
-      return;
-    }
-
     final wasSaved = _isSaved;
     setState(() {
       _isSaved = !_isSaved;
     });
 
     try {
-      if (_isSaved) {
-        await supabase.from('community_saved_posts').insert({
-          'post_id': widget.postId,
-          'user_id': user.id,
-        });
-      } else {
-        await supabase
-            .from('community_saved_posts')
-            .delete()
-            .eq('post_id', widget.postId)
-            .eq('user_id', user.id);
-      }
+      await ApiClient.post(
+        '/community/business-hub/${widget.postId}/save',
+        {'saved': _isSaved},
+      );
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -154,50 +106,29 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   Future<void> _addComment(String content, String? parentId) async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    await supabase.from('community_comments').insert({
-      'post_id': widget.postId,
-      'author_id': user.id,
-      'content': content,
-      'parent_id': parentId,
-    });
-
-    ref.invalidate(communityCommentsProvider(widget.postId));
-  }
-
-  void _likeComment(String commentId) async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
     try {
-      final existing = await supabase
-          .from('community_comment_likes')
-          .select('id')
-          .eq('comment_id', commentId)
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-      if (existing != null) {
-        await supabase
-            .from('community_comment_likes')
-            .delete()
-            .eq('comment_id', commentId)
-            .eq('user_id', user.id);
-      } else {
-        await supabase.from('community_comment_likes').insert({
-          'comment_id': commentId,
-          'user_id': user.id,
-        });
-      }
+      await ApiClient.post(
+        '/community/business-hub/${widget.postId}/comments',
+        {
+          'content': content,
+          if (parentId != null) 'parent_id': parentId,
+        },
+      );
 
       ref.invalidate(communityCommentsProvider(widget.postId));
     } catch (e) {
-      debugPrint('Error toggling comment like: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to add comment')),
+        );
+      }
     }
+  }
+
+  void _likeComment(String commentId) async {
+    // Note: No separate comment likes table exists in the database.
+    // Comment like counts are stored directly on business_hub_post_comments.
+    debugPrint('Comment like toggling not yet supported (no comment likes table)');
   }
 
   @override

@@ -50,10 +50,49 @@ enum CampusConnectCategory {
   const CampusConnectCategory(this.label, this.icon);
 }
 
+/// Color mapping for each category used in the filter pills.
+Color _getCategoryColor(CampusConnectCategory category) {
+  switch (category) {
+    case CampusConnectCategory.all:
+      return AppColors.primary;
+    case CampusConnectCategory.questions:
+      return const Color(0xFF6366F1);
+    case CampusConnectCategory.housing:
+      return const Color(0xFFF59E0B);
+    case CampusConnectCategory.opportunities:
+      return const Color(0xFF10B981);
+    case CampusConnectCategory.events:
+      return const Color(0xFFEC4899);
+    case CampusConnectCategory.marketplace:
+      return const Color(0xFF3B82F6);
+    case CampusConnectCategory.resources:
+      return const Color(0xFF8B5CF6);
+    case CampusConnectCategory.lostFound:
+      return const Color(0xFFEF4444);
+    case CampusConnectCategory.rides:
+      return const Color(0xFF14B8A6);
+    case CampusConnectCategory.studyGroups:
+      return const Color(0xFF0EA5E9);
+    case CampusConnectCategory.clubs:
+      return const Color(0xFFF97316);
+    case CampusConnectCategory.announcements:
+      return const Color(0xFFDC2626);
+    case CampusConnectCategory.discussions:
+      return const Color(0xFF6366F1);
+    case CampusConnectCategory.community:
+      return const Color(0xFF8B5CF6);
+    case CampusConnectCategory.products:
+      return const Color(0xFF3B82F6);
+    case CampusConnectCategory.saved:
+      return const Color(0xFFF59E0B);
+  }
+}
+
 /// Production-grade horizontal filter tabs bar for Campus Connect.
 ///
-/// Features capsule-shaped pills like QuickStatsRow with smooth animations.
-/// Selected state shows filled background, unselected shows subtle border.
+/// Features capsule-shaped pills with color-coded active states.
+/// Selected state shows a filled gradient background.
+/// Unselected state shows a clean outlined style.
 ///
 /// The housing category is only shown to students. Non-students will see
 /// all other categories but not housing.
@@ -124,6 +163,7 @@ class FilterTabsBar extends StatelessWidget {
               icon: category.icon,
               label: category.label.tr(context),
               isSelected: selectedCategory == category,
+              accentColor: _getCategoryColor(category),
               onTap: () => onCategoryChanged(
                 selectedCategory == category ? null : category,
               ),
@@ -135,44 +175,56 @@ class FilterTabsBar extends StatelessWidget {
   }
 }
 
-/// Individual capsule filter pill - production-grade with smooth animations.
+/// Individual capsule filter pill with color-coded active state.
 class _FilterCapsule extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
+  final Color accentColor;
   final VoidCallback onTap;
 
   const _FilterCapsule({
     required this.icon,
     required this.label,
     required this.isSelected,
+    required this.accentColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isSelected
-        ? AppColors.primary.withValues(alpha: 0.1)
-        : AppColors.surfaceLight;
-    final borderColor = isSelected
-        ? AppColors.primary.withValues(alpha: 0.3)
-        : AppColors.border.withValues(alpha: 0.5);
-    final textColor = isSelected ? AppColors.primary : AppColors.textSecondary;
-    final iconColor = isSelected ? AppColors.primary : AppColors.textTertiary;
-
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(20), // Capsule shape
+          color: isSelected
+              ? accentColor.withValues(alpha: 0.12)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: borderColor,
-            width: 1,
+            color: isSelected
+                ? accentColor.withValues(alpha: 0.4)
+                : AppColors.border.withValues(alpha: 0.5),
+            width: isSelected ? 1.5 : 1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: accentColor.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(4),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -180,15 +232,15 @@ class _FilterCapsule extends StatelessWidget {
             Icon(
               icon,
               size: 16,
-              color: iconColor,
+              color: isSelected ? accentColor : AppColors.textTertiary,
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: AppTextStyles.labelMedium.copyWith(
                 fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: textColor,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? accentColor : AppColors.textSecondary,
               ),
             ),
           ],
@@ -240,6 +292,7 @@ class EnhancedFilterTabsBar extends StatelessWidget {
           final index = entry.key;
           final category = entry.value;
           final count = filterCounts?[category] ?? 0;
+          final catColor = _getCategoryColor(category);
 
           return Padding(
             padding: EdgeInsets.only(right: index < availableCategories.length - 1 ? 8 : 0),
@@ -248,6 +301,7 @@ class EnhancedFilterTabsBar extends StatelessWidget {
               label: category.label.tr(context),
               isSelected: selectedCategory == category,
               badgeCount: count,
+              accentColor: catColor,
               onTap: () => onCategoryChanged(
                 selectedCategory == category ? null : category,
               ),
@@ -259,12 +313,13 @@ class EnhancedFilterTabsBar extends StatelessWidget {
   }
 }
 
-/// Capsule filter pill with optional badge count.
+/// Capsule filter pill with optional badge count and color-coded active state.
 class _FilterCapsuleWithBadge extends StatelessWidget {
   final IconData? icon;
   final String label;
   final bool isSelected;
   final int badgeCount;
+  final Color accentColor;
   final VoidCallback onTap;
 
   const _FilterCapsuleWithBadge({
@@ -272,33 +327,44 @@ class _FilterCapsuleWithBadge extends StatelessWidget {
     required this.label,
     required this.isSelected,
     this.badgeCount = 0,
+    required this.accentColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isSelected
-        ? AppColors.primary.withValues(alpha: 0.1)
-        : AppColors.surfaceLight;
-    final borderColor = isSelected
-        ? AppColors.primary.withValues(alpha: 0.3)
-        : AppColors.border.withValues(alpha: 0.5);
-    final textColor = isSelected ? AppColors.primary : AppColors.textSecondary;
-    final iconColor = isSelected ? AppColors.primary : AppColors.textTertiary;
-
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(20), // Capsule shape
+          color: isSelected
+              ? accentColor.withValues(alpha: 0.12)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: borderColor,
-            width: 1,
+            color: isSelected
+                ? accentColor.withValues(alpha: 0.4)
+                : AppColors.border.withValues(alpha: 0.5),
+            width: isSelected ? 1.5 : 1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: accentColor.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(4),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -307,7 +373,7 @@ class _FilterCapsuleWithBadge extends StatelessWidget {
               Icon(
                 icon,
                 size: 16,
-                color: iconColor,
+                color: isSelected ? accentColor : AppColors.textTertiary,
               ),
               const SizedBox(width: 6),
             ],
@@ -315,8 +381,8 @@ class _FilterCapsuleWithBadge extends StatelessWidget {
               label,
               style: AppTextStyles.labelMedium.copyWith(
                 fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: textColor,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? accentColor : AppColors.textSecondary,
               ),
             ),
             if (badgeCount > 0) ...[
@@ -325,16 +391,16 @@ class _FilterCapsuleWithBadge extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primary.withValues(alpha: 0.2)
-                      : AppColors.textTertiary.withValues(alpha: 0.15),
+                      ? accentColor.withValues(alpha: 0.2)
+                      : AppColors.textTertiary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   '$badgeCount',
                   style: AppTextStyles.labelSmall.copyWith(
                     fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected ? accentColor : AppColors.textSecondary,
                   ),
                 ),
               ),

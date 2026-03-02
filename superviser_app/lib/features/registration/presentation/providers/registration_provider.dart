@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/network/supabase_client.dart';
+import '../../../../core/api/api_client.dart';
 import '../../data/models/registration_model.dart';
 
 /// Registration wizard state
@@ -82,9 +81,7 @@ enum ApplicationStatus {
 
 /// Registration notifier for state management
 class RegistrationNotifier extends StateNotifier<RegistrationState> {
-  RegistrationNotifier(this._client) : super(const RegistrationState());
-
-  final SupabaseClient _client;
+  RegistrationNotifier() : super(const RegistrationState());
 
   /// Updates registration data
   void updateData(RegistrationData Function(RegistrationData) update) {
@@ -132,17 +129,8 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
     try {
       state = state.copyWith(isLoading: true, clearError: true);
 
-      final userId = getCurrentUserId();
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
-
-      // Submit to supervisors table
-      await _client.from('supervisors').upsert({
-        'user_id': userId,
+      await ApiClient.post('/supervisor/registration', {
         ...state.data.toJson(),
-        'status': 'pending',
-        'created_at': DateTime.now().toIso8601String(),
       });
 
       state = state.copyWith(
@@ -160,22 +148,12 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
     }
   }
 
-  /// Checks application status from database
+  /// Checks application status from API
   Future<void> checkApplicationStatus() async {
     try {
       state = state.copyWith(isLoading: true);
 
-      final userId = getCurrentUserId();
-      if (userId == null) {
-        state = state.copyWith(isLoading: false);
-        return;
-      }
-
-      final response = await _client
-          .from('supervisors')
-          .select('status')
-          .eq('user_id', userId)
-          .maybeSingle();
+      final response = await ApiClient.get('/supervisor/registration/status');
 
       if (response == null) {
         state = state.copyWith(
@@ -185,11 +163,16 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
         return;
       }
 
-      final status = response['status'] as String?;
+      final data = response as Map<String, dynamic>;
+      final isActivated = data['is_activated'] as bool? ?? false;
+      final isAccessGranted = data['is_access_granted'] as bool? ?? false;
+
+      final appStatus = _deriveStatus(isActivated, isAccessGranted);
+
       state = state.copyWith(
         isLoading: false,
-        isSubmitted: status != null,
-        applicationStatus: _parseStatus(status),
+        isSubmitted: true,
+        applicationStatus: appStatus,
       );
     } catch (e) {
       state = state.copyWith(
@@ -199,78 +182,47 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
     }
   }
 
-  ApplicationStatus _parseStatus(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'pending':
-        return ApplicationStatus.pending;
-      case 'under_review':
-        return ApplicationStatus.underReview;
-      case 'approved':
-        return ApplicationStatus.approved;
-      case 'rejected':
-        return ApplicationStatus.rejected;
-      case 'needs_revision':
-        return ApplicationStatus.needsRevision;
-      default:
-        return ApplicationStatus.none;
-    }
+  ApplicationStatus _deriveStatus(bool isActivated, bool isAccessGranted) {
+    if (isActivated && isAccessGranted) return ApplicationStatus.approved;
+    if (isActivated) return ApplicationStatus.underReview;
+    return ApplicationStatus.pending;
   }
 
-  /// Uploads CV file to storage
-  ///
-  /// Takes a file path and file name, uploads to Supabase storage,
-  /// and returns the public URL of the uploaded file.
+  /// Uploads CV file via the API.
   Future<String?> uploadCV(String filePath, String fileName) async {
     try {
       state = state.copyWith(isLoading: true, clearError: true);
 
-      final userId = getCurrentUserId();
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
-
-      // Generate unique file name with timestamp to avoid conflicts
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileExtension = fileName.split('.').last.toLowerCase();
-      final storagePath = '$userId/${timestamp}_cv.$fileExtension';
-
-      // Read file from local path
       final file = File(filePath);
       if (!await file.exists()) {
         throw Exception('File not found at path: $filePath');
       }
 
-      final fileBytes = await file.readAsBytes();
-
       // Validate file type
+      final fileExtension = fileName.split('.').last.toLowerCase();
       final allowedTypes = ['pdf', 'doc', 'docx'];
       if (!allowedTypes.contains(fileExtension)) {
         throw Exception('Invalid file type. Allowed: PDF, DOC, DOCX');
       }
 
       // Validate file size (max 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB
+      final fileBytes = await file.readAsBytes();
+      const maxSize = 10 * 1024 * 1024;
       if (fileBytes.length > maxSize) {
         throw Exception('File size exceeds 10MB limit');
       }
 
-      // Upload to Supabase storage
-      await _client.storage.from('supervisor-cvs').uploadBinary(
-        storagePath,
-        fileBytes,
-        fileOptions: FileOptions(
-          contentType: _getContentType(fileExtension),
-          upsert: true,
-        ),
+      final response = await ApiClient.uploadFile(
+        '/uploads/cv',
+        file,
+        fieldName: 'file',
+        folder: 'supervisor-cvs',
       );
 
-      // Get public URL
-      final publicUrl = _client.storage
-          .from('supervisor-cvs')
-          .getPublicUrl(storagePath);
+      final url = (response as Map<String, dynamic>?)?['url'] as String?;
 
       state = state.copyWith(isLoading: false);
-      return publicUrl;
+      return url;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -279,26 +231,12 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
       return null;
     }
   }
-
-  /// Gets the MIME content type for a file extension
-  String _getContentType(String extension) {
-    switch (extension.toLowerCase()) {
-      case 'pdf':
-        return 'application/pdf';
-      case 'doc':
-        return 'application/msword';
-      case 'docx':
-        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      default:
-        return 'application/octet-stream';
-    }
-  }
 }
 
 /// Provider for registration state
 final registrationProvider =
     StateNotifierProvider<RegistrationNotifier, RegistrationState>((ref) {
-  return RegistrationNotifier(ref.watch(supabaseClientProvider));
+  return RegistrationNotifier();
 });
 
 /// Provider for current registration step

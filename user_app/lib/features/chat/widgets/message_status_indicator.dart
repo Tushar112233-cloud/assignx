@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import 'message_approval_badge.dart';
 
 /// A full status view widget for message senders.
@@ -114,13 +115,13 @@ class _MessageStatusIndicatorState extends State<MessageStatusIndicator>
   }
 
   /// Get configuration for the current status.
-  _StatusIndicatorConfig get _config {
+  _StatusIndicatorConfig _getConfig(BuildContext context) {
     switch (widget.status) {
       case MessageApprovalStatus.pending:
         return _StatusIndicatorConfig(
           icon: Icons.schedule_outlined,
-          title: 'Pending Supervisor Approval',
-          subtitle: 'Your message is waiting for review',
+          title: 'Pending Supervisor Approval'.tr(context),
+          subtitle: 'Your message is waiting for review'.tr(context),
           backgroundColor: AppColors.warning.withValues(alpha: 0.15),
           borderColor: AppColors.warning.withValues(alpha: 0.3),
           iconColor: AppColors.warning,
@@ -129,10 +130,10 @@ class _MessageStatusIndicatorState extends State<MessageStatusIndicator>
       case MessageApprovalStatus.approved:
         return _StatusIndicatorConfig(
           icon: Icons.check_circle_outline,
-          title: 'Message Approved',
+          title: 'Message Approved'.tr(context),
           subtitle: widget.supervisorName != null
-              ? 'Approved by ${widget.supervisorName}'
-              : 'Your message has been approved',
+              ? '${'Approved by'.tr(context)} ${widget.supervisorName}'
+              : 'Your message has been approved'.tr(context),
           backgroundColor: AppColors.success.withValues(alpha: 0.15),
           borderColor: AppColors.success.withValues(alpha: 0.3),
           iconColor: AppColors.success,
@@ -141,8 +142,8 @@ class _MessageStatusIndicatorState extends State<MessageStatusIndicator>
       case MessageApprovalStatus.rejected:
         return _StatusIndicatorConfig(
           icon: Icons.cancel_outlined,
-          title: 'Message Rejected',
-          subtitle: widget.rejectionReason ?? 'Your message was not approved',
+          title: 'Message Rejected'.tr(context),
+          subtitle: widget.rejectionReason ?? 'Your message was not approved'.tr(context),
           backgroundColor: AppColors.error.withValues(alpha: 0.15),
           borderColor: AppColors.error.withValues(alpha: 0.3),
           iconColor: AppColors.error,
@@ -152,18 +153,18 @@ class _MessageStatusIndicatorState extends State<MessageStatusIndicator>
   }
 
   /// Format timestamp for display.
-  String _formatTimestamp(DateTime timestamp) {
+  String _formatTimestamp(BuildContext context, DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
 
     if (difference.inMinutes < 1) {
-      return 'Just now';
+      return 'Just now'.tr(context);
     } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
+      return '${difference.inMinutes}${'m ago'.tr(context)}';
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
+      return '${difference.inHours}${'h ago'.tr(context)}';
     } else if (difference.inDays == 1) {
-      return 'Yesterday';
+      return 'Yesterday'.tr(context);
     } else {
       return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
     }
@@ -175,7 +176,7 @@ class _MessageStatusIndicatorState extends State<MessageStatusIndicator>
       return const SizedBox.shrink();
     }
 
-    final config = _config;
+    final config = _getConfig(context);
 
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -262,7 +263,7 @@ class _MessageStatusIndicatorState extends State<MessageStatusIndicator>
                         ),
                         if (widget.actionTimestamp != null)
                           Text(
-                            _formatTimestamp(widget.actionTimestamp!),
+                            _formatTimestamp(context, widget.actionTimestamp!),
                             style: AppTextStyles.caption.copyWith(
                               color: config.textColor.withValues(alpha: 0.7),
                             ),
@@ -405,15 +406,15 @@ class PendingApprovalBanner extends StatelessWidget {
                   children: [
                     Text(
                       pendingCount == 1
-                          ? '1 message pending approval'
-                          : '$pendingCount messages pending approval',
+                          ? '1 ${'message pending approval'.tr(context)}'
+                          : '$pendingCount ${'messages pending approval'.tr(context)}',
                       style: AppTextStyles.labelSmall.copyWith(
                         color: AppColors.warning,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
-                      'Your messages will be delivered after supervisor review',
+                      'Your messages will be delivered after supervisor review'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.warning.withValues(alpha: 0.8),
                         fontSize: 10,

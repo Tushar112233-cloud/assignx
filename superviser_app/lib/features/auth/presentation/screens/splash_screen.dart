@@ -57,6 +57,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/constants.dart';
+import '../../../../core/storage/token_storage.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/auth_provider.dart';
@@ -88,14 +89,39 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     if (!mounted) return;
 
-    // Check auth state and navigate accordingly
-    final authState = ref.read(authProvider);
-
-    if (authState.isLoading) {
-      // Wait for auth to finish loading
-      await _waitForAuth();
+    // Check if already has tokens
+    final hasTokens = await TokenStorage.hasTokens();
+    if (hasTokens) {
+      // Check auth state and navigate accordingly
+      final authState = ref.read(authProvider);
+      if (authState.isLoading) {
+        await _waitForAuth();
+      }
+      _navigate();
+      return;
     }
 
+    // DEV: Auto-login with testsupervisor@gmail.com for testing
+    try {
+      debugPrint('SplashScreen: DEV auto-login with testsupervisor@gmail.com');
+      final success = await ref.read(authProvider.notifier).signIn(
+        email: 'testsupervisor@gmail.com',
+        password: 'admin123',
+      );
+      debugPrint('SplashScreen: DEV auto-login result: $success');
+      if (!mounted) return;
+      if (success) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (!mounted) return;
+        // DEV: Go straight to dashboard — activated supervisor
+        context.go('/dashboard');
+        return;
+      }
+    } catch (e) {
+      debugPrint('SplashScreen: DEV auto-login failed: $e');
+    }
+
+    if (!mounted) return;
     _navigate();
   }
 

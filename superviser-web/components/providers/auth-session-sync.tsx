@@ -1,7 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useRef } from "react"
-import { createClient } from "@/lib/supabase/client"
+/**
+ * @fileoverview Auth session sync component.
+ * No longer needed with JWT-based auth - kept as a no-op for backward compatibility.
+ */
 
 interface AuthSessionSyncProps {
   accessToken: string | null
@@ -9,22 +11,7 @@ interface AuthSessionSyncProps {
 }
 
 export function AuthSessionSync({ accessToken, refreshToken }: AuthSessionSyncProps) {
-  const supabase = useMemo(() => createClient(), [])
-  const lastTokensRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    if (!accessToken || !refreshToken) return
-
-    const tokenKey = `${accessToken}.${refreshToken}`
-    if (lastTokensRef.current === tokenKey) return
-
-    lastTokensRef.current = tokenKey
-
-    void supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    })
-  }, [accessToken, refreshToken, supabase])
-
+  // No-op: JWT tokens are managed by lib/api/client.ts
+  // This component is kept for backward compatibility with any layouts that render it.
   return null
 }

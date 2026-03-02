@@ -204,7 +204,7 @@ export default function ExpertBookingPage({
       }
 
       // Generate booking ID from DB response or fallback
-      const newBookingId = dbResult?.bookingId || `BOOK-${Date.now()}`;
+      const newBookingId = dbResult?.booking?.id || dbResult?.booking?._id || `BOOK-${Date.now()}`;
       setBookingId(String(newBookingId));
 
       // Calculate commission split

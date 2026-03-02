@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
+import { apiClient, getAccessToken } from '@/lib/api/client'
 import { useAuth } from '@/hooks/useAuth'
 import {
   ReviewsHeroBanner,
@@ -48,7 +48,7 @@ const staggerContainer = {
  * 5. Achievements - Milestone cards
  *
  * Data Management:
- * - Fetches reviews from Supabase doer_reviews table
+ * - Fetches reviews from Express API doer_reviews endpoint
  * - Calculates all derived metrics (averages, distributions)
  * - Handles loading, empty, and error states
  * - Real-time filtering and sorting
@@ -62,7 +62,7 @@ export default function ReviewsPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   /**
-   * Fetch reviews from Supabase
+   * Fetch reviews from API
    * Waits for auth to complete before deciding whether to fetch or show empty state.
    * Without the authLoading gate, doer is null during auth init which immediately
    * sets isLoading=false and flashes empty content before doer is available.
@@ -71,48 +71,25 @@ export default function ReviewsPage() {
     if (doer?.id) {
       const fetchReviews = async () => {
         try {
-          const supabase = createClient()
+          const reviewsData = await apiClient<any[]>(
+            `/api/doers/${doer.id}/reviews?is_public=true&sort=-created_at&populate=project,reviewer`
+          )
 
-          // Fetch reviews for this doer
-          const { data: reviewsData, error } = await supabase
-            .from('doer_reviews')
-            .select(
-              `
-              id,
-              overall_rating,
-              quality_rating,
-              timeliness_rating,
-              communication_rating,
-              review_text,
-              created_at,
-              project:projects(title),
-              reviewer:profiles!reviewer_id(full_name, avatar_url)
-            `
-            )
-            .eq('doer_id', doer.id)
-            .eq('is_public', true)
-            .order('created_at', { ascending: false })
-
-          if (error) {
-            console.error('Error fetching reviews:', error)
-            toast.error('Failed to load reviews')
-          } else {
-            // Transform data to match Review type (Supabase returns arrays for single relations)
-            const transformedReviews: Review[] = (reviewsData || []).map((r) => ({
-              id: r.id,
-              overall_rating: r.overall_rating,
-              quality_rating: r.quality_rating,
-              timeliness_rating: r.timeliness_rating,
-              communication_rating: r.communication_rating,
-              review_text: r.review_text,
-              created_at: r.created_at,
-              project: Array.isArray(r.project) ? r.project[0] || undefined : r.project || undefined,
-              reviewer: Array.isArray(r.reviewer)
-                ? r.reviewer[0] || undefined
-                : r.reviewer || undefined,
-            }))
-            setReviews(transformedReviews)
-          }
+          // Transform data to match Review type
+          const transformedReviews: Review[] = (reviewsData || []).map((r) => ({
+            id: r.id,
+            overall_rating: r.overall_rating,
+            quality_rating: r.quality_rating,
+            timeliness_rating: r.timeliness_rating,
+            communication_rating: r.communication_rating,
+            review_text: r.review_text,
+            created_at: r.created_at,
+            project: Array.isArray(r.project) ? r.project[0] || undefined : r.project || undefined,
+            reviewer: Array.isArray(r.reviewer)
+              ? r.reviewer[0] || undefined
+              : r.reviewer || undefined,
+          }))
+          setReviews(transformedReviews)
         } catch (err) {
           console.error('Error:', err)
           toast.error('An error occurred while loading reviews')

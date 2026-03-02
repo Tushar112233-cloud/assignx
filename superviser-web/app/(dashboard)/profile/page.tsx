@@ -36,7 +36,7 @@ import {
   SupervisorProfile,
 } from "@/components/profile"
 import { useSupervisor, useSupervisorStats, useAuth } from "@/hooks"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 import { useRouter } from "next/navigation"
 
 type ProfileView =
@@ -172,23 +172,13 @@ export default function ProfilePage() {
         return
       }
 
-      const supabase = createClient()
       try {
-        const { data, error } = await supabase
-          .from("supervisor_expertise")
-          .select(`
-            subjects (
-              name
-            )
-          `)
-          .eq("supervisor_id", supervisor.id)
+        const data = await apiFetch<{ expertise: { id: string; name: string; isPrimary: boolean }[] }>(
+          "/api/supervisors/me/expertise"
+        )
 
-        if (error) throw error
-
-        const areas = data
-          ?.map((item: { subjects: { name: string } | null }) => item.subjects?.name)
-          .filter(Boolean) as string[]
-        setExpertiseAreas(areas || [])
+        const areas = (data.expertise || []).map((item) => item.name)
+        setExpertiseAreas(areas)
       } catch (err) {
         console.error("Failed to fetch expertise areas:", err)
       } finally {
@@ -204,16 +194,11 @@ export default function ProfilePage() {
     async function fetchBlacklistCount() {
       if (!supervisor?.id) return
 
-      const supabase = createClient()
       try {
-        const { count, error } = await supabase
-          .from("supervisor_blacklisted_doers")
-          .select("*", { count: "exact", head: true })
-          .eq("supervisor_id", supervisor.id)
-
-        if (!error && count !== null) {
-          setBlacklistCount(count)
-        }
+        const data = await apiFetch<{ doers: unknown[] }>(
+          "/api/supervisors/me/blacklist"
+        )
+        setBlacklistCount(data.doers?.length || 0)
       } catch (err) {
         console.error("Failed to fetch blacklist count:", err)
       }
@@ -270,34 +255,28 @@ export default function ProfilePage() {
       return
     }
 
-    const supabase = createClient()
-
     try {
       // Update profile table
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
+      await apiFetch(`/api/profiles/${profile.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
           full_name: updatedProfile.full_name,
           phone: updatedProfile.phone,
-        })
-        .eq("id", profile.id)
-
-      if (profileError) throw profileError
+        }),
+      })
 
       // Update supervisor table
-      const { error: supervisorError } = await supabase
-        .from("supervisors")
-        .update({
+      await apiFetch("/api/supervisors/me", {
+        method: "PUT",
+        body: JSON.stringify({
           qualification: updatedProfile.qualification,
           years_of_experience: updatedProfile.years_of_experience,
           bank_name: updatedProfile.bank_details.bank_name,
           bank_account_name: updatedProfile.bank_details.account_holder_name,
           bank_ifsc_code: updatedProfile.bank_details.ifsc_code,
           upi_id: updatedProfile.bank_details.upi_id || null,
-        })
-        .eq("id", supervisor.id)
-
-      if (supervisorError) throw supervisorError
+        }),
+      })
 
       await refetch()
       toast.success("Profile updated successfully")

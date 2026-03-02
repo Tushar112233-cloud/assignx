@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/expert_model.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/experts_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
@@ -83,7 +84,7 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
           ),
         ),
         title: Text(
-          'My Bookings',
+          'My Bookings'.tr(context),
           style: AppTextStyles.headingSmall.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -126,13 +127,13 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
                         size: 48, color: AppColors.error),
                     const SizedBox(height: 16),
                     Text(
-                      'Failed to load bookings',
+                      'Failed to load bookings'.tr(context),
                       style: AppTextStyles.bodyMedium,
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => ref.invalidate(userBookingsProvider),
-                      child: const Text('Retry'),
+                      child: Text('Retry'.tr(context)),
                     ),
                   ],
                 ),
@@ -187,7 +188,7 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
                 children: [
                   Icon(tab.icon, size: 16),
                   const SizedBox(width: 6),
-                  Text(tab.label),
+                  Text(tab.label.tr(context)),
                   if (count != null && count > 0) ...[
                     const SizedBox(width: 6),
                     Container(
@@ -220,7 +221,7 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
   void _handleMessage(String bookingId) {
     // Navigate to chat
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Opening chat...')),
+      SnackBar(content: Text('Opening chat...'.tr(context))),
     );
   }
 
@@ -229,20 +230,20 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reschedule Session'),
-        content: const Text(
-            'Would you like to reschedule this session? You can select a new date and time.'),
+        title: Text('Reschedule Session'.tr(context)),
+        content: Text(
+            'Would you like to reschedule this session? You can select a new date and time.'.tr(context)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr(context)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               // Navigate to booking screen
             },
-            child: const Text('Reschedule'),
+            child: Text('Reschedule'.tr(context)),
           ),
         ],
       ),
@@ -254,21 +255,21 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancel Booking'),
-        content: const Text(
-            'Are you sure you want to cancel this booking? This action cannot be undone.'),
+        title: Text('Cancel Booking'.tr(context)),
+        content: Text(
+            'Are you sure you want to cancel this booking? This action cannot be undone.'.tr(context)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Keep Booking'),
+            child: Text('Keep Booking'.tr(context)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               // Cancel booking
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Booking cancelled'),
+                SnackBar(
+                  content: Text('Booking cancelled'.tr(context)),
                   backgroundColor: AppColors.error,
                 ),
               );
@@ -276,7 +277,7 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
             ),
-            child: const Text('Cancel Booking'),
+            child: Text('Cancel Booking'.tr(context)),
           ),
         ],
       ),
@@ -286,7 +287,7 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
   void _handleJoin(String bookingId) {
     // Open meeting link
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Opening video call...')),
+      SnackBar(content: Text('Opening video call...'.tr(context))),
     );
   }
 
@@ -438,7 +439,7 @@ class _LeaveReviewButton extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Leave a Review',
+                'Leave a Review'.tr(context),
                 style: AppTextStyles.labelMedium.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
@@ -460,7 +461,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icon, title, description) = _getEmptyStateContent();
+    final (icon, title, description) = _getEmptyStateContent(context);
 
     return Center(
       child: Padding(
@@ -501,7 +502,7 @@ class _EmptyState extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => context.push('/experts'),
                 icon: const Icon(Icons.add),
-                label: const Text('Book a Session'),
+                label: Text('Book a Session'.tr(context)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.darkBrown,
                   foregroundColor: Colors.white,
@@ -521,31 +522,31 @@ class _EmptyState extends StatelessWidget {
     );
   }
 
-  (IconData, String, String) _getEmptyStateContent() {
+  (IconData, String, String) _getEmptyStateContent(BuildContext context) {
     switch (tabType) {
       case 'upcoming':
         return (
           Icons.calendar_today_outlined,
-          'No upcoming bookings',
-          'Book a consultation with an expert to get started',
+          'No upcoming bookings'.tr(context),
+          'Book a consultation with an expert to get started'.tr(context),
         );
       case 'completed':
         return (
           Icons.check_circle_outline,
-          'No completed sessions',
-          'Your completed consultations will appear here',
+          'No completed sessions'.tr(context),
+          'Your completed consultations will appear here'.tr(context),
         );
       case 'cancelled':
         return (
           Icons.cancel_outlined,
-          'No cancelled bookings',
-          'Any cancelled sessions will appear here',
+          'No cancelled bookings'.tr(context),
+          'Any cancelled sessions will appear here'.tr(context),
         );
       default:
         return (
           Icons.inbox_outlined,
-          'No bookings',
-          'Your bookings will appear here',
+          'No bookings'.tr(context),
+          'Your bookings will appear here'.tr(context),
         );
     }
   }

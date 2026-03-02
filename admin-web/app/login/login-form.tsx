@@ -1,22 +1,66 @@
 "use client";
 
-import * as React from "react";
-import { useActionState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { IconLoader2 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loginAdmin } from "./actions";
+import { loginWithPassword } from "@/lib/api/auth";
+
+const DEV_BYPASS_EMAILS = ["admin@gmail.com"];
 
 export function LoginForm() {
-  const [state, formAction, isPending] = useActionState(loginAdmin, {
-    error: "",
-  });
-  const [email, setEmail] = React.useState("");
-  const isTestAccount = email.toLowerCase() === "admin@gmail.com";
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [isPending, setIsPending] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    setIsPending(true);
+
+    const formData = new FormData(e.currentTarget);
+    const email = (formData.get("email") as string || "").toLowerCase().trim();
+    const password = formData.get("password") as string;
+
+    if (!email) {
+      setError("Email is required.");
+      setIsPending(false);
+      return;
+    }
+
+    // Dev bypass: no password needed for admin@gmail.com
+    const isDevBypass = DEV_BYPASS_EMAILS.includes(email);
+    if (!isDevBypass && !password) {
+      setError("Password is required.");
+      setIsPending(false);
+      return;
+    }
+
+    const result = await loginWithPassword(email, password || "bypass");
+
+    if (!result.success) {
+      setError(result.error || "Login failed.");
+      setIsPending(false);
+      return;
+    }
+
+    // Set httpOnly cookie for server-side auth
+    await fetch("/api/auth/set-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accessToken: localStorage.getItem("accessToken"),
+        refreshToken: localStorage.getItem("refreshToken"),
+      }),
+    });
+
+    router.push("/");
+  }
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -26,8 +70,6 @@ export function LoginForm() {
           placeholder="admin@assignx.com"
           required
           autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
         />
       </div>
       <div className="space-y-2">
@@ -38,17 +80,10 @@ export function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          defaultValue={isTestAccount ? "Admin@123" : ""}
-          key={isTestAccount ? "test" : "normal"}
         />
-        {isTestAccount && (
-          <p className="text-xs text-muted-foreground">
-            Test account — password pre-filled: <span className="font-mono font-medium">Admin@123</span>
-          </p>
-        )}
       </div>
-      {state.error && (
-        <p className="text-sm text-destructive">{state.error}</p>
+      {error && (
+        <p className="text-sm text-destructive">{error}</p>
       )}
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending && <IconLoader2 className="animate-spin" />}

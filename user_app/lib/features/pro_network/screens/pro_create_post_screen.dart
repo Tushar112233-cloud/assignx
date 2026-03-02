@@ -661,9 +661,6 @@ class _ProCreatePostScreenState extends ConsumerState<ProCreatePostScreen> {
             ? _descriptionController.text.trim()
             : null,
         images: _selectedImages.isNotEmpty ? _selectedImages : null,
-        location: _locationController.text.trim().isNotEmpty
-            ? _locationController.text.trim()
-            : null,
         tags: _tags.isNotEmpty ? _tags : null,
       );
 

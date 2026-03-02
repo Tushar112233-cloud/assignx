@@ -197,7 +197,7 @@ export const ActiveProjectsTab = memo(function ActiveProjectsTab({
     const inProgress = projects.filter((p) => p.status === 'in_progress').length
     const urgent = projects.filter((p) => {
       const timeInfo = getTimeRemaining(p.deadline)
-      return timeInfo.isUrgent || p.is_urgent
+      return timeInfo.isUrgent
     }).length
     const totalEarnings = projects.reduce((sum, p) => sum + (p.price ?? p.doer_payout ?? 0), 0)
 
@@ -287,7 +287,7 @@ export const ActiveProjectsTab = memo(function ActiveProjectsTab({
           {sortedProjects.map((project, index) => {
             const timeInfo = getTimeRemaining(project.deadline)
             const statusInfo = getStatusDisplay(project.status)
-            const isUrgent = timeInfo.isUrgent || project.is_urgent
+            const isUrgent = timeInfo.isUrgent
             const payout = project.price ?? project.doer_payout ?? 0
 
             return (

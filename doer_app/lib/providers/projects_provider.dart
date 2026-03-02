@@ -6,25 +6,42 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../core/config/supabase_config.dart';
+import '../core/api/api_client.dart';
 import '../data/models/doer_project_model.dart';
 import '../data/repositories/project_repository.dart';
 import 'auth_provider.dart';
+
+/// Sort options for the My Projects screen.
+enum ProjectSortOption {
+  dueSoon('Due Soon'),
+  recent('Recent'),
+  amountHigh('Amount: High'),
+  amountLow('Amount: Low');
+
+  final String label;
+  const ProjectSortOption(this.label);
+}
 
 /// Stats summary for the My Projects hero banner.
 class ProjectStats {
   final int activeCount;
   final int completedCount;
+  final int underReviewCount;
   final double totalEarnings;
+  final double avgCompletionDays;
+  final int weekVelocity;
 
   const ProjectStats({
     this.activeCount = 0,
     this.completedCount = 0,
+    this.underReviewCount = 0,
     this.totalEarnings = 0.0,
+    this.avgCompletionDays = 0.0,
+    this.weekVelocity = 0,
   });
 
+  int get totalCount => activeCount + completedCount + underReviewCount;
   String get formattedEarnings => '₹${totalEarnings.toStringAsFixed(0)}';
 }
 
@@ -36,6 +53,7 @@ class MyProjectsState {
   final ProjectStats stats;
   final String searchQuery;
   final String? subjectFilter;
+  final ProjectSortOption sortOption;
   final bool isLoading;
   final String? errorMessage;
 
@@ -46,6 +64,7 @@ class MyProjectsState {
     this.stats = const ProjectStats(),
     this.searchQuery = '',
     this.subjectFilter,
+    this.sortOption = ProjectSortOption.dueSoon,
     this.isLoading = false,
     this.errorMessage,
   });
@@ -74,7 +93,7 @@ class MyProjectsState {
   }
 
   List<DoerProjectModel> _applyFilters(List<DoerProjectModel> projects) {
-    var result = projects;
+    var result = List<DoerProjectModel>.from(projects);
 
     if (searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
@@ -90,6 +109,18 @@ class MyProjectsState {
       result = result.where((p) => p.subjectName == subjectFilter).toList();
     }
 
+    // Apply sorting
+    switch (sortOption) {
+      case ProjectSortOption.dueSoon:
+        result.sort((a, b) => a.deadline.compareTo(b.deadline));
+      case ProjectSortOption.recent:
+        result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      case ProjectSortOption.amountHigh:
+        result.sort((a, b) => b.doerPayout.compareTo(a.doerPayout));
+      case ProjectSortOption.amountLow:
+        result.sort((a, b) => a.doerPayout.compareTo(b.doerPayout));
+    }
+
     return result;
   }
 
@@ -100,6 +131,7 @@ class MyProjectsState {
     ProjectStats? stats,
     String? searchQuery,
     String? subjectFilter,
+    ProjectSortOption? sortOption,
     bool clearSubjectFilter = false,
     bool? isLoading,
     String? errorMessage,
@@ -111,6 +143,7 @@ class MyProjectsState {
       stats: stats ?? this.stats,
       searchQuery: searchQuery ?? this.searchQuery,
       subjectFilter: clearSubjectFilter ? null : (subjectFilter ?? this.subjectFilter),
+      sortOption: sortOption ?? this.sortOption,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
     );
@@ -131,21 +164,19 @@ class MyProjectsNotifier extends Notifier<MyProjectsState> {
     return const MyProjectsState(isLoading: true);
   }
 
-  SupabaseClient get _client => SupabaseConfig.client;
-  String? get _userId => _client.auth.currentUser?.id;
   String? _cachedDoerId;
 
   /// Looks up the doer table ID from profile ID.
   Future<String?> _getDoerId() async {
     if (_cachedDoerId != null) return _cachedDoerId;
-    if (_userId == null) return null;
     try {
-      final response = await _client
-          .from('doers')
-          .select('id')
-          .eq('profile_id', _userId!)
-          .maybeSingle();
-      _cachedDoerId = response?['id'] as String?;
+      final response = await ApiClient.get('/profiles/me');
+      if (response is Map<String, dynamic>) {
+        final doer = response['doer'] as Map<String, dynamic>?;
+        if (doer != null) {
+          _cachedDoerId = (doer['_id'] ?? doer['id'])?.toString();
+        }
+      }
       return _cachedDoerId;
     } catch (_) {
       return null;
@@ -178,21 +209,15 @@ class MyProjectsNotifier extends Notifier<MyProjectsState> {
   /// Loads active projects (in_progress, assigned, revision_requested, in_revision).
   Future<void> _loadActiveProjects() async {
     try {
-      final doerId = await _getDoerId();
-      if (doerId == null) return;
-      final response = await _client.from('projects').select('''
-        *,
-        subject:subjects(id, name),
-        reference_style:reference_styles(id, name, slug)
-      ''').eq('doer_id', doerId).inFilter('status', [
-        'in_progress',
-        'assigned',
-        'revision_requested',
-        'in_revision',
-      ]).order('deadline', ascending: true);
+      final response = await ApiClient.get(
+        '/doer/projects/assigned?statuses=in_progress,assigned,revision_requested,in_revision&sort=deadline',
+      );
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['projects'] as List? ?? [];
 
-      final projects = (response as List)
-          .map((json) => DoerProjectModel.fromJson(json))
+      final projects = list
+          .map((json) => DoerProjectModel.fromJson(json as Map<String, dynamic>))
           .toList();
 
       state = state.copyWith(activeProjects: projects);
@@ -206,19 +231,15 @@ class MyProjectsNotifier extends Notifier<MyProjectsState> {
   /// Loads projects under review (delivered, for_review).
   Future<void> _loadUnderReviewProjects() async {
     try {
-      final doerId = await _getDoerId();
-      if (doerId == null) return;
-      final response = await _client.from('projects').select('''
-        *,
-        subject:subjects(id, name),
-        reference_style:reference_styles(id, name, slug)
-      ''').eq('doer_id', doerId).inFilter('status', [
-        'delivered',
-        'submitted_for_qc',
-      ]).order('delivered_at', ascending: false);
+      final response = await ApiClient.get(
+        '/doer/projects/assigned?statuses=delivered,submitted_for_qc&sort=delivered_at',
+      );
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['projects'] as List? ?? [];
 
-      final projects = (response as List)
-          .map((json) => DoerProjectModel.fromJson(json))
+      final projects = list
+          .map((json) => DoerProjectModel.fromJson(json as Map<String, dynamic>))
           .toList();
 
       state = state.copyWith(underReviewProjects: projects);
@@ -241,15 +262,40 @@ class MyProjectsNotifier extends Notifier<MyProjectsState> {
     }
   }
 
-  /// Loads aggregated stats.
+  /// Loads aggregated stats with enhanced metrics.
   Future<void> _loadStats() async {
     try {
       final stats = await _projectRepository.getDoerStatistics();
+
+      // Calculate avg completion days from completed projects
+      double avgDays = 0;
+      final completed = state.completedProjects;
+      if (completed.isNotEmpty) {
+        double totalDays = 0;
+        int counted = 0;
+        for (final p in completed) {
+          if (p.completedAt != null) {
+            totalDays += p.completedAt!.difference(p.createdAt).inHours / 24;
+            counted++;
+          }
+        }
+        if (counted > 0) avgDays = totalDays / counted;
+      }
+
+      // Calculate week velocity (projects completed in last 7 days)
+      final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+      final weekVelocity = completed
+          .where((p) => p.completedAt != null && p.completedAt!.isAfter(weekAgo))
+          .length;
+
       state = state.copyWith(
         stats: ProjectStats(
           activeCount: stats.activeProjects,
           completedCount: stats.completedProjects,
+          underReviewCount: state.underReviewProjects.length,
           totalEarnings: stats.totalEarnings,
+          avgCompletionDays: avgDays,
+          weekVelocity: weekVelocity,
         ),
       );
     } catch (e) {
@@ -271,6 +317,11 @@ class MyProjectsNotifier extends Notifier<MyProjectsState> {
     } else {
       state = state.copyWith(subjectFilter: subject);
     }
+  }
+
+  /// Sets the sort option.
+  void setSortOption(ProjectSortOption option) {
+    state = state.copyWith(sortOption: option);
   }
 
   /// Refreshes all projects data.

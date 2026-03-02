@@ -1,6 +1,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -92,12 +93,12 @@ class _QuickActionChips extends StatelessWidget {
         _ActionChip(
           icon: Icons.add_circle_outline,
           label: 'Post',
-          onTap: () {},
+          onTap: () => context.push('/business-hub/create'),
         ),
         _ActionChip(
           icon: Icons.bookmark_outline,
           label: 'Saved',
-          onTap: () {},
+          onTap: () => context.push('/business-hub/saved'),
         ),
       ],
     );

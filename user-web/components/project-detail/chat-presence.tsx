@@ -215,21 +215,19 @@ export function OnlineUsersIndicator({
 }
 
 /**
- * Hook to manage chat presence with Supabase Realtime.
+ * Hook to manage chat presence with Socket.IO.
  * Tracks who's online and emits join/leave events.
  *
  * @param roomId - The chat room ID
  * @param userId - Current user's ID
  * @param userName - Current user's display name
  * @param userRole - Current user's role (e.g., "Supervisor", "Doer")
- * @param supabase - Supabase client instance
  */
 export function useChatPresence(
   roomId: string | null,
   userId: string | null,
   userName: string,
   userRole?: string,
-  supabase?: ReturnType<typeof import("@/lib/supabase/client").createClient>
 ) {
   const [onlineUsers, setOnlineUsers] = useState<
     { id: string; name: string; role?: string; avatarUrl?: string }[]
@@ -258,69 +256,60 @@ export function useChatPresence(
   }, [])
 
   useEffect(() => {
-    if (!roomId || !userId || !supabase) return
+    if (!roomId || !userId) return
 
-    const channel = supabase.channel(`presence:${roomId}`)
+    // Dynamic import to avoid SSR issues
+    let cleanup: (() => void) | undefined
 
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState()
-        const users: { id: string; name: string; role?: string; avatarUrl?: string }[] = []
+    const setup = async () => {
+      const { getSocket } = await import("@/lib/socket/client")
+      const socket = getSocket()
 
-        Object.values(state).forEach((presences) => {
-          // Type assertion for Supabase presence state
-          const typedPresences = presences as unknown as { id: string; name: string; role?: string; avatarUrl?: string }[]
-          typedPresences.forEach((presence) => {
-              if (!users.find((u) => u.id === presence.id)) {
-                users.push({
-                  id: presence.id,
-                  name: presence.name,
-                  role: presence.role,
-                  avatarUrl: presence.avatarUrl,
-                })
-              }
-            })
-        })
+      // Join the presence room
+      socket.emit("presence:join", {
+        roomId,
+        userId,
+        userName,
+        userRole,
+      })
 
+      // Listen for presence sync
+      const syncHandler = (users: { id: string; name: string; role?: string; avatarUrl?: string }[]) => {
         setOnlineUsers(users)
-      })
-      .on("presence", { event: "join" }, ({ newPresences }: any) => {
-        const typedPresences = newPresences as unknown as { id: string; name: string; role?: string }[]
-        typedPresences.forEach((presence) => {
-          if (presence.id !== userId) {
-            addPresenceEvent("joined", {
-              name: presence.name,
-              role: presence.role,
-            })
-          }
-        })
-      })
-      .on("presence", { event: "leave" }, ({ leftPresences }: any) => {
-        const typedPresences = leftPresences as unknown as { id: string; name: string; role?: string }[]
-        typedPresences.forEach((presence) => {
-          if (presence.id !== userId) {
-            addPresenceEvent("left", {
-              name: presence.name,
-              role: presence.role,
-            })
-          }
-        })
-      })
-      .subscribe(async (status: any) => {
-        if (status === "SUBSCRIBED") {
-          await channel.track({
-            id: userId,
-            name: userName,
-            role: userRole,
-            online_at: new Date().toISOString(),
-          })
+      }
+
+      // Listen for user join
+      const joinHandler = (user: { id: string; name: string; role?: string; avatarUrl?: string }) => {
+        if (user.id !== userId) {
+          addPresenceEvent("joined", { name: user.name, role: user.role, avatarUrl: user.avatarUrl })
         }
-      })
+      }
+
+      // Listen for user leave
+      const leaveHandler = (user: { id: string; name: string; role?: string }) => {
+        if (user.id !== userId) {
+          addPresenceEvent("left", { name: user.name, role: user.role })
+        }
+      }
+
+      socket.on(`presence:${roomId}:sync`, syncHandler)
+      socket.on(`presence:${roomId}:join`, joinHandler)
+      socket.on(`presence:${roomId}:leave`, leaveHandler)
+
+      cleanup = () => {
+        socket.emit("presence:leave", { roomId, userId })
+        socket.off(`presence:${roomId}:sync`, syncHandler)
+        socket.off(`presence:${roomId}:join`, joinHandler)
+        socket.off(`presence:${roomId}:leave`, leaveHandler)
+      }
+    }
+
+    setup()
 
     return () => {
-      channel.unsubscribe()
+      cleanup?.()
     }
-  }, [roomId, userId, userName, userRole, supabase, addPresenceEvent])
+  }, [roomId, userId, userName, userRole, addPresenceEvent])
 
   return {
     onlineUsers,

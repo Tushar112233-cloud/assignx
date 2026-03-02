@@ -47,20 +47,20 @@ class ProjectTimelineEvent {
   /// Creates a [ProjectTimelineEvent] from JSON data.
   factory ProjectTimelineEvent.fromJson(Map<String, dynamic> json) {
     return ProjectTimelineEvent(
-      id: json['id'] as String,
-      projectId: json['project_id'] as String,
-      milestoneType: json['milestone_type'] as String,
-      milestoneTitle: json['milestone_title'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      projectId: (json['project_id'] ?? json['projectId'] ?? '').toString(),
+      milestoneType: (json['milestone_type'] ?? json['milestoneType'] ?? '').toString(),
+      milestoneTitle: (json['milestone_title'] ?? json['milestoneTitle'] ?? '').toString(),
       description: json['description'] as String?,
-      isCompleted: json['is_completed'] as bool? ?? false,
-      completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'] as String)
+      isCompleted: (json['is_completed'] ?? json['isCompleted']) as bool? ?? false,
+      completedAt: (json['completed_at'] ?? json['completedAt']) != null
+          ? DateTime.tryParse((json['completed_at'] ?? json['completedAt']).toString())
           : null,
-      sequenceOrder: json['sequence_order'] as int,
-      expectedAt: json['expected_at'] != null
-          ? DateTime.parse(json['expected_at'] as String)
+      sequenceOrder: (json['sequence_order'] ?? json['sequenceOrder'] ?? 0) as int,
+      expectedAt: (json['expected_at'] ?? json['expectedAt']) != null
+          ? DateTime.tryParse((json['expected_at'] ?? json['expectedAt']).toString())
           : null,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 

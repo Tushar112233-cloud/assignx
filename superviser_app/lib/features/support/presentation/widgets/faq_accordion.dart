@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/ticket_model.dart';
 
 /// FAQ accordion widget.
@@ -183,7 +184,7 @@ class FAQCategoryCard extends StatelessWidget {
                           ),
                     ),
                     Text(
-                      '${category.items.length} articles',
+                      '${category.items.length} ${'articles'.tr(context)}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondaryLight,
                           ),
@@ -232,14 +233,14 @@ class FAQSearchResults extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'No results found',
+                'No results found'.tr(context),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: AppColors.textSecondaryLight,
                     ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Try different keywords or browse categories',
+                'Try different keywords or browse categories'.tr(context),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondaryLight,
                     ),
@@ -409,14 +410,14 @@ class EmptyFAQ extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No FAQ available',
+              'No FAQ available'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Check back later for helpful articles',
+              'Check back later for helpful articles'.tr(context),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),

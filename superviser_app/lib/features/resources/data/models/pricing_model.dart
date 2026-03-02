@@ -173,23 +173,27 @@ class PricingModel {
   /// Creates a PricingModel from JSON.
   factory PricingModel.fromJson(Map<String, dynamic> json) {
     return PricingModel(
-      id: json['id'] as String,
-      workType: WorkType.fromId(json['work_type'] as String? ?? 'essay'),
-      basePrice: (json['base_price'] as num?)?.toDouble() ?? 0.0,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      workType: WorkType.fromId((json['workType'] ?? json['work_type']) as String? ?? 'essay'),
+      basePrice: ((json['basePrice'] ?? json['base_price']) as num?)?.toDouble() ?? 0.0,
       academicLevel: AcademicLevel.fromId(
-          json['academic_level'] as String? ?? 'undergraduate'),
-      pricePerPage: (json['price_per_page'] as num?)?.toDouble(),
-      pricePerWord: (json['price_per_word'] as num?)?.toDouble(),
-      minimumPages: json['minimum_pages'] as int? ?? 1,
-      minimumWords: json['minimum_words'] as int? ?? 275,
-      wordsPerPage: json['words_per_page'] as int? ?? 275,
+          (json['academicLevel'] ?? json['academic_level']) as String? ?? 'undergraduate'),
+      pricePerPage: ((json['pricePerPage'] ?? json['price_per_page']) as num?)?.toDouble(),
+      pricePerWord: ((json['pricePerWord'] ?? json['price_per_word']) as num?)?.toDouble(),
+      minimumPages: (json['minimumPages'] ?? json['minimum_pages']) as int? ?? 1,
+      minimumWords: (json['minimumWords'] ?? json['minimum_words']) as int? ?? 275,
+      wordsPerPage: (json['wordsPerPage'] ?? json['words_per_page']) as int? ?? 275,
       description: json['description'] as String?,
       notes: json['notes'] as String?,
-      isActive: json['is_active'] as bool? ?? true,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      isActive: (json['isActive'] ?? json['is_active']) as bool? ?? true,
+      updatedAt: _tryParseDateStatic(json['updatedAt'] ?? json['updated_at']),
     );
+  }
+
+  static DateTime? _tryParseDateStatic(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   /// Converts this model to JSON.
@@ -287,9 +291,7 @@ class PricingGuide {
               ?.map((e) => PricingModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      lastUpdated: json['last_updated'] != null
-          ? DateTime.parse(json['last_updated'] as String)
-          : null,
+      lastUpdated: PricingModel._tryParseDateStatic(json['lastUpdated'] ?? json['last_updated']),
       currency: json['currency'] as String? ?? 'INR',
       notes: json['notes'] as String?,
     );

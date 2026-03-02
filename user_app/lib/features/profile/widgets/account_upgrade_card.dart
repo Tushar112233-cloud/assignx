@@ -140,10 +140,10 @@ class _UpgradeCardColors {
   static const upgradeBannerBorder = Color(0xFFFED7AA);
 }
 
-/// Account upgrade card widget for the profile screen.
+/// Account role card widget for the profile screen.
 ///
-/// Displays the current account tier and provides an upgrade CTA button
-/// with a preview of benefits.
+/// Displays the current account role and provides a switch account type CTA
+/// button with a preview of benefits.
 ///
 /// Example usage:
 /// ```dart
@@ -312,19 +312,21 @@ class AccountUpgradeCard extends StatelessWidget {
                         color: const Color(0xFFF59E0B),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        'Upgrade to ${nextTier.displayName}',
-                        style: AppTextStyles.labelLarge.copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: _UpgradeCardColors.primaryText,
+                      Flexible(
+                        child: Text(
+                          'Switch to ${nextTier.displayName}',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: _UpgradeCardColors.primaryText,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Unlock ${nextTier.benefits.first.toLowerCase()} and more premium features',
+                    'Unlock ${nextTier.benefits.first.toLowerCase()} and more features',
                     style: AppTextStyles.bodySmall.copyWith(
                       fontSize: 13,
                       color: _UpgradeCardColors.secondaryText,
@@ -347,7 +349,7 @@ class AccountUpgradeCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Upgrade Now',
+                            'Switch Account Type',
                             style: AppTextStyles.buttonMedium.copyWith(
                               fontSize: 14,
                             ),
@@ -362,7 +364,7 @@ class AccountUpgradeCard extends StatelessWidget {
               ),
             ),
           ] else ...[
-            // Premium badge for highest tier
+            // Top role badge for highest tier
             Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(14),
@@ -387,7 +389,7 @@ class AccountUpgradeCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Premium Member',
+                          'Top Tier Account',
                           style: AppTextStyles.labelLarge.copyWith(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -395,7 +397,7 @@ class AccountUpgradeCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'You have the highest account tier',
+                          'You have the highest account role',
                           style: AppTextStyles.bodySmall.copyWith(
                             fontSize: 12,
                             color: const Color(0xFF047857),
@@ -479,7 +481,7 @@ class CompactUpgradeBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Upgrade to ${nextTier.displayName}',
+                    'Switch to ${nextTier.displayName}',
                     style: AppTextStyles.labelLarge.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -504,7 +506,7 @@ class CompactUpgradeBanner extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Upgrade',
+                'Switch',
                 style: AppTextStyles.labelSmall.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,

@@ -24,7 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { createClient } from "@/lib/supabase/client";
+import { apiClient } from "@/lib/api/client";
+import { getStoredUser, isLoggedIn } from "@/lib/api/auth";
 import { toast } from "sonner";
 
 /**
@@ -308,16 +309,10 @@ function SignupContent() {
   const [magicLinkError, setMagicLinkError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const supabase = createClient();
-
   // Check if user is already authenticated (e.g., redirected from login)
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsAuthenticated(!!user);
-    };
-    checkAuth();
-  }, [supabase.auth]);
+    setIsAuthenticated(isLoggedIn());
+  }, []);
 
   // Handle error from URL (invalid student email or no account)
   useEffect(() => {
@@ -343,14 +338,18 @@ function SignupContent() {
       document.cookie = `signup_intent=true; path=/; max-age=600; SameSite=Lax`;
 
       // Update their profile with the selected role
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = getStoredUser();
       if (user) {
-        await supabase.from("profiles").upsert({
-          id: user.id,
-          email: user.email,
-          user_type: roleId === "business" ? "professional" : roleId,
-          updated_at: new Date().toISOString(),
-        });
+        try {
+          await apiClient(`/api/profiles/${user.id}`, {
+            method: "PUT",
+            body: JSON.stringify({
+              user_type: roleId === "business" ? "professional" : roleId,
+            }),
+          });
+        } catch {
+          // Best-effort profile update
+        }
       }
 
       if (roleId === "student") {
@@ -476,24 +475,14 @@ function SignupContent() {
       document.cookie = `signup_role=${selectedRole}; path=/; max-age=600; SameSite=Lax`;
       document.cookie = `signup_intent=true; path=/; max-age=600; SameSite=Lax`;
 
+      // Redirect to API server's Google OAuth endpoint
       const callbackUrl = `${window.location.origin}/auth/callback`;
-
-      const { error: authError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: callbackUrl,
-          queryParams: {
-            ...(selectedRole === "student" && {
-              hd: "*",
-            }),
-          },
-        },
+      const params = new URLSearchParams({
+        role: selectedRole,
+        redirect: callbackUrl,
       });
 
-      if (authError) {
-        setError(authError.message);
-        setIsLoading(false);
-      }
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/auth/google?${params.toString()}`;
     } catch {
       setError("Something went wrong. Please try again.");
       setIsLoading(false);

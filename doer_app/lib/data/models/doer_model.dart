@@ -343,45 +343,55 @@ class DoerModel {
   ///
   /// @throws FormatException if required fields are missing or malformed.
   factory DoerModel.fromJson(Map<String, dynamic> json) {
+    // Helper to safely parse DateTime from various formats.
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Handle nested bankDetails from MongoDB.
+    final bank = json['bankDetails'] as Map<String, dynamic>? ?? {};
+
+    // Handle profileId which may be a populated Mongoose object.
+    String profileId = '';
+    final rawProfileId = json['profile_id'] ?? json['profileId'];
+    if (rawProfileId is String) {
+      profileId = rawProfileId;
+    } else if (rawProfileId is Map<String, dynamic>) {
+      profileId = (rawProfileId['_id'] ?? rawProfileId['id'] ?? '').toString();
+    }
+
     return DoerModel(
-      id: json['id'] as String,
-      profileId: json['profile_id'] as String,
-      qualification: json['qualification'] as String,
-      universityName: json['university_name'] as String?,
-      experienceLevel: json['experience_level'] as String,
-      yearsOfExperience: json['years_of_experience'] as int? ?? 0,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      profileId: profileId,
+      qualification: (json['qualification'] as String?) ?? '',
+      universityName: json['university_name'] as String? ?? json['universityName'] as String?,
+      experienceLevel: (json['experience_level'] ?? json['experienceLevel'] ?? 'beginner').toString(),
+      yearsOfExperience: (json['years_of_experience'] ?? json['yearsOfExperience']) as int? ?? 0,
       bio: json['bio'] as String?,
-      isAvailable: json['is_available'] as bool? ?? true,
-      availabilityUpdatedAt: json['availability_updated_at'] != null
-          ? DateTime.parse(json['availability_updated_at'] as String)
-          : null,
-      maxConcurrentProjects: json['max_concurrent_projects'] as int? ?? 3,
-      isActivated: json['is_activated'] as bool? ?? false,
-      activatedAt: json['activated_at'] != null
-          ? DateTime.parse(json['activated_at'] as String)
-          : null,
-      totalProjectsCompleted: json['total_projects_completed'] as int? ?? 0,
-      totalEarnings: (json['total_earnings'] as num?)?.toDouble() ?? 0.0,
-      averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
-      totalReviews: json['total_reviews'] as int? ?? 0,
-      successRate: (json['success_rate'] as num?)?.toDouble() ?? 100.0,
-      onTimeDeliveryRate: (json['on_time_delivery_rate'] as num?)?.toDouble() ?? 100.0,
-      bankAccountName: json['bank_account_name'] as String?,
-      bankAccountNumber: json['bank_account_number'] as String?,
-      bankIfscCode: json['bank_ifsc_code'] as String?,
-      bankName: json['bank_name'] as String?,
-      upiId: json['upi_id'] as String?,
-      bankVerified: json['bank_verified'] as bool? ?? false,
-      isFlagged: json['is_flagged'] as bool? ?? false,
-      flagReason: json['flag_reason'] as String?,
-      flaggedBy: json['flagged_by'] as String?,
-      flaggedAt: json['flagged_at'] != null
-          ? DateTime.parse(json['flagged_at'] as String)
-          : null,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      isAvailable: json['is_available'] as bool? ?? json['isAvailable'] as bool? ?? true,
+      availabilityUpdatedAt: _parseDate(json['availability_updated_at'] ?? json['availabilityUpdatedAt']),
+      maxConcurrentProjects: (json['max_concurrent_projects'] ?? json['maxConcurrentProjects']) as int? ?? 3,
+      isActivated: json['is_activated'] as bool? ?? json['isActivated'] as bool? ?? false,
+      activatedAt: _parseDate(json['activated_at'] ?? json['activatedAt']),
+      totalProjectsCompleted: (json['total_projects_completed'] ?? json['totalProjectsCompleted']) as int? ?? 0,
+      totalEarnings: ((json['total_earnings'] ?? json['totalEarnings']) as num?)?.toDouble() ?? 0.0,
+      averageRating: ((json['average_rating'] ?? json['averageRating']) as num?)?.toDouble() ?? 0.0,
+      totalReviews: (json['total_reviews'] ?? json['totalReviews']) as int? ?? 0,
+      successRate: ((json['success_rate'] ?? json['successRate']) as num?)?.toDouble() ?? 100.0,
+      onTimeDeliveryRate: ((json['on_time_delivery_rate'] ?? json['onTimeDeliveryRate']) as num?)?.toDouble() ?? 100.0,
+      bankAccountName: json['bank_account_name'] as String? ?? json['bankAccountName'] as String? ?? bank['accountName'] as String?,
+      bankAccountNumber: json['bank_account_number'] as String? ?? json['bankAccountNumber'] as String? ?? bank['accountNumber'] as String?,
+      bankIfscCode: json['bank_ifsc_code'] as String? ?? json['bankIfscCode'] as String? ?? bank['ifscCode'] as String?,
+      bankName: json['bank_name'] as String? ?? json['bankName'] as String? ?? bank['bankName'] as String?,
+      upiId: json['upi_id'] as String? ?? json['upiId'] as String? ?? bank['upiId'] as String?,
+      bankVerified: json['bank_verified'] as bool? ?? json['bankVerified'] as bool? ?? bank['verified'] as bool? ?? false,
+      isFlagged: json['is_flagged'] as bool? ?? json['isFlagged'] as bool? ?? false,
+      flagReason: json['flag_reason'] as String? ?? json['flagReason'] as String?,
+      flaggedBy: json['flagged_by'] as String? ?? json['flaggedBy'] as String?,
+      flaggedAt: _parseDate(json['flagged_at'] ?? json['flaggedAt']),
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDate(json['updated_at'] ?? json['updatedAt']),
     );
   }
 
@@ -692,12 +702,12 @@ class SkillModel {
   /// @returns A new [SkillModel] instance.
   factory SkillModel.fromJson(Map<String, dynamic> json) {
     return SkillModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      slug: json['slug'] as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      name: (json['name'] as String?) ?? '',
+      slug: (json['slug'] as String?) ?? '',
       category: json['category'] as String?,
-      subjectId: json['subject_id'] as String?,
-      isActive: json['is_active'] as bool? ?? true,
+      subjectId: json['subject_id'] as String? ?? json['subjectId'] as String?,
+      isActive: json['is_active'] as bool? ?? json['isActive'] as bool? ?? true,
     );
   }
 
@@ -830,15 +840,15 @@ class SubjectModel {
   /// @returns A new [SubjectModel] instance.
   factory SubjectModel.fromJson(Map<String, dynamic> json) {
     return SubjectModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      slug: json['slug'] as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      name: (json['name'] as String?) ?? '',
+      slug: (json['slug'] as String?) ?? '',
       description: json['description'] as String?,
       icon: json['icon'] as String?,
-      parentId: json['parent_id'] as String?,
+      parentId: json['parent_id'] as String? ?? json['parentId'] as String?,
       category: json['category'] as String?,
-      displayOrder: json['display_order'] as int?,
-      isActive: json['is_active'] as bool? ?? true,
+      displayOrder: (json['display_order'] ?? json['displayOrder']) as int?,
+      isActive: json['is_active'] as bool? ?? json['isActive'] as bool? ?? true,
     );
   }
 
@@ -943,17 +953,20 @@ class DoerSkillModel {
   /// @param json The JSON map from the database response.
   /// @returns A new [DoerSkillModel] instance.
   factory DoerSkillModel.fromJson(Map<String, dynamic> json) {
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
     return DoerSkillModel(
-      id: json['id'] as String,
-      doerId: json['doer_id'] as String,
-      skillId: json['skill_id'] as String,
-      proficiencyLevel: json['proficiency_level'] as String?,
-      isVerified: json['is_verified'] as bool? ?? false,
-      verifiedAt: json['verified_at'] != null
-          ? DateTime.parse(json['verified_at'] as String)
-          : null,
-      verifiedBy: json['verified_by'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      doerId: (json['doer_id'] ?? json['doerId'] ?? '').toString(),
+      skillId: (json['skill_id'] ?? json['skillId'] ?? '').toString(),
+      proficiencyLevel: json['proficiency_level'] as String? ?? json['proficiencyLevel'] as String?,
+      isVerified: json['is_verified'] as bool? ?? json['isVerified'] as bool? ?? false,
+      verifiedAt: _parseDate(json['verified_at'] ?? json['verifiedAt']),
+      verifiedBy: json['verified_by'] as String? ?? json['verifiedBy'] as String?,
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
     );
   }
 
@@ -1035,11 +1048,11 @@ class DoerSubjectModel {
   /// @returns A new [DoerSubjectModel] instance.
   factory DoerSubjectModel.fromJson(Map<String, dynamic> json) {
     return DoerSubjectModel(
-      id: json['id'] as String,
-      doerId: json['doer_id'] as String,
-      subjectId: json['subject_id'] as String,
-      isPrimary: json['is_primary'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      doerId: (json['doer_id'] ?? json['doerId'] ?? '').toString(),
+      subjectId: (json['subject_id'] ?? json['subjectId'] ?? '').toString(),
+      isPrimary: json['is_primary'] as bool? ?? json['isPrimary'] as bool? ?? false,
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 

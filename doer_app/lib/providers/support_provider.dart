@@ -30,9 +30,8 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../core/config/supabase_config.dart';
+import '../core/api/api_client.dart';
 
 /// FAQ model representing a frequently asked question.
 ///
@@ -61,10 +60,10 @@ class FAQ {
   /// Creates a [FAQ] from a JSON map.
   factory FAQ.fromJson(Map<String, dynamic> json) {
     return FAQ(
-      id: json['id']?.toString() ?? '',
-      question: json['question'] as String? ?? '',
-      answer: json['answer'] as String? ?? '',
-      category: json['category'] as String? ?? 'General',
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      question: (json['question'] ?? '').toString(),
+      answer: (json['answer'] ?? '').toString(),
+      category: (json['category'] ?? 'General').toString(),
     );
   }
 }
@@ -125,24 +124,20 @@ class SupportNotifier extends Notifier<SupportState> {
     return const SupportState();
   }
 
-  /// The Supabase client instance for database operations.
-  SupabaseClient get _client => SupabaseConfig.client;
-
-  /// Loads FAQs from the database.
+  /// Loads FAQs from the API.
   ///
-  /// Fetches all FAQs ordered by category. Falls back to default
-  /// FAQs if the database call fails.
+  /// Fetches all FAQs ordered by category.
   Future<void> _loadFaqs() async {
     state = state.copyWith(isLoadingFaqs: true, errorMessage: null);
 
     try {
-      final response = await _client
-          .from('faqs')
-          .select()
-          .order('category');
+      final response = await ApiClient.get('/support/faqs');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['faqs'] as List? ?? [];
 
-      final faqs = (response as List)
-          .map((e) => FAQ.fromJson(e))
+      final faqs = list
+          .map((e) => FAQ.fromJson(e as Map<String, dynamic>))
           .toList();
 
       state = state.copyWith(
@@ -161,7 +156,7 @@ class SupportNotifier extends Notifier<SupportState> {
     }
   }
 
-  /// Submits a support ticket to the database.
+  /// Submits a support ticket to the API.
   ///
   /// ## Parameters
   ///
@@ -184,22 +179,11 @@ class SupportNotifier extends Notifier<SupportState> {
     );
 
     try {
-      final user = _client.auth.currentUser;
-      if (user == null) {
-        state = state.copyWith(
-          isSubmitting: false,
-          errorMessage: 'You must be logged in to submit a ticket.',
-        );
-        return false;
-      }
-
-      await _client.from('support_tickets').insert({
-        'requester_id': user.id,
+      await ApiClient.post('/support/tickets', {
         'subject': subject,
         'description': message,
         'category': category,
         'priority': 'medium',
-        'status': 'open',
       });
 
       state = state.copyWith(

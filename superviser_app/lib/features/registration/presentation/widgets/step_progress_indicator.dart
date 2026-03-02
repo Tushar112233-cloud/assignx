@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Step progress indicator for multi-step forms.
 class StepProgressIndicator extends StatelessWidget {
@@ -128,7 +129,7 @@ class CompactStepIndicator extends StatelessWidget {
         Row(
           children: [
             Text(
-              'Step ${currentStep + 1} of $totalSteps',
+              '${'Step'.tr(context)} ${currentStep + 1} ${'of'.tr(context)} $totalSteps',
               style: AppTypography.labelMedium.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,

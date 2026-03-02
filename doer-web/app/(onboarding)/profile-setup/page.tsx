@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ProfileSetupForm } from '@/components/onboarding/ProfileSetupForm'
 import { ROUTES } from '@/lib/constants'
-import { createClient } from '@/lib/supabase/client'
+import { apiClient, getAccessToken } from '@/lib/api/client'
 import { useAuth } from '@/hooks/useAuth'
 import type { Qualification, ExperienceLevel } from '@/types/common.types'
 
@@ -30,30 +30,27 @@ export default function ProfileSetupPage() {
     experienceLevel: string
   }) => {
     setError(null)
-    const supabase = createClient()
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const authUser = session?.user ?? null
-      const authError = !authUser ? new Error('No session') : null
-
-      if (authError || !authUser) {
+      const token = getAccessToken()
+      if (!token || !user?.id) {
         throw new Error('You must be logged in to complete profile setup')
       }
 
       // Check if doer record already exists
-      let { data: doerRecord } = await supabase
-        .from('doers')
-        .select('id')
-        .eq('profile_id', authUser.id)
-        .single()
+      let doerRecord: { id: string } | null = null
+      try {
+        doerRecord = await apiClient<{ id: string }>(`/api/doers/by-profile/${user.id}`)
+      } catch {
+        // No doer record yet
+      }
 
       if (!doerRecord) {
         // CREATE new doer record with the form data
-        const { data: newDoer, error: createError } = await supabase
-          .from('doers')
-          .insert({
-            profile_id: authUser.id,
+        const newDoer = await apiClient<{ id: string }>('/api/doers', {
+          method: 'POST',
+          body: JSON.stringify({
+            profile_id: user.id,
             qualification: data.qualification as Qualification,
             experience_level: data.experienceLevel as ExperienceLevel,
             university_name: data.universityName || null,
@@ -68,89 +65,62 @@ export default function ProfileSetupPage() {
             on_time_delivery_rate: 0,
             bank_verified: false,
             is_flagged: false,
-          })
-          .select('id')
-          .single()
-
-        if (createError) {
-          throw new Error(`Failed to create doer profile: ${createError.message}`)
-        }
+          }),
+        })
 
         doerRecord = newDoer
 
         // Create activation record for new doer
-        const { error: activationError } = await supabase
-          .from('doer_activation')
-          .insert({
-            doer_id: doerRecord.id,
-            training_completed: false,
-            quiz_passed: false,
-            total_quiz_attempts: 0,
-            bank_details_added: false,
-            is_fully_activated: false,
+        try {
+          await apiClient(`/api/doers/${doerRecord.id}/activation`, {
+            method: 'POST',
+            body: JSON.stringify({
+              training_completed: false,
+              quiz_passed: false,
+              total_quiz_attempts: 0,
+              bank_details_added: false,
+              is_fully_activated: false,
+            }),
           })
-
-        if (activationError) {
+        } catch (activationError) {
           console.error('Failed to create activation record:', activationError)
         }
       } else {
         // UPDATE existing doer record
-        const { error: updateError } = await supabase
-          .from('doers')
-          .update({
+        await apiClient(`/api/doers/${doerRecord.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
             qualification: data.qualification,
             experience_level: data.experienceLevel,
             university_name: data.universityName || null,
-          })
-          .eq('id', doerRecord.id)
-
-        if (updateError) {
-          throw new Error(`Failed to update profile: ${updateError.message}`)
-        }
+          }),
+        })
       }
 
       // Insert skills (if any selected)
       if (data.skills.length > 0) {
-        await supabase
-          .from('doer_skills')
-          .delete()
-          .eq('doer_id', doerRecord.id)
-
-        const skillInserts = data.skills.map(skillId => ({
-          doer_id: doerRecord.id,
-          skill_id: skillId,
-          proficiency_level: 'intermediate',
-        }))
-
-        const { error: skillsError } = await supabase
-          .from('doer_skills')
-          .insert(skillInserts)
-
-        if (skillsError) {
-          console.error('Skills insert error:', skillsError)
-        }
+        await apiClient(`/api/doers/${doerRecord.id}/skills`, {
+          method: 'POST',
+          body: JSON.stringify({
+            skills: data.skills.map(skillId => ({
+              skill_id: skillId,
+              proficiency_level: 'intermediate',
+            })),
+          }),
+        })
       }
 
       // Insert subjects (if any selected)
       if (data.subjects.length > 0) {
-        await supabase
-          .from('doer_subjects')
-          .delete()
-          .eq('doer_id', doerRecord.id)
-
-        const subjectInserts = data.subjects.map((subjectId, index) => ({
-          doer_id: doerRecord.id,
-          subject_id: subjectId,
-          is_primary: index === 0,
-        }))
-
-        const { error: subjectsError } = await supabase
-          .from('doer_subjects')
-          .insert(subjectInserts)
-
-        if (subjectsError) {
-          console.error('Subjects insert error:', subjectsError)
-        }
+        await apiClient(`/api/doers/${doerRecord.id}/subjects`, {
+          method: 'POST',
+          body: JSON.stringify({
+            subjects: data.subjects.map((subjectId, index) => ({
+              subject_id: subjectId,
+              is_primary: index === 0,
+            })),
+          }),
+        })
       }
 
       // Navigate to training

@@ -164,27 +164,29 @@ class TrainingVideoModel {
   /// Creates a TrainingVideoModel from JSON.
   factory TrainingVideoModel.fromJson(Map<String, dynamic> json) {
     return TrainingVideoModel(
-      id: json['id'] as String,
-      title: json['title'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       category: VideoCategory.fromId(json['category'] as String? ?? 'qc_basics'),
-      thumbnailUrl: json['thumbnail_url'] as String? ?? '',
-      videoUrl: json['video_url'] as String? ?? '',
+      thumbnailUrl: (json['thumbnailUrl'] ?? json['thumbnail_url']) as String? ?? '',
+      videoUrl: (json['videoUrl'] ?? json['video_url']) as String? ?? '',
       duration: json['duration'] as int? ?? 0,
       difficulty: DifficultyLevel.fromId(json['difficulty'] as String? ?? 'beginner'),
-      isRequired: json['is_required'] as bool? ?? false,
-      isCompleted: json['is_completed'] as bool? ?? false,
-      watchProgress: (json['watch_progress'] as num?)?.toDouble() ?? 0.0,
+      isRequired: (json['isRequired'] ?? json['is_required']) as bool? ?? false,
+      isCompleted: (json['isCompleted'] ?? json['is_completed']) as bool? ?? false,
+      watchProgress: ((json['watchProgress'] ?? json['watch_progress']) as num?)?.toDouble() ?? 0.0,
       order: json['order'] as int? ?? 0,
-      tags: (json['tags'] as List?)?.map((e) => e as String).toList() ?? [],
+      tags: (json['tags'] as List?)?.map((e) => e.toString()).toList() ?? [],
       instructor: json['instructor'] as String?,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      createdAt: _tryParseDateStatic(json['createdAt'] ?? json['created_at']),
+      updatedAt: _tryParseDateStatic(json['updatedAt'] ?? json['updated_at']),
     );
+  }
+
+  static DateTime? _tryParseDateStatic(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   /// Converts this model to JSON.

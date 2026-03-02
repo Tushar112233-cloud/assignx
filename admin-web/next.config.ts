@@ -14,12 +14,17 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "*.supabase.co",
-        pathname: "/storage/v1/object/public/**",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "i.pravatar.cc",
         pathname: "/**",
       },
     ],
@@ -56,9 +61,9 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com https://i.pravatar.cc",
+              "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://i.pravatar.cc",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+              "connect-src 'self' http://localhost:4000",
               "frame-src 'self'",
               "frame-ancestors 'none'",
               "base-uri 'self'",

@@ -81,14 +81,14 @@ class FAQ {
   /// Create FAQ from JSON (Supabase response).
   factory FAQ.fromJson(Map<String, dynamic> json) {
     return FAQ(
-      id: json['id'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
       question: json['question'] as String? ?? '',
       answer: json['answer'] as String? ?? '',
       category: FAQCategory.fromDbValue(json['category'] as String?),
-      orderIndex: json['order_index'] as int? ?? 0,
-      isActive: json['is_active'] as bool? ?? true,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+      orderIndex: (json['order_index'] ?? json['orderIndex']) as int? ?? 0,
+      isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
+      createdAt: (json['created_at'] ?? json['createdAt']) != null
+          ? DateTime.tryParse((json['created_at'] ?? json['createdAt']).toString()) ?? DateTime.now()
           : DateTime.now(),
     );
   }

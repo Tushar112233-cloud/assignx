@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/marketplace_model.dart';
 
 /// Full-width banner card for events and opportunities.
@@ -102,7 +103,7 @@ class BannerCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              isEvent ? 'EVENT' : 'OPPORTUNITY',
+                              isEvent ? 'EVENT'.tr(context) : 'OPPORTUNITY'.tr(context),
                               style: AppTextStyles.caption.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
@@ -138,7 +139,7 @@ class BannerCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Remote',
+                                'Remote'.tr(context),
                                 style: AppTextStyles.caption.copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w500,
@@ -258,7 +259,7 @@ class BannerCard extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            isEvent ? 'Register Now' : 'Apply Now',
+                            isEvent ? 'Register Now'.tr(context) : 'Apply Now'.tr(context),
                             style: AppTextStyles.labelLarge.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
@@ -298,7 +299,7 @@ class BannerCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Closes ${_formatExpiry(listing.expiresAt!)}',
+                          '${'Closes'.tr(context)} ${_formatExpiry(context, listing.expiresAt!)}',
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.textTertiary,
                           ),
@@ -315,16 +316,16 @@ class BannerCard extends StatelessWidget {
     );
   }
 
-  String _formatExpiry(DateTime date) {
+  String _formatExpiry(BuildContext context, DateTime date) {
     final now = DateTime.now();
     final diff = date.difference(now);
 
     if (diff.inDays > 0) {
-      return 'in ${diff.inDays} days';
+      return '${'in'.tr(context)} ${diff.inDays} ${'days'.tr(context)}';
     } else if (diff.inHours > 0) {
-      return 'in ${diff.inHours} hours';
+      return '${'in'.tr(context)} ${diff.inHours} ${'hours'.tr(context)}';
     } else {
-      return 'soon';
+      return 'soon'.tr(context);
     }
   }
 }

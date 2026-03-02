@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/translation/translation_extensions.dart';
 import '../../../../../shared/widgets/buttons/primary_button.dart';
 import '../../../../../shared/widgets/inputs/app_text_field.dart';
 import '../../../data/models/registration_model.dart';
@@ -70,7 +71,7 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
       initialDate: _selectedDateOfBirth ?? DateTime(now.year - 25),
       firstDate: DateTime(1950),
       lastDate: DateTime(now.year - 18), // Must be at least 18
-      helpText: 'Select your date of birth',
+      helpText: 'Select your date of birth'.tr(context),
     );
 
     if (picked != null) {
@@ -109,14 +110,14 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Personal Information',
+              'Personal Information'.tr(context),
               style: AppTypography.headlineSmall.copyWith(
                 color: AppColors.textPrimaryLight,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Tell us a bit about yourself',
+              'Tell us a bit about yourself'.tr(context),
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.textSecondaryLight,
               ),
@@ -126,16 +127,16 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
             // Phone Number
             AppTextField(
               controller: _phoneController,
-              label: 'Phone Number',
+              label: 'Phone Number'.tr(context),
               hint: '+91 9876543210',
               keyboardType: TextInputType.phone,
               prefixIcon: Icons.phone_outlined,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Phone number is required';
+                  return 'Phone number is required'.tr(context);
                 }
                 if (value.length < 10) {
-                  return 'Enter a valid phone number';
+                  return 'Enter a valid phone number'.tr(context);
                 }
                 return null;
               },
@@ -148,7 +149,7 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
               borderRadius: BorderRadius.circular(12),
               child: InputDecorator(
                 decoration: InputDecoration(
-                  labelText: 'Date of Birth',
+                  labelText: 'Date of Birth'.tr(context),
                   prefixIcon: const Icon(Icons.calendar_today_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -157,7 +158,7 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
                 child: Text(
                   _selectedDateOfBirth != null
                       ? '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}'
-                      : 'Select date',
+                      : 'Select date'.tr(context),
                   style: AppTypography.bodyMedium.copyWith(
                     color: _selectedDateOfBirth != null
                         ? AppColors.textPrimaryLight
@@ -172,7 +173,7 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
             DropdownButtonFormField<String>(
               initialValue: _selectedGender,
               decoration: InputDecoration(
-                labelText: 'Gender',
+                labelText: 'Gender'.tr(context),
                 prefixIcon: const Icon(Icons.person_outline),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -198,12 +199,12 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
                 Expanded(
                   child: AppTextField(
                     controller: _cityController,
-                    label: 'City',
+                    label: 'City'.tr(context),
                     hint: 'Mumbai',
                     prefixIcon: Icons.location_city_outlined,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'City is required';
+                        return 'City is required'.tr(context);
                       }
                       return null;
                     },
@@ -213,7 +214,7 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
                 Expanded(
                   child: AppTextField(
                     controller: _stateController,
-                    label: 'State',
+                    label: 'State'.tr(context),
                     hint: 'Maharashtra',
                     prefixIcon: Icons.map_outlined,
                   ),
@@ -225,7 +226,7 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
             // Country
             AppTextField(
               controller: _countryController,
-              label: 'Country',
+              label: 'Country'.tr(context),
               hint: 'India',
               prefixIcon: Icons.public_outlined,
             ),
@@ -234,8 +235,8 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
             // Bio
             AppTextField(
               controller: _bioController,
-              label: 'Short Bio (Optional)',
-              hint: 'Tell us about yourself in a few sentences...',
+              label: 'Short Bio (Optional)'.tr(context),
+              hint: 'Tell us about yourself in a few sentences...'.tr(context),
               maxLines: 3,
               maxLength: 300,
               prefixIcon: Icons.edit_note_outlined,
@@ -245,14 +246,14 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
             // LinkedIn URL
             AppTextField(
               controller: _linkedInController,
-              label: 'LinkedIn Profile (Optional)',
+              label: 'LinkedIn Profile (Optional)'.tr(context),
               hint: 'https://linkedin.com/in/yourprofile',
               keyboardType: TextInputType.url,
               prefixIcon: Icons.link_outlined,
               validator: (value) {
                 if (value != null && value.isNotEmpty) {
                   if (!value.contains('linkedin.com')) {
-                    return 'Enter a valid LinkedIn URL';
+                    return 'Enter a valid LinkedIn URL'.tr(context);
                   }
                 }
                 return null;
@@ -262,7 +263,7 @@ class _PersonalInfoStepState extends ConsumerState<PersonalInfoStep> {
 
             // Continue Button
             PrimaryButton(
-              text: 'Continue',
+              text: 'Continue'.tr(context),
               onPressed: _saveAndContinue,
             ),
             const SizedBox(height: 16),

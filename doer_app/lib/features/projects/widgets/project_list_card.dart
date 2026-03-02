@@ -2,6 +2,7 @@
 ///
 /// Displays project title, topic/subject, status badge, deadline countdown,
 /// payout amount, and urgency indicator with a status-colored left border.
+/// Polished with consistent 16px border radius, subtle shadows, and spacing.
 library;
 
 import 'package:flutter/material.dart';
@@ -33,16 +34,21 @@ class ProjectListCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
+          vertical: 5,
         ),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: AppSpacing.borderRadiusMd,
-          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 4,
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 2,
               offset: const Offset(0, 1),
             ),
           ],
@@ -56,15 +62,15 @@ class ProjectListCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: statusColor,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(AppSpacing.radiusMd),
-                    bottomLeft: Radius.circular(AppSpacing.radiusMd),
+                    topLeft: Radius.circular(AppSpacing.radiusLg),
+                    bottomLeft: Radius.circular(AppSpacing.radiusLg),
                   ),
                 ),
               ),
               // Card content
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+                  padding: const EdgeInsets.all(14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -79,6 +85,7 @@ class ProjectListCard extends StatelessWidget {
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textPrimary,
+                                height: 1.3,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -88,25 +95,26 @@ class ProjectListCard extends StatelessWidget {
                             const SizedBox(width: AppSpacing.sm),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
+                                horizontal: 8,
+                                vertical: 3,
                               ),
                               decoration: BoxDecoration(
                                 color: AppColors.urgentBg,
-                                borderRadius: AppSpacing.borderRadiusXs,
+                                borderRadius:
+                                    BorderRadius.circular(AppSpacing.radiusSm),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.local_fire_department,
                                     size: 12,
                                     color: AppColors.urgent,
                                   ),
-                                  SizedBox(width: 2),
+                                  const SizedBox(width: 3),
                                   Text(
                                     'Urgent'.tr(context),
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.urgent,
@@ -125,7 +133,7 @@ class ProjectListCard extends StatelessWidget {
                       Row(
                         children: [
                           if (project.subjectName != null) ...[
-                            Icon(
+                            const Icon(
                               Icons.category_outlined,
                               size: 14,
                               color: AppColors.accent,
@@ -148,7 +156,7 @@ class ProjectListCard extends StatelessWidget {
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 6),
                               child: Text(
-                                '·',
+                                '\u00B7',
                                 style: TextStyle(
                                   color: AppColors.textTertiary,
                                   fontWeight: FontWeight.bold,
@@ -170,7 +178,7 @@ class ProjectListCard extends StatelessWidget {
                         ],
                       ),
 
-                      const SizedBox(height: AppSpacing.sm),
+                      const SizedBox(height: 10),
 
                       // Bottom row: status badge, deadline, payout
                       Row(
@@ -179,11 +187,12 @@ class ProjectListCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
-                              vertical: 3,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
                               color: statusColor.withValues(alpha: 0.1),
-                              borderRadius: AppSpacing.borderRadiusXs,
+                              borderRadius:
+                                  BorderRadius.circular(AppSpacing.radiusSm),
                             ),
                             child: Text(
                               project.status.displayName,
@@ -219,7 +228,7 @@ class ProjectListCard extends StatelessWidget {
                           Text(
                             project.formattedPayout,
                             style: const TextStyle(
-                              fontSize: 15,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppColors.success,
                             ),
@@ -232,12 +241,19 @@ class ProjectListCard extends StatelessWidget {
               ),
 
               // Arrow indicator
-              const Padding(
-                padding: EdgeInsets.only(right: AppSpacing.sm),
-                child: Icon(
-                  Icons.chevron_right,
-                  color: AppColors.textTertiary,
-                  size: 20,
+              Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.sm),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textTertiary,
+                    size: 18,
+                  ),
                 ),
               ),
             ],

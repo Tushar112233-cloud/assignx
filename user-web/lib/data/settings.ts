@@ -1,7 +1,7 @@
 /**
  * Settings and support static data
  * Contains app version and static UI options
- * Support tickets and FAQs are fetched from Supabase via lib/actions/data.ts
+ * Support tickets and FAQs are fetched from the Express API via lib/actions/data.ts
  */
 
 import type { AppVersion } from "@/types/settings";

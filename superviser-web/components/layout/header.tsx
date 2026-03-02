@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/tooltip"
 import { LanguageSelector } from "@/components/language-selector"
 import { cn } from "@/lib/utils"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 
 interface HeaderProps {
   userName?: string
@@ -55,16 +55,10 @@ export function Header({
   const handleAvailabilityToggle = async (checked: boolean) => {
     setIsAvailable(checked)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setIsAvailable(!checked)
-        return
-      }
-      await supabase
-        .from("supervisors")
-        .update({ is_available: checked })
-        .eq("profile_id", user.id)
+      await apiFetch("/api/supervisors/me", {
+        method: "PUT",
+        body: JSON.stringify({ is_available: checked }),
+      })
     } catch (err) {
       console.error("Failed to update availability:", err)
       setIsAvailable(!checked)

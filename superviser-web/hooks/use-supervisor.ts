@@ -1,12 +1,14 @@
 /**
  * @fileoverview Custom hook for supervisor data and profile management.
+ * Uses Express API instead of Supabase.
  * @module hooks/use-supervisor
  */
 
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { createClient, getSessionUser } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
+import { getStoredUser } from "@/lib/api/auth"
 import type {
   SupervisorWithProfile,
   Profile
@@ -29,14 +31,11 @@ export function useSupervisor(): UseSupervisorReturn {
   const [error, setError] = useState<Error | null>(null)
 
   const fetchSupervisor = useCallback(async () => {
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
       setError(null)
 
-      const user = await getSessionUser()
-
+      const user = getStoredUser()
       if (!user) {
         setProfile(null)
         setSupervisor(null)
@@ -44,39 +43,42 @@ export function useSupervisor(): UseSupervisorReturn {
       }
 
       // Get profile
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single()
+      try {
+        const rawProfile = await apiFetch<{ profile: Profile } | Profile>(`/api/profiles/${user.id}`)
 
-      if (profileError) {
-        console.error("[useSupervisor] Profile lookup failed:", profileError.message)
-        throw profileError
+        // API returns { profile: {...} } — extract the inner object
+        const profileData = (rawProfile && typeof rawProfile === 'object' && 'profile' in rawProfile)
+          ? (rawProfile as { profile: Profile }).profile
+          : rawProfile as Profile
+
+        // Normalize camelCase → snake_case aliases
+        const normalized = {
+          ...profileData,
+          full_name: profileData.full_name || (profileData as Record<string, unknown>).fullName as string,
+          avatar_url: profileData.avatar_url || (profileData as Record<string, unknown>).avatarUrl as string,
+          created_at: profileData.created_at || (profileData as Record<string, unknown>).createdAt as string,
+          user_sub_type: profileData.user_sub_type || (profileData as Record<string, unknown>).userSubType as string,
+        } as Profile
+
+        setProfile(normalized)
+      } catch (err) {
+        console.error("[useSupervisor] Profile lookup failed:", err)
+        throw err
       }
-      setProfile(profileData)
 
       // Get supervisor data with profile
-      const { data: supervisorData, error: supervisorError } = await supabase
-        .from("supervisors")
-        .select(`
-          *,
-          profiles!profile_id (*)
-        `)
-        .eq("profile_id", user.id)
-        .single()
-
-      if (supervisorError && supervisorError.code !== "PGRST116") {
-        throw supervisorError
+      try {
+        const supervisorData = await apiFetch<SupervisorWithProfile>("/api/supervisors/me")
+        setSupervisor(supervisorData)
+      } catch (err) {
+        // PGRST116 equivalent -- no supervisor record found
+        const apiErr = err as { status?: number }
+        if (apiErr.status === 404) {
+          setSupervisor(null)
+        } else {
+          throw err
+        }
       }
-
-      // Transform null to undefined for type compatibility
-      const transformedSupervisor = supervisorData ? {
-        ...supervisorData,
-        profiles: supervisorData.profiles || undefined,
-      } : null
-
-      setSupervisor(transformedSupervisor as SupervisorWithProfile | null)
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch supervisor"))
     } finally {
@@ -87,14 +89,10 @@ export function useSupervisor(): UseSupervisorReturn {
   const updateAvailability = useCallback(async (isAvailable: boolean) => {
     if (!supervisor) return
 
-    const supabase = createClient()
-
-    const { error: updateError } = await supabase
-      .from("supervisors")
-      .update({ is_available: isAvailable })
-      .eq("id", supervisor.id)
-
-    if (updateError) throw updateError
+    await apiFetch("/api/supervisors/me", {
+      method: "PUT",
+      body: JSON.stringify({ is_available: isAvailable }),
+    })
 
     setSupervisor(prev => prev ? { ...prev, is_available: isAvailable } : null)
   }, [supervisor])
@@ -102,14 +100,10 @@ export function useSupervisor(): UseSupervisorReturn {
   const updateProfile = useCallback(async (data: Partial<Profile>) => {
     if (!profile) return
 
-    const supabase = createClient()
-
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update(data)
-      .eq("id", profile.id)
-
-    if (updateError) throw updateError
+    await apiFetch(`/api/profiles/${profile.id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
 
     setProfile(prev => prev ? { ...prev, ...data } : null)
   }, [profile])
@@ -151,77 +145,18 @@ export function useSupervisorStats(): UseSupervisorStatsReturn {
 
   useEffect(() => {
     async function fetchStats() {
-      const supabase = createClient()
-
       try {
-        const user = await getSessionUser()
-
+        const user = getStoredUser()
         if (!user) {
           setStats(null)
           return
         }
 
-        // Get supervisor ID
-        const { data: supervisor, error: supError } = await supabase
-          .from("supervisors")
-          .select("id, average_rating, total_projects_managed, total_earnings")
-          .eq("profile_id", user.id)
-          .single()
+        const data = await apiFetch<UseSupervisorStatsReturn["stats"]>(
+          "/api/supervisors/me/stats"
+        )
 
-        if (supError) {
-          console.error("[useSupervisorStats] Supervisor lookup failed:", supError.message)
-          throw supError
-        }
-
-        if (!supervisor) {
-          setStats(null)
-          return
-        }
-
-        // Get project counts by status
-        const { data: projects } = await supabase
-          .from("projects")
-          .select("id, status")
-          .eq("supervisor_id", supervisor.id)
-
-        const activeStatuses = [
-          "assigned", "in_progress", "submitted_for_qc",
-          "qc_in_progress", "revision_requested", "in_revision"
-        ]
-        const pendingQuoteStatuses = ["submitted", "analyzing"]
-        const completedStatuses = ["completed", "auto_approved", "delivered"]
-
-        const activeProjects = projects?.filter(p => activeStatuses.includes(p.status)).length || 0
-        const pendingQuotes = projects?.filter(p => pendingQuoteStatuses.includes(p.status)).length || 0
-        const completedProjects = projects?.filter(p => completedStatuses.includes(p.status)).length || 0
-
-        // Get wallet data
-        const { data: wallet } = await supabase
-          .from("wallets")
-          .select("balance, total_credited")
-          .eq("profile_id", user.id)
-          .eq("wallet_type", "supervisor")
-          .maybeSingle()
-
-        // Get unique doers count
-        const { data: doerAssignments } = await supabase
-          .from("projects")
-          .select("doer_id")
-          .eq("supervisor_id", supervisor.id)
-          .not("doer_id", "is", null)
-
-        const uniqueDoers = new Set(doerAssignments?.map(p => p.doer_id)).size
-
-        setStats({
-          totalProjects: supervisor.total_projects_managed || projects?.length || 0,
-          activeProjects,
-          completedProjects,
-          pendingQuotes,
-          totalEarnings: wallet?.total_credited || supervisor.total_earnings || 0,
-          pendingEarnings: wallet?.balance || 0,
-          averageRating: supervisor.average_rating || 0,
-          totalDoers: uniqueDoers,
-        })
+        setStats(data)
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Failed to fetch supervisor stats"))
       } finally {
@@ -250,58 +185,19 @@ export function useSupervisorExpertise(): UseSupervisorExpertiseReturn {
 
   useEffect(() => {
     async function fetchExpertise() {
-      const supabase = createClient()
-
       try {
-        const user = await getSessionUser()
-
+        const user = getStoredUser()
         if (!user) {
           setExpertise([])
           setIsLoading(false)
           return
         }
 
-        // Get supervisor ID
-        const { data: supervisor, error: supError } = await supabase
-          .from("supervisors")
-          .select("id")
-          .eq("profile_id", user.id)
-          .single()
+        const data = await apiFetch<{ expertise: UseSupervisorExpertiseReturn["expertise"] }>(
+          "/api/supervisors/me/expertise"
+        )
 
-        if (supError) {
-          console.error("[useSupervisorExpertise] Supervisor lookup failed:", supError.message)
-          throw supError
-        }
-
-        if (!supervisor) {
-          setIsLoading(false)
-          return
-        }
-
-        // Get expertise areas with subject details
-        const { data: expertiseData, error: expertiseError } = await supabase
-          .from("supervisor_expertise")
-          .select(`
-            subject_id,
-            is_primary,
-            subjects (
-              id,
-              name
-            )
-          `)
-          .eq("supervisor_id", supervisor.id)
-
-        if (expertiseError) throw expertiseError
-
-        const formattedExpertise = (expertiseData || [])
-          .filter((item: { subjects: { id: string; name: string } | null }) => item.subjects)
-          .map((item: { subject_id: string; is_primary: boolean | null; subjects: { id: string; name: string } | null }) => ({
-            id: item.subjects!.id,
-            name: item.subjects!.name,
-            isPrimary: item.is_primary || false,
-          }))
-
-        setExpertise(formattedExpertise)
+        setExpertise(data.expertise || [])
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Failed to fetch expertise"))
       } finally {

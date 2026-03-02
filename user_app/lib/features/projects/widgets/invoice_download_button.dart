@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/services/invoice_service.dart';
@@ -112,21 +111,13 @@ class _InvoiceDownloadButtonState extends ConsumerState<InvoiceDownloadButton> {
     });
 
     try {
-      final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser?.id;
-
-      if (userId == null) {
+      // Fetch user profile from API
+      final profileResponse = await ApiClient.get('/profiles/me');
+      if (profileResponse == null) {
         throw Exception('User not authenticated');
       }
 
-      // Fetch user profile
-      final profileResponse = await supabase
-          .from('profiles')
-          .select()
-          .eq('id', userId)
-          .single();
-
-      final profile = UserProfile.fromJson(profileResponse);
+      final profile = UserProfile.fromJson(profileResponse as Map<String, dynamic>);
 
       // Create invoice from project and profile
       _invoice = InvoiceModel.fromProjectAndProfile(project, profile);

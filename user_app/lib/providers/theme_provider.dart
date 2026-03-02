@@ -114,6 +114,15 @@ class ThemeNotifier extends StateNotifier<AppThemeMode> {
     }
   }
 
+  /// Set theme to light mode.
+  Future<void> setLight() async => setTheme(AppThemeMode.light);
+
+  /// Set theme to dark mode.
+  Future<void> setDark() async => setTheme(AppThemeMode.dark);
+
+  /// Set theme to follow system setting.
+  Future<void> setSystem() async => setTheme(AppThemeMode.system);
+
   /// Toggle between light and dark mode.
   ///
   /// If currently on system mode, toggles to light.

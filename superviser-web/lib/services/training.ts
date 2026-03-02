@@ -1,65 +1,40 @@
 /**
- * @fileoverview Training service — CRUD operations for training modules and progress.
+ * @fileoverview Training service -- CRUD operations for training modules and progress.
+ * Uses Express API instead of Supabase.
  * @module lib/services/training
  */
 
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 
 export async function getTrainingModules(role: string) {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("training_modules")
-    .select("*")
-    .eq("target_role", role)
-    .eq("is_active", true)
-    .order("sequence_order", { ascending: true })
-  if (error) throw error
-  return data || []
+  const data = await apiFetch<{ modules: unknown[] }>(
+    `/api/training/modules?role=${role}`
+  )
+  return data.modules || []
 }
 
 export async function getTrainingProgress(profileId: string) {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("training_progress")
-    .select("*")
-    .eq("profile_id", profileId)
-  if (error) throw error
-  return data || []
+  const data = await apiFetch<{ progress: unknown[] }>(
+    `/api/training/progress?profileId=${profileId}`
+  )
+  return data.progress || []
 }
 
 export async function markModuleComplete(profileId: string, moduleId: string) {
-  const supabase = createClient()
-  const { error } = await supabase
-    .from("training_progress")
-    .upsert(
-      {
-        profile_id: profileId,
-        module_id: moduleId,
-        status: "completed",
-        progress_percentage: 100,
-        completed_at: new Date().toISOString(),
-      },
-      { onConflict: "profile_id,module_id" }
-    )
-  if (error) throw error
+  await apiFetch("/api/training/progress", {
+    method: "POST",
+    body: JSON.stringify({
+      profileId,
+      moduleId,
+      status: "completed",
+      progressPercentage: 100,
+    }),
+  })
 }
 
 export async function isTrainingComplete(profileId: string, role: string) {
-  const supabase = createClient()
-  const { data: modules } = await supabase
-    .from("training_modules")
-    .select("id")
-    .eq("target_role", role)
-    .eq("is_mandatory", true)
-    .eq("is_active", true)
-
-  const { data: progress } = await supabase
-    .from("training_progress")
-    .select("module_id, status")
-    .eq("profile_id", profileId)
-
-  const completedIds = new Set(
-    (progress || []).filter((p: any) => p.status === "completed").map((p: any) => p.module_id)
+  const data = await apiFetch<{ complete: boolean }>(
+    `/api/training/status?profileId=${profileId}&role=${role}`
   )
-  return (modules || []).length === 0 || (modules || []).every((m: any) => completedIds.has(m.id))
+  return data.complete
 }

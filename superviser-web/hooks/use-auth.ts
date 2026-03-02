@@ -1,39 +1,46 @@
 /**
- * @fileoverview Custom React hook for authentication state management and session handling.
+ * @fileoverview Custom React hook for authentication state management.
+ * Uses Express API + JWT instead of Supabase.
  * @module hooks/use-auth
  *
  * Auth flow:
- * 1. signIn/signUp → saves user to localStorage immediately
- * 2. onAuthStateChange SIGNED_IN → saves user to localStorage (backup)
- * 3. initAuth on mount → reads user from localStorage (instant)
- * 4. All other hooks call getAuthUser() which reads from localStorage
- * 5. signOut → clears localStorage, cookies, and navigates to login
+ * 1. signIn/signUp -> stores JWT tokens + user in localStorage
+ * 2. initAuth on mount -> reads user from localStorage, fetches profile from API
+ * 3. signOut -> clears tokens, navigates to login
  */
 
 "use client"
 
-import { useEffect, useCallback, useMemo, useRef } from "react"
+import { useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { createClient, resetClient, getAuthUser, storeAuthUser, clearAuthUser } from "@/lib/supabase/client"
 import { useAuthStore } from "@/store/auth-store"
 import { ROUTES } from "@/lib/constants"
 import { clearAppStorage } from "@/lib/utils"
+import { apiFetch } from "@/lib/api/client"
+import { clearTokens, getAccessToken } from "@/lib/api/client"
+import {
+  getStoredUser,
+  storeUser,
+  clearStoredUser,
+  signUp as apiSignUp,
+  signInWithPassword as apiSignIn,
+  logout as apiLogout,
+  sendMagicLink,
+  verifyOTP as apiVerifyOTP,
+} from "@/lib/api/auth"
+import { disconnectSocket } from "@/lib/socket/client"
 import type { Profile, Supervisor, SupervisorActivation } from "@/types/database"
 
 /**
  * Module-level flag to prevent duplicate auth initialization.
- * When multiple components call useAuth(), only the first triggers initAuth.
- * Reset on sign-out so the next sign-in properly initializes.
  */
 let _authInitStarted = false
 
 /**
  * Custom hook for authentication management
- * @returns Auth state and methods
  */
 export function useAuth() {
   const router = useRouter()
-  const supabase = useMemo(() => createClient(), [])
 
   const {
     user,
@@ -51,43 +58,40 @@ export function useAuth() {
   } = useAuthStore()
 
   /**
-   * Fetch user profile from database
+   * Fetch user profile from API
    */
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single()
-
-    return profile as Profile | null
-  }, [supabase])
-
-  /**
-   * Fetch supervisor data from database
-   */
-  const fetchSupervisor = useCallback(async (profileId: string) => {
-    const { data: supervisorData } = await supabase
-      .from("supervisors")
-      .select("*")
-      .eq("profile_id", profileId)
-      .single()
-
-    return supervisorData as Supervisor | null
-  }, [supabase])
+    try {
+      const profile = await apiFetch<Profile>(`/api/profiles/${userId}`)
+      return profile
+    } catch {
+      return null
+    }
+  }, [])
 
   /**
-   * Fetch supervisor activation data from database
+   * Fetch supervisor data from API
    */
-  const fetchActivation = useCallback(async (supervisorId: string) => {
-    const { data: activationData } = await supabase
-      .from("supervisor_activation")
-      .select("*")
-      .eq("supervisor_id", supervisorId)
-      .maybeSingle()
+  const fetchSupervisor = useCallback(async (_profileId: string) => {
+    try {
+      const supervisorData = await apiFetch<Supervisor>("/api/supervisors/me")
+      return supervisorData
+    } catch {
+      return null
+    }
+  }, [])
 
-    return activationData as SupervisorActivation | null
-  }, [supabase])
+  /**
+   * Fetch supervisor activation data from API
+   */
+  const fetchActivation = useCallback(async (_supervisorId: string) => {
+    try {
+      const activationData = await apiFetch<SupervisorActivation>("/api/supervisors/me/activation")
+      return activationData
+    } catch {
+      return null
+    }
+  }, [])
 
   // Stable refs for callbacks used inside effects
   const fetchProfileRef = useRef(fetchProfile)
@@ -111,8 +115,7 @@ export function useAuth() {
 
   /**
    * One-time auth initialization.
-   * Reads user from localStorage (instant, synchronous).
-   * Then fetches profile/supervisor data from Supabase.
+   * Reads user from localStorage then fetches profile/supervisor data from API.
    */
   useEffect(() => {
     if (_authInitStarted) {
@@ -129,12 +132,12 @@ export function useAuth() {
       setLoadingRef.current(true)
 
       try {
-        // Reads from localStorage — instant, never hangs
-        const authUser = await getAuthUser()
+        const token = getAccessToken()
+        const authUser = getStoredUser()
 
         if (!isMounted) return
 
-        if (authUser) {
+        if (token && authUser) {
           let profile: Profile | null = null
           try {
             profile = await fetchProfileRef.current(authUser.id)
@@ -173,7 +176,7 @@ export function useAuth() {
 
           setOnboardedRef.current(true)
         } else {
-          // No user in localStorage — redirect if on protected route
+          // No token -- redirect if on protected route
           const pathname = window.location.pathname
           const isProtectedRoute = pathname.startsWith("/dashboard") ||
                                    pathname.startsWith("/projects") ||
@@ -206,67 +209,13 @@ export function useAuth() {
       isMounted = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase])
-
-  /**
-   * Auth state change listener — always active.
-   * Saves user to localStorage on SIGNED_IN so future page loads are instant.
-   * Clears on SIGNED_OUT.
-   */
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_IN" && session?.user) {
-          // Persist to localStorage for future page loads
-          storeAuthUser(session.user)
-
-          const profile = await fetchProfileRef.current(session.user.id)
-          setUserRef.current(profile)
-
-          if (profile) {
-            const supervisorData = await fetchSupervisorRef.current(profile.id)
-            setSupervisorRef.current(supervisorData)
-
-            if (supervisorData) {
-              const activationData = await fetchActivationRef.current(supervisorData.id)
-              setActivationRef.current(activationData)
-            }
-
-            setOnboardedRef.current(!!supervisorData)
-          }
-        } else if (event === "SIGNED_OUT") {
-          clearAuthUser()
-          clearAuthRef.current()
-          _authInitStarted = false
-        }
-      }
-    )
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [supabase])
+  }, [])
 
   /**
    * Sign up with email and password
    */
   const signUp = async (email: string, password: string, fullName: string, phone: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          phone,
-        },
-      },
-    })
-
-    if (error) throw error
-
-    // Persist to localStorage immediately so dashboard loads on redirect
-    if (data.user) storeAuthUser(data.user)
-
+    const data = await apiSignUp(email, password, fullName, phone)
     return data
   }
 
@@ -274,41 +223,27 @@ export function useAuth() {
    * Sign in with email and password
    */
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) throw error
-
-    // Persist to localStorage immediately so dashboard loads on redirect
-    if (data.user) storeAuthUser(data.user)
-
+    const data = await apiSignIn(email, password)
     return data
   }
 
   /**
    * Sign out
-   * Clears all localStorage data and forces full page reload.
-   * Resilient — always navigates to login even if signout API calls fail.
    */
   const signOut = async () => {
     clearAuth()
     _authInitStarted = false
     clearAppStorage()
-    resetClient()
+    disconnectSocket()
 
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      await apiLogout()
     } catch {
-      // ignore — navigate anyway
+      // ignore -- navigate anyway
     }
 
-    try {
-      await supabase.auth.signOut()
-    } catch {
-      // ignore — navigate anyway
-    }
+    clearTokens()
+    clearStoredUser()
 
     window.location.href = ROUTES.login
   }
@@ -317,11 +252,10 @@ export function useAuth() {
    * Send OTP to phone number
    */
   const sendPhoneOtp = async (phone: string) => {
-    const { data, error } = await supabase.auth.signInWithOtp({
-      phone,
+    const data = await apiFetch("/api/auth/send-otp", {
+      method: "POST",
+      body: JSON.stringify({ phone }),
     })
-
-    if (error) throw error
     return data
   }
 
@@ -329,17 +263,7 @@ export function useAuth() {
    * Verify phone OTP
    */
   const verifyPhoneOtp = async (phone: string, token: string) => {
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone,
-      token,
-      type: "sms",
-    })
-
-    if (error) throw error
-
-    // Persist to localStorage immediately
-    if (data.user) storeAuthUser(data.user)
-
+    const data = await apiVerifyOTP(phone, token)
     return data
   }
 

@@ -141,7 +141,7 @@ jest.mock('@/components/projects', () => ({
 const mockDoer = {
   id: 'doer-123',
   profile_id: 'profile-123',
-  university_id: 'uni-123',
+  university_name: 'Test University',
   total_earnings: 5000,
   average_rating: 4.5,
   created_at: '2024-01-01T00:00:00Z',
@@ -162,7 +162,6 @@ const createMockProject = (overrides: Partial<Project> = {}): Project => ({
   doer_payout: 150,
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
-  is_urgent: false,
   ...overrides,
 })
 
@@ -363,7 +362,6 @@ describe('ProjectsPage', () => {
         id: 'urgent-1',
         title: 'Urgent Project',
         deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days from now
-        is_urgent: true,
       })
 
       const notUrgentProject = createMockProject({

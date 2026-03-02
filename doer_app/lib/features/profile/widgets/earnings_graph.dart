@@ -137,7 +137,7 @@ class _EarningsGraphState extends State<EarningsGraph> {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         side: const BorderSide(color: AppColors.border),
       ),
       child: Padding(

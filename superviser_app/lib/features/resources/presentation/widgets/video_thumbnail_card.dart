@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/training_video_model.dart';
 
 /// Card widget for displaying a training video thumbnail.
@@ -139,9 +140,9 @@ class VideoThumbnailCard extends StatelessWidget {
                             color: AppColors.error,
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text(
-                            'Required',
-                            style: TextStyle(
+                          child: Text(
+                            'Required'.tr(context),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,

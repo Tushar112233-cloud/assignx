@@ -206,7 +206,7 @@ class _SuccessPopupState extends State<SuccessPopup>
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Project ID: ${widget.projectId!.substring(0, 8).toUpperCase()}',
+                            'Project ID: ${widget.projectId!.length >= 8 ? widget.projectId!.substring(0, 8).toUpperCase() : widget.projectId!.toUpperCase()}',
                             style: AppTextStyles.labelMedium.copyWith(
                               color: AppColors.primary,
                               fontFamily: 'monospace',

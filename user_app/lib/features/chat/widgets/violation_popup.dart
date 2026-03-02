@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../shared/widgets/glass_container.dart';
 
 /// Types of policy violations that can be detected in chat messages.
@@ -234,7 +235,7 @@ class _ViolationPopupState extends State<ViolationPopup>
 
                         // Title
                         Text(
-                          'Message Not Sent',
+                          'Message Not Sent'.tr(context),
                           style: AppTextStyles.headlineSmall.copyWith(
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
@@ -246,7 +247,7 @@ class _ViolationPopupState extends State<ViolationPopup>
 
                         // Main description
                         Text(
-                          'For your protection and privacy, sharing personal contact information is not allowed in project chats. All communication should remain within the AssignX platform.',
+                          'For your protection and privacy, sharing personal contact information is not allowed in project chats. All communication should remain within the AssignX platform.'.tr(context),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.textSecondary,
                             height: 1.5,
@@ -388,7 +389,7 @@ class _ViolationPopupState extends State<ViolationPopup>
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
-              widget.violationType.detectedText,
+              widget.violationType.detectedText.tr(context),
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
                 color: AppColors.warning.withValues(alpha: 0.9),
@@ -418,7 +419,7 @@ class _ViolationPopupState extends State<ViolationPopup>
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Text(
-              'This policy helps protect both you and your assigned expert from potential risks associated with sharing personal information outside the platform.',
+              'This policy helps protect both you and your assigned expert from potential risks associated with sharing personal information outside the platform.'.tr(context),
               style: AppTextStyles.caption.copyWith(
                 color: AppColors.textTertiary,
                 height: 1.4,
@@ -457,7 +458,7 @@ class _ViolationPopupState extends State<ViolationPopup>
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
-                  'Cancel',
+                  'Cancel'.tr(context),
                   style: AppTextStyles.labelLarge.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -511,7 +512,7 @@ class _ViolationPopupState extends State<ViolationPopup>
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   Text(
-                    'Edit Message',
+                    'Edit Message'.tr(context),
                     style: AppTextStyles.labelLarge.copyWith(
                       color: AppColors.textOnPrimary,
                       fontWeight: FontWeight.w600,
@@ -689,7 +690,7 @@ class ViolationDialog extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
 
                 Text(
-                  'Message Not Sent',
+                  'Message Not Sent'.tr(context),
                   style: AppTextStyles.titleLarge.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
@@ -700,7 +701,7 @@ class ViolationDialog extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
 
                 Text(
-                  'For your protection and privacy, sharing personal contact information is not allowed in project chats.',
+                  'For your protection and privacy, sharing personal contact information is not allowed in project chats.'.tr(context),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                     height: 1.5,
@@ -731,7 +732,7 @@ class ViolationDialog extends StatelessWidget {
                       const SizedBox(width: AppSpacing.xs),
                       Flexible(
                         child: Text(
-                          violationType.detectedText,
+                          violationType.detectedText.tr(context),
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.warning,
                             fontWeight: FontWeight.w600,
@@ -750,7 +751,7 @@ class ViolationDialog extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Cancel'),
+                        child: Text('Cancel'.tr(context)),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -760,7 +761,7 @@ class ViolationDialog extends StatelessWidget {
                           onEdit?.call();
                           Navigator.of(context).pop();
                         },
-                        child: const Text('Edit Message'),
+                        child: Text('Edit Message'.tr(context)),
                       ),
                     ),
                   ],

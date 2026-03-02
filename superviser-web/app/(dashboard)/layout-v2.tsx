@@ -5,11 +5,13 @@
  */
 
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebarV2 } from "@/components/layout/app-sidebar-v2"
 import { HeaderV2 } from "@/components/layout/header-v2"
 import { AuthSessionSync } from "@/components/providers/auth-session-sync"
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
 
 interface UserProfile {
   full_name: string | null
@@ -22,10 +24,29 @@ export default async function DashboardLayoutV2({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  const cookieStore = await cookies()
+  const token = cookieStore.get("supervisor_token")?.value
 
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: { session } } = await supabase.auth.getSession()
+  if (!token) {
+    redirect("/login")
+  }
+
+  // Validate token and get user info
+  let user: any = null
+  try {
+    const authRes = await fetch(`${API_BASE}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (!authRes.ok) {
+      redirect("/login")
+    }
+
+    const authData = await authRes.json()
+    user = authData.user
+  } catch {
+    redirect("/login")
+  }
 
   if (!user) {
     redirect("/login")
@@ -34,20 +55,20 @@ export default async function DashboardLayoutV2({
   // Get user profile
   let profile: UserProfile | null = null
   try {
-    const { data } = await supabase
-      .from("profiles")
-      .select("full_name, email, avatar_url")
-      .eq("id", user.id)
-      .single()
-    profile = data as UserProfile | null
+    const profileRes = await fetch(`${API_BASE}/api/profiles/${user.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (profileRes.ok) {
+      profile = await profileRes.json()
+    }
   } catch {
-    // Profile table may not exist yet
+    // Profile fetch may fail
   }
 
   const userData = {
-    name: profile?.full_name || user.user_metadata?.full_name || "Supervisor",
+    name: profile?.full_name || user.full_name || user.user_metadata?.full_name || "Supervisor",
     email: profile?.email || user.email || "",
-    avatarUrl: profile?.avatar_url,
+    avatarUrl: profile?.avatar_url || null,
   }
 
   // Fetch stats
@@ -56,32 +77,34 @@ export default async function DashboardLayoutV2({
   let unreadChats = 0
 
   try {
-    const { data: supervisor } = await supabase
-      .from("supervisors")
-      .select("id")
-      .eq("profile_id", user.id)
-      .single()
+    const supervisorRes = await fetch(`${API_BASE}/api/supervisors/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
 
-    if (supervisor) {
-      const [notificationsResult, pendingResult, chatsResult] = await Promise.all([
-        supabase
-          .from("notifications")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .eq("target_role", "supervisor")
-          .eq("read", false),
-        supabase
-          .from("projects")
-          .select("id", { count: "exact", head: true })
-          .eq("supervisor_id", supervisor.id)
-          .eq("status", "submitted_for_qc"),
-        // Mock unread chats count - replace with actual query
-        Promise.resolve({ count: 0 }),
-      ])
+    if (supervisorRes.ok) {
+      const supervisor = await supervisorRes.json()
 
-      notificationCount = notificationsResult.count || 0
-      pendingProjects = pendingResult.count || 0
-      unreadChats = chatsResult.count || 0
+      if (supervisor?.id) {
+        const [notificationsRes, pendingRes] = await Promise.all([
+          fetch(
+            `${API_BASE}/api/notifications?userId=${user.id}&targetRole=supervisor&read=false&countOnly=true`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          ).catch(() => null),
+          fetch(
+            `${API_BASE}/api/projects?supervisorId=${supervisor.id}&status=submitted_for_qc&countOnly=true`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          ).catch(() => null),
+        ])
+
+        if (notificationsRes?.ok) {
+          const notifData = await notificationsRes.json()
+          notificationCount = notifData.count || 0
+        }
+        if (pendingRes?.ok) {
+          const pendingData = await pendingRes.json()
+          pendingProjects = pendingData.count || 0
+        }
+      }
     }
   } catch {
     // Stats queries may fail
@@ -90,8 +113,8 @@ export default async function DashboardLayoutV2({
   return (
     <SidebarProvider>
       <AuthSessionSync
-        accessToken={session?.access_token ?? null}
-        refreshToken={session?.refresh_token ?? null}
+        accessToken={token}
+        refreshToken={null}
       />
       <AppSidebarV2
         user={userData}

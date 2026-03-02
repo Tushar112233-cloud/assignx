@@ -100,11 +100,11 @@ export function TrainingCenter({
   /** Calculate overall progress percentage */
   const overallProgress = modules.length > 0
     ? Math.round(
-        (progress.filter((p) => p.is_completed).length / modules.length) * 100
+        (progress.filter((p) => p.status === 'completed').length / modules.length) * 100
       )
     : 0
 
-  const completedCount = progress.filter((p) => p.is_completed).length
+  const completedCount = progress.filter((p) => p.status === 'completed').length
   const mandatoryCount = modules.filter((m) => m.is_mandatory).length
   const bookmarkCount = bookmarkedModules.length
 
@@ -250,7 +250,7 @@ export function TrainingCenter({
             </span>
           </div>
 
-          {!getModuleProgress(selectedModule.id)?.is_completed && (
+          {!(getModuleProgress(selectedModule.id)?.status === 'completed') && (
             <Button
               onClick={() => {
                 onModuleComplete?.(selectedModule.id)
@@ -263,7 +263,7 @@ export function TrainingCenter({
             </Button>
           )}
 
-          {getModuleProgress(selectedModule.id)?.is_completed && (
+          {getModuleProgress(selectedModule.id)?.status === 'completed' && (
             <Badge variant="outline" className="gap-1 bg-[#E3E9FF] text-[#4F6CF7]">
               <CheckCircle2 className="h-3 w-3" />
               Completed
@@ -399,7 +399,7 @@ function ModuleCard({
   onBookmark,
   onClick,
 }: ModuleCardProps) {
-  const isCompleted = progress?.is_completed ?? false
+  const isCompleted = progress?.status === 'completed'
   const progressPercent = progress?.progress_percentage ?? 0
 
   /**

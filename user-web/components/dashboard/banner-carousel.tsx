@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { getBanners } from "@/lib/actions/data";
 
 /**
- * Banner interface matching Supabase schema
+ * Banner interface matching API schema
  */
 interface Banner {
   id: string;
@@ -32,7 +32,7 @@ interface Banner {
 
 /**
  * Banner carousel with autoplay
- * Fetches banners from Supabase and displays with 4s auto-scroll
+ * Fetches banners from API and displays with 4s auto-scroll
  */
 export function BannerCarousel() {
   const [banners, setBanners] = useState<Banner[]>([]);

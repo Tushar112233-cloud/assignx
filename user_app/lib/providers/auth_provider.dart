@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/api/api_client.dart';
+import '../core/storage/token_storage.dart';
 import '../data/models/user_model.dart';
 import '../data/repositories/auth_repository.dart';
 
@@ -11,9 +12,17 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
 });
 
+/// Lightweight user info from JWT / API response.
+class AuthUser {
+  final String id;
+  final String? email;
+
+  const AuthUser({required this.id, this.email});
+}
+
 /// Current auth state.
 class AuthStateData {
-  final User? user;
+  final AuthUser? user;
   final UserProfile? profile;
   final bool isLoading;
   final String? error;
@@ -33,7 +42,7 @@ class AuthStateData {
 
   /// Copy with updated fields.
   AuthStateData copyWith({
-    User? user,
+    AuthUser? user,
     UserProfile? profile,
     bool? isLoading,
     String? error,
@@ -50,77 +59,30 @@ class AuthStateData {
 /// Auth state notifier.
 class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
   late AuthRepository _authRepository;
-  StreamSubscription<AuthState>? _authSubscription;
 
   @override
   Future<AuthStateData> build() async {
     _authRepository = ref.read(authRepositoryProvider);
 
-    // Listen to auth state changes
-    _authSubscription = _authRepository.authStateChanges.listen(
-      _onAuthStateChange,
-    );
-
-    // Clean up on dispose
-    ref.onDispose(() {
-      _authSubscription?.cancel();
-    });
-
-    // Check initial auth state
-    final user = _authRepository.currentUser;
-    if (user != null) {
-      final profile = await _authRepository.getUserProfile(user.id);
-      return AuthStateData(user: user, profile: profile);
+    // Check if user has stored tokens
+    final hasTokens = await TokenStorage.hasTokens();
+    if (hasTokens) {
+      try {
+        final userData = await _authRepository.getCurrentUser();
+        if (userData != null) {
+          final userId = (userData['_id'] ?? userData['id'] ?? '') as String;
+          final email = userData['email'] as String?;
+          final user = AuthUser(id: userId, email: email);
+          final profile = await _authRepository.getUserProfile(userId);
+          return AuthStateData(user: user, profile: profile);
+        }
+      } catch (_) {
+        // Token expired or invalid, clear it
+        await TokenStorage.clearTokens();
+      }
     }
 
     return const AuthStateData();
-  }
-
-  /// Handle auth state changes from Supabase.
-  Future<void> _onAuthStateChange(AuthState authState) async {
-    final user = authState.session?.user;
-
-    if (user != null) {
-      final profile = await _authRepository.getUserProfile(user.id);
-      state = AsyncValue.data(AuthStateData(user: user, profile: profile));
-    } else {
-      state = const AsyncValue.data(AuthStateData());
-    }
-  }
-
-  /// Sign in with Google.
-  ///
-  /// Returns true if successful, false if cancelled.
-  Future<bool> signInWithGoogle() async {
-    state = AsyncValue.data(state.valueOrNull?.copyWith(isLoading: true) ??
-        const AuthStateData(isLoading: true));
-
-    try {
-      final success = await _authRepository.signInWithGoogle();
-
-      if (!success) {
-        // User cancelled
-        state = AsyncValue.data(
-          state.valueOrNull?.copyWith(isLoading: false) ??
-              const AuthStateData(),
-        );
-        return false;
-      }
-
-      final user = _authRepository.currentUser;
-      if (user != null) {
-        final profile = await _authRepository.getUserProfile(user.id);
-        state = AsyncValue.data(AuthStateData(user: user, profile: profile));
-      }
-
-      return true;
-    } catch (e) {
-      state = AsyncValue.data(
-        state.valueOrNull?.copyWith(isLoading: false, error: e.toString()) ??
-            AuthStateData(error: e.toString()),
-      );
-      rethrow;
-    }
   }
 
   /// Sign out.
@@ -142,8 +104,6 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
   }
 
   /// Update user profile.
-  ///
-  /// Uses user_type instead of role to match database schema.
   Future<void> updateProfile({
     String? fullName,
     UserType? userType,
@@ -186,8 +146,6 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
   }
 
   /// Save student data to the students table.
-  ///
-  /// Uses profile_id instead of user_id to match database schema.
   Future<StudentData> saveStudentData({
     String? universityId,
     String? courseId,
@@ -217,9 +175,6 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
   }
 
   /// Save professional data to the professionals table.
-  ///
-  /// Uses profile_id instead of user_id to match database schema.
-  /// Requires professional_type as it's a required field in the database.
   Future<ProfessionalData> saveProfessionalData({
     required ProfessionalType professionalType,
     String? industryId,
@@ -263,7 +218,6 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
   }
 
   /// Set selected user type (before profile completion).
-  /// Persisted via StateProvider to survive notifier rebuilds during OAuth.
   UserType? get selectedUserType => ref.read(_persistedSelectedUserTypeProvider);
 
   void setSelectedUserType(UserType userType) {
@@ -271,22 +225,16 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
   }
 
   /// Store role selected before sign-in (survives OAuth redirect).
-  /// This is used when user selects role first, then authenticates.
-  /// Persisted via StateProvider to survive notifier rebuilds during OAuth.
   UserType? get preSignInRole => ref.read(_persistedPreSignInRoleProvider);
 
   void setPreSignInRole(UserType? role) {
     ref.read(_persistedPreSignInRoleProvider.notifier).state = role;
-    // Also set as selected user type for profile creation
     if (role != null) {
       ref.read(_persistedSelectedUserTypeProvider.notifier).state = role;
     }
   }
 
   /// Sign in with magic link (passwordless email authentication).
-  ///
-  /// Sends a magic link to the provided email address.
-  /// Returns true if the link was sent successfully.
   Future<bool> signInWithMagicLink({
     required String email,
     UserType? userType,
@@ -295,7 +243,6 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
         const AuthStateData(isLoading: true));
 
     try {
-      // Store role for use after sign-in completes
       if (userType != null) {
         setPreSignInRole(userType);
       }
@@ -328,24 +275,24 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
         const AuthStateData(isLoading: true));
 
     try {
-      final success = await _authRepository.verifyOtp(
+      final data = await _authRepository.verifyOtp(
         email: email,
         token: token,
       );
 
-      if (success) {
-        final user = _authRepository.currentUser;
-        if (user != null) {
-          final profile = await _authRepository.getUserProfile(user.id);
-          state = AsyncValue.data(AuthStateData(user: user, profile: profile));
-        }
+      if (data != null) {
+        final userId = (data['user']?['_id'] ?? data['user']?['id'] ?? data['_id'] ?? data['id'] ?? '') as String;
+        final userEmail = (data['user']?['email'] ?? data['email'] ?? email) as String;
+        final user = AuthUser(id: userId, email: userEmail);
+        final profile = await _authRepository.getUserProfile(userId);
+        state = AsyncValue.data(AuthStateData(user: user, profile: profile));
+        return true;
       } else {
         state = AsyncValue.data(
           state.valueOrNull?.copyWith(isLoading: false) ?? const AuthStateData(),
         );
+        return false;
       }
-
-      return success;
     } catch (e) {
       state = AsyncValue.data(
         state.valueOrNull?.copyWith(isLoading: false, error: e.toString()) ??
@@ -379,14 +326,14 @@ final authStateProvider =
   return AuthStateNotifier();
 });
 
-/// Persisted selected user type across notifier rebuilds (survives OAuth redirect).
+/// Persisted selected user type across notifier rebuilds.
 final _persistedSelectedUserTypeProvider = StateProvider<UserType?>((ref) => null);
 
-/// Persisted pre-sign-in role across notifier rebuilds (survives OAuth redirect).
+/// Persisted pre-sign-in role across notifier rebuilds.
 final _persistedPreSignInRoleProvider = StateProvider<UserType?>((ref) => null);
 
 /// Convenience provider for current user.
-final currentUserProvider = Provider<User?>((ref) {
+final currentUserProvider = Provider<AuthUser?>((ref) {
   return ref.watch(authStateProvider).valueOrNull?.user;
 });
 
@@ -414,7 +361,7 @@ final coursesProvider =
   return repository.getCourses(universityId);
 });
 
-/// Industries provider - returns list of industry records with id and name.
+/// Industries provider.
 final industriesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repository = ref.read(authRepositoryProvider);
   return repository.getIndustries();

@@ -1,20 +1,21 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../providers/accessibility_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../providers/theme_provider.dart';
-import '../../../providers/translation_provider.dart';
 import '../../../shared/widgets/dashboard_app_bar.dart';
-import '../../../shared/widgets/language_picker.dart';
 import '../../profile/widgets/account_upgrade_card.dart';
+import '../widgets/language_selector.dart';
+import '../widgets/about_section.dart';
+import '../widgets/danger_zone_section.dart';
+import '../widgets/feedback_section.dart';
+import '../widgets/my_roles_section.dart';
+import '../widgets/privacy_data_section.dart';
 
 // ============================================================
 // DESIGN CONSTANTS
@@ -29,13 +30,7 @@ class _SettingsColors {
   static const mutedText = Color(0xFF8B8B8B);
   static const toggleOn = Color(0xFF5D3A3A);
   static const toggleOff = Color(0xFFE0E0E0);
-  static const actionBlue = Color(0xFF2196F3);
-  static const actionRed = Color(0xFFF44336);
   static const selectedThemeTint = Color(0xFFF8F0F8);
-  static const chipBackground = Color(0xFFF5F5F5);
-  static const exportBlueBackground = Color(0xFFF0F7FF);
-  static const clearRedBackground = Color(0xFFFFF0F0);
-  static const walletChipBackground = Color(0xFFF0F0F0);
 }
 
 // ============================================================
@@ -59,15 +54,6 @@ final appearancePrefsProvider = FutureProvider<AppearancePrefs>((ref) async {
   return AppearancePrefs(
     reducedMotion: prefs.getBool('reduced_motion') ?? false,
     compactMode: prefs.getBool('compact_mode') ?? false,
-  );
-});
-
-/// Provider for privacy preferences.
-final privacyPrefsProvider = FutureProvider<PrivacyPrefs>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  return PrivacyPrefs(
-    analyticsOptOut: prefs.getBool('analytics_opt_out') ?? false,
-    showOnlineStatus: prefs.getBool('show_online_status') ?? true,
   );
 });
 
@@ -101,17 +87,6 @@ class AppearancePrefs {
   });
 }
 
-/// Model for privacy preferences.
-class PrivacyPrefs {
-  final bool analyticsOptOut;
-  final bool showOnlineStatus;
-
-  const PrivacyPrefs({
-    required this.analyticsOptOut,
-    required this.showOnlineStatus,
-  });
-}
-
 // ============================================================
 // MAIN SCREEN
 // ============================================================
@@ -125,15 +100,11 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _isExporting = false;
-  bool _isClearing = false;
-
   @override
   Widget build(BuildContext context) {
     final appThemeMode = ref.watch(themeProvider);
     final notifPrefsAsync = ref.watch(notificationPrefsProvider);
     final appearancePrefsAsync = ref.watch(appearancePrefsProvider);
-    final privacyPrefsAsync = ref.watch(privacyPrefsProvider);
 
     return Scaffold(
       // Transparent to show SubtleGradientScaffold from MainShell
@@ -177,109 +148,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Language Section (mobile only)
-                      if (!kIsWeb) _buildLanguageCard(),
-                      if (!kIsWeb) const SizedBox(height: 16),
+                      // Language Section
+                      _buildLanguageCard(),
+                      const SizedBox(height: 16),
+
+                      // My Roles Section
+                      const MyRolesSection(),
+                      const SizedBox(height: 16),
 
                       // Privacy & Data Section
-                      privacyPrefsAsync.when(
-                        data: (prefs) => _buildPrivacyCard(prefs),
-                        loading: () => _buildLoadingCard(),
-                        error: (e, s) => const SizedBox.shrink(),
-                      ),
+                      const PrivacyDataSection(),
                       const SizedBox(height: 16),
 
-                      // Feedback Section
-                      _buildFeedbackCard(),
+                      // Send Feedback Section
+                      const FeedbackSection(),
                       const SizedBox(height: 16),
 
-                      // About Section
-                      _buildAboutCard(),
+                      // About AssignX Section
+                      const AboutSection(),
                       const SizedBox(height: 16),
 
                       // Danger Zone Section
-                      _buildDangerZoneCard(),
+                      const DangerZoneSection(),
                       const SizedBox(height: 100), // Bottom padding for nav bar
                     ]),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // HEADER BAR
-  // ============================================================
-
-  /// Builds the header bar with logo, wallet chip, and notification icon.
-  Widget _buildHeaderBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Row(
-        children: [
-          // AssignX Logo
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                'A',
-                style: AppTextStyles.headingSmall.copyWith(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            'AssignX',
-            style: AppTextStyles.headingMedium.copyWith(
-              color: _SettingsColors.primaryText,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          // Wallet Chip
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: _SettingsColors.walletChipBackground,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.account_balance_wallet_outlined,
-                  size: 16,
-                  color: _SettingsColors.secondaryText,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Wallet · 100',
-                  style: AppTextStyles.labelMedium.copyWith(
-                    color: _SettingsColors.primaryText,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Notification Bell
-          Icon(
-            Icons.notifications_outlined,
-            size: 24,
-            color: _SettingsColors.secondaryText,
           ),
         ],
       ),
@@ -484,595 +380,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // LANGUAGE CARD
   // ============================================================
 
-  /// Builds the language settings card (mobile only).
+  /// Builds the language settings card with selectable language options.
   Widget _buildLanguageCard() {
-    final translationState = ref.watch(translationProvider);
+    final selectedCode = ref.watch(languageProvider);
 
     return _SettingsCard(
-      icon: Icons.translate_outlined,
+      icon: Icons.language,
       iconBackgroundColor: const Color(0xFFE3F2FD), // Soft blue
       title: 'Language',
-      subtitle: 'Change the display language',
+      subtitle: 'Choose your preferred language',
       children: [
-        InkWell(
-          onTap: () => showLanguagePicker(context),
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: _SettingsColors.chipBackground,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.language,
-                    size: 18,
-                    color: _SettingsColors.secondaryText,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Display Language',
-                        style: AppTextStyles.labelLarge.copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: _SettingsColors.primaryText,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        translationState.selectedLanguageName,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: _SettingsColors.secondaryText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (translationState.isDownloading)
-                  const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  Icon(
-                    Icons.chevron_right,
-                    size: 20,
-                    color: _SettingsColors.mutedText,
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // PRIVACY & DATA CARD
-  // ============================================================
-
-  /// Builds the privacy & data settings card.
-  Widget _buildPrivacyCard(PrivacyPrefs prefs) {
-    return _SettingsCard(
-      icon: Icons.shield_outlined,
-      iconBackgroundColor: const Color(0xFFE8F5E9), // Soft green
-      title: 'Privacy & Data',
-      subtitle: 'Control your data',
-      children: [
-        _SettingsToggleItem(
-          title: 'Analytics Opt-out',
-          subtitle: 'Disable anonymous usage analytics',
-          value: prefs.analyticsOptOut,
-          onChanged: (value) => _updatePrivacyPref('analytics_opt_out', value),
-        ),
-        _SettingsToggleItem(
-          title: 'Show Online Status',
-          subtitle: 'Let others see when you are online',
-          value: prefs.showOnlineStatus,
-          onChanged: (value) => _updatePrivacyPref('show_online_status', value),
-          showDivider: false,
-        ),
-        const SizedBox(height: 16),
-        // Export Data Button
-        _ActionButton(
-          title: 'Export Data',
-          subtitle: 'Download your data as JSON',
-          backgroundColor: _SettingsColors.exportBlueBackground,
-          textColor: _SettingsColors.actionBlue,
-          isLoading: _isExporting,
-          onTap: _handleExportData,
-        ),
-        const SizedBox(height: 10),
-        // Clear Cache Button
-        _ActionButton(
-          title: 'Clear Cache',
-          subtitle: 'Clear local storage data',
-          backgroundColor: _SettingsColors.clearRedBackground,
-          textColor: _SettingsColors.actionRed,
-          isLoading: _isClearing,
-          onTap: _handleClearCache,
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // ABOUT CARD
-  // ============================================================
-
-  /// Builds the about AssignX card.
-  Widget _buildAboutCard() {
-    return _SettingsCard(
-      icon: Icons.info_outline,
-      iconBackgroundColor: const Color(0xFFE8E0F8),
-      title: 'About AssignX',
-      subtitle: 'App information',
-      children: [
-        // Info Chips
-        Row(
-          children: [
-            _InfoChip(label: 'Version', value: '1.0.0'),
-            const SizedBox(width: 10),
-            _InfoChip(label: 'Build', value: '2024.12.26'),
-            const SizedBox(width: 10),
-            _InfoChip(label: 'Status', value: 'Beta'),
-          ],
-        ),
-        const SizedBox(height: 12),
-        // Last Updated
-        FutureBuilder<PackageInfo>(
-          future: PackageInfo.fromPlatform(),
-          builder: (context, snapshot) {
-            return Center(
-              child: Text(
-                'Updated: Dec 26, 2024',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: _SettingsColors.mutedText,
-                ),
-              ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: kLanguageOptions.map((lang) {
+            final isSelected = selectedCode == lang.code;
+            return _LanguageOptionChip(
+              flag: lang.flag,
+              label: lang.name,
+              isSelected: isSelected,
+              onTap: () {
+                ref.read(languageProvider.notifier).setLanguage(lang.code);
+              },
             );
-          },
-        ),
-        const SizedBox(height: 20),
-        // Navigation Links
-        _NavigationLinkItem(
-          title: 'Terms of Service',
-          onTap: () => _launchUrl('https://assignx.in/terms'),
-        ),
-        _NavigationLinkItem(
-          title: 'Privacy Policy',
-          onTap: () => _launchUrl('https://assignx.in/privacy'),
-        ),
-        _NavigationLinkItem(
-          title: 'Open Source',
-          onTap: () => showLicensePage(
-            context: context,
-            applicationName: 'AssignX',
-            applicationVersion: '1.0.0',
-          ),
-          showDivider: false,
+          }).toList(),
         ),
       ],
-    );
-  }
-
-  // ============================================================
-  // FEEDBACK CARD
-  // ============================================================
-
-  /// Builds the feedback section card.
-  Widget _buildFeedbackCard() {
-    return _SettingsCard(
-      icon: Icons.feedback_outlined,
-      iconBackgroundColor: const Color(0xFFE0F2FE), // Soft blue
-      title: 'Send Feedback',
-      subtitle: 'Help us improve AssignX',
-      children: [
-        _FeedbackOption(
-          icon: Icons.bug_report_outlined,
-          title: 'Report a Bug',
-          subtitle: 'Something not working right?',
-          onTap: () => _showFeedbackSheet(context, 'bug'),
-        ),
-        _FeedbackOption(
-          icon: Icons.lightbulb_outline,
-          title: 'Feature Request',
-          subtitle: 'Suggest a new feature',
-          onTap: () => _showFeedbackSheet(context, 'feature'),
-        ),
-        _FeedbackOption(
-          icon: Icons.chat_bubble_outline,
-          title: 'General Feedback',
-          subtitle: 'Share your thoughts',
-          onTap: () => _showFeedbackSheet(context, 'general'),
-          showDivider: false,
-        ),
-      ],
-    );
-  }
-
-  /// Shows the feedback bottom sheet.
-  void _showFeedbackSheet(BuildContext context, String type) {
-    final feedbackController = TextEditingController();
-    String selectedType = type;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Send Feedback',
-                style: AppTextStyles.headingSmall.copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Help us improve AssignX by sharing your feedback',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: _SettingsColors.secondaryText,
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Feedback type selector
-              Text(
-                'Feedback Type',
-                style: AppTextStyles.labelMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  _FeedbackTypeChip(
-                    label: 'Bug',
-                    icon: Icons.bug_report_outlined,
-                    isSelected: selectedType == 'bug',
-                    onTap: () => setState(() => selectedType = 'bug'),
-                  ),
-                  const SizedBox(width: 8),
-                  _FeedbackTypeChip(
-                    label: 'Feature',
-                    icon: Icons.lightbulb_outline,
-                    isSelected: selectedType == 'feature',
-                    onTap: () => setState(() => selectedType = 'feature'),
-                  ),
-                  const SizedBox(width: 8),
-                  _FeedbackTypeChip(
-                    label: 'General',
-                    icon: Icons.chat_bubble_outline,
-                    isSelected: selectedType == 'general',
-                    onTap: () => setState(() => selectedType = 'general'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              // Feedback text field
-              Text(
-                'Your Feedback',
-                style: AppTextStyles.labelMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: feedbackController,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Tell us what you think...',
-                  hintStyle: AppTextStyles.bodyMedium.copyWith(
-                    color: _SettingsColors.mutedText,
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF5F5F5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Submit button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (feedbackController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter your feedback')),
-                      );
-                      return;
-                    }
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Thank you for your feedback!'),
-                        backgroundColor: Color(0xFF4CAF50),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _SettingsColors.actionBlue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('Send Feedback'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // DANGER ZONE CARD
-  // ============================================================
-
-  /// Builds the danger zone card for destructive actions.
-  Widget _buildDangerZoneCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: _SettingsColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _SettingsColors.actionRed.withValues(alpha: 0.3),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: _SettingsColors.clearRedBackground,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.warning_amber_rounded,
-                    size: 20,
-                    color: _SettingsColors.actionRed,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Danger Zone',
-                        style: AppTextStyles.headingSmall.copyWith(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: _SettingsColors.actionRed,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Irreversible actions',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontSize: 13,
-                          color: _SettingsColors.mutedText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Delete account option
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: _SettingsColors.clearRedBackground,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: _SettingsColors.actionRed.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Delete Account',
-                          style: AppTextStyles.labelLarge.copyWith(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: _SettingsColors.primaryText,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Permanently delete your account and all data',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            fontSize: 12,
-                            color: _SettingsColors.secondaryText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _showDeleteAccountDialog,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _SettingsColors.actionRed,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Delete'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Shows the delete account confirmation dialog.
-  void _showDeleteAccountDialog() {
-    final confirmController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _SettingsColors.clearRedBackground,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.warning_amber_rounded,
-                  color: _SettingsColors.actionRed,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text('Delete Account'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'This action is permanent and irreversible. Deleting your account will:',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: _SettingsColors.secondaryText,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _DeleteWarningItem(text: 'Remove all your personal information'),
-              _DeleteWarningItem(text: 'Delete all your projects and history'),
-              _DeleteWarningItem(text: 'Cancel any active subscriptions'),
-              _DeleteWarningItem(text: 'Remove access to all connected services'),
-              const SizedBox(height: 16),
-              Text(
-                'Type DELETE to confirm',
-                style: AppTextStyles.labelMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: confirmController,
-                decoration: InputDecoration(
-                  hintText: 'DELETE',
-                  hintStyle: TextStyle(
-                    fontFamily: 'monospace',
-                    color: _SettingsColors.mutedText,
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF5F5F5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                style: const TextStyle(fontFamily: 'monospace'),
-                onChanged: (_) => setState(() {}),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: confirmController.text == 'DELETE'
-                  ? () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Account deletion request submitted'),
-                          backgroundColor: _SettingsColors.actionRed,
-                        ),
-                      );
-                    }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _SettingsColors.actionRed,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Delete Account'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1115,103 +448,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
     ref.invalidate(appearancePrefsProvider);
-  }
-
-  Future<void> _updatePrivacyPref(String key, bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(key, value);
-    ref.invalidate(privacyPrefsProvider);
-  }
-
-  // ============================================================
-  // ACTION HANDLERS
-  // ============================================================
-
-  Future<void> _handleExportData() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text('Export Your Data'),
-        content: const Text(
-          'We\'ll prepare a copy of your data and send it to your email. This may take up to 24 hours.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _SettingsColors.actionBlue,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Export'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      setState(() => _isExporting = true);
-      await Future.delayed(const Duration(seconds: 2));
-      if (mounted) {
-        setState(() => _isExporting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Data export request submitted')),
-        );
-      }
-    }
-  }
-
-  Future<void> _handleClearCache() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text('Clear Cache'),
-        content: const Text(
-          'This will clear cached images and temporary data. You may need to download some content again.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _SettingsColors.actionRed,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Clear'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      setState(() => _isClearing = true);
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        setState(() => _isClearing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cache cleared successfully')),
-        );
-      }
-    }
-  }
-
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 }
 
@@ -1476,276 +712,16 @@ class _ThemeOptionCard extends StatelessWidget {
   }
 }
 
-/// Action button (Export Data / Clear Cache).
-class _ActionButton extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final Color backgroundColor;
-  final Color textColor;
-  final bool isLoading;
-  final VoidCallback onTap;
-
-  const _ActionButton({
-    required this.title,
-    required this.subtitle,
-    required this.backgroundColor,
-    required this.textColor,
-    this.isLoading = false,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: isLoading ? null : onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: isLoading
-            ? Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(textColor),
-                  ),
-                ),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      fontSize: 12,
-                      color: textColor.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-}
-
-/// Info chip for about section.
-class _InfoChip extends StatelessWidget {
+/// Language option chip for selecting app language.
+class _LanguageOptionChip extends StatelessWidget {
+  final String flag;
   final String label;
-  final String value;
-
-  const _InfoChip({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: _SettingsColors.chipBackground,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: AppTextStyles.caption.copyWith(
-                fontSize: 10,
-                color: _SettingsColors.mutedText,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: AppTextStyles.labelLarge.copyWith(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: _SettingsColors.primaryText,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Navigation link item for about section.
-class _NavigationLinkItem extends StatelessWidget {
-  final String title;
-  final VoidCallback onTap;
-  final bool showDivider;
-
-  const _NavigationLinkItem({
-    required this.title,
-    required this.onTap,
-    this.showDivider = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: _SettingsColors.chipBackground,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.description_outlined,
-                    size: 18,
-                    color: _SettingsColors.secondaryText,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: _SettingsColors.primaryText,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right,
-                  size: 20,
-                  color: _SettingsColors.mutedText,
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (showDivider)
-          Divider(
-            height: 1,
-            color: Colors.grey.withValues(alpha: 0.1),
-          ),
-      ],
-    );
-  }
-}
-
-/// Feedback option item widget.
-class _FeedbackOption extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final bool showDivider;
-
-  const _FeedbackOption({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    this.showDivider = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: _SettingsColors.chipBackground,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 18,
-                    color: _SettingsColors.secondaryText,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: AppTextStyles.labelLarge.copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: _SettingsColors.primaryText,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontSize: 12,
-                          color: _SettingsColors.mutedText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right,
-                  size: 20,
-                  color: _SettingsColors.mutedText,
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (showDivider)
-          Divider(
-            height: 1,
-            color: Colors.grey.withValues(alpha: 0.1),
-          ),
-      ],
-    );
-  }
-}
-
-/// Feedback type selection chip.
-class _FeedbackTypeChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _FeedbackTypeChip({
+  const _LanguageOptionChip({
+    required this.flag,
     required this.label,
-    required this.icon,
     required this.isSelected,
     required this.onTap,
   });
@@ -1758,30 +734,43 @@ class _FeedbackTypeChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? _SettingsColors.actionBlue : Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          color: isSelected
+              ? _SettingsColors.selectedThemeTint
+              : Colors.white,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
-                ? _SettingsColors.actionBlue
-                : Colors.grey.withValues(alpha: 0.3),
+                ? AppColors.primary.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.2),
+            width: isSelected ? 2 : 1,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? Colors.white : _SettingsColors.secondaryText,
+            Text(
+              flag,
+              style: const TextStyle(fontSize: 20),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             Text(
               label,
               style: AppTextStyles.labelMedium.copyWith(
-                fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : _SettingsColors.primaryText,
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected
+                    ? _SettingsColors.primaryText
+                    : _SettingsColors.secondaryText,
               ),
             ),
+            if (isSelected) ...[
+              const SizedBox(width: 6),
+              Icon(
+                Icons.check_circle,
+                size: 16,
+                color: AppColors.primary,
+              ),
+            ],
           ],
         ),
       ),
@@ -1789,36 +778,3 @@ class _FeedbackTypeChip extends StatelessWidget {
   }
 }
 
-/// Delete warning item widget.
-class _DeleteWarningItem extends StatelessWidget {
-  final String text;
-
-  const _DeleteWarningItem({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.circle,
-            size: 6,
-            color: _SettingsColors.actionRed,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: AppTextStyles.bodySmall.copyWith(
-                fontSize: 13,
-                color: _SettingsColors.secondaryText,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

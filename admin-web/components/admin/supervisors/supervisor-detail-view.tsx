@@ -53,7 +53,7 @@ interface SupervisorProject {
   id: string;
   title: string;
   status: string;
-  price: number | null;
+  user_quote: number | null;
   created_at: string;
 }
 
@@ -195,7 +195,7 @@ export function SupervisorDetailView({
                               {p.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>{formatCurrency(p.price)}</TableCell>
+                          <TableCell>{formatCurrency(p.user_quote)}</TableCell>
                           <TableCell>{formatDate(p.created_at)}</TableCell>
                         </TableRow>
                       ))}

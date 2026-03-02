@@ -51,7 +51,7 @@ export type ServiceType =
 
 /**
  * Project interface
- * Core project/task data matching Supabase schema
+ * Core project/task data matching database schema
  */
 export interface Project {
   /** Unique identifier */
@@ -166,10 +166,6 @@ export interface Project {
   doer_name?: string
   /** Price - alias for doer_payout for component compatibility */
   price?: number
-  /** Whether task is urgent (computed from deadline) */
-  is_urgent?: boolean
-  /** Submission timestamp for QC (computed) */
-  submitted_at?: string | null
 }
 
 /**
@@ -200,6 +196,8 @@ export interface ProjectFile {
 /**
  * Project deliverable interface
  * Submitted work files
+ * DB columns: id, project_id, uploaded_by, file_name, file_url, file_type,
+ * file_size_bytes, version, qc_status, qc_notes, qc_at, qc_by, created_at
  */
 export interface ProjectDeliverable {
   /** Unique identifier */
@@ -222,33 +220,37 @@ export interface ProjectDeliverable {
   qc_status: QCStatus
   /** QC reviewer notes */
   qc_notes: string | null
-  /** Submission timestamp */
-  submitted_at: string
-  /** Review timestamp */
-  reviewed_at: string | null
-  /** Reviewer ID */
-  reviewed_by: string | null
+  /** Submission / creation timestamp */
+  created_at: string
+  /** QC review timestamp */
+  qc_at: string | null
+  /** QC reviewer ID */
+  qc_by: string | null
 }
 
 /**
  * Project revision interface
  * Revision request details
+ * DB columns: id, project_id, requested_by, requested_by_type, revision_number,
+ * feedback, specific_changes, response_notes, status, created_at, completed_at
  */
 export interface ProjectRevision {
   /** Unique identifier */
   id: string
   /** Parent project */
   project_id: string
-  /** Related deliverable */
-  deliverable_id: string | null
   /** Requester ID */
   requested_by: string
-  /** Revision reason */
-  reason: string
-  /** Detailed instructions */
-  details: string | null
-  /** Priority level */
-  priority: 'low' | 'medium' | 'high'
+  /** Type of requester (user, supervisor, etc.) */
+  requested_by_type: string | null
+  /** Revision sequence number */
+  revision_number: number
+  /** General feedback from requester */
+  feedback: string | null
+  /** Specific changes requested */
+  specific_changes: string | null
+  /** Notes from the doer's response */
+  response_notes: string | null
   /** Current status */
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
   /** Creation timestamp */

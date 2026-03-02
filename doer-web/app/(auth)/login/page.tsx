@@ -6,7 +6,8 @@ import { useSearchParams } from 'next/navigation'
 import { Loader2, Mail, ArrowRight, CheckCircle2, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { createClient } from '@/lib/supabase/client'
+import { sendMagicLink, devLogin, isDevBypassEmail } from '@/lib/api/auth'
+import { apiClient } from '@/lib/api/client'
 
 export default function LoginPage() {
   const searchParams = useSearchParams()
@@ -15,7 +16,6 @@ export default function LoginPage() {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Show error when callback redirects back with error param
   useEffect(() => {
     const err = searchParams.get('error')
     if (err) {
@@ -32,61 +32,42 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const supabase = createClient()
-
-      // TEST BYPASS: admin@gmail.com logs in directly
-      if (trimmed === 'admin@gmail.com') {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: 'admin@gmail.com',
-          password: 'Admin@123',
-        })
-        if (signInError) {
-          setError(signInError.message)
-          return
-        }
+      // Dev bypass: direct login without OTP
+      if (isDevBypassEmail(trimmed)) {
+        await devLogin(trimmed)
         window.location.href = '/dashboard'
         return
       }
 
-      // Check email_access_requests status (RLS is off)
-      const { data: accessRequest } = await (supabase as any)
-        .from('email_access_requests')
-        .select('status')
-        .eq('email', trimmed)
-        .eq('role', 'doer')
-        .maybeSingle()
+      // Check email access request status via API
+      try {
+        const accessData = await apiClient<{ status: string }>(
+          `/api/auth/access-status?email=${encodeURIComponent(trimmed)}&role=doer`,
+          { skipAuth: true }
+        )
 
-      if (!accessRequest) {
-        setError("No account found for this email. Apply for access below.")
-        return
+        if (!accessData || accessData.status === 'not_found') {
+          setError("No account found for this email. Apply for access below.")
+          return
+        }
+
+        if (accessData.status === 'pending') {
+          setError("Your application is still under review. Please wait for approval.")
+          return
+        }
+        if (accessData.status === 'rejected') {
+          setError("Your application was not approved. Please contact support.")
+          return
+        }
+      } catch {
+        // If access check fails, proceed with magic link anyway
       }
 
-      if (accessRequest.status === 'pending') {
-        setError("Your application is still under review. Please wait for approval.")
-        return
-      }
-      if (accessRequest.status === 'rejected') {
-        setError("Your application was not approved. Please contact support.")
-        return
-      }
-
-      // Status is approved — send magic link via Supabase's built-in email (custom SMTP)
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: trimmed,
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      })
-
-      if (otpError) {
-        setError(otpError.message)
-        return
-      }
-
+      // Send magic link via API
+      await sendMagicLink(trimmed, 'doer')
       setSent(true)
-    } catch {
-      setError('Something went wrong. Please try again.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
       setIsLoading(false)
     }

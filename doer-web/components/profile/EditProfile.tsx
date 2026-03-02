@@ -147,7 +147,7 @@ export function EditProfile({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // In production, upload to Supabase storage
+      // In production, upload to cloud storage via API
       const reader = new FileReader()
       reader.onloadend = () => {
         handleChange('avatar_url', reader.result as string)

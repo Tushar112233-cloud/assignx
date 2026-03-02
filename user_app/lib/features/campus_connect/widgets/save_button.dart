@@ -131,7 +131,7 @@ class _SaveButtonState extends State<SaveButton>
               if (widget.showLabel) ...[
                 const SizedBox(width: 6),
                 Text(
-                  widget.isSaved ? 'Saved' : 'Save',
+                  widget.isSaved ? 'Saved'.tr(context) : 'Save'.tr(context),
                   style: AppTextStyles.labelMedium.copyWith(
                     fontSize: config.fontSize,
                     fontWeight: FontWeight.w500,
@@ -284,7 +284,7 @@ class _SaveButtonOutlineState extends State<SaveButtonOutline>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      widget.isSaved ? 'Saved' : 'Save',
+                      widget.isSaved ? 'Saved'.tr(context) : 'Save'.tr(context),
                       style: AppTextStyles.labelMedium.copyWith(
                         fontWeight: FontWeight.w500,
                         color: widget.isSaved

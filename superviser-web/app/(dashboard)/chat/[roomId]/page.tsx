@@ -18,7 +18,7 @@ import {
   type ChatMessage,
 } from "@/components/chat"
 import { useChatRooms, useChatMessages, useUnreadMessages, useSupervisor } from "@/hooks"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 
 export default function ChatRoomPage() {
   const params = useParams()
@@ -57,20 +57,20 @@ export default function ChatRoomPage() {
     if (activeRoomId && activeMessages.length > 0) {
       setMessagesMap(prev => ({
         ...prev,
-        [activeRoomId]: activeMessages.map(msg => ({
+        [activeRoomId]: activeMessages.map((msg: any) => ({
           id: msg.id,
-          room_id: msg.chat_room_id,
-          sender_id: msg.sender_id,
+          room_id: msg.chat_room_id || msg.room_id,
+          sender_id: msg.sender_id || "",
           sender_name: msg.profiles?.full_name || "Unknown",
-          sender_role: ((msg.action_metadata as Record<string, unknown>)?.sender_role as "user" | "supervisor" | "doer" | "support" | "system") || (msg.profiles?.user_type as "user" | "supervisor" | "doer" | "support" | "system") || "user",
-          type: msg.message_type || "text",
+          sender_role: (msg.action_metadata?.sender_role as "user" | "supervisor" | "doer" | "support" | "system") || (msg.profiles?.user_type as "user" | "supervisor" | "doer" | "support" | "system") || "user",
+          type: msg.message_type || msg.type || "text",
           content: msg.content || "",
           file_url: msg.file_url || undefined,
           file_name: msg.file_name || undefined,
-          file_size: msg.file_size_bytes || undefined,
+          file_size: msg.file_size_bytes || msg.file_size || undefined,
           is_read: msg.is_deleted === false,
           created_at: msg.created_at || new Date().toISOString(),
-        }))
+        } as ChatMessage))
       }))
     }
   }, [activeRoomId, activeMessages])
@@ -105,31 +105,11 @@ export default function ChatRoomPage() {
       return
     }
 
-    const supabase = createClient()
-
     try {
-      const { error } = await supabase
-        .from("chat_rooms")
-        .update({
-          is_suspended: true,
-          suspension_reason: reason,
-          suspended_at: new Date().toISOString(),
-          suspended_by: supervisor.profile_id
-        })
-        .eq("id", roomId)
-
-      if (error) throw error
-
-      // Add system message
-      await supabase
-        .from("chat_messages")
-        .insert({
-          chat_room_id: roomId,
-          sender_id: supervisor.profile_id,
-          content: `Chat suspended by supervisor. Reason: ${reason}`,
-          message_type: "system",
-          action_metadata: { sender_role: "supervisor" },
-        })
+      await apiFetch(`/api/chat/rooms/${roomId}/suspend`, {
+        method: "PUT",
+        body: JSON.stringify({ reason }),
+      })
 
       toast.success("Chat suspended successfully")
       await refetchRooms()
@@ -145,31 +125,10 @@ export default function ChatRoomPage() {
       return
     }
 
-    const supabase = createClient()
-
     try {
-      const { error } = await supabase
-        .from("chat_rooms")
-        .update({
-          is_suspended: false,
-          suspension_reason: null,
-          suspended_at: null,
-          suspended_by: null
-        })
-        .eq("id", roomId)
-
-      if (error) throw error
-
-      // Add system message
-      await supabase
-        .from("chat_messages")
-        .insert({
-          chat_room_id: roomId,
-          sender_id: supervisor.profile_id,
-          content: "Chat resumed by supervisor",
-          message_type: "system",
-          action_metadata: { sender_role: "supervisor" },
-        })
+      await apiFetch(`/api/chat/rooms/${roomId}/resume`, {
+        method: "PUT",
+      })
 
       toast.success("Chat resumed successfully")
       await refetchRooms()
@@ -240,21 +199,23 @@ export default function ChatRoomPage() {
   }
 
   // Transform rooms to ChatWindow format
-  const chatRooms: ChatRoom[] = rooms.map(room => ({
+  // The API may return field names like room_type, profile_id, participant_role
+  // which differ from the database type definitions, so we cast to any during mapping.
+  const chatRooms: ChatRoom[] = rooms.map((room: any) => ({
     id: room.id,
     project_id: room.project_id || undefined,
     project_number: room.projects?.project_number || "Unknown",
-    type: room.room_type as ChatRoom["type"],
-    name: room.room_type === "project_user_supervisor"
+    type: (room.room_type || room.type) as ChatRoom["type"],
+    name: (room.room_type || room.type) === "project_user_supervisor"
       ? "Client Chat"
-      : room.room_type === "project_supervisor_doer"
+      : (room.room_type || room.type) === "project_supervisor_doer"
         ? "Expert Chat"
         : "Group Chat",
-    participants: (room.chat_participants || []).map(p => ({
+    participants: (room.chat_participants || []).map((p: any) => ({
       id: p.id,
-      user_id: p.profile_id,
+      user_id: p.profile_id || p.user_id,
       name: p.profiles?.full_name || "Unknown",
-      role: p.participant_role as "user" | "supervisor" | "doer",
+      role: (p.participant_role || p.role) as "user" | "supervisor" | "doer",
       avatar_url: p.profiles?.avatar_url || undefined,
       is_online: false, // Would need presence tracking
       joined_at: p.joined_at || new Date().toISOString(),

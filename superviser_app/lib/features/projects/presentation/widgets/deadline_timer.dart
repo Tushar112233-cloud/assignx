@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Widget that displays a countdown timer to a deadline.
 ///
@@ -173,7 +174,7 @@ class _DeadlineTimerState extends State<DeadlineTimer> {
                 ),
           ),
           Text(
-            _remaining.isNegative ? 'Overdue' : 'Remaining',
+            _remaining.isNegative ? 'Overdue'.tr(context) : 'Remaining'.tr(context),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: _color.withValues(alpha: 0.7),
                 ),
@@ -221,7 +222,7 @@ class DeadlineProgress extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Deadline Progress',
+              'Deadline Progress'.tr(context),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),

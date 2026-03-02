@@ -37,29 +37,48 @@ class ChatRoomModel {
   });
 
   factory ChatRoomModel.fromJson(Map<String, dynamic> json, String currentUserId) {
-    // Parse participants
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Parse participants - handle both nested profile and flat formats.
     List<ChatParticipant> participants = [];
     if (json['participants'] != null && json['participants'] is List) {
       for (final p in json['participants'] as List) {
-        if (p['profile'] != null) {
-          participants.add(ChatParticipant.fromJson(p['profile']));
+        if (p is Map<String, dynamic>) {
+          if (p['profile'] != null && p['profile'] is Map) {
+            participants.add(ChatParticipant.fromJson(p['profile'] as Map<String, dynamic>));
+          } else if (p['profileId'] != null && p['profileId'] is Map) {
+            participants.add(ChatParticipant.fromJson(p['profileId'] as Map<String, dynamic>));
+          } else {
+            // Flat participant object.
+            participants.add(ChatParticipant.fromJson(p));
+          }
         }
       }
     }
 
+    // Handle projectId which may be a populated Mongoose object.
+    String? projectId;
+    final rawProjectId = json['project_id'] ?? json['projectId'];
+    if (rawProjectId is String) {
+      projectId = rawProjectId;
+    } else if (rawProjectId is Map<String, dynamic>) {
+      projectId = (rawProjectId['_id'] ?? rawProjectId['id'])?.toString();
+    }
+
     return ChatRoomModel(
-      id: json['id'] as String,
-      roomType: ChatRoomType.fromString(json['room_type'] as String? ?? 'direct'),
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      roomType: ChatRoomType.fromString((json['room_type'] ?? json['roomType'] ?? 'direct').toString()),
       name: json['name'] as String?,
-      projectId: json['project_id'] as String?,
-      isActive: json['is_active'] as bool? ?? true,
-      isSuspended: json['is_suspended'] as bool? ?? false,
-      suspensionReason: json['suspension_reason'] as String?,
-      lastMessageAt: json['last_message_at'] != null
-          ? DateTime.parse(json['last_message_at'] as String)
-          : null,
-      messageCount: json['message_count'] as int? ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      projectId: projectId,
+      isActive: json['is_active'] as bool? ?? json['isActive'] as bool? ?? true,
+      isSuspended: json['is_suspended'] as bool? ?? json['isSuspended'] as bool? ?? false,
+      suspensionReason: json['suspension_reason'] as String? ?? json['suspensionReason'] as String?,
+      lastMessageAt: _parseDate(json['last_message_at'] ?? json['lastMessageAt']),
+      messageCount: (json['message_count'] ?? json['messageCount']) as int? ?? 0,
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
       participants: participants,
     );
   }
@@ -109,10 +128,10 @@ class ChatParticipant {
 
   factory ChatParticipant.fromJson(Map<String, dynamic> json) {
     return ChatParticipant(
-      id: json['id'] as String,
-      name: json['full_name'] as String? ?? 'Unknown',
-      avatarUrl: json['avatar_url'] as String?,
-      userType: json['user_type'] as String? ?? 'user',
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      name: (json['full_name'] ?? json['fullName'] ?? json['name'] ?? 'Unknown').toString(),
+      avatarUrl: json['avatar_url'] as String? ?? json['avatarUrl'] as String?,
+      userType: (json['user_type'] ?? json['userType'] ?? 'user').toString(),
     );
   }
 }
@@ -185,45 +204,71 @@ class ChatMessageModel {
   });
 
   factory ChatMessageModel.fromJson(Map<String, dynamic> json, String currentUserId) {
-    // Parse sender
-    String senderName = 'Unknown';
-    String? senderAvatarUrl;
-    if (json['sender'] != null && json['sender'] is Map) {
-      senderName = json['sender']['full_name'] as String? ?? 'Unknown';
-      senderAvatarUrl = json['sender']['avatar_url'] as String?;
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
     }
 
-    // Parse reply_to
+    // Parse sender - may be a populated Mongoose object or nested profile.
+    String senderName = 'Unknown';
+    String? senderAvatarUrl;
+    final senderRaw = json['sender'] ?? json['senderId'];
+    if (senderRaw != null && senderRaw is Map) {
+      senderName = (senderRaw['full_name'] ?? senderRaw['fullName'] ?? senderRaw['name'] ?? 'Unknown').toString();
+      senderAvatarUrl = senderRaw['avatar_url'] as String? ?? senderRaw['avatarUrl'] as String?;
+    }
+
+    // Extract senderId from possibly populated object.
+    String senderId = '';
+    final rawSenderId = json['sender_id'] ?? json['senderId'];
+    if (rawSenderId is String) {
+      senderId = rawSenderId;
+    } else if (rawSenderId is Map<String, dynamic>) {
+      senderId = (rawSenderId['_id'] ?? rawSenderId['id'] ?? '').toString();
+    }
+
+    // Extract chatRoomId from possibly populated object.
+    String chatRoomId = '';
+    final rawChatRoomId = json['chat_room_id'] ?? json['chatRoomId'];
+    if (rawChatRoomId is String) {
+      chatRoomId = rawChatRoomId;
+    } else if (rawChatRoomId is Map<String, dynamic>) {
+      chatRoomId = (rawChatRoomId['_id'] ?? rawChatRoomId['id'] ?? '').toString();
+    }
+
+    // Parse reply_to / replyTo.
     String? replyToContent;
     String? replyToSenderName;
-    if (json['reply_to'] != null && json['reply_to'] is Map) {
-      replyToContent = json['reply_to']['content'] as String?;
-      if (json['reply_to']['sender'] != null) {
-        replyToSenderName = json['reply_to']['sender']['full_name'] as String?;
+    final replyTo = json['reply_to'] ?? json['replyTo'];
+    if (replyTo != null && replyTo is Map) {
+      replyToContent = replyTo['content'] as String?;
+      final replySender = replyTo['sender'] ?? replyTo['senderId'];
+      if (replySender != null && replySender is Map) {
+        replyToSenderName = (replySender['full_name'] ?? replySender['fullName']) as String?;
       }
     }
 
     return ChatMessageModel(
-      id: json['id'] as String,
-      chatRoomId: json['chat_room_id'] as String,
-      senderId: json['sender_id'] as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      chatRoomId: chatRoomId,
+      senderId: senderId,
       senderName: senderName,
       senderAvatarUrl: senderAvatarUrl,
-      messageType: MessageType.fromString(json['message_type'] as String? ?? 'text'),
+      messageType: MessageType.fromString((json['message_type'] ?? json['messageType'] ?? 'text').toString()),
       content: json['content'] as String? ?? '',
-      fileUrl: json['file_url'] as String?,
-      fileName: json['file_name'] as String?,
-      fileType: json['file_type'] as String?,
-      fileSizeBytes: json['file_size_bytes'] as int?,
-      replyToId: json['reply_to_id'] as String?,
+      fileUrl: json['file_url'] as String? ?? json['fileUrl'] as String?,
+      fileName: json['file_name'] as String? ?? json['fileName'] as String?,
+      fileType: json['file_type'] as String? ?? json['fileType'] as String?,
+      fileSizeBytes: (json['file_size_bytes'] ?? json['fileSizeBytes']) as int?,
+      replyToId: json['reply_to_id'] as String? ?? json['replyToId'] as String?,
       replyToContent: replyToContent,
       replyToSenderName: replyToSenderName,
-      isEdited: json['is_edited'] as bool? ?? false,
-      isDeleted: json['is_deleted'] as bool? ?? false,
-      isFlagged: json['is_flagged'] as bool? ?? false,
-      containsContactInfo: json['contains_contact_info'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      isFromCurrentUser: json['sender_id'] == currentUserId,
+      isEdited: json['is_edited'] as bool? ?? json['isEdited'] as bool? ?? false,
+      isDeleted: json['is_deleted'] as bool? ?? json['isDeleted'] as bool? ?? false,
+      isFlagged: json['is_flagged'] as bool? ?? json['isFlagged'] as bool? ?? false,
+      containsContactInfo: json['contains_contact_info'] as bool? ?? json['containsContactInfo'] as bool? ?? false,
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      isFromCurrentUser: senderId == currentUserId,
     );
   }
 

@@ -58,23 +58,62 @@ class DeliverableModel {
   final DateTime createdAt;
 
   /// Creates a DeliverableModel from JSON.
+  ///
+  /// Handles both Supabase flat format and MongoDB nested format.
   factory DeliverableModel.fromJson(Map<String, dynamic> json) {
+    // Derive isApproved from qc_status string column
+    bool? isApproved;
+    final qcStatus = (json['qc_status'] ?? json['qcStatus']) as String?;
+    if (qcStatus != null) {
+      isApproved = qcStatus == 'approved';
+    }
+
+    // Helper to extract ID from a field that may be a string or populated object.
+    String _extractId(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return (value['_id'] ?? value['id'] ?? '').toString();
+      }
+      return value.toString();
+    }
+
+    // Helper to safely parse DateTime.
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Handle uploadedBy which may be a populated object.
+    final uploadedByRaw = json['uploaded_by'] ?? json['uploadedBy'];
+    String? uploadedBy;
+    String? uploaderName;
+    if (uploadedByRaw is Map<String, dynamic>) {
+      uploadedBy = (uploadedByRaw['_id'] ?? uploadedByRaw['id'])?.toString();
+      uploaderName = (uploadedByRaw['fullName'] ?? uploadedByRaw['full_name']) as String?;
+    } else if (uploadedByRaw is String) {
+      uploadedBy = uploadedByRaw;
+    }
+    // Supabase-style joined uploader.
+    if (json['uploader'] is Map) {
+      uploaderName ??= (json['uploader']['fullName'] ?? json['uploader']['full_name']) as String?;
+    }
+    uploaderName ??= (json['uploader_name'] ?? json['uploaderName']) as String?;
+
     return DeliverableModel(
-      id: json['id'] as String,
-      projectId: json['project_id'] as String,
-      fileUrl: json['file_url'] as String,
-      fileName: json['file_name'] as String,
-      fileType: json['file_type'] as String?,
-      fileSize: json['file_size'] as int?,
-      uploadedBy: json['uploaded_by'] as String?,
-      uploaderName: json['uploader'] is Map
-          ? json['uploader']['full_name'] as String?
-          : json['uploader_name'] as String?,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      projectId: _extractId(json['project_id'] ?? json['projectId']),
+      fileUrl: (json['file_url'] ?? json['fileUrl'] ?? '') as String,
+      fileName: (json['file_name'] ?? json['fileName'] ?? '') as String,
+      fileType: (json['file_type'] ?? json['fileType']) as String?,
+      fileSize: (json['file_size_bytes'] ?? json['fileSizeBytes'] ?? json['fileSize']) as int?,
+      uploadedBy: uploadedBy,
+      uploaderName: uploaderName,
       description: json['description'] as String?,
       version: json['version'] as int? ?? 1,
-      isApproved: json['is_approved'] as bool?,
-      reviewerNotes: json['reviewer_notes'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      isApproved: isApproved,
+      reviewerNotes: (json['qc_notes'] ?? json['qcNotes'] ?? json['reviewerNotes']) as String?,
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
     );
   }
 

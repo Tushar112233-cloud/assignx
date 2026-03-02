@@ -1,7 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { verifyAdmin } from "@/lib/admin/auth";
+import { verifyAdmin, serverFetch } from "@/lib/admin/auth";
 
 export async function getLearningResources(params: {
   search?: string;
@@ -11,52 +10,31 @@ export async function getLearningResources(params: {
   perPage?: number;
 }) {
   await verifyAdmin();
-  const supabase = await createClient();
-  const page = params.page || 1;
-  const perPage = params.perPage || 20;
-  const from = (page - 1) * perPage;
-  const to = from + perPage - 1;
 
-  let query = supabase
-    .from("learning_resources")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(from, to);
+  const query = new URLSearchParams();
+  if (params.search) query.set("search", params.search);
+  if (params.contentType) query.set("contentType", params.contentType);
+  if (params.category) query.set("category", params.category);
+  if (params.page) query.set("page", String(params.page));
+  if (params.perPage) query.set("perPage", String(params.perPage));
 
-  if (params.search) {
-    query = query.or(
-      `title.ilike.%${params.search}%,description.ilike.%${params.search}%`
-    );
+  try {
+    const result = await serverFetch(`/api/admin/learning-resources?${query.toString()}`);
+    const arr = result.resources || result.data || [];
+    return {
+      data: arr,
+      total: result.total || arr.length,
+      page: result.page || params.page || 1,
+      totalPages: result.totalPages || Math.ceil((result.total || arr.length) / (params.perPage || 20)),
+    };
+  } catch {
+    return { data: [], total: 0, page: params.page || 1, totalPages: 1 };
   }
-  if (params.contentType) {
-    query = query.eq("content_type", params.contentType);
-  }
-  if (params.category) {
-    query = query.eq("category", params.category);
-  }
-
-  const { data, count, error } = await query;
-  if (error) throw new Error(error.message);
-
-  return {
-    data: data || [],
-    total: count || 0,
-    page,
-    perPage,
-    totalPages: Math.ceil((count || 0) / perPage),
-  };
 }
 
 export async function getLearningResourceById(id: string) {
   await verifyAdmin();
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("learning_resources")
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (error) throw new Error(error.message);
-  return data;
+  return serverFetch(`/api/admin/learning-resources/${id}`);
 }
 
 export async function createLearningResource(formData: {
@@ -71,29 +49,12 @@ export async function createLearningResource(formData: {
   is_active?: boolean;
   is_featured?: boolean;
 }) {
-  const admin = await verifyAdmin();
-  const supabase = await createClient();
+  await verifyAdmin();
 
-  const { data, error } = await supabase
-    .from("learning_resources")
-    .insert({
-      ...formData,
-      created_by: admin.id,
-    })
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  await supabase.from("admin_audit_logs").insert({
-    admin_id: admin.id,
-    action: "create_learning_resource",
-    target_type: "learning_resource",
-    target_id: data.id,
-    details: { title: formData.title },
+  return serverFetch(`/api/admin/learning-resources`, {
+    method: "POST",
+    body: JSON.stringify(formData),
   });
-
-  return data;
 }
 
 export async function updateLearningResource(
@@ -111,66 +72,30 @@ export async function updateLearningResource(
     is_featured?: boolean;
   }
 ) {
-  const admin = await verifyAdmin();
-  const supabase = await createClient();
+  await verifyAdmin();
 
-  const { data, error } = await supabase
-    .from("learning_resources")
-    .update({ ...formData, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  await supabase.from("admin_audit_logs").insert({
-    admin_id: admin.id,
-    action: "update_learning_resource",
-    target_type: "learning_resource",
-    target_id: id,
-    details: { changes: Object.keys(formData) },
+  return serverFetch(`/api/admin/learning-resources/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(formData),
   });
-
-  return data;
 }
 
 export async function deleteLearningResource(id: string) {
-  const admin = await verifyAdmin();
-  const supabase = await createClient();
+  await verifyAdmin();
 
-  const { error } = await supabase
-    .from("learning_resources")
-    .delete()
-    .eq("id", id);
-
-  if (error) throw new Error(error.message);
-
-  await supabase.from("admin_audit_logs").insert({
-    admin_id: admin.id,
-    action: "delete_learning_resource",
-    target_type: "learning_resource",
-    target_id: id,
+  await serverFetch(`/api/admin/learning-resources/${id}`, {
+    method: "DELETE",
   });
 
   return { success: true };
 }
 
 export async function toggleLearningFeatured(id: string, featured: boolean) {
-  const admin = await verifyAdmin();
-  const supabase = await createClient();
+  await verifyAdmin();
 
-  const { error } = await supabase
-    .from("learning_resources")
-    .update({ is_featured: featured, updated_at: new Date().toISOString() })
-    .eq("id", id);
-
-  if (error) throw new Error(error.message);
-
-  await supabase.from("admin_audit_logs").insert({
-    admin_id: admin.id,
-    action: featured ? "feature_learning_resource" : "unfeature_learning_resource",
-    target_type: "learning_resource",
-    target_id: id,
+  await serverFetch(`/api/admin/learning-resources/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ is_featured: featured }),
   });
 
   return { success: true };

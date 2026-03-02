@@ -13,7 +13,7 @@ import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
-import { createClient } from "@/lib/supabase/client";
+import { isLoggedIn as checkLoggedIn } from "@/lib/api/auth";
 import "@/app/landing.css";
 
 export function Navigation() {
@@ -22,29 +22,11 @@ export function Navigation() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const prefersReducedMotion = useReducedMotion();
-  const supabase = createClient();
-
   // Check if user is logged in
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setIsLoggedIn(!!user);
-      } catch {
-        setIsLoggedIn(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkUser();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-      setIsLoggedIn(!!session?.user);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+    setIsLoggedIn(checkLoggedIn());
+    setIsLoading(false);
+  }, []);
 
   // Track scroll position
   useEffect(() => {

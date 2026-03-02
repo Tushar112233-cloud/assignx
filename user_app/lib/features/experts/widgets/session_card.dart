@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/expert_model.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -75,7 +76,7 @@ class SessionCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              expert?.name ?? 'Expert',
+                              expert?.name ?? 'Expert'.tr(context),
                               style: AppTextStyles.labelLarge.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -84,12 +85,12 @@ class SessionCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _buildStatusBadge(),
+                          _buildStatusBadge(context),
                         ],
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        expert?.designation ?? 'Consultant',
+                        expert?.designation ?? 'Consultant'.tr(context),
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -108,7 +109,7 @@ class SessionCard extends StatelessWidget {
               children: [
                 _buildInfoChip(
                   icon: Icons.calendar_today,
-                  label: _formatDate(booking.date),
+                  label: _formatDate(context, booking.date),
                 ),
                 const SizedBox(width: 12),
                 _buildInfoChip(
@@ -119,7 +120,7 @@ class SessionCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   _buildInfoChip(
                     icon: Icons.videocam,
-                    label: 'Video Call',
+                    label: 'Video Call'.tr(context),
                   ),
                 ],
               ],
@@ -132,7 +133,7 @@ class SessionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Topic: ',
+                    '${'Topic'.tr(context)}: ',
                     style: AppTextStyles.bodySmall.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
@@ -161,7 +162,7 @@ class SessionCard extends StatelessWidget {
                   children: [
                     if (isUpcoming) ...[
                       Text(
-                        'Starts in',
+                        'Starts in'.tr(context),
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textTertiary,
                         ),
@@ -174,7 +175,7 @@ class SessionCard extends StatelessWidget {
                       ),
                     ] else ...[
                       Text(
-                        'Amount Paid',
+                        'Amount Paid'.tr(context),
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textTertiary,
                         ),
@@ -194,7 +195,7 @@ class SessionCard extends StatelessWidget {
                   _buildActionButtons()
                 else if (booking.status == BookingStatus.inProgress &&
                     booking.meetLink != null)
-                  _buildJoinButton(),
+                  _buildJoinButton(context),
               ],
             ),
           ],
@@ -241,7 +242,7 @@ class SessionCard extends StatelessWidget {
   }
 
   /// Build status badge.
-  Widget _buildStatusBadge() {
+  Widget _buildStatusBadge(BuildContext context) {
     final (color, bgColor) = _getStatusColors();
 
     return Container(
@@ -257,7 +258,7 @@ class SessionCard extends StatelessWidget {
         ),
       ),
       child: Text(
-        booking.status.label,
+        booking.status.label.tr(context),
         style: AppTextStyles.caption.copyWith(
           color: color,
           fontWeight: FontWeight.w600,
@@ -373,7 +374,7 @@ class SessionCard extends StatelessWidget {
   }
 
   /// Build join button.
-  Widget _buildJoinButton() {
+  Widget _buildJoinButton(BuildContext context) {
     return Material(
       color: AppColors.darkBrown,
       borderRadius: BorderRadius.circular(10),
@@ -395,7 +396,7 @@ class SessionCard extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Join Now',
+                'Join Now'.tr(context),
                 style: AppTextStyles.labelMedium.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -409,13 +410,13 @@ class SessionCard extends StatelessWidget {
   }
 
   /// Format date for display.
-  String _formatDate(DateTime date) {
+  String _formatDate(BuildContext context, DateTime date) {
     final now = DateTime.now();
     final diff = date.difference(now).inDays;
 
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Tomorrow';
-    if (diff == -1) return 'Yesterday';
+    if (diff == 0) return 'Today'.tr(context);
+    if (diff == 1) return 'Tomorrow'.tr(context);
+    if (diff == -1) return 'Yesterday'.tr(context);
 
     return DateFormat('EEE, MMM d').format(date);
   }
@@ -434,7 +435,7 @@ class SessionCard extends StatelessWidget {
 
     final diff = sessionStart.difference(now);
 
-    if (diff.isNegative) return 'Started';
+    if (diff.isNegative) return 'Started'; // No context available here
 
     if (diff.inDays > 0) {
       return '${diff.inDays}d ${diff.inHours % 24}h';

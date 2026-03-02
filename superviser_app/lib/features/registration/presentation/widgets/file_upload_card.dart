@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// File upload card widget for CV and documents.
 class FileUploadCard extends StatelessWidget {
@@ -113,7 +114,7 @@ class FileUploadCard extends StatelessWidget {
             ],
             const SizedBox(height: 8),
             Text(
-              '${acceptedFormats.join(', ')} (Max ${maxSizeMB}MB)',
+              '${acceptedFormats.join(', ')} (${'Max'.tr(context)} ${maxSizeMB}MB)',
               style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiaryLight,
               ),
@@ -157,7 +158,7 @@ class FileUploadCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  fileName ?? 'File uploaded',
+                  fileName ?? 'File uploaded'.tr(context),
                   style: AppTypography.titleSmall.copyWith(
                     color: AppColors.textPrimaryLight,
                   ),

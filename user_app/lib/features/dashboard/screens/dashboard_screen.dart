@@ -13,6 +13,7 @@ import '../../home/widgets/home_app_bar.dart';
 import '../widgets/greeting_section.dart';
 import '../widgets/needs_attention_card.dart';
 import '../widgets/quick_stats_row.dart';
+import '../widgets/explore_more_section.dart';
 import '../widgets/services_grid.dart';
 import '../widgets/recent_projects_section.dart';
 import '../widgets/campus_pulse_section.dart';
@@ -150,6 +151,19 @@ class DashboardScreen extends ConsumerWidget {
                                   context.push('/add-project/expert'),
                               onRefGenerator: () => _launchRefGenerator(),
                             ),
+                    ),
+
+                    // Explore More Section (Marketplace, Connect, Pro Network, Business Hub)
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: 28),
+                    ),
+                    SliverToBoxAdapter(
+                      child: ExploreMoreSection(
+                        onMarketplace: () => context.push('/marketplace'),
+                        onConnect: () => context.push('/connect'),
+                        onProNetwork: () => context.push('/pro-network'),
+                        onBusinessHub: () => context.push('/business-hub'),
+                      ),
                     ),
 
                     // Recent Projects Section

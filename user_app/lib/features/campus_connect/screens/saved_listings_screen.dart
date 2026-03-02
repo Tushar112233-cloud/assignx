@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
@@ -13,76 +12,31 @@ import '../widgets/save_button.dart';
 
 /// Provider for saved listings data.
 final savedListingsProvider = FutureProvider.autoDispose<List<MarketplaceListing>>((ref) async {
-  final supabase = Supabase.instance.client;
-  final user = supabase.auth.currentUser;
+  try {
+    final response = await ApiClient.get('/community/campus/saved');
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['posts'] as List? ?? [];
 
-  if (user == null) {
+    return list.map((post) {
+      final p = post as Map<String, dynamic>;
+      return MarketplaceListing(
+        id: (p['_id'] ?? p['id'] ?? '') as String,
+        title: (p['title'] ?? '') as String,
+        description: p['content'] as String?,
+        type: _getListingType(p['category'] as String?),
+        userName: (p['author']?['full_name'] ?? 'Anonymous') as String,
+        userAvatar: p['author']?['avatar_url'] as String?,
+        likeCount: (p['likes_count'] ?? p['likeCount'] ?? 0) as int,
+        commentCount: (p['comments_count'] ?? p['commentCount'] ?? 0) as int,
+        createdAt: DateTime.parse(p['created_at'] ?? p['createdAt'] ?? DateTime.now().toIso8601String()),
+        images: p['images'] != null ? List<String>.from(p['images'] as List) : null,
+        collegeName: null,
+      );
+    }).toList();
+  } catch (_) {
     return [];
   }
-
-  // Get saved listing IDs
-  final savedItems = await supabase
-      .from('saved_listings')
-      .select('listing_id, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', ascending: false);
-
-  if (savedItems.isEmpty) {
-    return [];
-  }
-
-  final listingIds = (savedItems as List).map((s) => s['listing_id']).toList();
-
-  // Fetch the full post data
-  final posts = await supabase
-      .from('campus_posts')
-      .select('''
-        *,
-        author:profiles (
-          id,
-          full_name,
-          avatar_url,
-          is_college_verified
-        ),
-        college:colleges (
-          id,
-          name,
-          short_name,
-          city
-        )
-      ''')
-      .inFilter('id', listingIds)
-      .or('status.eq.active,status.eq.published,status.is.null');
-
-  // Transform to MarketplaceListing model
-  final listings = (posts as List).map((post) {
-    return MarketplaceListing(
-      id: post['id'],
-      title: post['title'] ?? '',
-      description: post['content'],
-      type: _getListingType(post['category']),
-      userName: post['author']?['full_name'] ?? 'Anonymous',
-      userAvatar: post['author']?['avatar_url'],
-      likeCount: post['likes_count'] ?? 0,
-      commentCount: post['comments_count'] ?? 0,
-      createdAt: DateTime.parse(post['created_at']),
-      images: post['images'] != null ? List<String>.from(post['images']) : null,
-      collegeName: post['college']?['name'],
-    );
-  }).toList();
-
-  // Sort by saved order
-  final savedOrder = <String, int>{};
-  for (var i = 0; i < savedItems.length; i++) {
-    savedOrder[savedItems[i]['listing_id']] = i;
-  }
-  listings.sort((a, b) {
-    final orderA = savedOrder[a.id] ?? 999;
-    final orderB = savedOrder[b.id] ?? 999;
-    return orderA.compareTo(orderB);
-  });
-
-  return listings;
 });
 
 ListingType _getListingType(String? category) {
@@ -124,16 +78,7 @@ class _SavedListingsScreenState extends ConsumerState<SavedListingsScreen> {
     });
 
     try {
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
-
-      if (user == null) return;
-
-      await supabase
-          .from('saved_listings')
-          .delete()
-          .eq('listing_id', listingId)
-          .eq('user_id', user.id);
+      await ApiClient.delete('/community/campus/$listingId/save');
 
       // Refresh the list
       ref.invalidate(savedListingsProvider);

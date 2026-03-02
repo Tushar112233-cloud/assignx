@@ -15,7 +15,7 @@ import {
   LogOut,
   Sparkles,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { logout } from "@/lib/api/auth";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n/context";
@@ -72,21 +72,7 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-
-      // Clear local storage
-      if (typeof window !== "undefined") {
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.startsWith("sb-") || key.includes("-storage"))) {
-            keysToRemove.push(key);
-          }
-        }
-        keysToRemove.forEach((key) => localStorage.removeItem(key));
-      }
-
+      logout();
       toast.success("Logged out successfully");
       router.push("/login");
     } catch (error) {

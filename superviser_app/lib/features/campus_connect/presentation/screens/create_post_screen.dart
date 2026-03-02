@@ -889,7 +889,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         description: _descriptionController.text.trim().isNotEmpty
             ? _descriptionController.text.trim()
             : null,
-        images: _selectedImages.isNotEmpty ? _selectedImages : null,
+        images: _selectedImages.isNotEmpty ? _selectedImages : <String>[],
         location: _locationController.text.trim().isNotEmpty
             ? _locationController.text.trim()
             : null,

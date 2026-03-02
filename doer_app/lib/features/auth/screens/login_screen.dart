@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../core/api/api_client.dart';
+import '../../../core/storage/token_storage.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/router/route_names.dart';
@@ -182,11 +182,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (email.toLowerCase() == 'admin@gmail.com') {
       setState(() => _isLoading = true);
       try {
-        final response = await Supabase.instance.client.auth.signInWithPassword(
-          email: 'admin@gmail.com',
-          password: 'Admin@123',
-        );
-        if (response.session != null) {
+        final response = await ApiClient.post('/auth/login', {
+          'email': 'admin@gmail.com',
+          'password': 'Admin@123',
+        });
+        if (response != null && response['accessToken'] != null) {
+          await TokenStorage.saveTokens(
+            response['accessToken'] as String,
+            response['refreshToken'] as String? ?? '',
+          );
           // Auth state listener handles navigation
           return;
         }

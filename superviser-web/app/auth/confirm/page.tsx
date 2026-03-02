@@ -1,7 +1,6 @@
 /**
  * @fileoverview Client-side auth code exchange page.
- * Handles PKCE code exchange using the browser client which has access
- * to the code verifier stored in cookies during signInWithOtp.
+ * Handles OTP/magic-link token verification via Express API.
  * @module app/auth/confirm/page
  */
 
@@ -9,8 +8,11 @@
 
 import { Suspense, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { createClient, storeAuthUser } from "@/lib/supabase/client"
+import { setTokens } from "@/lib/api/client"
+import { storeUser } from "@/lib/api/auth"
 import { Loader2 } from "lucide-react"
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
 
 function ConfirmHandler() {
   const searchParams = useSearchParams()
@@ -21,26 +23,51 @@ function ConfirmHandler() {
     if (exchanged.current) return
     exchanged.current = true
 
+    const token = searchParams.get("token")
     const code = searchParams.get("code")
 
-    if (!code) {
+    if (!token && !code) {
       router.replace("/login?error=auth")
       return
     }
 
-    const supabase = createClient()
+    const verify = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/verify-token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: token || code }),
+        })
 
-    supabase.auth.exchangeCodeForSession(code).then(async ({ data, error }) => {
-      if (error) {
-        router.replace("/login?error=auth")
-      } else {
-        // Persist user to localStorage so dashboard loads instantly
-        if (data.user) storeAuthUser(data.user)
+        if (!res.ok) {
+          router.replace("/login?error=auth")
+          return
+        }
+
+        const data = await res.json()
+
+        if (data.accessToken && data.refreshToken) {
+          setTokens(data.accessToken, data.refreshToken)
+        }
+        if (data.user) {
+          storeUser(data.user)
+        }
+
         // Auto-create supervisor record from approved access request metadata
-        await fetch("/api/auth/setup-supervisor", { method: "POST" }).catch(() => {})
+        await fetch(`${API_BASE}/api/auth/setup-supervisor`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${data.accessToken}`,
+          },
+        }).catch(() => {})
+
         router.replace("/dashboard")
+      } catch {
+        router.replace("/login?error=auth")
       }
-    })
+    }
+
+    verify()
   }, [searchParams, router])
 
   return null

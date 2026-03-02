@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/tutor_model.dart';
 
 /// Card widget displaying tutor information in a compact format.
@@ -131,7 +132,7 @@ class TutorCard extends StatelessWidget {
                       ),
                       if (tutor.sessionsCompleted > 0)
                         Text(
-                          '${tutor.sessionsCompleted} sessions',
+                          '${tutor.sessionsCompleted} ${'sessions'.tr(context)}',
                           style: AppTextStyles.caption.copyWith(
                             fontSize: 10,
                           ),
@@ -157,7 +158,7 @@ class TutorCard extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: Text(
-                      tutor.isAvailable ? 'Book' : 'Unavailable',
+                      tutor.isAvailable ? 'Book'.tr(context) : 'Unavailable'.tr(context),
                       style: AppTextStyles.buttonSmall,
                     ),
                   ),

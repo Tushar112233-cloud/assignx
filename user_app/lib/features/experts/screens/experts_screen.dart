@@ -10,6 +10,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/expert_model.dart';
 import '../../../providers/experts_provider.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../home/widgets/home_app_bar.dart';
@@ -113,7 +114,7 @@ class _ExpertsScreenState extends ConsumerState<ExpertsScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                   child: expertsAsync.when(
                     data: (experts) => Text(
-                      '${experts.length} doctor${experts.length != 1 ? 's' : ''} available',
+                      '${experts.length} ${'doctor'.tr(context)}${experts.length != 1 ? 's' : ''} ${'available'.tr(context)}',
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -144,7 +145,7 @@ class _ExpertsScreenState extends ConsumerState<ExpertsScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                   child: expertsAsync.when(
                     data: (experts) => Text(
-                      '${experts.length} expert${experts.length != 1 ? 's' : ''} available',
+                      '${experts.length} ${'expert'.tr(context)}${experts.length != 1 ? 's' : ''} ${'available'.tr(context)}',
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -274,8 +275,38 @@ class _ExpertsHeroState extends State<_ExpertsHero> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFFDF8F3), // warm cream
+            Colors.white,
+            const Color(0xFFF5F0EB), // light coffee tint
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.08),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -290,48 +321,48 @@ class _ExpertsHeroState extends State<_ExpertsHero> {
                   children: [
                     // Main title
                     Text(
-                      'Expert Consultations',
+                      'Expert Consultations'.tr(context),
                       style: AppTextStyles.displayMedium.copyWith(
                         fontSize: 26,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
                         height: 1.2,
                         letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     // Subtitle
                     Text(
-                      'Get guidance from verified professionals',
+                      'Get guidance from verified professionals'.tr(context),
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                         color: AppColors.textSecondary,
-                        height: 1.4,
+                        height: 1.5,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // Right: Lottie animation
+              // Right: Lottie animation in styled container
               const SizedBox(width: 12),
-              SizedBox(
-                width: 70,
-                height: 70,
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Lottie.asset(
                   'assets/animations/computer.json',
                   fit: BoxFit.contain,
                   repeat: true,
                   errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                    return Center(
                       child: Icon(
                         LucideIcons.stethoscope,
-                        size: 32,
+                        size: 36,
                         color: AppColors.primary,
                       ),
                     );
@@ -341,59 +372,65 @@ class _ExpertsHeroState extends State<_ExpertsHero> {
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Quick stats row - capsule pills like QuickStatsRow
+          // Quick stats row - capsule pills
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
               _StatPill(
                 icon: LucideIcons.users,
-                label: 'Verified',
+                label: 'Verified'.tr(context),
                 value: '500+',
                 highlight: true,
               ),
               _StatPill(
                 icon: LucideIcons.star,
-                label: 'Rating',
+                label: 'Rating'.tr(context),
                 value: '4.9',
                 highlight: false,
               ),
               _StatPill(
                 icon: LucideIcons.zap,
-                label: 'Sessions',
+                label: 'Sessions'.tr(context),
                 value: '10K+',
                 highlight: false,
               ),
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
 
-          // Flat search bar (no capsule)
+          // Polished search bar
           Container(
             decoration: BoxDecoration(
-              color: _isFocused ? Colors.white : AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: _isFocused
-                  ? [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.08),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
+              color: _isFocused ? Colors.white : Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _isFocused
+                    ? AppColors.primary.withValues(alpha: 0.3)
+                    : AppColors.border.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: _isFocused
+                      ? AppColors.primary.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.04),
+                  blurRadius: _isFocused ? 12 : 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Row(
               children: [
                 // Search icon
                 Padding(
-                  padding: const EdgeInsets.only(left: 14),
+                  padding: const EdgeInsets.only(left: 16),
                   child: Icon(
                     LucideIcons.search,
-                    size: 18,
+                    size: 20,
                     color: _isFocused
                         ? AppColors.primary
                         : AppColors.textTertiary,
@@ -406,19 +443,19 @@ class _ExpertsHeroState extends State<_ExpertsHero> {
                     controller: widget.searchController,
                     focusNode: _focusNode,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      fontSize: 14,
+                      fontSize: 15,
                       color: AppColors.textPrimary,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Search experts, specializations...',
+                      hintText: 'Search experts, specializations...'.tr(context),
                       hintStyle: AppTextStyles.bodyMedium.copyWith(
-                        fontSize: 14,
+                        fontSize: 15,
                         color: AppColors.textTertiary,
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 12,
+                        vertical: 14,
                       ),
                       isDense: true,
                     ),
@@ -438,16 +475,16 @@ class _ExpertsHeroState extends State<_ExpertsHero> {
                       setState(() {});
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Container(
-                        padding: const EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
-                          color: AppColors.textTertiary.withValues(alpha: 0.15),
+                          color: AppColors.textTertiary.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           LucideIcons.x,
-                          size: 12,
+                          size: 14,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -479,22 +516,29 @@ class _StatPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = highlight
-        ? AppColors.primary.withValues(alpha: 0.08)
-        : AppColors.surfaceLight;
+        ? AppColors.primary.withValues(alpha: 0.1)
+        : Colors.white.withValues(alpha: 0.85);
     final iconColor = highlight ? AppColors.primary : AppColors.textTertiary;
     final valueColor = highlight ? AppColors.primary : AppColors.textPrimary;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: highlight
               ? AppColors.primary.withValues(alpha: 0.2)
-              : AppColors.border.withValues(alpha: 0.5),
+              : AppColors.border.withValues(alpha: 0.3),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -516,8 +560,8 @@ class _StatPill extends StatelessWidget {
           Text(
             value,
             style: AppTextStyles.labelMedium.copyWith(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
               color: valueColor,
             ),
           ),
@@ -539,31 +583,36 @@ class _MainTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const tabs = [
-      (type: ExpertsTabType.doctors, icon: LucideIcons.stethoscope, label: 'Doctors'),
-      (type: ExpertsTabType.allExperts, icon: LucideIcons.graduationCap, label: 'All Experts'),
-      (type: ExpertsTabType.bookings, icon: LucideIcons.calendarCheck, label: 'My Bookings'),
+    final tabs = [
+      (type: ExpertsTabType.doctors, icon: LucideIcons.stethoscope, label: 'Doctors'.tr(context)),
+      (type: ExpertsTabType.allExperts, icon: LucideIcons.graduationCap, label: 'All Experts'.tr(context)),
+      (type: ExpertsTabType.bookings, icon: LucideIcons.calendarCheck, label: 'My Bookings'.tr(context)),
     ];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.5),
+            color: AppColors.border.withValues(alpha: 0.2),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 12,
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16,
               offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(5),
         child: Row(
           children: tabs.map((tab) {
             final isSelected = activeTab == tab.type;
@@ -571,18 +620,28 @@ class _MainTabs extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => onTabChanged(tab.type),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
+                    gradient: isSelected
+                        ? LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.primary,
+                              AppColors.primaryDark,
+                            ],
+                          )
+                        : null,
+                    color: isSelected ? null : Colors.transparent,
+                    borderRadius: BorderRadius.circular(14),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.25),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
                             ),
                           ]
                         : null,
@@ -593,15 +652,15 @@ class _MainTabs extends StatelessWidget {
                       Icon(
                         tab.icon,
                         size: 16,
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                        color: isSelected ? Colors.white : AppColors.textTertiary,
                       ),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
                           tab.label,
                           style: AppTextStyles.labelSmall.copyWith(
-                            fontSize: 11,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                            fontSize: 12,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                             color: isSelected ? Colors.white : AppColors.textSecondary,
                           ),
                           maxLines: 1,
@@ -714,14 +773,14 @@ class _FeaturedDoctorsCarouselState extends State<_FeaturedDoctorsCarousel> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Featured Doctors',
+                    'Featured Doctors'.tr(context),
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
                     ),
                   ),
                   Text(
-                    'Top-rated medical professionals',
+                    'Top-rated medical professionals'.tr(context),
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textSecondary,
                       fontSize: 12,
@@ -904,7 +963,7 @@ class _FeaturedDoctorCard extends StatelessWidget {
                             Icon(LucideIcons.award, size: 12, color: Colors.white),
                             const SizedBox(width: 4),
                             Text(
-                              'Featured',
+                              'Featured'.tr(context),
                               style: AppTextStyles.caption.copyWith(
                                 color: Colors.white,
                                 fontSize: 10,
@@ -1016,7 +1075,7 @@ class _FeaturedDoctorCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'per session',
+                      'per session'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.textTertiary,
                         fontSize: 11,
@@ -1033,7 +1092,7 @@ class _FeaturedDoctorCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                       child: Text(
-                        'Book Consultation',
+                        'Book Consultation'.tr(context),
                         style: AppTextStyles.labelMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -1142,10 +1201,10 @@ class _BookingSubTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const tabs = [
-      (type: _BookingTabType.upcoming, icon: LucideIcons.calendarClock, label: 'Upcoming'),
-      (type: _BookingTabType.completed, icon: LucideIcons.checkCircle2, label: 'Completed'),
-      (type: _BookingTabType.cancelled, icon: LucideIcons.xCircle, label: 'Cancelled'),
+    final tabs = [
+      (type: _BookingTabType.upcoming, icon: LucideIcons.calendarClock, label: 'Upcoming'.tr(context)),
+      (type: _BookingTabType.completed, icon: LucideIcons.checkCircle2, label: 'Completed'.tr(context)),
+      (type: _BookingTabType.cancelled, icon: LucideIcons.xCircle, label: 'Cancelled'.tr(context)),
     ];
 
     return Container(
@@ -1251,25 +1310,25 @@ class _BookingEmptyState extends StatelessWidget {
     }
   }
 
-  String get _title {
+  String _title(BuildContext context) {
     switch (tabType) {
       case _BookingTabType.upcoming:
-        return 'No upcoming bookings';
+        return 'No upcoming bookings'.tr(context);
       case _BookingTabType.completed:
-        return 'No completed sessions';
+        return 'No completed sessions'.tr(context);
       case _BookingTabType.cancelled:
-        return 'No cancelled bookings';
+        return 'No cancelled bookings'.tr(context);
     }
   }
 
-  String get _description {
+  String _description(BuildContext context) {
     switch (tabType) {
       case _BookingTabType.upcoming:
-        return 'Book a consultation with a doctor to get started';
+        return 'Book a consultation with a doctor to get started'.tr(context);
       case _BookingTabType.completed:
-        return 'Your completed consultations will appear here';
+        return 'Your completed consultations will appear here'.tr(context);
       case _BookingTabType.cancelled:
-        return 'Any cancelled sessions will appear here';
+        return 'Any cancelled sessions will appear here'.tr(context);
     }
   }
 
@@ -1309,7 +1368,7 @@ class _BookingEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            _title,
+            _title(context),
             style: AppTextStyles.headingSmall.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -1317,7 +1376,7 @@ class _BookingEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            _description,
+            _description(context),
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textSecondary,
               fontSize: 13,
@@ -1381,7 +1440,7 @@ class _FilterTabs extends StatelessWidget {
           final index = entry.key;
           final spec = entry.value;
           final isSelected = selectedSpecialization == spec;
-          final label = spec?.label ?? 'All';
+          final label = spec?.label.tr(context) ?? 'All'.tr(context);
 
           final bgColor = isSelected
               ? AppColors.primary.withValues(alpha: 0.1)
@@ -1465,7 +1524,7 @@ class _FeaturedSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Featured Experts',
+                    'Featured Experts'.tr(context),
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -1477,7 +1536,7 @@ class _FeaturedSection extends StatelessWidget {
                   // See all featured
                 },
                 child: Text(
-                  'See all',
+                  'See all'.tr(context),
                   style: AppTextStyles.labelSmall.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w500,
@@ -1587,7 +1646,7 @@ class _ExpertCardSkeleton extends StatelessWidget {
   }
 }
 
-/// Empty state widget.
+/// Empty state widget with polished design.
 class _EmptyState extends StatelessWidget {
   final bool hasFilters;
   final VoidCallback onClearFilters;
@@ -1600,56 +1659,98 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
-      child: GlassCard(
-        blur: 15,
-        opacity: 0.8,
-        padding: const EdgeInsets.all(32),
-        borderRadius: BorderRadius.circular(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.border.withValues(alpha: 0.2),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.06),
+                    AppColors.accent.withValues(alpha: 0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  width: 1,
+                ),
               ),
               child: Icon(
                 hasFilters ? LucideIcons.filterX : LucideIcons.graduationCap,
-                size: 48,
+                size: 36,
                 color: AppColors.textTertiary,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
-              hasFilters ? 'No experts found' : 'No experts available',
+              hasFilters ? 'No experts found'.tr(context) : 'No experts available'.tr(context),
               style: AppTextStyles.headingSmall.copyWith(
-                color: AppColors.textSecondary,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               hasFilters
-                  ? 'Try adjusting your filters or search query'
-                  : 'Check back later for available experts',
+                  ? 'Try adjusting your filters or search query'.tr(context)
+                  : 'Check back later for available experts'.tr(context),
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textTertiary,
+                fontSize: 14,
               ),
               textAlign: TextAlign.center,
             ),
             if (hasFilters) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
               Material(
-                color: AppColors.darkBrown,
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.transparent,
                 child: InkWell(
                   onTap: onClearFilters,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                      horizontal: 28,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.darkBrown,
+                          AppColors.primary,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.25),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1661,7 +1762,7 @@ class _EmptyState extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Clear Filters',
+                          'Clear Filters'.tr(context),
                           style: AppTextStyles.labelMedium.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -1716,7 +1817,7 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Something went wrong',
+              'Something went wrong'.tr(context),
               style: AppTextStyles.headingSmall.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -1753,7 +1854,7 @@ class _ErrorState extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Try Again',
+                        'Try Again'.tr(context),
                         style: AppTextStyles.labelMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,

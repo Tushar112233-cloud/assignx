@@ -244,7 +244,7 @@ class UserProfile {
   /// - [userType] is selected
   /// - [onboardingCompleted] is true
   bool get isComplete =>
-      fullName != null && userType != null && onboardingCompleted;
+      onboardingCompleted || (fullName != null && userType != null);
 
   /// Whether the account has been soft-deleted.
   bool get isDeleted => deletedAt != null;
@@ -307,43 +307,44 @@ class UserProfile {
   /// final profile = UserProfile.fromJson(response);
   /// ```
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    // Helper to safely parse DateTime from either snake_case or camelCase key.
+    DateTime? parseDate(String snakeKey, String camelKey) {
+      final value = json[snakeKey] ?? json[camelKey];
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    final deviceTokensRaw = json['device_tokens'] ?? json['deviceTokens'];
+
     return UserProfile(
-      id: json['id'] as String,
-      email: json['email'] as String,
-      fullName: json['full_name'] as String?,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      fullName: (json['full_name'] ?? json['fullName']) as String?,
       phone: json['phone'] as String?,
-      phoneVerified: json['phone_verified'] as bool? ?? false,
-      userType: UserType.fromString(json['user_type'] as String?),
-      avatarUrl: json['avatar_url'] as String?,
+      phoneVerified: (json['phone_verified'] ?? json['phoneVerified']) as bool? ?? false,
+      userType: UserType.fromString((json['user_type'] ?? json['userType'] ?? json['userSubType']) as String?),
+      avatarUrl: (json['avatar_url'] ?? json['avatarUrl']) as String?,
       city: json['city'] as String?,
       state: json['state'] as String?,
       country: json['country'] as String? ?? 'IN',
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
-      isActive: json['is_active'] as bool? ?? true,
-      isBlocked: json['is_blocked'] as bool? ?? false,
-      blockReason: json['block_reason'] as String?,
-      lastLoginAt: json['last_login_at'] != null
-          ? DateTime.parse(json['last_login_at'] as String)
-          : null,
-      loginCount: json['login_count'] as int? ?? 0,
-      deviceTokens: json['device_tokens'] != null
-          ? List<String>.from(json['device_tokens'] as List)
+      createdAt: parseDate('created_at', 'createdAt') ?? DateTime.now(),
+      updatedAt: parseDate('updated_at', 'updatedAt'),
+      isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
+      isBlocked: (json['is_blocked'] ?? json['isBlocked']) as bool? ?? false,
+      blockReason: (json['block_reason'] ?? json['blockReason']) as String?,
+      lastLoginAt: parseDate('last_login_at', 'lastLoginAt'),
+      loginCount: (json['login_count'] ?? json['loginCount']) as int? ?? 0,
+      deviceTokens: deviceTokensRaw != null
+          ? List<String>.from(deviceTokensRaw as List)
           : null,
       onboardingStep:
-          OnboardingStep.fromString(json['onboarding_step'] as String?) ??
+          OnboardingStep.fromString((json['onboarding_step'] ?? json['onboardingStep'])?.toString()) ??
               OnboardingStep.roleSelection,
-      onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
-      onboardingCompletedAt: json['onboarding_completed_at'] != null
-          ? DateTime.parse(json['onboarding_completed_at'] as String)
-          : null,
-      referralCode: json['referral_code'] as String?,
-      referredBy: json['referred_by'] as String?,
-      deletedAt: json['deleted_at'] != null
-          ? DateTime.parse(json['deleted_at'] as String)
-          : null,
+      onboardingCompleted: (json['onboarding_completed'] ?? json['onboardingCompleted']) as bool? ?? false,
+      onboardingCompletedAt: parseDate('onboarding_completed_at', 'onboardingCompletedAt'),
+      referralCode: (json['referral_code'] ?? json['referralCode']) as String?,
+      referredBy: (json['referred_by'] ?? json['referredBy']) as String?,
+      deletedAt: parseDate('deleted_at', 'deletedAt'),
     );
   }
 

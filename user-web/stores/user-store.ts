@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { getProfile } from "@/lib/actions/data";
 
 /**
- * User interface matching Supabase profile schema
+ * User interface matching API profile schema
  */
 export interface User {
   id: string;
@@ -112,7 +112,7 @@ function transformUser(profile: User): User {
 /**
  * Global user state store
  * Persists user data to localStorage for session management
- * Integrates with Supabase for profile fetching
+ * Integrates with API for profile fetching
  */
 export const useUserStore = create<UserState>()(
   persist(
@@ -122,7 +122,7 @@ export const useUserStore = create<UserState>()(
       error: null,
 
       /**
-       * Fetches user profile from Supabase
+       * Fetches user profile from API
        */
       fetchUser: async () => {
         set({ isLoading: true, error: null });

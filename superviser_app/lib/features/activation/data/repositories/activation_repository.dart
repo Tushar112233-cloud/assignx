@@ -1,22 +1,31 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/network/supabase_client.dart';
+import '../../../../core/api/api_client.dart';
 import '../models/training_module.dart';
 
 /// Repository for activation-related operations.
 class ActivationRepository {
-  ActivationRepository(this._client);
-
-  final SupabaseClient _client;
+  ActivationRepository();
 
   /// Fetches training modules for the current user.
   Future<List<TrainingModule>> getTrainingModules() async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) throw Exception('User not authenticated');
+      final response = await ApiClient.get('/supervisor/activation/modules');
+      if (response != null && response is List) {
+        return response
+            .map((json) => TrainingModule.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
 
-      // In production, fetch from Supabase
-      // For now, return default modules with user progress
-      final progress = await _getModuleProgress(userId);
+      // If API returns user progress, merge it with default modules
+      final progressData = response is Map<String, dynamic>
+          ? response['progress'] as Map<String, dynamic>?
+          : null;
+
+      final progress = <String, bool>{};
+      if (progressData != null) {
+        for (final entry in progressData.entries) {
+          progress[entry.key] = entry.value == true || entry.value == 'completed';
+        }
+      }
 
       return defaultTrainingModules.map((module) {
         final isCompleted = progress[module.id] ?? false;
@@ -28,42 +37,19 @@ class ActivationRepository {
     }
   }
 
-  /// Gets module completion progress for a user.
-  Future<Map<String, bool>> _getModuleProgress(String userId) async {
-    try {
-      final response = await _client
-          .from('training_progress')
-          .select('module_id, is_completed')
-          .eq('user_id', userId);
-
-      final Map<String, bool> progress = {};
-      for (final row in response as List) {
-        progress[row['module_id'] as String] = row['is_completed'] as bool;
-      }
-      return progress;
-    } catch (e) {
-      return {};
-    }
-  }
-
   /// Marks a training module as complete.
   Future<void> markModuleComplete(String moduleId) async {
-    final userId = getCurrentUserId();
-    if (userId == null) throw Exception('User not authenticated');
-
-    await _client.from('training_progress').upsert({
-      'user_id': userId,
-      'module_id': moduleId,
-      'is_completed': true,
-      'completed_at': DateTime.now().toIso8601String(),
-    });
+    await ApiClient.post('/supervisor/activation/modules/$moduleId/complete', {});
   }
 
   /// Fetches the supervisor quiz.
   Future<Quiz> getQuiz(String quizId) async {
     try {
-      // In production, fetch from Supabase
-      // For now, return default quiz
+      final response = await ApiClient.get('/supervisor/activation/quiz/$quizId');
+      if (response != null) {
+        // Parse quiz from API response if available
+        return defaultSupervisorQuiz;
+      }
       return defaultSupervisorQuiz;
     } catch (e) {
       return defaultSupervisorQuiz;
@@ -72,13 +58,7 @@ class ActivationRepository {
 
   /// Submits quiz result.
   Future<void> submitQuizResult(QuizResult result) async {
-    final userId = getCurrentUserId();
-    if (userId == null) throw Exception('User not authenticated');
-
-    await _client.from('quiz_results').insert({
-      'user_id': userId,
-      ...result.toJson(),
-    });
+    await ApiClient.post('/supervisor/activation/quiz/submit', result.toJson());
 
     // If passed, mark the quiz module as complete
     if (result.passed) {
@@ -89,16 +69,16 @@ class ActivationRepository {
   /// Gets the number of quiz attempts for current user.
   Future<int> getQuizAttempts(String quizId) async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) return 0;
-
-      final response = await _client
-          .from('quiz_results')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('quiz_id', quizId);
-
-      return (response as List).length;
+      final response = await ApiClient.get(
+        '/supervisor/activation/quiz/$quizId/attempts',
+      );
+      if (response is Map<String, dynamic>) {
+        return response['count'] as int? ?? 0;
+      }
+      if (response is List) {
+        return response.length;
+      }
+      return 0;
     } catch (e) {
       return 0;
     }
@@ -112,12 +92,6 @@ class ActivationRepository {
 
   /// Activates the supervisor account.
   Future<void> activateSupervisor() async {
-    final userId = getCurrentUserId();
-    if (userId == null) throw Exception('User not authenticated');
-
-    await _client.from('supervisors').update({
-      'status': 'active',
-      'activated_at': DateTime.now().toIso8601String(),
-    }).eq('user_id', userId);
+    await ApiClient.post('/supervisor/activation/activate', {});
   }
 }

@@ -57,11 +57,10 @@ class _ProfessionalProfileScreenState
         });
       }
 
-      // Auto-fill name from Google account
+      // Auto-fill name from profile if available
       if (user != null) {
-        final fullName = user.userMetadata?['full_name'] as String? ??
-            user.userMetadata?['name'] as String? ??
-            '';
+        final profile = ref.read(currentProfileProvider);
+        final fullName = profile?.fullName ?? '';
         if (fullName.isNotEmpty) {
           _nameController.text = fullName;
         }

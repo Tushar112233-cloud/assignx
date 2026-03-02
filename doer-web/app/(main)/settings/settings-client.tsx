@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { User, Bell, Shield, LogOut, Trash2 } from 'lucide-react'
+import { User, Bell, Shield, LogOut, Trash2, Loader2 } from 'lucide-react'
 import {
   SettingsHero,
   AccountSettings,
@@ -11,6 +11,18 @@ import {
 } from '@/components/settings'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog'
+import { useAuth } from '@/hooks/useAuth'
+import { toast } from 'sonner'
 
 type SettingsClientProps = {
   userEmail: string
@@ -26,6 +38,22 @@ type SettingsTab = 'account' | 'notifications' | 'privacy'
  */
 export function SettingsClient({ userEmail, profile, doer }: SettingsClientProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('account')
+  const [isSigningOut, setIsSigningOut] = useState(false)
+  const { signOut } = useAuth()
+  const userId = profile?.id || ''
+
+  /**
+   * Handle sign out - calls API logout and redirects to login
+   */
+  const handleSignOut = async () => {
+    setIsSigningOut(true)
+    try {
+      await signOut()
+    } catch {
+      toast.error('Failed to sign out. Please try again.')
+      setIsSigningOut(false)
+    }
+  }
 
   return (
     <div className="relative min-h-screen">
@@ -44,7 +72,7 @@ export function SettingsClient({ userEmail, profile, doer }: SettingsClientProps
           userEmail={userEmail}
         />
 
-        {/* Tabs Navigation — explicit id prevents Radix useId() hydration mismatch
+        {/* Tabs Navigation -- explicit id prevents Radix useId() hydration mismatch
             where server-generated aria-controls IDs differ from client-generated ones */}
         <Tabs id="settings-tabs" value={activeTab} onValueChange={(value) => setActiveTab(value as SettingsTab)}>
           <TabsList className="grid w-full grid-cols-3 h-12 rounded-full bg-white/85 p-1 shadow-[0_14px_28px_rgba(30,58,138,0.08)]">
@@ -80,15 +108,15 @@ export function SettingsClient({ userEmail, profile, doer }: SettingsClientProps
               className="min-w-0"
             >
               <TabsContent value="account" className="mt-0">
-                <AccountSettings profile={profile} />
+                <AccountSettings profile={profile} userId={userId} />
               </TabsContent>
 
               <TabsContent value="notifications" className="mt-0">
-                <NotificationSettings />
+                <NotificationSettings userId={userId} />
               </TabsContent>
 
               <TabsContent value="privacy" className="mt-0">
-                <PrivacySettings />
+                <PrivacySettings userId={userId} />
               </TabsContent>
 
             </motion.main>
@@ -101,19 +129,56 @@ export function SettingsClient({ userEmail, profile, doer }: SettingsClientProps
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"
+              onClick={handleSignOut}
+              disabled={isSigningOut}
               className="justify-start gap-3 h-11 rounded-2xl border-slate-200/80 bg-white text-slate-700 hover:bg-slate-50"
             >
-              <LogOut className="h-5 w-5 text-slate-600" />
-              <span>Sign Out</span>
+              {isSigningOut ? (
+                <Loader2 className="h-5 w-5 animate-spin text-slate-600" />
+              ) : (
+                <LogOut className="h-5 w-5 text-slate-600" />
+              )}
+              <span>{isSigningOut ? 'Signing out...' : 'Sign Out'}</span>
             </Button>
 
-            <Button
-              variant="outline"
-              className="justify-start gap-3 h-11 rounded-2xl border-red-200/80 bg-white text-red-600 hover:bg-red-50"
-            >
-              <Trash2 className="h-5 w-5" />
-              <span>Delete Account</span>
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="justify-start gap-3 h-11 rounded-2xl border-red-200/80 bg-white text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="h-5 w-5" />
+                  <span>Delete Account</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-2xl sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Delete Account</DialogTitle>
+                  <DialogDescription>
+                    Account deletion requires admin review. Please contact support at{' '}
+                    <a href="mailto:support@assignx.com" className="font-semibold text-[#5A7CFF] hover:underline">
+                      support@assignx.com
+                    </a>{' '}
+                    to request account deletion. This ensures all pending payouts and projects are properly handled.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <DialogClose asChild>
+                    <Button variant="outline" className="rounded-xl">
+                      Close
+                    </Button>
+                  </DialogClose>
+                  <Button
+                    onClick={() => {
+                      window.location.href = 'mailto:support@assignx.com?subject=Account%20Deletion%20Request'
+                    }}
+                    className="rounded-xl bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Contact Support
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </motion.div>

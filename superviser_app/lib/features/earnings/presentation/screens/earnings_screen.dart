@@ -188,11 +188,13 @@ class _OverviewTab extends StatelessWidget {
                 onWithdraw: onWithdraw,
               ),
 
-            // Goal Tracker
+            // Performance Insights Card
             if (state.summary != null)
-              _GoalTracker(
+              _PerformanceInsightsCard(
                 currentEarnings: state.summary!.totalEarnings,
                 goalAmount: 50000,
+                growthPercentage: state.summary!.growthPercentage,
+                previousPeriodEarnings: state.summary!.previousPeriodEarnings,
               ),
 
             // Earnings Snapshot
@@ -575,85 +577,246 @@ class _CommissionItem extends StatelessWidget {
   }
 }
 
-/// Goal tracker showing monthly earnings progress toward a target.
-class _GoalTracker extends StatelessWidget {
-  const _GoalTracker({
+/// Performance Insights card showing monthly goal progress, trend,
+/// and a motivational message based on progress percentage.
+class _PerformanceInsightsCard extends StatelessWidget {
+  const _PerformanceInsightsCard({
     required this.currentEarnings,
     required this.goalAmount,
+    required this.growthPercentage,
+    required this.previousPeriodEarnings,
   });
 
   final double currentEarnings;
   final double goalAmount;
+  final double? growthPercentage;
+  final double? previousPeriodEarnings;
+
+  /// Returns an appropriate motivational message based on progress.
+  String _getMotivationalMessage(int percentage, BuildContext context) {
+    if (percentage >= 100) {
+      return 'Outstanding! You have exceeded your monthly goal!'.tr(context);
+    } else if (percentage >= 75) {
+      return 'Almost there! Keep up the great work!'.tr(context);
+    } else if (percentage >= 50) {
+      return 'Great progress! You are halfway to your goal.'.tr(context);
+    } else if (percentage >= 25) {
+      return 'Good start! Stay consistent to reach your target.'.tr(context);
+    } else {
+      return 'Every project counts. Let us build momentum!'.tr(context);
+    }
+  }
+
+  /// Returns color for the progress bar based on progress.
+  Color _getProgressColor(int percentage) {
+    if (percentage >= 75) return AppColors.success;
+    if (percentage >= 50) return AppColors.accent;
+    if (percentage >= 25) return AppColors.warning;
+    return AppColors.error;
+  }
 
   @override
   Widget build(BuildContext context) {
     final progress = (currentEarnings / goalAmount).clamp(0.0, 1.0);
     final percentage = (progress * 100).toInt();
+    final isPositiveTrend = (growthPercentage ?? 0) >= 0;
+    final progressColor = _getProgressColor(percentage);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.outlineVariant,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Monthly Goal'.tr(context),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              Text(
-                '₹${goalAmount.toStringAsFixed(0)}',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.accent,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+          // Header row with title and trend badge
           Row(
             children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 10,
-                    backgroundColor:
-                        AppColors.textSecondaryLight.withValues(alpha: 0.1),
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(AppColors.accent),
-                  ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.insights,
+                  size: 20,
+                  color: AppColors.accent,
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                '$percentage%',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.accent,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Performance Insights'.tr(context),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
+                    Text(
+                      'Monthly Goal: ₹${goalAmount.toStringAsFixed(0)}'.tr(context),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              // Trend indicator badge
+              if (growthPercentage != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (isPositiveTrend ? AppColors.success : AppColors.error)
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isPositiveTrend
+                            ? Icons.trending_up
+                            : Icons.trending_down,
+                        size: 14,
+                        color: isPositiveTrend
+                            ? AppColors.success
+                            : AppColors.error,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${isPositiveTrend ? '+' : ''}${growthPercentage!.toStringAsFixed(1)}%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isPositiveTrend
+                              ? AppColors.success
+                              : AppColors.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Progress bar
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '₹${currentEarnings.toStringAsFixed(0)}',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        Text(
+                          '$percentage%',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: progressColor,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 10,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .outlineVariant
+                            .withValues(alpha: 0.3),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(progressColor),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            '${'₹${currentEarnings.toStringAsFixed(0)}'} ${'earned this month'.tr(context)}',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondaryLight,
+          const SizedBox(height: 16),
+
+          // Motivational message
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: progressColor.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  percentage >= 75
+                      ? Icons.emoji_events
+                      : percentage >= 50
+                          ? Icons.thumb_up
+                          : Icons.lightbulb_outline,
+                  size: 18,
+                  color: progressColor,
                 ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _getMotivationalMessage(percentage, context),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ),
+              ],
+            ),
           ),
+
+          // Comparison vs last period
+          if (previousPeriodEarnings != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  Icons.compare_arrows,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${'vs last period:'.tr(context)} ₹${previousPeriodEarnings!.toStringAsFixed(0)}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -730,10 +893,17 @@ class _SnapshotCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: color.withValues(alpha: 0.15),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -750,7 +920,7 @@ class _SnapshotCard extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondaryLight,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 10,
                 ),
           ),

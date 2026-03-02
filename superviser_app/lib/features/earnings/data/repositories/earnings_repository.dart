@@ -1,16 +1,12 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/network/supabase_client.dart';
+
+import '../../../../core/api/api_client.dart';
 import '../models/earnings_model.dart';
 import '../models/transaction_model.dart';
 
 /// Repository for earnings and transaction operations.
 class EarningsRepository {
-  EarningsRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
-
-  final SupabaseClient _client;
+  EarningsRepository();
 
   // ==================== EARNINGS ====================
 
@@ -19,15 +15,10 @@ class EarningsRepository {
     EarningsPeriod period = EarningsPeriod.monthly,
   }) async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) throw Exception('User not authenticated');
-
-      final response = await _client.rpc('get_earnings_summary', params: {
-        'user_id': userId,
-        'period': period.id,
-      });
-
-      return EarningsSummary.fromJson(response);
+      final response = await ApiClient.get(
+        '/supervisor/earnings/summary?period=${period.id}',
+      );
+      return EarningsSummary.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('EarningsRepository.getEarningsSummary error: $e');
@@ -42,17 +33,15 @@ class EarningsRepository {
     int limit = 12,
   }) async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) throw Exception('User not authenticated');
+      final response = await ApiClient.get(
+        '/supervisor/earnings/chart?period=${period.id}&limit=$limit',
+      );
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['data'] as List? ?? [];
 
-      final response = await _client.rpc('get_earnings_chart', params: {
-        'user_id': userId,
-        'period': period.id,
-        'limit_count': limit,
-      });
-
-      return (response as List)
-          .map((json) => EarningsDataPoint.fromJson(json))
+      return list
+          .map((json) => EarningsDataPoint.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       if (kDebugMode) {
@@ -67,16 +56,15 @@ class EarningsRepository {
     EarningsPeriod period = EarningsPeriod.monthly,
   }) async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) throw Exception('User not authenticated');
+      final response = await ApiClient.get(
+        '/supervisor/earnings/commissions?period=${period.id}',
+      );
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['commissions'] as List? ?? [];
 
-      final response = await _client.rpc('get_commission_breakdown', params: {
-        'user_id': userId,
-        'period': period.id,
-      });
-
-      return (response as List)
-          .map((json) => CommissionBreakdown.fromJson(json))
+      return list
+          .map((json) => CommissionBreakdown.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       if (kDebugMode) {
@@ -89,40 +77,13 @@ class EarningsRepository {
   /// Get performance metrics.
   Future<PerformanceMetrics> getPerformanceMetrics() async {
     try {
-      final userId = getCurrentUserId();
-      if (userId == null) throw Exception('User not authenticated');
-
-      final response = await _client.rpc('get_performance_metrics', params: {
-        'user_id': userId,
-      });
-
-      return PerformanceMetrics.fromJson(response);
+      final response = await ApiClient.get('/supervisor/earnings/performance');
+      return PerformanceMetrics.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('EarningsRepository.getPerformanceMetrics error: $e');
       }
       rethrow;
-    }
-  }
-
-  // ==================== WALLET ====================
-
-  /// Get wallet ID for current user.
-  Future<String?> _getWalletId() async {
-    final userId = getCurrentUserId();
-    if (userId == null) return null;
-    try {
-      final response = await _client
-          .from('wallets')
-          .select('id')
-          .eq('profile_id', userId)
-          .maybeSingle();
-      return response?['id'] as String?;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('EarningsRepository._getWalletId error: $e');
-      }
-      return null;
     }
   }
 
@@ -135,35 +96,31 @@ class EarningsRepository {
     TransactionFilter? filter,
   }) async {
     try {
-      final walletId = await _getWalletId();
-      if (walletId == null) throw Exception('Wallet not found');
-
-      var query = _client
-          .from('wallet_transactions')
-          .select()
-          .eq('wallet_id', walletId);
-
+      final params = <String, String>{
+        'limit': '$limit',
+        'offset': '$offset',
+      };
       if (filter?.types != null && filter!.types!.isNotEmpty) {
-        query = query.inFilter(
-            'transaction_type', filter.types!.map((t) => t.id).toList());
+        params['types'] = filter.types!.map((t) => t.id).join(',');
       }
       if (filter?.statuses != null && filter!.statuses!.isNotEmpty) {
-        query = query.inFilter(
-            'status', filter.statuses!.map((s) => s.id).toList());
+        params['statuses'] = filter.statuses!.map((s) => s.id).join(',');
       }
       if (filter?.startDate != null) {
-        query = query.gte('created_at', filter!.startDate!.toIso8601String());
+        params['startDate'] = filter!.startDate!.toIso8601String();
       }
       if (filter?.endDate != null) {
-        query = query.lte('created_at', filter!.endDate!.toIso8601String());
+        params['endDate'] = filter!.endDate!.toIso8601String();
       }
 
-      final response = await query
-          .order('created_at', ascending: false)
-          .range(offset, offset + limit - 1);
+      final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
+      final response = await ApiClient.get('/wallets/me/transactions?$query');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['transactions'] as List? ?? [];
 
-      return (response as List)
-          .map((json) => TransactionModel.fromJson(json))
+      return list
+          .map((json) => TransactionModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       if (kDebugMode) {
@@ -176,13 +133,8 @@ class EarningsRepository {
   /// Get transaction by ID.
   Future<TransactionModel?> getTransaction(String id) async {
     try {
-      final response = await _client
-          .from('wallet_transactions')
-          .select()
-          .eq('id', id)
-          .single();
-
-      return TransactionModel.fromJson(response);
+      final response = await ApiClient.get('/wallets/me/transactions/$id');
+      return TransactionModel.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('EarningsRepository.getTransaction error: $e');
@@ -198,23 +150,13 @@ class EarningsRepository {
     Map<String, dynamic>? paymentDetails,
   }) async {
     try {
-      final walletId = await _getWalletId();
-      if (walletId == null) return null;
+      final response = await ApiClient.post('/wallets/me/withdraw', {
+        'amount': amount,
+        'paymentMethod': paymentMethod,
+        if (paymentDetails != null) 'paymentDetails': paymentDetails,
+      });
 
-      final response = await _client
-          .from('wallet_transactions')
-          .insert({
-            'wallet_id': walletId,
-            'transaction_type': TransactionType.withdrawal.id,
-            'amount': amount,
-            'status': TransactionStatus.pending.id,
-            'description': 'Withdrawal request',
-            'notes': paymentMethod,
-          })
-          .select()
-          .single();
-
-      return TransactionModel.fromJson(response);
+      return TransactionModel.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('EarningsRepository.requestWithdrawal error: $e');

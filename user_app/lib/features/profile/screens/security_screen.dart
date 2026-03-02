@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/api/api_client.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -454,18 +454,17 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
     return strength.clamp(0.0, 1.0);
   }
 
-  /// Handles the password update via Supabase auth.
+  /// Handles the password update via the API.
   Future<void> _handleUpdatePassword() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isUpdatingPassword = true);
 
     try {
-      final newPassword = _newPasswordController.text;
-
-      await Supabase.instance.client.auth.updateUser(
-        UserAttributes(password: newPassword),
-      );
+      await ApiClient.put('/auth/password', {
+        'currentPassword': _currentPasswordController.text,
+        'newPassword': _newPasswordController.text,
+      });
 
       if (mounted) {
         // Clear the form
@@ -477,19 +476,6 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
           SnackBar(
             content: const Text('Password updated successfully'),
             backgroundColor: _SecurityColors.successGreen,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-      }
-    } on AuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: _SecurityColors.actionRed,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),

@@ -280,36 +280,43 @@ class ProfileModel {
   ///
   /// @throws FormatException if required fields are missing or malformed.
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
+    // Helper to safely parse DateTime from various formats.
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Handle deviceTokens which may come as different key names.
+    List<String>? deviceTokens;
+    final rawTokens = json['device_tokens'] ?? json['deviceTokens'];
+    if (rawTokens is List) {
+      deviceTokens = rawTokens.cast<String>();
+    }
+
     return ProfileModel(
-      id: json['id'] as String,
-      email: json['email'] as String,
-      fullName: json['full_name'] as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      email: (json['email'] as String?) ?? '',
+      fullName: (json['full_name'] ?? json['fullName'] ?? '').toString(),
       phone: json['phone'] as String?,
-      phoneVerified: json['phone_verified'] as bool? ?? false,
-      avatarUrl: json['avatar_url'] as String?,
-      userType: json['user_type'] as String,
-      isActive: json['is_active'] as bool? ?? true,
-      isBlocked: json['is_blocked'] as bool? ?? false,
-      blockReason: json['block_reason'] as String?,
+      phoneVerified: json['phone_verified'] as bool? ?? json['phoneVerified'] as bool? ?? false,
+      avatarUrl: json['avatar_url'] as String? ?? json['avatarUrl'] as String?,
+      userType: (json['user_type'] ?? json['userType'] ?? 'doer').toString(),
+      isActive: json['is_active'] as bool? ?? json['isActive'] as bool? ?? true,
+      isBlocked: json['is_blocked'] as bool? ?? json['isBlocked'] as bool? ?? false,
+      blockReason: json['block_reason'] as String? ?? json['blockReason'] as String?,
       city: json['city'] as String?,
       state: json['state'] as String?,
       country: json['country'] as String? ?? 'India',
-      lastLoginAt: json['last_login_at'] != null
-          ? DateTime.parse(json['last_login_at'] as String)
-          : null,
-      loginCount: json['login_count'] as int? ?? 0,
-      deviceTokens: (json['device_tokens'] as List<dynamic>?)?.cast<String>(),
-      onboardingStep: json['onboarding_step'] as String? ?? 'role_selection',
-      onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
-      onboardingCompletedAt: json['onboarding_completed_at'] != null
-          ? DateTime.parse(json['onboarding_completed_at'] as String)
-          : null,
-      referralCode: json['referral_code'] as String?,
-      referredBy: json['referred_by'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+      lastLoginAt: _parseDate(json['last_login_at'] ?? json['lastLoginAt']),
+      loginCount: (json['login_count'] ?? json['loginCount']) as int? ?? 0,
+      deviceTokens: deviceTokens,
+      onboardingStep: (json['onboarding_step'] ?? json['onboardingStep'] ?? 'role_selection').toString(),
+      onboardingCompleted: json['onboarding_completed'] as bool? ?? json['onboardingCompleted'] as bool? ?? false,
+      onboardingCompletedAt: _parseDate(json['onboarding_completed_at'] ?? json['onboardingCompletedAt']),
+      referralCode: json['referral_code'] as String? ?? json['referralCode'] as String?,
+      referredBy: json['referred_by'] as String? ?? json['referredBy'] as String?,
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDate(json['updated_at'] ?? json['updatedAt']),
     );
   }
 

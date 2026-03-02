@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 
 /// Message approval status enumeration.
 enum MessageApprovalStatus {
@@ -209,18 +210,18 @@ class _MessageApprovalBadgeState extends State<MessageApprovalBadge>
   }
 
   /// Format date for tooltip.
-  String _formatDate(DateTime date) {
+  String _formatDate(BuildContext context, DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
       final hours = date.hour.toString().padLeft(2, '0');
       final minutes = date.minute.toString().padLeft(2, '0');
-      return 'Today at $hours:$minutes';
+      return '${'Today at'.tr(context)} $hours:$minutes';
     } else if (difference.inDays == 1) {
       final hours = date.hour.toString().padLeft(2, '0');
       final minutes = date.minute.toString().padLeft(2, '0');
-      return 'Yesterday at $hours:$minutes';
+      return '${'Yesterday at'.tr(context)} $hours:$minutes';
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
@@ -228,7 +229,7 @@ class _MessageApprovalBadgeState extends State<MessageApprovalBadge>
 
   void _showTooltip(BuildContext context) {
     final config = _config;
-    final tooltipText = _buildTooltipText();
+    final tooltipText = _buildTooltipText(context);
 
     showDialog(
       context: context,
@@ -274,7 +275,7 @@ class _MessageApprovalBadgeState extends State<MessageApprovalBadge>
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                widget.status.displayName,
+                                widget.status.displayName.tr(context),
                                 style: AppTextStyles.labelMedium.copyWith(
                                   color: config.iconColor,
                                   fontWeight: FontWeight.bold,
@@ -304,20 +305,20 @@ class _MessageApprovalBadgeState extends State<MessageApprovalBadge>
     );
   }
 
-  String _buildTooltipText() {
+  String _buildTooltipText(BuildContext context) {
     final lines = <String>[];
 
     if (widget.approvedBy != null) {
-      lines.add('By: ${widget.approvedBy}');
+      lines.add('${'By:'.tr(context)} ${widget.approvedBy}');
     }
 
     if (widget.approvedAt != null) {
-      lines.add('At: ${_formatDate(widget.approvedAt!)}');
+      lines.add('${'At:'.tr(context)} ${_formatDate(context, widget.approvedAt!)}');
     }
 
     if (widget.rejectionReason != null &&
         widget.status == MessageApprovalStatus.rejected) {
-      lines.add('Reason: ${widget.rejectionReason}');
+      lines.add('${'Reason:'.tr(context)} ${widget.rejectionReason}');
     }
 
     return lines.join('\n');
@@ -412,19 +413,19 @@ class MessageApprovalBadgeInline extends StatelessWidget {
         icon = Icons.schedule;
         backgroundColor = AppColors.warning.withValues(alpha: 0.2);
         textColor = AppColors.warning;
-        label = 'Pending';
+        label = 'Pending'.tr(context);
         break;
       case MessageApprovalStatus.approved:
         icon = Icons.check;
         backgroundColor = AppColors.success.withValues(alpha: 0.2);
         textColor = AppColors.success;
-        label = 'Approved';
+        label = 'Approved'.tr(context);
         break;
       case MessageApprovalStatus.rejected:
         icon = Icons.close;
         backgroundColor = AppColors.error.withValues(alpha: 0.2);
         textColor = AppColors.error;
-        label = 'Rejected';
+        label = 'Rejected'.tr(context);
         break;
     }
 

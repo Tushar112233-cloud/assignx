@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/services/external_actions_service.dart';
 import '../../../../core/services/snackbar_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../shared/widgets/buttons/primary_button.dart';
 import '../providers/projects_provider.dart';
@@ -45,7 +46,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(state.project?.projectNumber ?? 'Project Details'),
+        title: Text(state.project?.projectNumber ?? 'Project Details'.tr(context)),
         actions: [
           if (state.project?.chatRoomId != null)
             IconButton(
@@ -55,23 +56,23 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'refresh',
                 child: Row(
                   children: [
-                    Icon(Icons.refresh, size: 20),
-                    SizedBox(width: 12),
-                    Text('Refresh'),
+                    const Icon(Icons.refresh, size: 20),
+                    const SizedBox(width: 12),
+                    Text('Refresh'.tr(context)),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'history',
                 child: Row(
                   children: [
-                    Icon(Icons.history, size: 20),
-                    SizedBox(width: 12),
-                    Text('View History'),
+                    const Icon(Icons.history, size: 20),
+                    const SizedBox(width: 12),
+                    Text('View History'.tr(context)),
                   ],
                 ),
               ),
@@ -83,7 +84,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           ? const Center(child: CircularProgressIndicator())
           : state.project == null
               ? _ErrorView(
-                  message: state.error ?? 'Project not found',
+                  message: state.error ?? 'Project not found'.tr(context),
                   onRetry: () => ref
                       .read(projectDetailProvider.notifier)
                       .loadProject(widget.projectId),
@@ -111,7 +112,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                         // Deliverables
                         if (state.deliverables.isNotEmpty) ...[
                           _SectionTitle(
-                            title: 'Deliverables',
+                            title: 'Deliverables'.tr(context),
                             count: state.deliverables.length,
                           ),
                           const SizedBox(height: 12),
@@ -185,21 +186,20 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   Future<void> _approveDeliverable() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Approve Deliverable'),
-        content: const Text(
-          'Are you sure you want to approve this work? '
-          'The client will be notified that their project is ready.',
+      builder: (ctx) => AlertDialog(
+        title: Text('Approve Deliverable'.tr(ctx)),
+        content: Text(
+          'Are you sure you want to approve this work? The client will be notified that their project is ready.'.tr(ctx),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel'.tr(ctx)),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.success),
-            child: const Text('Approve'),
+            child: Text('Approve'.tr(ctx)),
           ),
         ],
       ),
@@ -212,8 +212,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Deliverable approved!'),
+          SnackBar(
+            content: Text('Deliverable approved!'.tr(context)),
             backgroundColor: Colors.green,
           ),
         );
@@ -238,8 +238,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
     if (result == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Revision requested!'),
+        SnackBar(
+          content: Text('Revision requested!'.tr(context)),
           backgroundColor: Colors.orange,
         ),
       );
@@ -249,20 +249,19 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   Future<void> _deliverToClient() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Deliver to Client'),
-        content: const Text(
-          'Are you sure you want to deliver this project to the client? '
-          'They will receive a notification with the final deliverables.',
+      builder: (ctx) => AlertDialog(
+        title: Text('Deliver to Client'.tr(ctx)),
+        content: Text(
+          'Are you sure you want to deliver this project to the client? They will receive a notification with the final deliverables.'.tr(ctx),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel'.tr(ctx)),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Deliver'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Deliver'.tr(ctx)),
           ),
         ],
       ),
@@ -274,8 +273,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Project delivered to client!'),
+          SnackBar(
+            content: Text('Project delivered to client!'.tr(context)),
             backgroundColor: Colors.green,
           ),
         );
@@ -344,7 +343,7 @@ class _InfoSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionTitle(title: 'Project Details'),
+        _SectionTitle(title: 'Project Details'.tr(context)),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
@@ -355,24 +354,24 @@ class _InfoSection extends StatelessWidget {
           child: Column(
             children: [
               _InfoRow(
-                label: 'Subject',
+                label: 'Subject'.tr(context),
                 value: project.subject,
                 icon: Icons.book_outlined,
               ),
               if (project.wordCount != null)
                 _InfoRow(
-                  label: 'Word Count',
-                  value: '${project.wordCount} words',
+                  label: 'Word Count'.tr(context),
+                  value: '${project.wordCount} ${'words'.tr(context)}',
                   icon: Icons.text_fields,
                 ),
               if (project.pageCount != null)
                 _InfoRow(
-                  label: 'Page Count',
-                  value: '${project.pageCount} pages',
+                  label: 'Page Count'.tr(context),
+                  value: '${project.pageCount} ${'pages'.tr(context)}',
                   icon: Icons.description_outlined,
                 ),
               _InfoRow(
-                label: 'Revisions',
+                label: 'Revisions'.tr(context),
                 value: '${project.revisionCount}',
                 icon: Icons.replay,
               ),
@@ -382,7 +381,7 @@ class _InfoSection extends StatelessWidget {
         if (project.description.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text(
-            'Description',
+            'Description'.tr(context),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -411,7 +410,7 @@ class _PeopleSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionTitle(title: 'People'),
+        _SectionTitle(title: 'People'.tr(context)),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -419,7 +418,7 @@ class _PeopleSection extends StatelessWidget {
               Expanded(
                 child: _PersonCard(
                   name: project.clientName!,
-                  role: 'Client',
+                  role: 'Client'.tr(context),
                   email: project.clientEmail,
                   color: Colors.blue,
                 ),
@@ -430,7 +429,7 @@ class _PeopleSection extends StatelessWidget {
               Expanded(
                 child: _PersonCard(
                   name: project.doerName!,
-                  role: 'Doer',
+                  role: 'Doer'.tr(context),
                   color: Colors.purple,
                 ),
               ),
@@ -516,7 +515,7 @@ class _PricingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionTitle(title: 'Pricing Breakdown'),
+        _SectionTitle(title: 'Pricing Breakdown'.tr(context)),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
@@ -527,27 +526,27 @@ class _PricingSection extends StatelessWidget {
           child: Column(
             children: [
               _PricingRow(
-                label: 'Client Price',
+                label: 'Client Price'.tr(context),
                 amount: project.userQuote ?? 0,
                 isTotal: false,
               ),
               const Divider(height: 24),
               if (project.doerAmount != null)
                 _PricingRow(
-                  label: 'Doer Payment',
+                  label: 'Doer Payment'.tr(context),
                   amount: project.doerAmount!,
                   isTotal: false,
                 ),
               if (project.supervisorAmount != null)
                 _PricingRow(
-                  label: 'Your Commission',
+                  label: 'Your Commission'.tr(context),
                   amount: project.supervisorAmount!,
                   isTotal: false,
                   color: AppColors.success,
                 ),
               if (project.platformAmount != null)
                 _PricingRow(
-                  label: 'Platform Fee',
+                  label: 'Platform Fee'.tr(context),
                   amount: project.platformAmount!,
                   isTotal: false,
                 ),
@@ -720,7 +719,7 @@ class _ActionBar extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: state.isUpdating ? null : onRevision,
                   icon: const Icon(Icons.replay),
-                  label: const Text('Request Revision'),
+                  label: Text('Request Revision'.tr(context)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.orange,
                     side: const BorderSide(color: Colors.orange),
@@ -733,7 +732,7 @@ class _ActionBar extends StatelessWidget {
             if (state.canApprove)
               Expanded(
                 child: PrimaryButton(
-                  text: 'Approve',
+                  text: 'Approve'.tr(context),
                   isLoading: state.isUpdating,
                   onPressed: onApprove,
                 ),
@@ -741,7 +740,7 @@ class _ActionBar extends StatelessWidget {
             if (state.project?.status.name == 'approved')
               Expanded(
                 child: PrimaryButton(
-                  text: 'Deliver to Client',
+                  text: 'Deliver to Client'.tr(context),
                   isLoading: state.isUpdating,
                   onPressed: onDeliver,
                 ),
@@ -788,7 +787,7 @@ class _ErrorView extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text('Retry'.tr(context)),
             ),
           ],
         ),

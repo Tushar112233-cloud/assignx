@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/project_model.dart';
 import 'deadline_timer.dart';
 import 'status_badge.dart';
@@ -101,7 +102,7 @@ class ProjectCard extends StatelessWidget {
                                     ),
                                     const SizedBox(width: 2),
                                     Text(
-                                      'Urgent',
+                                      'Urgent'.tr(context),
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelSmall
@@ -246,7 +247,7 @@ class ProjectCard extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: onRevision,
                           icon: const Icon(Icons.replay, size: 18),
-                          label: const Text('Revision'),
+                          label: Text('Revision'.tr(context)),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.orange,
                             side: const BorderSide(color: Colors.orange),
@@ -260,7 +261,7 @@ class ProjectCard extends StatelessWidget {
                         child: FilledButton.icon(
                           onPressed: onApprove,
                           icon: const Icon(Icons.check, size: 18),
-                          label: const Text('Approve'),
+                          label: Text('Approve'.tr(context)),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.success,
                           ),

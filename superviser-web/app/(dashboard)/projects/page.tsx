@@ -26,7 +26,7 @@ import { formatDistanceToNow } from "date-fns"
 import { useProjectsByStatus, useSupervisor, claimProject } from "@/hooks"
 import { useAuth } from "@/hooks"
 import type { ProjectWithRelations } from "@/types/database"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -124,6 +124,20 @@ function ProjectsPage() {
   } = useProjectsByStatus()
   const { supervisor } = useSupervisor()
 
+  // Helper to extract client name from project (handles both Supabase and MongoDB API shapes)
+  const getClientName = (project: ProjectWithRelations, fallback = "Unknown User"): string => {
+    const p = project as Record<string, unknown>
+    const userId = p.userId as Record<string, unknown> | undefined
+    const user = p.user as Record<string, unknown> | undefined
+    return (userId?.fullName as string) || (userId?.full_name as string) || project.profiles?.full_name || (user?.fullName as string) || fallback
+  }
+
+  // Helper to extract user quote amount
+  const getQuoteAmount = (project: ProjectWithRelations): number => {
+    const p = project as Record<string, unknown>
+    return (p.userQuote as number) || project.user_quote || 0
+  }
+
   // Transform project to card format
   const transformToCardData = (project: ProjectWithRelations): ProjectCardV2Data => ({
     id: project.id,
@@ -133,9 +147,9 @@ function ProjectsPage() {
     service_type: project.service_type,
     status: project.status,
     deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
-    user_name: project.profiles?.full_name || "Unknown User",
-    doer_name: project.doers?.profiles?.full_name,
-    quoted_amount: project.user_quote || 0,
+    user_name: getClientName(project),
+    doer_name: project.doers?.profiles?.full_name || undefined,
+    quoted_amount: getQuoteAmount(project),
     supervisor_commission: project.supervisor_commission || 0,
     has_unread_messages: false,
     revision_count: (project as ProjectWithRelations & { revision_count?: number }).revision_count || 0,
@@ -150,20 +164,20 @@ function ProjectsPage() {
     subject: project.subjects?.name || "General",
     service_type: project.service_type,
     status: project.status,
-    user_name: project.profiles?.full_name || "Unknown User",
-    user_id: project.user_id,
+    user_name: getClientName(project),
+    user_id: project.user_id || "",
     doer_name: project.doers?.profiles?.full_name || "Unassigned",
     doer_id: project.doer_id || "",
     deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
     word_count: project.word_count ?? undefined,
     page_count: project.page_count ?? undefined,
-    quoted_amount: project.user_quote || 0,
+    quoted_amount: getQuoteAmount(project),
     doer_payout: project.doer_payout || 0,
     supervisor_commission: project.supervisor_commission || 0,
-    assigned_at: project.doer_assigned_at ?? undefined,
-    submitted_for_qc_at: project.status_updated_at ?? undefined,
-    delivered_at: project.delivered_at ?? undefined,
-    completed_at: project.completed_at ?? undefined,
+    assigned_at: project.doer_assigned_at || undefined,
+    submitted_for_qc_at: project.status_updated_at || undefined,
+    delivered_at: project.delivered_at || undefined,
+    completed_at: project.completed_at || undefined,
     created_at: project.created_at || new Date().toISOString(),
     revision_count: 0,
     has_unread_messages: false,
@@ -343,18 +357,15 @@ function ProjectsPage() {
 
   // Handle QC approve
   const handleApprove = useCallback(async (projectId: string, message?: string) => {
-    const supabase = createClient()
     try {
-      const { error: updateError } = await supabase
-        .from("projects")
-        .update({
+      await apiFetch(`/api/projects/${projectId}`, {
+        method: "PUT",
+        body: JSON.stringify({
           status: "qc_approved",
           status_updated_at: new Date().toISOString(),
           completion_notes: message || null,
-        })
-        .eq("id", projectId)
-
-      if (updateError) throw updateError
+        }),
+      })
       toast.success("Project approved successfully")
       setQcModalState({ open: false, project: null, mode: null })
       await refetch()
@@ -370,44 +381,20 @@ function ProjectsPage() {
     feedback: string,
     severity: "minor" | "major" | "critical"
   ) => {
-    const supabase = createClient()
     if (!supervisor?.id) {
       toast.error("Supervisor data not found")
       return
     }
     try {
-      const { count: revisionCount, error: countError } = await supabase
-        .from("project_revisions")
-        .select("*", { count: "exact", head: true })
-        .eq("project_id", projectId)
-
-      if (countError) throw countError
-      const newRevisionNumber = (revisionCount || 0) + 1
-
-      const { error: revisionError } = await supabase
-        .from("project_revisions")
-        .insert({
-          project_id: projectId,
-          revision_number: newRevisionNumber,
-          requested_by: supervisor.profile_id,
-          requested_by_type: "supervisor",
+      await apiFetch(`/api/projects/${projectId}/revision`, {
+        method: "POST",
+        body: JSON.stringify({
           feedback,
-          status: "pending",
           severity,
-        })
+          requestedByType: "supervisor",
+        }),
+      })
 
-      if (revisionError) throw revisionError
-
-      const { error: projectError } = await supabase
-        .from("projects")
-        .update({
-          status: "qc_rejected",
-          status_updated_at: new Date().toISOString(),
-          revision_count: newRevisionNumber,
-        })
-        .eq("id", projectId)
-
-      if (projectError) throw projectError
       toast.success("Revision requested successfully")
       setQcModalState({ open: false, project: null, mode: null })
       await refetch()
@@ -447,11 +434,11 @@ function ProjectsPage() {
       title: project.title,
       subject: project.subjects?.name || "General",
       service_type: project.service_type,
-      user_name: project.profiles?.full_name || "Unknown User",
+      user_name: getClientName(project),
       deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
       word_count: project.word_count ?? undefined,
       page_count: project.page_count ?? undefined,
-      quoted_amount: project.user_quote || 0,
+      quoted_amount: getQuoteAmount(project),
       doer_payout: project.doer_payout || 0,
       paid_at: project.status_updated_at || project.created_at || new Date().toISOString(),
       created_at: project.created_at || new Date().toISOString(),
@@ -586,7 +573,7 @@ function ProjectsPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 line-clamp-1">{project.title}</p>
                           <p className="text-xs text-gray-500 mt-1">
-                            #{project.project_number} • {project.profiles?.full_name || "Client"}
+                            #{project.project_number} • {getClientName(project, "Client")}
                           </p>
                         </div>
                         <div className="text-xs text-gray-500 flex items-center gap-1 flex-shrink-0 whitespace-nowrap">

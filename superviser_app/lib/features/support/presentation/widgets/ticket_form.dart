@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/ticket_model.dart';
 
 /// Ticket creation form widget.
@@ -56,7 +57,7 @@ class _TicketFormState extends State<TicketForm> {
         children: [
           // Category selection
           Text(
-            'Category',
+            'Category'.tr(context),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -102,18 +103,18 @@ class _TicketFormState extends State<TicketForm> {
           // Subject field
           TextFormField(
             controller: _subjectController,
-            decoration: const InputDecoration(
-              labelText: 'Subject',
-              hintText: 'Brief description of your issue',
-              prefixIcon: Icon(Icons.subject),
+            decoration: InputDecoration(
+              labelText: 'Subject'.tr(context),
+              hintText: 'Brief description of your issue'.tr(context),
+              prefixIcon: const Icon(Icons.subject),
             ),
             textCapitalization: TextCapitalization.sentences,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return 'Please enter a subject';
+                return 'Please enter a subject'.tr(context);
               }
               if (value.trim().length < 5) {
-                return 'Subject must be at least 5 characters';
+                return 'Subject must be at least 5 characters'.tr(context);
               }
               return null;
             },
@@ -124,19 +125,19 @@ class _TicketFormState extends State<TicketForm> {
           // Description field
           TextFormField(
             controller: _descriptionController,
-            decoration: const InputDecoration(
-              labelText: 'Description',
-              hintText: 'Provide details about your issue...',
+            decoration: InputDecoration(
+              labelText: 'Description'.tr(context),
+              hintText: 'Provide details about your issue...'.tr(context),
               alignLabelWithHint: true,
             ),
             maxLines: 5,
             textCapitalization: TextCapitalization.sentences,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return 'Please provide a description';
+                return 'Please provide a description'.tr(context);
               }
               if (value.trim().length < 20) {
-                return 'Description must be at least 20 characters';
+                return 'Description must be at least 20 characters'.tr(context);
               }
               return null;
             },
@@ -146,7 +147,7 @@ class _TicketFormState extends State<TicketForm> {
 
           // Priority selection
           Text(
-            'Priority',
+            'Priority'.tr(context),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -208,14 +209,14 @@ class _TicketFormState extends State<TicketForm> {
                       valueColor: AlwaysStoppedAnimation(Colors.white),
                     ),
                   )
-                : const Text('Submit Ticket'),
+                : Text('Submit Ticket'.tr(context)),
           ),
 
           const SizedBox(height: 16),
 
           // Info text
           Text(
-            'Our support team typically responds within 24 hours.',
+            'Our support team typically responds within 24 hours.'.tr(context),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondaryLight,
                 ),
@@ -307,7 +308,7 @@ class _TicketMessageInputState extends State<TicketMessageInput> {
               controller: _controller,
               enabled: widget.enabled,
               decoration: InputDecoration(
-                hintText: 'Type a message...',
+                hintText: 'Type a message...'.tr(context),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
@@ -469,12 +470,12 @@ class _CloseTicketDialogState extends State<CloseTicketDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Close Ticket'),
+      title: Text('Close Ticket'.tr(context)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('How was your support experience?'),
+          Text('How was your support experience?'.tr(context)),
           const SizedBox(height: 16),
 
           // Star rating
@@ -498,9 +499,9 @@ class _CloseTicketDialogState extends State<CloseTicketDialog> {
           // Feedback
           TextField(
             controller: _feedbackController,
-            decoration: const InputDecoration(
-              labelText: 'Feedback (optional)',
-              hintText: 'Any additional comments...',
+            decoration: InputDecoration(
+              labelText: 'Feedback (optional)'.tr(context),
+              hintText: 'Any additional comments...'.tr(context),
             ),
             maxLines: 3,
             textCapitalization: TextCapitalization.sentences,
@@ -510,7 +511,7 @@ class _CloseTicketDialogState extends State<CloseTicketDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text('Cancel'.tr(context)),
         ),
         FilledButton(
           onPressed: () {
@@ -522,7 +523,7 @@ class _CloseTicketDialogState extends State<CloseTicketDialog> {
                   : _feedbackController.text.trim(),
             );
           },
-          child: const Text('Close Ticket'),
+          child: Text('Close Ticket'.tr(context)),
         ),
       ],
     );

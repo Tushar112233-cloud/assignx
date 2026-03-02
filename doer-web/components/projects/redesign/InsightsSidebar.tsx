@@ -105,7 +105,10 @@ export function InsightsSidebar({
 
   // Calculate metrics
   const urgentCount = activeProjects.filter(
-    (p) => p.status === 'revision_requested' || p.is_urgent
+    (p) => {
+      const hoursLeft = (new Date(p.deadline).getTime() - Date.now()) / (1000 * 60 * 60)
+      return p.status === 'revision_requested' || (hoursLeft < 24 && hoursLeft > 0)
+    }
   ).length
 
   const inProgressCount = activeProjects.filter(
@@ -124,7 +127,10 @@ export function InsightsSidebar({
 
   // Find most urgent project
   const mostUrgentProject = activeProjects
-    .filter((p) => p.status === 'revision_requested' || p.is_urgent)
+    .filter((p) => {
+      const hoursLeft = (new Date(p.deadline).getTime() - Date.now()) / (1000 * 60 * 60)
+      return p.status === 'revision_requested' || (hoursLeft < 24 && hoursLeft > 0)
+    })
     .sort((a, b) => {
       // Prioritize revision requests
       if (a.status === 'revision_requested' && b.status !== 'revision_requested') return -1

@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 import { Doer, DoerReview, DoerProject } from "./types"
 
 interface DoerDetailsProps {
@@ -102,45 +102,24 @@ export function DoerDetails({ doer, open, onOpenChange, onBlacklistChange }: Doe
   const [isLoadingReviews, setIsLoadingReviews] = useState(false)
   const [isLoadingProjects, setIsLoadingProjects] = useState(false)
 
-  // Fetch doer reviews from Supabase
+  // Fetch doer reviews from API
   const fetchReviews = useCallback(async (doerId: string) => {
-    const supabase = createClient()
     setIsLoadingReviews(true)
     try {
-      const { data, error } = await supabase
-        .from("doer_reviews")
-        .select(`
-          id,
-          overall_rating,
-          review_text,
-          reviewer_type,
-          created_at,
-          project_id,
-          projects (
-            project_number,
-            title
-          ),
-          profiles:reviewer_id (
-            full_name
-          )
-        `)
-        .eq("doer_id", doerId)
-        .eq("is_public", true)
-        .order("created_at", { ascending: false })
-        .limit(20)
+      const data = await apiFetch<{ reviews: any[] }>(
+        `/api/doers/${doerId}/reviews?is_public=true&sort=-created_at&limit=20`
+      )
 
-      if (error) throw error
-
-      const formattedReviews: DoerReview[] = (data || []).map((review) => ({
+      const formattedReviews: DoerReview[] = (data.reviews || []).map((review: any) => ({
         id: review.id,
         doer_id: doerId,
         project_id: review.project_id || "",
-        project_number: (review.projects as { project_number?: string })?.project_number || "",
-        project_title: (review.projects as { title?: string })?.title || "Unknown Project",
-        reviewer_name: (review.profiles as { full_name?: string })?.full_name || "Anonymous",
+        project_number: review.project_number || review.projects?.project_number || "",
+        project_title: review.project_title || review.projects?.title || "Unknown Project",
+        reviewer_name: review.reviewer_name || review.profiles?.full_name || "Anonymous",
         reviewer_type: review.reviewer_type as "user" | "supervisor",
-        rating: review.overall_rating,
-        comment: review.review_text || "",
+        rating: review.overall_rating || review.rating,
+        comment: review.review_text || review.comment || "",
         created_at: review.created_at || new Date().toISOString(),
       }))
 
@@ -153,59 +132,25 @@ export function DoerDetails({ doer, open, onOpenChange, onBlacklistChange }: Doe
     }
   }, [])
 
-  // Fetch doer projects from Supabase
+  // Fetch doer projects from API
   const fetchProjects = useCallback(async (doerId: string) => {
-    const supabase = createClient()
     setIsLoadingProjects(true)
     try {
-      const { data, error } = await supabase
-        .from("projects")
-        .select(`
-          id,
-          project_number,
-          title,
-          status,
-          deadline,
-          doer_assigned_at,
-          completed_at,
-          doer_payout,
-          subjects (
-            name
-          )
-        `)
-        .eq("doer_id", doerId)
-        .order("created_at", { ascending: false })
-        .limit(20)
+      const data = await apiFetch<{ projects: any[] }>(
+        `/api/projects?doerId=${doerId}&sort=-created_at&limit=20`
+      )
 
-      if (error) throw error
-
-      // Get ratings for completed projects
-      const projectIds = (data || []).filter(p => p.status === "completed").map(p => p.id)
-      let ratingsMap: Record<string, number> = {}
-
-      if (projectIds.length > 0) {
-        const { data: reviewsData } = await supabase
-          .from("doer_reviews")
-          .select("project_id, overall_rating")
-          .in("project_id", projectIds)
-
-        ratingsMap = (reviewsData || []).reduce((acc, r) => {
-          if (r.project_id) acc[r.project_id] = r.overall_rating
-          return acc
-        }, {} as Record<string, number>)
-      }
-
-      const formattedProjects: DoerProject[] = (data || []).map((project) => ({
-        id: project.id,
+      const formattedProjects: DoerProject[] = (data.projects || []).map((project: any) => ({
+        id: project.id || project._id,
         project_number: project.project_number,
         title: project.title,
-        subject: (project.subjects as { name?: string })?.name || "",
+        subject: project.subjects?.name || project.subject || "",
         status: project.status,
         deadline: project.deadline,
         assigned_at: project.doer_assigned_at || undefined,
         completed_at: project.completed_at || undefined,
         doer_payout: project.doer_payout || undefined,
-        rating: ratingsMap[project.id] || undefined,
+        rating: project.rating || undefined,
       }))
 
       setProjects(formattedProjects)

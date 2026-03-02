@@ -185,85 +185,146 @@ class DoerProjectModel {
     this.completionNotes,
   });
 
-  /// Creates from Supabase JSON response.
+  /// Creates from JSON response (supports both Supabase flat and MongoDB nested formats).
+  ///
+  /// MongoDB may return populated objects for supervisorId/doerId/userId and
+  /// nested sub-documents for pricing, payment, delivery, qualityCheck.
   factory DoerProjectModel.fromJson(Map<String, dynamic> json) {
-    // Handle nested subject
+    // Helper to extract ID from a field that may be a string or populated object.
+    String? _extractIdOrNull(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        final id = value['_id'] ?? value['id'];
+        return id?.toString();
+      }
+      return value.toString();
+    }
+
+    // Helper to extract a display name from a populated object.
+    String? _extractName(dynamic value) {
+      if (value == null) return null;
+      if (value is Map<String, dynamic>) {
+        return (value['fullName'] ?? value['full_name'] ?? value['name']) as String?;
+      }
+      return null;
+    }
+
+    // Helper to safely parse a double from various types.
+    double? _parseDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
+    // Helper to safely parse DateTime.
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      return DateTime.tryParse(value.toString());
+    }
+
+    // Extract nested sub-documents (MongoDB Mongoose style).
+    final pricing = json['pricing'] as Map<String, dynamic>? ?? {};
+    final delivery = json['delivery'] as Map<String, dynamic>? ?? {};
+    final qualityCheck = json['qualityCheck'] as Map<String, dynamic>? ?? {};
+
+    // Handle nested subject - could be string, Map from Supabase join, or populated MongoDB object.
     String? subjectName;
     String? subjectId;
-    if (json['subject'] != null && json['subject'] is Map) {
-      subjectName = json['subject']['name'] as String?;
-      subjectId = json['subject']['id'] as String?;
+    final subjectRaw = json['subject'] ?? json['subjectId'] ?? json['subject_id'];
+    if (subjectRaw is Map<String, dynamic>) {
+      subjectName = (subjectRaw['name'] as String?);
+      subjectId = (subjectRaw['_id'] ?? subjectRaw['id'])?.toString();
+    } else if (subjectRaw is String) {
+      // Could be an ID or the subject name itself depending on the field.
+      if (json['subject'] is String) {
+        subjectName = json['subject'] as String;
+      }
+      subjectId = (json['subject_id'] ?? json['subjectId']) is String
+          ? ((json['subject_id'] ?? json['subjectId']) as String)
+          : null;
+    }
+    // Override with explicit flat fields if present.
+    subjectName = (json['subject_name'] ?? json['subjectName']) as String? ?? subjectName;
+    if (json['subject_id'] is String) subjectId = json['subject_id'] as String;
+
+    // Handle nested supervisor - could be flat ID or populated object.
+    final supervisorRaw = json['supervisor'] ?? json['supervisor_id'] ?? json['supervisorId'];
+    String? supervisorName = _extractName(supervisorRaw);
+    String? supervisorId = _extractIdOrNull(supervisorRaw);
+    // If json['supervisor'] was used for name but ID is in a separate field:
+    if (json['supervisor'] is Map && json['supervisor_id'] is String) {
+      supervisorId = json['supervisor_id'] as String;
     }
 
-    // Handle nested supervisor
-    String? supervisorName;
-    String? supervisorId;
-    if (json['supervisor'] != null && json['supervisor'] is Map) {
-      supervisorName = json['supervisor']['full_name'] as String?;
-      supervisorId = json['supervisor']['id'] as String?;
-    }
+    // Handle nested user.
+    final userRaw = json['user'] ?? json['userId'] ?? json['user_id'];
+    String? userName = _extractName(userRaw);
+    // Override with flat field if present.
+    userName = (json['user_name'] ?? json['userName']) as String? ?? userName;
 
-    // Handle nested user
-    String? userName;
-    if (json['user'] != null && json['user'] is Map) {
-      userName = json['user']['full_name'] as String?;
-    }
-
-    // Handle nested reference style
+    // Handle nested reference style.
     String? referenceStyleName;
-    if (json['reference_style'] != null && json['reference_style'] is Map) {
-      referenceStyleName = json['reference_style']['name'] as String? ??
-                          json['reference_style']['slug'] as String?;
+    final refStyleRaw = json['reference_style'] ?? json['referenceStyle']
+        ?? json['referenceStyleId'] ?? json['reference_style_id'];
+    if (refStyleRaw is Map<String, dynamic>) {
+      referenceStyleName = (refStyleRaw['name'] ?? refStyleRaw['slug']) as String?;
+    } else if (refStyleRaw is String) {
+      referenceStyleName = refStyleRaw;
     }
 
-    // Handle focus_areas array
+    // Handle focus_areas array (supports both snake_case and camelCase).
     List<String> focusAreas = [];
-    if (json['focus_areas'] != null && json['focus_areas'] is List) {
-      focusAreas = (json['focus_areas'] as List).cast<String>();
+    final focusAreasRaw = json['focus_areas'] ?? json['focusAreas'];
+    if (focusAreasRaw is List) {
+      focusAreas = focusAreasRaw.map((e) => e.toString()).toList();
     }
 
     return DoerProjectModel(
-      id: json['id'] as String,
-      projectNumber: json['project_number'] as String? ?? 'PRJ-UNKNOWN',
-      title: json['title'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      projectNumber: (json['project_number'] ?? json['projectNumber'] ?? 'PRJ-UNKNOWN').toString(),
+      title: (json['title'] as String?) ?? '',
       description: json['description'] as String?,
       topic: json['topic'] as String?,
-      subjectName: subjectName ?? json['subject_name'] as String?,
-      subjectId: subjectId ?? json['subject_id'] as String?,
-      status: DoerProjectStatus.fromString(json['status'] as String? ?? 'pending'),
-      deadline: DateTime.parse(json['deadline'] as String),
-      originalDeadline: json['original_deadline'] != null
-          ? DateTime.parse(json['original_deadline'] as String)
-          : null,
-      deadlineExtended: json['deadline_extended'] as bool? ?? false,
-      deadlineExtensionReason: json['deadline_extension_reason'] as String?,
-      doerPayout: (json['doer_payout'] as num?)?.toDouble() ?? 0.0,
-      wordCount: json['word_count'] as int?,
-      pageCount: json['page_count'] as int?,
+      subjectName: subjectName,
+      subjectId: subjectId,
+      status: DoerProjectStatus.fromString((json['status'] ?? 'pending').toString()),
+      deadline: _parseDate(json['deadline']) ?? DateTime.now(),
+      originalDeadline: _parseDate(json['original_deadline'] ?? json['originalDeadline']),
+      deadlineExtended: (json['deadline_extended'] ?? json['deadlineExtended']) as bool? ?? false,
+      deadlineExtensionReason: (json['deadline_extension_reason']
+          ?? json['deadlineExtensionReason']) as String?,
+      // Pricing: check nested pricing object, then flat fields.
+      doerPayout: _parseDouble(json['doer_payout'] ?? json['doerPayout']
+          ?? pricing['doerPayout']) ?? 0.0,
+      wordCount: (json['word_count'] ?? json['wordCount']) as int?,
+      pageCount: (json['page_count'] ?? json['pageCount']) as int?,
       referenceStyleName: referenceStyleName,
-      specificInstructions: json['specific_instructions'] as String?,
+      specificInstructions: (json['specific_instructions']
+          ?? json['specificInstructions']) as String?,
       focusAreas: focusAreas,
-      progressPercentage: json['progress_percentage'] as int? ?? 0,
+      progressPercentage: (json['progress_percentage']
+          ?? json['progressPercentage']) as int? ?? 0,
       supervisorName: supervisorName,
-      supervisorId: supervisorId ?? json['supervisor_id'] as String?,
+      supervisorId: supervisorId,
       userName: userName,
-      liveDocumentUrl: json['live_document_url'] as String?,
-      aiScore: (json['ai_score'] as num?)?.toDouble(),
-      plagiarismScore: (json['plagiarism_score'] as num?)?.toDouble(),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      doerAssignedAt: json['doer_assigned_at'] != null
-          ? DateTime.parse(json['doer_assigned_at'] as String)
-          : null,
-      deliveredAt: json['delivered_at'] != null
-          ? DateTime.parse(json['delivered_at'] as String)
-          : null,
-      expectedDeliveryAt: json['expected_delivery_at'] != null
-          ? DateTime.parse(json['expected_delivery_at'] as String)
-          : null,
-      completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'] as String)
-          : null,
-      completionNotes: json['completion_notes'] as String?,
+      liveDocumentUrl: (json['live_document_url'] ?? json['liveDocumentUrl']) as String?,
+      // Quality check: check nested qualityCheck object, then flat fields.
+      aiScore: _parseDouble(json['ai_score'] ?? json['aiScore']
+          ?? qualityCheck['aiScore']),
+      plagiarismScore: _parseDouble(json['plagiarism_score'] ?? json['plagiarismScore']
+          ?? qualityCheck['plagiarismScore']),
+      createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
+      doerAssignedAt: _parseDate(json['doer_assigned_at'] ?? json['doerAssignedAt']),
+      // Delivery: check nested delivery object, then flat fields.
+      deliveredAt: _parseDate(json['delivered_at'] ?? json['deliveredAt']
+          ?? delivery['deliveredAt']),
+      expectedDeliveryAt: _parseDate(json['expected_delivery_at']
+          ?? json['expectedDeliveryAt'] ?? delivery['expectedDeliveryAt']),
+      completedAt: _parseDate(json['completed_at'] ?? json['completedAt']
+          ?? delivery['completedAt']),
+      completionNotes: (json['completion_notes'] ?? json['completionNotes']) as String?,
     );
   }
 

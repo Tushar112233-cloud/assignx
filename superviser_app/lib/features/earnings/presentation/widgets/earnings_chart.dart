@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/earnings_model.dart';
 
 /// Earnings line chart widget.
@@ -23,8 +24,8 @@ class EarningsLineChart extends StatelessWidget {
     if (dataPoints.isEmpty) {
       return SizedBox(
         height: height,
-        child: const Center(
-          child: Text('No data available'),
+        child: Center(
+          child: Text('No data available'.tr(context)),
         ),
       );
     }
@@ -184,8 +185,8 @@ class EarningsBarChart extends StatelessWidget {
     if (dataPoints.isEmpty) {
       return SizedBox(
         height: height,
-        child: const Center(
-          child: Text('No data available'),
+        child: Center(
+          child: Text('No data available'.tr(context)),
         ),
       );
     }
@@ -320,8 +321,8 @@ class _CommissionPieChartState extends State<CommissionPieChart> {
     if (widget.breakdown.isEmpty) {
       return SizedBox(
         height: widget.size,
-        child: const Center(
-          child: Text('No data available'),
+        child: Center(
+          child: Text('No data available'.tr(context)),
         ),
       );
     }

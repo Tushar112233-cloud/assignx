@@ -55,7 +55,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { BlacklistedDoer } from "./types"
 import { useBlacklistedDoers } from "@/hooks/use-doers"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 
 interface DoerCardProps {
   doer: BlacklistedDoer
@@ -173,27 +173,9 @@ export function DoerBlacklist() {
 
     setIsRemoving(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error("Not authenticated")
-
-      // Get supervisor ID
-      const { data: supervisor } = await supabase
-        .from("supervisors")
-        .select("id")
-        .eq("profile_id", user.id)
-        .single()
-
-      if (!supervisor) throw new Error("Supervisor not found")
-
-      // Remove from blacklist
-      const { error } = await supabase
-        .from("supervisor_blacklisted_doers")
-        .delete()
-        .eq("supervisor_id", supervisor.id)
-        .eq("doer_id", doerToRemove)
-
-      if (error) throw error
+      await apiFetch(`/api/supervisors/me/blacklist/${doerToRemove}`, {
+        method: "DELETE",
+      })
 
       toast.success("Doer removed from blacklist")
       await refetch()

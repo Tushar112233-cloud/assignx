@@ -3,24 +3,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { createClient } from '@/lib/supabase/client'
+import { apiClient, getAccessToken } from '@/lib/api/client'
 import { activationService } from '@/services/activation.service'
 import { logger } from '@/lib/logger'
 import type { DoerActivation, TrainingProgress, QuizAttempt } from '@/types/database'
 
-/** Activation state interface */
 interface ActivationState {
-  /** Current activation status */
   activation: DoerActivation | null
-  /** Training progress for each module */
   trainingProgress: TrainingProgress[]
-  /** Quiz attempts history */
   quizAttempts: QuizAttempt[]
-  /** Loading state */
   isLoading: boolean
-  /** Error message */
   error: string | null
-  /** Actions */
   setActivation: (activation: DoerActivation | null) => void
   setTrainingProgress: (progress: TrainingProgress[]) => void
   addTrainingProgress: (progress: TrainingProgress) => void
@@ -31,27 +24,6 @@ interface ActivationState {
   reset: () => void
 }
 
-/** Initial activation state */
-const initialActivation: DoerActivation = {
-  id: '',
-  doer_id: '',
-  training_completed: false,
-  training_completed_at: null,
-  quiz_passed: false,
-  quiz_passed_at: null,
-  quiz_attempt_id: null,
-  total_quiz_attempts: 0,
-  bank_details_added: false,
-  bank_details_added_at: null,
-  is_fully_activated: false,
-  activated_at: null,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-}
-
-/**
- * Activation store using Zustand with persistence
- */
 export const useActivationStore = create<ActivationState>()(
   persist(
     (set) => ({
@@ -104,20 +76,14 @@ export const useActivationStore = create<ActivationState>()(
   )
 )
 
-/**
- * Hook for managing activation flow
- * Provides methods to update activation status and track progress
- */
 export function useActivation() {
   const store = useActivationStore()
   const [mounted, setMounted] = useState(false)
 
-  // Handle hydration
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  /** Get current step based on activation status */
   const getCurrentStep = useCallback(() => {
     if (!store.activation) return 1
     if (!store.activation.training_completed) return 1
@@ -126,7 +92,6 @@ export function useActivation() {
     return 3
   }, [store.activation])
 
-  /** Check if a specific step is completed */
   const isStepCompleted = useCallback(
     (step: number) => {
       if (!store.activation) return false
@@ -144,7 +109,6 @@ export function useActivation() {
     [store.activation]
   )
 
-  /** Check if a specific step is unlocked */
   const isStepUnlocked = useCallback(
     (step: number) => {
       if (step === 1) return true
@@ -161,29 +125,25 @@ export function useActivation() {
     [store.activation]
   )
 
-  /** Get completed training modules */
   const getCompletedModules = useCallback(() => {
     return store.trainingProgress
-      .filter((p) => p.is_completed)
+      .filter((p) => p.status === 'completed')
       .map((p) => p.module_id)
   }, [store.trainingProgress])
 
-  /** Get number of quiz attempts */
   const getQuizAttempts = useCallback(() => {
     return store.quizAttempts.length
   }, [store.quizAttempts])
 
-  /** Complete a training module */
   const completeTrainingModule = useCallback(
     async (moduleId: string) => {
       const doerId = store.activation?.doer_id
       if (!doerId) return
 
-      // Persist to DB first
       try {
         const dbProgress = await activationService.updateTrainingProgress(doerId, moduleId, {
           progress_percentage: 100,
-          is_completed: true,
+          status: 'completed',
           completed_at: new Date().toISOString(),
         } as Partial<TrainingProgress>)
 
@@ -195,7 +155,6 @@ export function useActivation() {
         logger.error('Activation', 'Error persisting training progress:', err)
       }
 
-      // Fallback: update local store if DB fails
       const progress: TrainingProgress = {
         id: `progress-${moduleId}`,
         profile_id: doerId,
@@ -203,19 +162,17 @@ export function useActivation() {
         started_at: new Date().toISOString(),
         completed_at: new Date().toISOString(),
         progress_percentage: 100,
-        is_completed: true,
+        status: 'completed',
       }
       store.addTrainingProgress(progress)
     },
     [store]
   )
 
-  /** Mark training as completed */
   const completeTraining = useCallback(async () => {
     if (!store.activation) return
 
     const doerId = store.activation.doer_id
-    // Persist to DB
     try {
       const success = await activationService.completeTraining(doerId)
       if (success) {
@@ -232,7 +189,6 @@ export function useActivation() {
       logger.error('Activation', 'Error persisting training completion:', err)
     }
 
-    // Fallback: update local store
     const updatedActivation: DoerActivation = {
       ...store.activation,
       training_completed: true,
@@ -242,14 +198,12 @@ export function useActivation() {
     store.setActivation(updatedActivation)
   }, [store])
 
-  /** Submit quiz attempt (server-side validated) */
   const submitQuizAttempt = useCallback(
     async (score: number, totalQuestions: number, answers: Record<string, number>) => {
       if (!store.activation) return false
 
       const doerId = store.activation.doer_id
 
-      // Submit to server for validation (server ignores client score)
       try {
         const result = await activationService.submitQuizAttempt(doerId, score, totalQuestions, answers)
 
@@ -262,7 +216,6 @@ export function useActivation() {
           store.addQuizAttempt(result.attempt)
 
           if (result.passed) {
-            // Re-fetch activation to get server-updated state
             const updated = await activationService.getActivationStatus(doerId)
             if (updated) {
               store.setActivation(updated)
@@ -274,7 +227,6 @@ export function useActivation() {
       } catch (err) {
         logger.error('Activation', 'Error submitting quiz attempt:', err)
 
-        // Fallback: local-only if service call fails
         const isPassed = (score / totalQuestions) * 100 >= 80
         const attemptNumber = store.quizAttempts.length + 1
 
@@ -299,7 +251,6 @@ export function useActivation() {
     [store]
   )
 
-  /** Submit bank details */
   const submitBankDetails = useCallback(
     async (bankDetails: {
       accountHolderName: string
@@ -311,11 +262,9 @@ export function useActivation() {
 
       const doerId = store.activation.doer_id
 
-      // Persist to DB (updates doer record + activation status)
       try {
         const success = await activationService.submitBankDetails(doerId, bankDetails)
         if (success) {
-          // Re-fetch activation to get server-updated state
           const updated = await activationService.getActivationStatus(doerId)
           if (updated) {
             store.setActivation(updated)
@@ -326,7 +275,6 @@ export function useActivation() {
         logger.error('Activation', 'Error persisting bank details:', err)
       }
 
-      // Fallback: update local store
       const updatedActivation: DoerActivation = {
         ...store.activation,
         bank_details_added: true,
@@ -340,7 +288,6 @@ export function useActivation() {
     [store]
   )
 
-  /** Get overall activation progress percentage */
   const getProgressPercentage = useCallback(() => {
     let completed = 0
     if (store.activation?.training_completed) completed++
@@ -349,18 +296,16 @@ export function useActivation() {
     return (completed / 3) * 100
   }, [store.activation])
 
-  /** Check if fully activated */
   const isFullyActivated = useCallback(() => {
     return store.activation?.is_fully_activated ?? false
   }, [store.activation])
 
-  // Stable refs for store methods to avoid re-render loops
   const setActivationRef = useRef(store.setActivation)
   setActivationRef.current = store.setActivation
   const activationRef = useRef(store.activation)
   activationRef.current = store.activation
 
-  // Initialize activation from Supabase if not present
+  // Initialize activation from API if not present
   useEffect(() => {
     if (!mounted) return
 
@@ -368,47 +313,37 @@ export function useActivation() {
 
     const loadActivation = async () => {
       try {
-        const supabase = createClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        const user = session?.user
-        if (!user || isCancelled) return
+        const token = getAccessToken()
+        if (!token || isCancelled) return
+
+        // Decode JWT to get user ID
+        let userId: string
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          userId = payload.userId || payload.sub || payload.id
+        } catch {
+          return
+        }
 
         // Get the doer record for this user
-        const { data: doer } = await supabase
-          .from('doers')
-          .select('id')
-          .eq('profile_id', user.id)
-          .single()
+        let doer: { id: string } | null = null
+        try {
+          doer = await apiClient<{ id: string }>(`/api/doers/by-profile/${userId}`)
+        } catch {
+          return
+        }
 
         if (!doer || isCancelled) return
 
-        // Fetch existing activation record from DB
-        const { data: activation } = await supabase
-          .from('doer_activation')
-          .select('*')
-          .eq('doer_id', doer.id)
-          .single()
-
+        // Fetch existing activation record from API
+        const activation = await activationService.getActivationStatus(doer.id)
         if (isCancelled) return
 
         if (activation) {
           setActivationRef.current(activation)
         } else if (!activationRef.current) {
-          // Create a new activation record in Supabase
-          const { data: newActivation, error } = await supabase
-            .from('doer_activation')
-            .insert({
-              doer_id: doer.id,
-              training_completed: false,
-              quiz_passed: false,
-              total_quiz_attempts: 0,
-              bank_details_added: false,
-              is_fully_activated: false,
-            })
-            .select()
-            .single()
-
-          if (!error && newActivation && !isCancelled) {
+          const newActivation = await activationService.createActivation(doer.id)
+          if (newActivation && !isCancelled) {
             setActivationRef.current(newActivation)
           }
         }
@@ -425,7 +360,6 @@ export function useActivation() {
   }, [mounted])
 
   return {
-    // State
     activation: store.activation,
     trainingProgress: store.trainingProgress,
     quizAttempts: store.quizAttempts,
@@ -433,14 +367,12 @@ export function useActivation() {
     error: store.error,
     mounted,
 
-    // Computed
     currentStep: getCurrentStep(),
     progressPercentage: getProgressPercentage(),
     isFullyActivated: isFullyActivated(),
     completedModules: getCompletedModules(),
     quizAttemptCount: getQuizAttempts(),
 
-    // Methods
     isStepCompleted,
     isStepUnlocked,
     completeTrainingModule,

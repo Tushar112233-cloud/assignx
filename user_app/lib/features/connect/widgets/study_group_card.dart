@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/connect_models.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -164,7 +165,7 @@ class StudyGroupCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    group.nextSessionString ?? 'No session scheduled',
+                    group.nextSessionString ?? 'No session scheduled'.tr(context),
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.success,
                       fontWeight: FontWeight.w500,
@@ -182,7 +183,7 @@ class StudyGroupCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    'No upcoming session',
+                    'No upcoming session'.tr(context),
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -191,7 +192,7 @@ class StudyGroupCard extends StatelessWidget {
               ],
 
               // Join/Leave button
-              _buildActionButton(),
+              _buildActionButton(context),
             ],
           ),
         ],
@@ -243,7 +244,7 @@ class StudyGroupCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton() {
+  Widget _buildActionButton(BuildContext context) {
     if (group.isFull && !isJoined) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -252,7 +253,7 @@ class StudyGroupCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
         ),
         child: Text(
-          'Full',
+          'Full'.tr(context),
           style: AppTextStyles.buttonSmall.copyWith(
             color: AppColors.textTertiary,
           ),
@@ -278,7 +279,7 @@ class StudyGroupCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                isJoined ? 'Joined' : 'Join',
+                isJoined ? 'Joined'.tr(context) : 'Join'.tr(context),
                 style: AppTextStyles.buttonSmall.copyWith(
                   color: isJoined ? AppColors.textSecondary : Colors.white,
                 ),
@@ -353,7 +354,7 @@ class CompactStudyGroupCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    'Joined',
+                    'Joined'.tr(context),
                     style: AppTextStyles.caption.copyWith(
                       fontSize: 9,
                       color: AppColors.success,

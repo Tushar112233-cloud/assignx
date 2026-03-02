@@ -1,18 +1,20 @@
 /**
  * @fileoverview Custom hooks for project data management.
+ * Uses Express API + Socket.IO instead of Supabase.
  * @module hooks/use-projects
  */
 
 "use client"
 
 import { useEffect, useState, useCallback, useMemo } from "react"
-import { createClient, getSessionUser } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
+import { getStoredUser } from "@/lib/api/auth"
+import { getSocket } from "@/lib/socket/client"
 import type {
   Project,
   ProjectWithRelations,
   ProjectStatus
 } from "@/types/database"
-import type { RealtimeChannel } from "@supabase/supabase-js"
 
 interface UseProjectsOptions {
   status?: ProjectStatus | ProjectStatus[]
@@ -34,89 +36,41 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsReturn
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [totalCount, setTotalCount] = useState(0)
-  const [retryCount, setRetryCount] = useState(0)
 
   const fetchProjects = useCallback(async () => {
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
       setError(null)
 
-      const user = await getSessionUser()
-
+      const user = getStoredUser()
       if (!user) {
         setProjects([])
         setTotalCount(0)
         return
       }
 
-      // Get supervisor ID
-      const { data: supervisor, error: supError } = await supabase
-        .from("supervisors")
-        .select("id")
-        .eq("profile_id", user.id)
-        .single()
+      const params = new URLSearchParams()
+      params.set("supervisorId", "me")
+      params.set("limit", String(limit))
+      params.set("offset", String(offset))
 
-      if (supError) {
-        console.error("[useProjects] Supervisor lookup failed:", supError.message)
-        throw new Error(`Supervisor lookup failed: ${supError.message}`)
-      }
-
-      if (!supervisor) {
-        setProjects([])
-        setTotalCount(0)
-        return
-      }
-
-      // Build query
-      let query = supabase
-        .from("projects")
-        .select(`
-          *,
-          profiles!projects_user_id_fkey (*),
-          subjects (*),
-          doers (
-            *,
-            profiles!profile_id (*)
-          )
-        `, { count: "exact" })
-        .eq("supervisor_id", supervisor.id)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1)
-
-      // Filter by status
       if (status) {
-        if (Array.isArray(status)) {
-          query = query.in("status", status)
-        } else {
-          query = query.eq("status", status)
-        }
+        const statuses = Array.isArray(status) ? status.join(",") : status
+        params.set("status", statuses)
       }
 
-      const { data, error: queryError, count } = await query
+      const data = await apiFetch<{ projects: ProjectWithRelations[]; total: number }>(
+        `/api/projects?${params.toString()}`
+      )
 
-      if (queryError) throw queryError
-
-      // Transform null to undefined for type compatibility
-      const transformedData = (data || []).map(project => ({
-        ...project,
-        profiles: project.profiles || undefined,
-        subjects: Array.isArray(project.subjects) ? undefined : (project.subjects || undefined),
-        doers: project.doers && !Array.isArray(project.doers) ? {
-          ...project.doers,
-          profiles: project.doers.profiles || undefined,
-        } : undefined,
-      })) as ProjectWithRelations[]
-
-      setProjects(transformedData)
-      setTotalCount(count || 0)
+      setProjects(data.projects || [])
+      setTotalCount(data.total || 0)
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch projects"))
     } finally {
       setIsLoading(false)
     }
-  }, [status, limit, offset, retryCount])
+  }, [status, limit, offset])
 
   useEffect(() => {
     fetchProjects()
@@ -150,60 +104,13 @@ export function useProject(projectId: string): UseProjectReturn {
   const fetchProject = useCallback(async () => {
     if (!projectId) return
 
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
       setError(null)
 
-      const user = await getSessionUser()
-      if (!user) throw new Error("Not authenticated")
-
-      const { data: supervisor } = await supabase
-        .from("supervisors")
-        .select("id")
-        .eq("profile_id", user.id)
-        .single()
-
-      if (!supervisor) throw new Error("Supervisor not found")
-
-      const { data, error: queryError } = await supabase
-        .from("projects")
-        .select(`
-          *,
-          profiles!projects_user_id_fkey (*),
-          subjects (*),
-          doers (
-            *,
-            profiles!profile_id (*)
-          ),
-          supervisors (
-            *,
-            profiles!profile_id (*)
-          )
-        `)
-        .eq("id", projectId)
-        .eq("supervisor_id", supervisor.id)
-        .single()
-
-      if (queryError) throw queryError
-
-      // Transform null to undefined for type compatibility
-      const transformedProject = data ? {
-        ...data,
-        profiles: data.profiles || undefined,
-        subjects: data.subjects || undefined,
-        doers: data.doers ? {
-          ...data.doers,
-          profiles: data.doers.profiles || undefined,
-        } : undefined,
-        supervisors: data.supervisors ? {
-          ...data.supervisors,
-          profiles: data.supervisors.profiles || undefined,
-        } : undefined,
-      } : null
-
-      setProject(transformedProject as ProjectWithRelations | null)
+      const data = await apiFetch<{ project: ProjectWithRelations } | ProjectWithRelations>(`/api/projects/${projectId}`)
+      // API wraps response in { project: ... }
+      setProject((data as { project: ProjectWithRelations }).project || data as ProjectWithRelations)
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch project"))
     } finally {
@@ -214,49 +121,46 @@ export function useProject(projectId: string): UseProjectReturn {
   const updateProject = useCallback(async (data: Partial<Project>) => {
     if (!projectId) return
 
-    const supabase = createClient()
-    const user = await getSessionUser()
-    if (!user) throw new Error("Not authenticated")
-
-    const { data: supervisor } = await supabase
-      .from("supervisors")
-      .select("id")
-      .eq("profile_id", user.id)
-      .single()
-
-    if (!supervisor) throw new Error("Supervisor not found")
-
-    const { error: updateError } = await supabase
-      .from("projects")
-      .update({ ...data, updated_at: new Date().toISOString() })
-      .eq("id", projectId)
-      .eq("supervisor_id", supervisor.id)
-
-    if (updateError) throw updateError
+    await apiFetch(`/api/projects/${projectId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
     await fetchProject()
   }, [projectId, fetchProject])
 
   const updateStatus = useCallback(async (status: ProjectStatus) => {
-    await updateProject({ status })
-  }, [updateProject])
+    await apiFetch(`/api/projects/${projectId}/status`, {
+      method: "PUT",
+      body: JSON.stringify({ status }),
+    })
+    await fetchProject()
+  }, [projectId, fetchProject])
 
   const assignDoer = useCallback(async (doerId: string) => {
-    await updateProject({ doer_id: doerId, status: "assigned" })
-  }, [updateProject])
+    await apiFetch(`/api/projects/${projectId}/assign`, {
+      method: "PUT",
+      body: JSON.stringify({ doerId }),
+    })
+    await fetchProject()
+  }, [projectId, fetchProject])
 
   const submitQuote = useCallback(async (quote: number, doerPayout: number) => {
-    const platformFee = quote * 0.20 // 20% platform fee
-    const supervisorCommission = quote * 0.15 // 15% supervisor commission
+    const platformFee = quote * 0.20
+    const supervisorCommission = quote * 0.15
 
-    await updateProject({
-      user_quote: quote,
-      doer_payout: doerPayout,
-      supervisor_commission: supervisorCommission,
-      platform_fee: platformFee,
-      status: "quoted",
-      status_updated_at: new Date().toISOString(),
+    await apiFetch(`/api/projects/${projectId}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        user_quote: quote,
+        doer_payout: doerPayout,
+        supervisor_commission: supervisorCommission,
+        platform_fee: platformFee,
+        status: "quoted",
+        status_updated_at: new Date().toISOString(),
+      }),
     })
-  }, [updateProject])
+    await fetchProject()
+  }, [projectId, fetchProject])
 
   useEffect(() => {
     fetchProject()
@@ -290,65 +194,21 @@ export const PROJECT_STATUS_GROUPS = {
     "in_revision"
   ] as ProjectStatus[],
   needsQC: ["submitted_for_qc"] as ProjectStatus[],
-  completed: ["completed", "auto_approved", "delivered"] as ProjectStatus[],
+  completed: ["completed", "auto_approved", "delivered", "qc_approved"] as ProjectStatus[],
   cancelled: ["cancelled", "refunded"] as ProjectStatus[],
 }
 
 /**
  * Claim a project - assign it to the current supervisor.
- * Uses browser client directly (RLS is disabled on projects table).
- * @param projectId - The project UUID to claim
- * @returns Promise that resolves when the project is claimed
  */
 export async function claimProject(projectId: string): Promise<void> {
-  const supabase = createClient()
-
-  const user = await getSessionUser()
-  if (!user) throw new Error("Not authenticated")
-
-  const { data: supervisor } = await supabase
-    .from("supervisors")
-    .select("id")
-    .eq("profile_id", user.id)
-    .single()
-
-  if (!supervisor) throw new Error("Supervisor not found")
-
-  // Get project details for notification
-  const { data: project } = await supabase
-    .from("projects")
-    .select("project_number, user_id")
-    .eq("id", projectId)
-    .single()
-
-  const { error } = await supabase
-    .from("projects")
-    .update({
-      supervisor_id: supervisor.id,
-      status: "analyzing",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", projectId)
-    .is("supervisor_id", null)
-
-  if (error) throw new Error("Failed to claim project")
-
-  // Create notification for the supervisor
-  await supabase.from("notifications").insert({
-    profile_id: user.id,
-    notification_type: "project_assigned",
-    title: "Project Claimed",
-    body: `You claimed project${project?.project_number ? ` ${project.project_number}` : ""}. Review the requirements and submit a quote.`,
-    reference_type: "project",
-    reference_id: projectId,
-    action_url: `/projects/${projectId}`,
-    target_role: "supervisor",
+  await apiFetch(`/api/projects/${projectId}/claim`, {
+    method: "POST",
   })
 }
 
 /**
  * Hook to fetch NEW/UNASSIGNED projects that need a supervisor.
- * Uses browser client directly (RLS is disabled on projects table).
  */
 export function useNewRequests() {
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
@@ -356,48 +216,21 @@ export function useNewRequests() {
   const [error, setError] = useState<Error | null>(null)
 
   const fetchNewRequests = useCallback(async () => {
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
       setError(null)
 
-      const user = await getSessionUser()
+      const user = getStoredUser()
       if (!user) {
         setProjects([])
         return
       }
 
-      // Fetch projects with no supervisor assigned (new requests)
-      const { data, error: queryError } = await supabase
-        .from("projects")
-        .select(`
-          *,
-          profiles!projects_user_id_fkey (*),
-          subjects (*),
-          doers (
-            *,
-            profiles!profile_id (*)
-          )
-        `)
-        .is("supervisor_id", null)
-        .in("status", ["submitted", "analyzing"])
-        .order("created_at", { ascending: false })
+      const data = await apiFetch<{ projects: ProjectWithRelations[] }>(
+        "/api/projects?unassigned=true&status=submitted,analyzing"
+      )
 
-      if (queryError) throw queryError
-
-      // Transform null to undefined for type compatibility
-      const transformedData = (data || []).map(project => ({
-        ...project,
-        profiles: project.profiles || undefined,
-        subjects: Array.isArray(project.subjects) ? undefined : (project.subjects || undefined),
-        doers: project.doers && !Array.isArray(project.doers) ? {
-          ...project.doers,
-          profiles: project.doers.profiles || undefined,
-        } : undefined,
-      })) as ProjectWithRelations[]
-
-      setProjects(transformedData)
+      setProjects(data.projects || [])
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch new requests"))
     } finally {
@@ -419,7 +252,6 @@ export function useNewRequests() {
 
 /**
  * Hook to fetch projects that are PAID and ready to assign to a doer.
- * These are projects where supervisor_id = current supervisor, status = 'paid', and doer_id IS NULL.
  */
 export function useReadyToAssign() {
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
@@ -427,67 +259,21 @@ export function useReadyToAssign() {
   const [error, setError] = useState<Error | null>(null)
 
   const fetchReadyToAssign = useCallback(async () => {
-    const supabase = createClient()
-
     try {
       setIsLoading(true)
       setError(null)
 
-      const user = await getSessionUser()
-
+      const user = getStoredUser()
       if (!user) {
         setProjects([])
         return
       }
 
-      // Get supervisor ID
-      const { data: supervisor, error: supError } = await supabase
-        .from("supervisors")
-        .select("id")
-        .eq("profile_id", user.id)
-        .single()
+      const data = await apiFetch<{ projects: ProjectWithRelations[] }>(
+        "/api/projects?supervisorId=me&status=paid&needsDoer=true"
+      )
 
-      if (supError) {
-        console.error("[useReadyToAssign] Supervisor lookup failed:", supError.message)
-        throw new Error(`Supervisor lookup failed: ${supError.message}`)
-      }
-
-      if (!supervisor) {
-        setProjects([])
-        return
-      }
-
-      // Fetch projects assigned to this supervisor that are paid and need doer assignment
-      const { data, error: queryError } = await supabase
-        .from("projects")
-        .select(`
-          *,
-          profiles!projects_user_id_fkey (*),
-          subjects (*),
-          doers (
-            *,
-            profiles!profile_id (*)
-          )
-        `)
-        .eq("supervisor_id", supervisor.id)
-        .eq("status", "paid")
-        .is("doer_id", null)
-        .order("created_at", { ascending: false })
-
-      if (queryError) throw queryError
-
-      // Transform null to undefined for type compatibility
-      const transformedData = (data || []).map(project => ({
-        ...project,
-        profiles: project.profiles || undefined,
-        subjects: Array.isArray(project.subjects) ? undefined : (project.subjects || undefined),
-        doers: project.doers && !Array.isArray(project.doers) ? {
-          ...project.doers,
-          profiles: project.doers.profiles || undefined,
-        } : undefined,
-      })) as ProjectWithRelations[]
-
-      setProjects(transformedData)
+      setProjects(data.projects || [])
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch ready-to-assign projects"))
     } finally {
@@ -521,11 +307,8 @@ export function useProjectsByStatus() {
 
   const groupedProjects = useMemo(() => {
     return {
-      // NEW: Unassigned projects needing supervisor
       needsQuote: newRequests,
-      // NEW: Projects paid and needing doer assignment
       readyToAssign: readyProjects,
-      // Projects assigned to this supervisor that are in progress
       inProgress: allProjects.filter(p =>
         PROJECT_STATUS_GROUPS.inProgress.includes(p.status as ProjectStatus)
       ),
@@ -541,70 +324,31 @@ export function useProjectsByStatus() {
     }
   }, [allProjects, newRequests, readyProjects])
 
-  // Real-time subscription for project updates
+  // Real-time subscription via Socket.IO
   useEffect(() => {
-    const supabase = createClient()
-    let supervisorChannel: RealtimeChannel | null = null
-    let newRequestsChannel: RealtimeChannel | null = null
-    let cancelled = false
+    const user = getStoredUser()
+    if (!user) return
 
-    const setupSubscriptions = async () => {
-      const user = await getSessionUser()
-      if (!user || cancelled) return
+    let mounted = true
 
-      const { data: supervisor } = await supabase
-        .from("supervisors")
-        .select("id")
-        .eq("profile_id", user.id)
-        .single()
+    try {
+      const socket = getSocket()
 
-      if (!supervisor || cancelled) return
+      const handleProjectUpdate = () => {
+        if (mounted) refetch()
+      }
 
-      // Subscribe to this supervisor's projects
-      supervisorChannel = supabase
-        .channel(`supervisor_projects_${supervisor.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'projects',
-            filter: `supervisor_id=eq.${supervisor.id}`,
-          },
-          () => {
-            // Refetch all project data on any change
-            refetch()
-          }
-        )
-        .subscribe()
+      socket.on(`projects:${user.id}`, handleProjectUpdate)
+      socket.on("projects:new", handleProjectUpdate)
 
-      // Subscribe to new unassigned projects
-      newRequestsChannel = supabase
-        .channel('new_project_requests')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'projects',
-          },
-          (payload) => {
-            const project = payload.new as { supervisor_id: string | null; status: string }
-            // Only refetch if it's a new unassigned project
-            if (!project.supervisor_id && ['submitted', 'analyzing'].includes(project.status)) {
-              refetch()
-            }
-          }
-        )
-        .subscribe()
-    }
-
-    setupSubscriptions().catch(() => {})
-
-    return () => {
-      cancelled = true
-      if (supervisorChannel) supabase.removeChannel(supervisorChannel)
-      if (newRequestsChannel) supabase.removeChannel(newRequestsChannel)
+      return () => {
+        mounted = false
+        socket.off(`projects:${user.id}`, handleProjectUpdate)
+        socket.off("projects:new", handleProjectUpdate)
+      }
+    } catch {
+      // Socket not available
+      return () => { mounted = false }
     }
   }, [refetch])
 

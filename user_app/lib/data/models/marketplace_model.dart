@@ -148,12 +148,12 @@ class MarketplaceListing {
   /// Create from JSON.
   factory MarketplaceListing.fromJson(Map<String, dynamic> json) {
     return MarketplaceListing(
-      id: json['id'] as String,
-      userId: json['user_id'] as String? ?? '',
-      userName: json['user_name'] as String? ?? 'Anonymous',
-      userAvatar: json['user_avatar'] as String?,
-      userUniversity: json['user_university'] as String?,
-      collegeName: json['college_name'] as String?,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: (json['user_id'] ?? json['userId']) as String? ?? '',
+      userName: (json['user_name'] ?? json['userName']) as String? ?? 'Anonymous',
+      userAvatar: (json['user_avatar'] ?? json['userAvatar']) as String?,
+      userUniversity: (json['user_university'] ?? json['userUniversity']) as String?,
+      collegeName: (json['college_name'] ?? json['collegeName']) as String?,
       category: MarketplaceCategory.values.firstWhere(
         (c) => c.name == json['category'],
         orElse: () => MarketplaceCategory.hardGoods,
@@ -162,26 +162,26 @@ class MarketplaceListing {
         (t) => t.name == json['type'],
         orElse: () => ListingType.product,
       ),
-      title: json['title'] as String,
+      title: (json['title'] as String?) ?? '',
       description: json['description'] as String?,
       price: (json['price'] as num?)?.toDouble(),
-      isNegotiable: json['is_negotiable'] as bool? ?? false,
+      isNegotiable: (json['is_negotiable'] ?? json['isNegotiable']) as bool? ?? false,
       images: (json['images'] as List<dynamic>?)?.cast<String>(),
       location: json['location'] as String?,
-      distanceKm: (json['distance_km'] as num?)?.toDouble(),
+      distanceKm: ((json['distance_km'] ?? json['distanceKm']) as num?)?.toDouble(),
       status: ListingStatus.values.firstWhere(
         (s) => s.name == json['status'],
         orElse: () => ListingStatus.active,
       ),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      expiresAt: json['expires_at'] != null
-          ? DateTime.parse(json['expires_at'] as String)
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      expiresAt: (json['expires_at'] ?? json['expiresAt']) != null
+          ? DateTime.tryParse((json['expires_at'] ?? json['expiresAt']).toString())
           : null,
-      viewCount: json['view_count'] as int? ?? 0,
-      likeCount: json['like_count'] as int? ?? 0,
-      commentCount: json['comment_count'] as int? ?? 0,
-      isLiked: json['is_liked'] as bool? ?? false,
-      isSaved: json['is_saved'] as bool? ?? false,
+      viewCount: (json['view_count'] ?? json['viewCount']) as int? ?? 0,
+      likeCount: (json['like_count'] ?? json['likeCount']) as int? ?? 0,
+      commentCount: (json['comment_count'] ?? json['commentCount']) as int? ?? 0,
+      isLiked: (json['is_liked'] ?? json['isLiked']) as bool? ?? false,
+      isSaved: (json['is_saved'] ?? json['isSaved']) as bool? ?? false,
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }
@@ -318,8 +318,8 @@ class PollOption {
 
   factory PollOption.fromJson(Map<String, dynamic> json) {
     return PollOption(
-      id: json['id'] as String,
-      text: json['text'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      text: (json['text'] as String?) ?? '',
       votes: json['votes'] as int? ?? 0,
       percentage: (json['percentage'] as num?)?.toDouble() ?? 0,
     );

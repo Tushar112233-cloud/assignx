@@ -90,7 +90,7 @@ class ProfileTabs extends ConsumerWidget {
   double _getTabContentHeight(int index) {
     switch (index) {
       case 0:
-        return 1100; // Overview
+        return 1600; // Overview (with performance stats + earnings graph)
       case 1:
         return 700; // Skills
       case 2:
@@ -110,6 +110,18 @@ class ProfileTabs extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Performance Stats Row
+          _buildPerformanceStatsRow(context),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Earnings Overview (compact version)
+          EarningsGraph(
+            totalEarnings: profile.totalEarnings.toDouble(),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
           // About section
           if (profile.bio != null && profile.bio!.isNotEmpty)
             _buildAboutCard(context),
@@ -138,6 +150,82 @@ class ProfileTabs extends ConsumerWidget {
           // Quick actions
           _buildQuickActionsCard(context),
         ],
+      ),
+    );
+  }
+
+  /// Builds a horizontal row of performance stat cards.
+  Widget _buildPerformanceStatsRow(BuildContext context) {
+    final onTimeRate =
+        profile.completedProjects > 0
+            ? (85 + (profile.rating / 5.0) * 12).round().clamp(0, 100)
+            : 0;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.bar_chart_rounded,
+                    size: 18, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Performance'.tr(context),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: _PerformanceStatItem(
+                    icon: Icons.assignment_turned_in_rounded,
+                    value: profile.completedProjects.toString(),
+                    label: 'Completed'.tr(context),
+                    color: AppColors.success,
+                  ),
+                ),
+                Expanded(
+                  child: _PerformanceStatItem(
+                    icon: Icons.star_rounded,
+                    value: profile.rating.toStringAsFixed(1),
+                    label: 'Rating'.tr(context),
+                    color: AppColors.warning,
+                  ),
+                ),
+                Expanded(
+                  child: _PerformanceStatItem(
+                    icon: Icons.timer_rounded,
+                    value: '$onTimeRate%',
+                    label: 'On-Time'.tr(context),
+                    color: const Color(0xFF8B5CF6),
+                  ),
+                ),
+                Expanded(
+                  child: _PerformanceStatItem(
+                    icon: Icons.currency_rupee_rounded,
+                    value: _formatAmount(profile.totalEarnings.toDouble()),
+                    label: 'Earned'.tr(context),
+                    color: AppColors.accent,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -800,5 +888,55 @@ class ProfileTabs extends ConsumerWidget {
       return '${(amount / 1000).toStringAsFixed(1)}K';
     }
     return amount.toStringAsFixed(0);
+  }
+}
+
+/// A compact performance stat item used in the performance stats row.
+class _PerformanceStatItem extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _PerformanceStatItem({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 18, color: color),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
   }
 }

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/expert_model.dart';
+import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/experts_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
@@ -60,7 +61,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           ),
         ),
         title: Text(
-          'Book Session',
+          'Book Session'.tr(context),
           style: AppTextStyles.headingSmall.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -70,7 +71,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       body: expertAsync.when(
         data: (expert) {
           if (expert == null) {
-            return const Center(child: Text('Expert not found'));
+            return Center(child: Text('Expert not found'.tr(context)));
           }
 
           return _BookingContent(
@@ -109,12 +110,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 16),
-              Text('Failed to load expert', style: AppTextStyles.bodyMedium),
+              Text('Failed to load expert'.tr(context), style: AppTextStyles.bodyMedium),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () =>
                     ref.invalidate(expertDetailProvider(widget.expertId)),
-                child: const Text('Retry'),
+                child: Text('Retry'.tr(context)),
               ),
             ],
           ),
@@ -139,8 +140,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   Future<void> _confirmBooking(Expert expert) async {
     if (_selectedDate == null || _selectedTimeSlot == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a date and time'),
+        SnackBar(
+          content: Text('Please select a date and time'.tr(context)),
           backgroundColor: AppColors.error,
         ),
       );
@@ -401,7 +402,7 @@ class _SessionTypeSelector extends StatelessWidget {
             Icon(Icons.timer, size: 18, color: AppColors.primary),
             const SizedBox(width: 8),
             Text(
-              'Session Duration',
+              'Session Duration'.tr(context),
               style: AppTextStyles.labelLarge.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -458,7 +459,7 @@ class _SessionTypeSelector extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        type.displayName,
+                        type.displayName.tr(context),
                         style: AppTextStyles.labelMedium.copyWith(
                           fontWeight:
                               isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -505,7 +506,7 @@ class _TopicInput extends StatelessWidget {
             Icon(Icons.topic, size: 18, color: AppColors.primary),
             const SizedBox(width: 8),
             Text(
-              'Topic (Optional)',
+              'Topic (Optional)'.tr(context),
               style: AppTextStyles.labelLarge.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -523,7 +524,7 @@ class _TopicInput extends StatelessWidget {
             maxLines: 3,
             style: AppTextStyles.bodyMedium,
             decoration: InputDecoration(
-              hintText: 'What would you like to discuss?',
+              hintText: 'What would you like to discuss?'.tr(context),
               hintStyle: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -587,7 +588,7 @@ class _BookingBar extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Total amount',
+                  'Total amount'.tr(context),
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -616,7 +617,7 @@ class _BookingBar extends StatelessWidget {
                             ),
                           )
                         : Text(
-                            'Confirm Booking',
+                            'Confirm Booking'.tr(context),
                             style: AppTextStyles.buttonMedium.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
@@ -672,14 +673,14 @@ class _SuccessDialog extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Booking Confirmed!',
+              'Booking Confirmed!'.tr(context),
               style: AppTextStyles.headingMedium.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Your session with ${expert.name} has been scheduled.',
+              '${'Your session with'.tr(context)} ${expert.name} ${'has been scheduled.'.tr(context)}',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -736,7 +737,7 @@ class _SuccessDialog extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'View My Bookings',
+                  'View My Bookings'.tr(context),
                   style: AppTextStyles.buttonMedium.copyWith(
                     color: Colors.white,
                   ),

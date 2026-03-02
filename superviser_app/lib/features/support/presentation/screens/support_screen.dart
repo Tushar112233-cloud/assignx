@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/services/external_actions_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/ticket_model.dart';
 import '../providers/support_provider.dart';
 import '../widgets/faq_accordion.dart';
@@ -43,13 +44,13 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Support'),
+        title: Text('Support'.tr(context)),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'My Tickets'),
-            Tab(text: 'New Ticket'),
-            Tab(text: 'FAQ'),
+          tabs: [
+            Tab(text: 'My Tickets'.tr(context)),
+            Tab(text: 'New Ticket'.tr(context)),
+            Tab(text: 'FAQ'.tr(context)),
           ],
         ),
       ),
@@ -149,8 +150,8 @@ class _NewTicketTab extends ConsumerWidget {
 
         if (ticket != null && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Ticket created successfully'),
+            SnackBar(
+              content: Text('Ticket created successfully'.tr(context)),
               backgroundColor: Colors.green,
             ),
           );
@@ -199,7 +200,7 @@ class _FAQTabState extends ConsumerState<_FAQTab> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Search FAQ...',
+              hintText: 'Search FAQ...'.tr(context),
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
@@ -289,7 +290,7 @@ class QuickSupportActions extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'How can we help?',
+              'How can we help?'.tr(context),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -300,7 +301,7 @@ class QuickSupportActions extends ConsumerWidget {
                 Expanded(
                   child: _QuickActionCard(
                     icon: Icons.quiz_outlined,
-                    label: 'FAQ',
+                    label: 'FAQ'.tr(context),
                     onTap: () => context.pushNamed(RouteNames.faq),
                   ),
                 ),
@@ -308,7 +309,7 @@ class QuickSupportActions extends ConsumerWidget {
                 Expanded(
                   child: _QuickActionCard(
                     icon: Icons.email_outlined,
-                    label: 'Email Us',
+                    label: 'Email Us'.tr(context),
                     onTap: () {
                       ref.read(externalActionsServiceProvider).sendEmail(
                             to: 'support@assignx.com',
@@ -325,7 +326,7 @@ class QuickSupportActions extends ConsumerWidget {
                 Expanded(
                   child: _QuickActionCard(
                     icon: Icons.chat_outlined,
-                    label: 'Live Chat',
+                    label: 'Live Chat'.tr(context),
                     onTap: () {
                       ref.read(externalActionsServiceProvider).openLiveChat();
                     },
@@ -335,7 +336,7 @@ class QuickSupportActions extends ConsumerWidget {
                 Expanded(
                   child: _QuickActionCard(
                     icon: Icons.phone_outlined,
-                    label: 'Call Us',
+                    label: 'Call Us'.tr(context),
                     onTap: () {
                       ref.read(externalActionsServiceProvider).makePhoneCall('+91-1800-ASSIGNX');
                     },

@@ -11,19 +11,16 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Keys to clear from localStorage on logout
- * Includes Supabase auth tokens and app-specific cached data
+ * Keys to clear from localStorage on logout.
+ * Includes JWT tokens and app-specific cached data.
  */
-// Extract Supabase project ref from URL for dynamic storage key
-const SUPABASE_PROJECT_REF = (
-  process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase/)?.[1] || ""
-)
-
 export const APP_STORAGE_KEYS = [
-  // Supabase auth token (project-specific, derived from env)
-  ...(SUPABASE_PROJECT_REF ? [`sb-${SUPABASE_PROJECT_REF}-auth-token`] : []),
+  // JWT tokens
+  "supervisor_access_token",
+  "supervisor_refresh_token",
 
-  // Cached user/supervisor data
+  // Cached user data
+  "supervisor_auth_user",
   "cachedUser",
   "cachedSupervisor",
   "auth-storage",
@@ -34,8 +31,8 @@ export const APP_STORAGE_KEYS = [
 ]
 
 /**
- * Clears all app-related data from localStorage
- * Called on logout to prevent cached state issues
+ * Clears all app-related data from localStorage.
+ * Called on logout to prevent cached state issues.
  */
 export function clearAppStorage(): void {
   if (typeof window === "undefined") return
@@ -51,10 +48,10 @@ export function clearAppStorage(): void {
     const key = localStorage.key(i)
     if (
       key &&
-      (key.startsWith("sb-") || // All Supabase tokens
-        key.startsWith("cached") || // All cached data
-        key.startsWith("onboarding_") || // Onboarding state
-        key.startsWith("supervisor_")) // Supervisor-specific data
+      (key.startsWith("sb-") || // Legacy Supabase tokens (cleanup)
+        key.startsWith("cached") ||
+        key.startsWith("onboarding_") ||
+        key.startsWith("supervisor_"))
     ) {
       keysToRemove.push(key)
     }

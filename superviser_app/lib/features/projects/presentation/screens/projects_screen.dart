@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/router/routes.dart';
 import '../providers/projects_provider.dart';
 import '../widgets/project_card.dart';
@@ -23,6 +24,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
   late TabController _tabController;
   String _searchQuery = '';
   String _sortMode = 'recent';
+  String _selectedSubject = 'All';
 
   @override
   void initState() {
@@ -47,11 +49,11 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Projects'),
+        title: Text('Projects'.tr(context)),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.sort),
-            tooltip: 'Sort projects',
+            tooltip: 'Sort projects'.tr(context),
             onSelected: (value) {
               setState(() => _sortMode = value);
             },
@@ -69,7 +71,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Recent',
+                      'Recent'.tr(context),
                       style: TextStyle(
                         color: _sortMode == 'recent'
                             ? AppColors.accent
@@ -95,7 +97,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Due Soon',
+                      'Due Soon'.tr(context),
                       style: TextStyle(
                         color: _sortMode == 'due_soon'
                             ? AppColors.accent
@@ -121,7 +123,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Priority',
+                      'Priority'.tr(context),
                       style: TextStyle(
                         color: _sortMode == 'priority'
                             ? AppColors.accent
@@ -149,6 +151,13 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
             query: _searchQuery,
             onChanged: (value) {
               setState(() => _searchQuery = value);
+            },
+          ),
+          // Subject filter chips
+          _SubjectFilterChips(
+            selectedSubject: _selectedSubject,
+            onSelected: (subject) {
+              setState(() => _selectedSubject = subject);
             },
           ),
           // Pipeline status bar
@@ -206,9 +215,9 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
               children: [
                 // Active projects
                 _ProjectList(
-                  projects: state.activeProjects,
+                  projects: _filterBySubject(state.activeProjects),
                   isLoading: state.isLoading,
-                  emptyMessage: 'No active projects',
+                  emptyMessage: 'No active projects'.tr(context),
                   emptyIcon: Icons.pending_outlined,
                   onRefresh: () => ref.read(projectsProvider.notifier).refresh(),
                   onProjectTap: _openProjectDetail,
@@ -216,9 +225,9 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
                 ),
                 // For review projects
                 _ProjectList(
-                  projects: state.forReviewProjects,
+                  projects: _filterBySubject(state.forReviewProjects),
                   isLoading: state.isLoading,
-                  emptyMessage: 'No projects awaiting review',
+                  emptyMessage: 'No projects awaiting review'.tr(context),
                   emptyIcon: Icons.rate_review_outlined,
                   onRefresh: () => ref.read(projectsProvider.notifier).refresh(),
                   onProjectTap: _openProjectDetail,
@@ -229,9 +238,9 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
                 ),
                 // Completed projects
                 _ProjectList(
-                  projects: state.completedProjects,
+                  projects: _filterBySubject(state.completedProjects),
                   isLoading: state.isLoading,
-                  emptyMessage: 'No completed projects',
+                  emptyMessage: 'No completed projects'.tr(context),
                   emptyIcon: Icons.check_circle_outline,
                   onRefresh: () => ref.read(projectsProvider.notifier).refresh(),
                   onProjectTap: _openProjectDetail,
@@ -243,6 +252,14 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
         ],
       ),
     );
+  }
+
+  /// Filters a list of projects by the currently selected subject.
+  List _filterBySubject(List projects) {
+    if (_selectedSubject == 'All') return projects;
+    return projects
+        .where((p) => p.subject == _selectedSubject)
+        .toList();
   }
 
   void _openProjectDetail(String projectId) {
@@ -257,21 +274,20 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Approve Project'),
-        content: const Text(
-          'Are you sure you want to approve this deliverable? '
-          'This will notify the client that the work is ready.',
+      builder: (ctx) => AlertDialog(
+        title: Text('Approve Project'.tr(ctx)),
+        content: Text(
+          'Are you sure you want to approve this deliverable? This will notify the client that the work is ready.'.tr(ctx),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel'.tr(ctx)),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.success),
-            child: const Text('Approve'),
+            child: Text('Approve'.tr(ctx)),
           ),
         ],
       ),
@@ -284,8 +300,8 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Project approved successfully!'),
+          SnackBar(
+            content: Text('Project approved successfully!'.tr(context)),
             backgroundColor: Colors.green,
           ),
         );
@@ -314,8 +330,8 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
 
     if (result == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Revision request sent!'),
+        SnackBar(
+          content: Text('Revision request sent!'.tr(context)),
           backgroundColor: Colors.orange,
         ),
       );
@@ -438,14 +454,16 @@ class _SearchBar extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariantLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
       ),
       child: TextField(
         onChanged: onChanged,
         decoration: InputDecoration(
-          hintText: 'Search projects...',
+          hintText: 'Search projects...'.tr(context),
           hintStyle: TextStyle(color: AppColors.textTertiaryLight),
           prefixIcon: Icon(Icons.search, color: AppColors.textSecondaryLight),
           suffixIcon: query.isNotEmpty
@@ -486,26 +504,120 @@ class _PipelineBar extends StatelessWidget {
       child: Row(
         children: [
           _StatusPill(
-            label: 'Active',
+            label: 'Active'.tr(context),
             count: activeCount,
             color: AppColors.statusInProgress,
             onTap: () => onTap(0),
           ),
           const SizedBox(width: 8),
           _StatusPill(
-            label: 'Review',
+            label: 'Review'.tr(context),
             count: reviewCount,
             color: AppColors.accent,
             onTap: () => onTap(1),
           ),
           const SizedBox(width: 8),
           _StatusPill(
-            label: 'Completed',
+            label: 'Completed'.tr(context),
             count: completedCount,
             color: AppColors.success,
             onTap: () => onTap(2),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Horizontal scrolling subject filter chips for filtering projects by subject.
+///
+/// Provides a list of common academic subjects that supervisors can use
+/// to narrow down their project lists alongside the existing status tabs.
+class _SubjectFilterChips extends StatelessWidget {
+  const _SubjectFilterChips({
+    required this.selectedSubject,
+    required this.onSelected,
+  });
+
+  final String selectedSubject;
+  final ValueChanged<String> onSelected;
+
+  static const _subjects = [
+    ('All', Icons.apps),
+    ('Mathematics', Icons.functions),
+    ('Science', Icons.science),
+    ('English', Icons.menu_book),
+    ('History', Icons.history_edu),
+    ('Computer Science', Icons.computer),
+    ('Business', Icons.business),
+    ('Economics', Icons.trending_up),
+    ('Psychology', Icons.psychology),
+    ('Engineering', Icons.engineering),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        itemCount: _subjects.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final (subject, icon) = _subjects[index];
+          final isSelected = selectedSubject == subject;
+
+          return GestureDetector(
+            onTap: () => onSelected(subject),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.accent
+                    : Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.accent
+                      : Theme.of(context).colorScheme.outline,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.accent.withValues(alpha: 0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 14,
+                    color: isSelected
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    subject.tr(context),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: isSelected
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w500,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -4,9 +4,9 @@
 /// and application-wide constants used throughout the DOER app.
 ///
 /// ## Categories
-/// - **Supabase Configuration**: Backend connection settings
+/// - **API Configuration**: Backend connection settings
 /// - **OAuth Configuration**: Third-party authentication
-/// - **Storage Buckets**: File storage bucket names
+/// - **Storage Folders**: Cloudinary upload folder names
 /// - **Timeouts**: Network timeout durations
 /// - **Pagination**: List loading settings
 /// - **File Uploads**: Upload constraints and allowed types
@@ -17,8 +17,7 @@
 ///
 /// ## Environment Variables
 /// Several constants are loaded from `--dart-define` environment variables:
-/// - `SUPABASE_URL`: Supabase project URL
-/// - `SUPABASE_ANON_KEY`: Supabase anonymous key
+/// - `API_BASE_URL`: Express API server URL
 /// - `GOOGLE_WEB_CLIENT_ID`: Google OAuth web client ID
 /// - `DEFAULT_COUNTRY_CODE`: Default phone country code
 library;
@@ -46,29 +45,18 @@ class ApiConstants {
   ApiConstants._();
 
   // ---------------------------------------------------------------------------
-  // Supabase Configuration
+  // API Configuration
   // ---------------------------------------------------------------------------
 
-  /// Supabase project URL.
+  /// Express API server base URL.
   ///
-  /// Loaded from `SUPABASE_URL` environment variable.
+  /// Loaded from `API_BASE_URL` environment variable.
   /// Must be provided via `--dart-define` during build.
   ///
-  /// Example: `https://xxxxx.supabase.co`
-  static const String supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: '',
-  );
-
-  /// Supabase anonymous/public API key.
-  ///
-  /// Loaded from `SUPABASE_ANON_KEY` environment variable.
-  /// Must be provided via `--dart-define` during build.
-  ///
-  /// This is the public key safe for client-side use.
-  static const String supabaseAnonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue: '',
+  /// Example: `http://localhost:4000`
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:4000',
   );
 
   // ---------------------------------------------------------------------------
@@ -101,16 +89,16 @@ class ApiConstants {
   // Storage Bucket Names
   // ---------------------------------------------------------------------------
 
-  /// Supabase storage bucket for user profile images.
+  /// Cloudinary upload folder for user profile images.
   static const String profileImagesBucket = 'profile-images';
 
-  /// Supabase storage bucket for project-related files.
+  /// Cloudinary upload folder for project-related files.
   static const String projectFilesBucket = 'project-files';
 
-  /// Supabase storage bucket for submitted deliverables.
+  /// Cloudinary upload folder for submitted deliverables.
   static const String deliverablesBucket = 'deliverables';
 
-  /// Supabase storage bucket for training module media.
+  /// Cloudinary upload folder for training module media.
   static const String trainingMediaBucket = 'training-media';
 
   // ---------------------------------------------------------------------------

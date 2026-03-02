@@ -25,7 +25,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { createClient } from "@/lib/supabase/client"
+import { apiFetch } from "@/lib/api/client"
 
 import {
   ResourcesIllustration,
@@ -422,13 +422,22 @@ export default function ResourcesPage() {
 
   useEffect(() => {
     const fetchResources = async () => {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('learning_resources' as any)
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-      if (data) setLearningResources(data as any)
+      try {
+        const data = await apiFetch<Array<{
+          id: string
+          title: string
+          description: string | null
+          content_type: string
+          content_url: string | null
+          thumbnail_url: string | null
+          is_featured: boolean
+          category: string | null
+          created_at: string
+        }>>("/api/resources/learning?is_active=true&sort=-created_at")
+        if (data) setLearningResources(data)
+      } catch {
+        // Resources may not be available
+      }
       setResourcesLoading(false)
     }
     fetchResources()

@@ -9,6 +9,10 @@ import {
   Wallet,
   Settings,
   GraduationCap,
+  Briefcase,
+  Building2,
+  ShoppingBag,
+  UserPlus,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -43,13 +47,37 @@ const navItems = [
     title: "Campus Connect",
     url: "/campus-connect",
     icon: Users,
+    tourId: "campus-connect",
+  },
+  {
+    title: "Connect",
+    url: "/connect",
+    icon: UserPlus,
     tourId: "connect",
+  },
+  {
+    title: "Pro Network",
+    url: "/pro-network",
+    icon: Briefcase,
+    tourId: "pro-network",
+  },
+  {
+    title: "Business Hub",
+    url: "/business-hub",
+    icon: Building2,
+    tourId: "business-hub",
   },
   {
     title: "Experts",
     url: "/experts",
     icon: GraduationCap,
     tourId: "experts",
+  },
+  {
+    title: "Marketplace",
+    url: "/marketplace",
+    icon: ShoppingBag,
+    tourId: "marketplace",
   },
   {
     title: "Wallet",
@@ -77,7 +105,7 @@ export function DockNav() {
           direction="bottom"
         >
           {navItems.map((item) => {
-            const isActive = pathname === item.url;
+            const isActive = pathname === item.url || pathname.startsWith(item.url + "/");
             const Icon = item.icon;
 
             return (

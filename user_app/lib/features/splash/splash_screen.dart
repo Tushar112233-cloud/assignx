@@ -3,15 +3,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/api/api_client.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/router/route_names.dart';
+import '../../core/storage/token_storage.dart';
 import '../../providers/auth_provider.dart';
 
 /// Splash screen with animated logo and auth state check.
-///
-/// Displays the app logo and tagline with fade-in animation,
-/// then navigates based on authentication state.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -27,34 +26,63 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _navigateAfterDelay() async {
-    // Wait for splash animation
     await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+
+    // Check if user has stored tokens
+    try {
+      final hasTokens = await TokenStorage.hasTokens();
+      if (!mounted) return;
+
+      if (hasTokens) {
+        // Wait for the auth provider to settle
+        for (int i = 0; i < 20; i++) {
+          final authState = ref.read(authStateProvider);
+          if (!authState.isLoading && authState.valueOrNull?.isAuthenticated == true) {
+            debugPrint('SplashScreen: Auth settled, navigating to home');
+            context.go(RouteNames.home);
+            return;
+          }
+          await Future.delayed(const Duration(milliseconds: 250));
+          if (!mounted) return;
+        }
+        // If auth state didn't settle after 5s, force navigate to home anyway
+        debugPrint('SplashScreen: Auth timeout, force navigating to home');
+        if (mounted) context.go(RouteNames.home);
+        return;
+      }
+    } catch (e) {
+      debugPrint('SplashScreen: Auth check error: $e');
+    }
 
     if (!mounted) return;
 
-    // Check auth state and navigate accordingly
-    final authState = ref.read(authStateProvider);
+    // DEV: Auto-login with testuser@gmail.com for testing
+    try {
+      debugPrint('SplashScreen: DEV auto-login with testuser@gmail.com');
+      final response = await ApiClient.post('/auth/login', {
+        'email': 'testuser@gmail.com',
+        'password': 'admin123',
+      });
+      if (response != null && response['accessToken'] != null) {
+        await TokenStorage.saveTokens(
+          response['accessToken'] as String,
+          response['refreshToken'] as String,
+        );
+        debugPrint('SplashScreen: DEV auto-login successful');
+        if (!mounted) return;
+        // Trigger auth state refresh
+        ref.invalidate(authStateProvider);
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) context.go(RouteNames.home);
+        return;
+      }
+    } catch (e) {
+      debugPrint('SplashScreen: DEV auto-login failed: $e');
+    }
 
-    authState.when(
-      data: (data) {
-        if (data.isAuthenticated && data.hasProfile) {
-          context.go(RouteNames.home);
-        } else if (data.isAuthenticated && !data.hasProfile) {
-          context.go(RouteNames.roleSelection);
-        } else {
-          context.go(RouteNames.onboarding);
-        }
-      },
-      loading: () {
-        // Still loading, wait a bit more
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) _navigateAfterDelay();
-        });
-      },
-      error: (_, _) {
-        context.go(RouteNames.onboarding);
-      },
-    );
+    if (!mounted) return;
+    context.go(RouteNames.signin);
   }
 
   @override
@@ -68,7 +96,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             colors: [
               AppColors.primary,
               AppColors.primary.withValues(alpha: 0.85),
-              const Color(0xFF9C27B0).withValues(alpha: 0.4), // Subtle purple accent
+              const Color(0xFF9C27B0).withValues(alpha: 0.4),
             ],
           ),
         ),
@@ -77,7 +105,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Logo (Text-based)
                 Text(
                   'AssignX',
                   style: AppTextStyles.displayLarge.copyWith(
@@ -95,10 +122,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                       duration: 500.ms,
                       curve: Curves.easeOut,
                     ),
-
                 const SizedBox(height: 16),
-
-                // Tagline
                 Text(
                   'Your Task, Our Expertise',
                   style: AppTextStyles.bodyLarge.copyWith(
@@ -109,10 +133,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                     .animate(delay: 300.ms)
                     .fadeIn(duration: 500.ms)
                     .slideY(begin: 0.2, end: 0, duration: 500.ms),
-
                 const SizedBox(height: 48),
-
-                // Loading indicator
                 const SizedBox(
                   width: 24,
                   height: 24,

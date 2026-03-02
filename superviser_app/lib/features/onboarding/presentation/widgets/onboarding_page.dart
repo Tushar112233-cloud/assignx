@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/translation/translation_extensions.dart';
 
 /// Single onboarding page content.
 ///
@@ -60,7 +61,7 @@ class OnboardingPage extends StatelessWidget {
 
           // Title
           Text(
-            title,
+            title.tr(context),
             style: AppTypography.headlineMedium.copyWith(
               color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.bold,
@@ -71,7 +72,7 @@ class OnboardingPage extends StatelessWidget {
 
           // Description
           Text(
-            description,
+            description.tr(context),
             style: AppTypography.bodyLarge.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               height: 1.6,

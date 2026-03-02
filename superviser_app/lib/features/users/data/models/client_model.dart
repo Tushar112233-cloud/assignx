@@ -88,24 +88,26 @@ class ClientModel {
 
   factory ClientModel.fromJson(Map<String, dynamic> json) {
     return ClientModel(
-      id: json['id'] as String,
-      name: json['full_name'] as String? ?? json['name'] as String? ?? 'Unknown',
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      name: (json['fullName'] ?? json['full_name'] ?? json['name']) as String? ?? 'Unknown',
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
-      totalProjects: json['total_projects'] as int? ?? 0,
-      activeProjects: json['active_projects'] as int? ?? 0,
-      completedProjects: json['completed_projects'] as int? ?? 0,
-      totalSpent: (json['total_spent'] as num?)?.toDouble() ?? 0.0,
-      joinedAt: json['joined_at'] != null
-          ? DateTime.parse(json['joined_at'] as String)
-          : null,
-      lastActiveAt: json['last_active_at'] != null
-          ? DateTime.parse(json['last_active_at'] as String)
-          : null,
-      isVerified: json['is_verified'] as bool? ?? false,
+      avatarUrl: (json['avatarUrl'] ?? json['avatar_url']) as String?,
+      totalProjects: (json['totalProjects'] ?? json['total_projects']) as int? ?? 0,
+      activeProjects: (json['activeProjects'] ?? json['active_projects']) as int? ?? 0,
+      completedProjects: (json['completedProjects'] ?? json['completed_projects']) as int? ?? 0,
+      totalSpent: ((json['totalSpent'] ?? json['total_spent']) as num?)?.toDouble() ?? 0.0,
+      joinedAt: _tryParseDateStatic(json['joinedAt'] ?? json['joined_at']),
+      lastActiveAt: _tryParseDateStatic(json['lastActiveAt'] ?? json['last_active_at']),
+      isVerified: (json['isVerified'] ?? json['is_verified']) as bool? ?? false,
       notes: json['notes'] as String?,
     );
+  }
+
+  static DateTime? _tryParseDateStatic(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   Map<String, dynamic> toJson() {
@@ -190,16 +192,12 @@ class ClientProjectHistory {
 
   factory ClientProjectHistory.fromJson(Map<String, dynamic> json) {
     return ClientProjectHistory(
-      projectId: json['project_id'] as String? ?? json['id'] as String,
+      projectId: (json['projectId'] ?? json['project_id'] ?? json['id'] ?? json['_id'] ?? '').toString(),
       title: json['title'] as String? ?? 'Untitled Project',
       status: json['status'] as String? ?? 'unknown',
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
-      completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'] as String)
-          : null,
-      amount: (json['amount'] as num?)?.toDouble(),
+      createdAt: ClientModel._tryParseDateStatic(json['createdAt'] ?? json['created_at']) ?? DateTime.now(),
+      completedAt: ClientModel._tryParseDateStatic(json['completedAt'] ?? json['completed_at']),
+      amount: ((json['amount'] ?? json['userQuote'] ?? json['user_quote']) as num?)?.toDouble(),
       rating: json['rating'] as int?,
     );
   }

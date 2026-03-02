@@ -10,9 +10,7 @@ library;
 import 'package:flutter/foundation.dart';
 import '../data/models/project_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../core/config/supabase_config.dart';
+import '../core/api/api_client.dart';
 import '../data/models/doer_project_model.dart';
 import '../data/models/wallet_model.dart';
 import '../data/repositories/project_repository.dart';
@@ -113,9 +111,7 @@ class DashboardNotifier extends Notifier<DashboardState> {
     return const DashboardState(isLoading: true);
   }
 
-  SupabaseClient get _client => SupabaseConfig.client;
-
-  /// Loads all dashboard data from Supabase.
+  /// Loads all dashboard data from API.
   Future<void> _loadDashboardData(String doerId) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
@@ -166,36 +162,21 @@ class DashboardNotifier extends Notifier<DashboardState> {
     }
   }
 
-  /// Loads doer statistics from Supabase.
+  /// Loads doer statistics from API.
   Future<void> _loadStats(String profileId) async {
     try {
-      // Get doer record for stats (using profile_id)
-      final doerResponse = await _client
-          .from('doers')
-          .select('id, total_projects_completed, total_earnings, average_rating, success_rate, on_time_delivery_rate')
-          .eq('profile_id', profileId)
-          .maybeSingle();
-
-      final actualDoerId = doerResponse?['id'] as String?;
-
-      // Get in-progress count (using doer table ID)
-      final inProgressResponse = actualDoerId != null
-          ? await _client
-              .from('projects')
-              .select('id')
-              .eq('doer_id', actualDoerId)
-              .inFilter('status', ['assigned', 'in_progress'])
-          : [];
-
-      state = state.copyWith(
-        stats: DoerStats(
-          totalEarnings: (doerResponse?['total_earnings'] as num?)?.toDouble() ?? 0,
-          completedProjects: doerResponse?['total_projects_completed'] as int? ?? 0,
-          activeProjects: (inProgressResponse as List).length,
-          rating: (doerResponse?['average_rating'] as num?)?.toDouble() ?? 0,
-          onTimeDeliveryRate: (doerResponse?['on_time_delivery_rate'] as num?)?.toDouble() ?? 0.95,
-        ),
-      );
+      final response = await ApiClient.get('/projects/doer/statistics');
+      if (response is Map<String, dynamic>) {
+        state = state.copyWith(
+          stats: DoerStats(
+            totalEarnings: (response['totalEarnings'] as num?)?.toDouble() ?? 0,
+            completedProjects: response['completedProjects'] as int? ?? 0,
+            activeProjects: response['activeProjects'] as int? ?? 0,
+            rating: (response['averageRating'] as num?)?.toDouble() ?? 0,
+            onTimeDeliveryRate: (response['onTimeRate'] as num?)?.toDouble() ?? 0.95,
+          ),
+        );
+      }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('DashboardNotifier._loadStats error: $e');
@@ -203,35 +184,16 @@ class DashboardNotifier extends Notifier<DashboardState> {
     }
   }
 
-  /// Loads recent reviews from Supabase doer_reviews table.
+  /// Loads recent reviews from API.
   Future<void> _loadReviews(String profileId) async {
     try {
-      // Look up the actual doer ID
-      final doerRecord = await _client
-          .from('doers')
-          .select('id')
-          .eq('profile_id', profileId)
-          .maybeSingle();
-      final actualDoerId = doerRecord?['id'] as String?;
-      if (actualDoerId == null) {
-        state = state.copyWith(reviews: []);
-        return;
-      }
+      final response = await ApiClient.get('/profiles/me/reviews?limit=50');
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['reviews'] as List? ?? [];
 
-      final response = await _client
-          .from('doer_reviews')
-          .select('''
-            *,
-            project:projects(id, title, project_number),
-            reviewer:profiles!reviewer_id(id, full_name, avatar_url)
-          ''')
-          .eq('doer_id', actualDoerId)
-          .eq('is_public', true)
-          .order('created_at', ascending: false)
-          .limit(50);
-
-      final reviews = (response as List)
-          .map((e) => ReviewModel.fromJson(e))
+      final reviews = list
+          .map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
           .toList();
 
       state = state.copyWith(reviews: reviews);
@@ -260,16 +222,14 @@ class DashboardNotifier extends Notifier<DashboardState> {
     }
   }
 
-  /// Loads doer availability status from doers table.
+  /// Loads doer availability status from API.
   Future<void> _loadAvailability(String doerId) async {
     try {
-      final response = await _client
-          .from('doers')
-          .select('is_available')
-          .eq('profile_id', doerId)
-          .maybeSingle();
-
-      state = state.copyWith(isAvailable: response?['is_available'] as bool? ?? true);
+      final response = await ApiClient.get('/profiles/me');
+      if (response is Map<String, dynamic>) {
+        final doer = response['doer'] as Map<String, dynamic>?;
+        state = state.copyWith(isAvailable: doer?['isAvailable'] as bool? ?? true);
+      }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('DashboardNotifier._loadAvailability error: $e');
@@ -279,27 +239,18 @@ class DashboardNotifier extends Notifier<DashboardState> {
 
   /// Toggles the doer's availability status.
   Future<void> toggleAvailability() async {
-    final user = ref.read(currentUserProvider);
-    if (user == null) return;
-
     final newStatus = !state.isAvailable;
 
     try {
-      await _client
-          .from('doers')
-          .update({
-            'is_available': newStatus,
-            'availability_updated_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('profile_id', user.id);
+      await ApiClient.put('/profiles/me/availability', {
+        'isAvailable': newStatus,
+      });
 
       state = state.copyWith(isAvailable: newStatus);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('DashboardNotifier.toggleAvailability error: $e');
       }
-      // Revert to previous state on failure
       state = state.copyWith(isAvailable: !newStatus);
     }
   }

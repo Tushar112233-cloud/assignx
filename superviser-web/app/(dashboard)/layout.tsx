@@ -3,90 +3,66 @@
  * @module app/(dashboard)/layout
  */
 
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebarV2 } from "@/components/layout/app-sidebar-v2"
 import { HeaderV2 } from "@/components/layout/header-v2"
+import { useAuth } from "@/hooks/use-auth"
+import { apiFetch } from "@/lib/api/client"
 
-interface UserProfile {
-  full_name: string | null
-  email: string | null
-  avatar_url: string | null
-}
-
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  const router = useRouter()
+  const { user, isLoading: authLoading } = useAuth()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const [pendingQCCount, setPendingQCCount] = useState(0)
+  const [notificationCount, setNotificationCount] = useState(0)
+  const [supervisorAvailability, setSupervisorAvailability] = useState(true)
 
-  if (!user) {
-    redirect("/login")
-  }
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login")
+    }
+  }, [user, authLoading, router])
 
-  // Get user profile - using type assertion since table may not exist yet
-  let profile: UserProfile | null = null
-  try {
-    const { data } = await supabase
-      .from("profiles")
-      .select("full_name, email, avatar_url")
-      .eq("id", user.id)
-      .single()
-    profile = data as UserProfile | null
-  } catch {
-    // Profile table may not exist yet, use auth metadata
+  useEffect(() => {
+    if (!user) return
+
+    async function fetchCounts() {
+      try {
+        const [supervisorData, notifData] = await Promise.all([
+          apiFetch<{ id: string; is_available: boolean }>("/api/supervisors/me").catch(() => null),
+          apiFetch<{ unreadCount: number }>("/api/notifications?role=supervisor&limit=0").catch(() => null),
+        ])
+
+        if (supervisorData) {
+          setSupervisorAvailability(supervisorData.is_available ?? true)
+        }
+        if (notifData) {
+          setNotificationCount(notifData.unreadCount || 0)
+        }
+      } catch {
+        // Stats queries may fail
+      }
+    }
+
+    fetchCounts()
+  }, [user])
+
+  if (authLoading || !user) {
+    return null
   }
 
   const userData = {
-    name: profile?.full_name || user.user_metadata?.full_name || "Supervisor",
-    email: profile?.email || user.email || "",
-    avatarUrl: profile?.avatar_url,
-  }
-
-  // Fetch supervisor data and stats for header
-  let pendingQCCount = 0
-  let activeProjectsCount = 0
-  let notificationCount = 0
-  let supervisorAvailability = true
-
-  try {
-    const { data: supervisor } = await supabase
-      .from("supervisors")
-      .select("id, is_available")
-      .eq("profile_id", user.id)
-      .single()
-
-    if (supervisor) {
-      supervisorAvailability = supervisor.is_available ?? true
-      const [pendingQCResult, activeProjectsResult, notificationsResult] = await Promise.all([
-        supabase
-          .from("projects")
-          .select("id", { count: "exact", head: true })
-          .eq("supervisor_id", supervisor.id)
-          .eq("status", "submitted_for_qc"),
-        supabase
-          .from("projects")
-          .select("id", { count: "exact", head: true })
-          .eq("supervisor_id", supervisor.id)
-          .in("status", ["analyzing", "quoted", "payment_pending", "assigned", "in_progress", "submitted_for_qc", "qc_in_progress", "revision_requested", "in_revision"]),
-        supabase
-          .from("notifications")
-          .select("id", { count: "exact", head: true })
-          .eq("profile_id", user.id)
-          .eq("target_role", "supervisor")
-          .eq("is_read", false),
-      ])
-
-      pendingQCCount = pendingQCResult.count || 0
-      activeProjectsCount = activeProjectsResult.count || 0
-      notificationCount = notificationsResult.count || 0
-    }
-  } catch {
-    // Stats queries may fail if tables don't exist yet
+    name: user.full_name || user.email?.split("@")[0] || "Supervisor",
+    email: user.email || "",
+    avatarUrl: user.avatar_url,
   }
 
   return (

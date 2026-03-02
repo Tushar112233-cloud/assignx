@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -12,39 +11,33 @@ import 'account_upgrade_card.dart';
 // DESIGN CONSTANTS
 // ============================================================
 
-/// Colors used in the subscription card.
-class _SubscriptionColors {
+/// Colors used in the account role card.
+class _RoleCardColors {
   static const cardBackground = Color(0xFFFFFFFF);
   static const primaryText = Color(0xFF1A1A1A);
   static const secondaryText = Color(0xFF6B6B6B);
-  static const mutedText = Color(0xFF8B8B8B);
   static const checkIconColor = Color(0xFF22C55E);
-  static const renewalBg = Color(0xFFF5F5F5);
 }
 
 // ============================================================
-// SUBSCRIPTION PLAN MODEL
+// ACCOUNT ROLE MODEL
 // ============================================================
 
-/// Model for subscription plan details.
-class SubscriptionPlan {
-  /// The account type associated with this plan.
+/// Model for the user's account role and its perks.
+class AccountRole {
+  /// The account type (role) of the user.
   final AccountType accountType;
 
-  /// The renewal date (if applicable).
-  final DateTime? renewalDate;
-
-  /// Whether the subscription is active.
+  /// Whether the role is active.
   final bool isActive;
 
-  const SubscriptionPlan({
+  const AccountRole({
     required this.accountType,
-    this.renewalDate,
     this.isActive = true,
   });
 
-  /// Get features list based on account type.
-  List<String> get features {
+  /// Get perks list based on account role.
+  List<String> get perks {
     switch (accountType) {
       case AccountType.student:
         return [
@@ -73,31 +66,18 @@ class SubscriptionPlan {
         ];
     }
   }
-
-  /// Get the plan price label.
-  String get priceLabel {
-    switch (accountType) {
-      case AccountType.student:
-        return 'Free';
-      case AccountType.professional:
-        return 'Rs. 499/month';
-      case AccountType.businessOwner:
-        return 'Rs. 1,999/month';
-    }
-  }
 }
 
 // ============================================================
-// SUBSCRIPTION CARD WIDGET
+// SUBSCRIPTION CARD WIDGET (now shows Account Role)
 // ============================================================
 
-/// A card widget that displays the user's current subscription plan.
+/// A card widget that displays the user's current account role.
 ///
 /// Shows:
-/// - Current plan name and badge
-/// - Plan features list
-/// - Renewal date (if applicable)
-/// - Upgrade button (if not on highest tier)
+/// - Current role name and badge (Student / Professional / Business)
+/// - Role perks list
+/// - Switch account type button (if not on highest tier)
 ///
 /// Example usage:
 /// ```dart
@@ -112,37 +92,30 @@ class SubscriptionCard extends ConsumerWidget {
 
     return profileAsync.when(
       data: (profile) {
-        // Convert UserType to AccountType (map professional to professional, else student)
         final accountType = profile.userType?.toDbString() == 'professional'
             ? AccountType.professional
             : AccountType.student;
-        final plan = SubscriptionPlan(
-          accountType: accountType,
-          // For demo purposes, set renewal date 30 days from now for paid plans
-          renewalDate: accountType != AccountType.student
-              ? DateTime.now().add(const Duration(days: 30))
-              : null,
-        );
+        final role = AccountRole(accountType: accountType);
 
-        return _buildSubscriptionCard(context, plan);
+        return _buildRoleCard(context, role);
       },
       loading: () => _buildLoadingCard(),
-      error: (_, __) => _buildSubscriptionCard(
+      error: (_, __) => _buildRoleCard(
         context,
-        const SubscriptionPlan(accountType: AccountType.student),
+        const AccountRole(accountType: AccountType.student),
       ),
     );
   }
 
-  /// Builds the main subscription card.
-  Widget _buildSubscriptionCard(BuildContext context, SubscriptionPlan plan) {
-    final canUpgrade = plan.accountType.canUpgradeTo.isNotEmpty;
-    final nextTier = canUpgrade ? plan.accountType.canUpgradeTo.first : null;
+  /// Builds the main account role card.
+  Widget _buildRoleCard(BuildContext context, AccountRole role) {
+    final canUpgrade = role.accountType.canUpgradeTo.isNotEmpty;
+    final nextTier = canUpgrade ? role.accountType.canUpgradeTo.first : null;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: _SubscriptionColors.cardBackground,
+        color: _RoleCardColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -155,47 +128,44 @@ class SubscriptionCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with plan info
-          _buildPlanHeader(plan),
+          // Header with role info
+          _buildRoleHeader(role),
 
-          // Features list
+          // Perks list
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Plan Features',
+                  'Your Perks',
                   style: AppTextStyles.labelMedium.copyWith(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: _SubscriptionColors.secondaryText,
+                    color: _RoleCardColors.secondaryText,
                   ),
                 ),
                 const SizedBox(height: 10),
-                ...plan.features.map((feature) => _buildFeatureItem(feature)),
+                ...role.perks.map((perk) => _buildPerkItem(perk)),
               ],
             ),
           ),
 
           const SizedBox(height: 16),
 
-          // Renewal date (if applicable)
-          if (plan.renewalDate != null) _buildRenewalSection(plan.renewalDate!),
-
-          // Upgrade section or premium badge
+          // Switch role section or top-tier badge
           if (canUpgrade && nextTier != null) ...[
-            _buildUpgradeSection(context, plan.accountType, nextTier),
+            _buildSwitchRoleSection(context, role.accountType, nextTier),
           ] else ...[
-            _buildPremiumBadge(),
+            _buildTopTierBadge(),
           ],
         ],
       ),
     );
   }
 
-  /// Builds the plan header with icon and badge.
-  Widget _buildPlanHeader(SubscriptionPlan plan) {
+  /// Builds the role header with icon and badge.
+  Widget _buildRoleHeader(AccountRole role) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -203,8 +173,8 @@ class SubscriptionCard extends ConsumerWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            plan.accountType.backgroundColor,
-            plan.accountType.backgroundColor.withAlpha(180),
+            role.accountType.backgroundColor,
+            role.accountType.backgroundColor.withAlpha(180),
           ],
         ),
         borderRadius: const BorderRadius.only(
@@ -214,7 +184,7 @@ class SubscriptionCard extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          // Plan icon
+          // Role icon
           Container(
             width: 52,
             height: 52,
@@ -223,33 +193,37 @@ class SubscriptionCard extends ConsumerWidget {
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: plan.accountType.color.withAlpha(30),
+                  color: role.accountType.color.withAlpha(30),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: Icon(
-              plan.accountType.icon,
+              role.accountType.icon,
               size: 26,
-              color: plan.accountType.color,
+              color: role.accountType.color,
             ),
           ),
           const SizedBox(width: 14),
 
-          // Plan info
+          // Role info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Text(
-                      '${plan.accountType.displayName} Plan',
-                      style: AppTextStyles.headingSmall.copyWith(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: _SubscriptionColors.primaryText,
+                    Flexible(
+                      child: Text(
+                        '${role.accountType.displayName} Account',
+                        style: AppTextStyles.headingSmall.copyWith(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: _RoleCardColors.primaryText,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -260,10 +234,10 @@ class SubscriptionCard extends ConsumerWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: plan.accountType.color.withAlpha(25),
+                        color: role.accountType.color.withAlpha(25),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                          color: plan.accountType.color.withAlpha(50),
+                          color: role.accountType.color.withAlpha(50),
                         ),
                       ),
                       child: Text(
@@ -271,7 +245,7 @@ class SubscriptionCard extends ConsumerWidget {
                         style: AppTextStyles.caption.copyWith(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: plan.accountType.color,
+                          color: role.accountType.color,
                         ),
                       ),
                     ),
@@ -279,10 +253,10 @@ class SubscriptionCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  plan.priceLabel,
+                  role.accountType.description,
                   style: AppTextStyles.bodySmall.copyWith(
-                    fontSize: 14,
-                    color: _SubscriptionColors.secondaryText,
+                    fontSize: 13,
+                    color: _RoleCardColors.secondaryText,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -294,8 +268,8 @@ class SubscriptionCard extends ConsumerWidget {
     );
   }
 
-  /// Builds a single feature item.
-  Widget _buildFeatureItem(String feature) {
+  /// Builds a single perk item.
+  Widget _buildPerkItem(String perk) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -304,15 +278,15 @@ class SubscriptionCard extends ConsumerWidget {
           Icon(
             Icons.check_circle,
             size: 18,
-            color: _SubscriptionColors.checkIconColor,
+            color: _RoleCardColors.checkIconColor,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              feature,
+              perk,
               style: AppTextStyles.bodySmall.copyWith(
                 fontSize: 14,
-                color: _SubscriptionColors.primaryText,
+                color: _RoleCardColors.primaryText,
               ),
             ),
           ),
@@ -321,70 +295,8 @@ class SubscriptionCard extends ConsumerWidget {
     );
   }
 
-  /// Builds the renewal date section.
-  Widget _buildRenewalSection(DateTime renewalDate) {
-    final formattedDate = DateFormat('MMMM d, yyyy').format(renewalDate);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _SubscriptionColors.renewalBg,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.calendar_today_outlined,
-            size: 18,
-            color: _SubscriptionColors.mutedText,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Next Renewal',
-                  style: AppTextStyles.caption.copyWith(
-                    fontSize: 11,
-                    color: _SubscriptionColors.mutedText,
-                  ),
-                ),
-                Text(
-                  formattedDate,
-                  style: AppTextStyles.labelMedium.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: _SubscriptionColors.primaryText,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              // Handle manage subscription
-            },
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            ),
-            child: Text(
-              'Manage',
-              style: AppTextStyles.labelSmall.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds the upgrade section.
-  Widget _buildUpgradeSection(
+  /// Builds the switch account type section.
+  Widget _buildSwitchRoleSection(
     BuildContext context,
     AccountType currentType,
     AccountType nextTier,
@@ -418,22 +330,24 @@ class SubscriptionCard extends ConsumerWidget {
                 color: nextTier.color,
               ),
               const SizedBox(width: 8),
-              Text(
-                'Upgrade to ${nextTier.displayName}',
-                style: AppTextStyles.labelLarge.copyWith(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: _SubscriptionColors.primaryText,
+              Flexible(
+                child: Text(
+                  'Switch to ${nextTier.displayName}',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: _RoleCardColors.primaryText,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 6),
           Text(
-            'Unlock ${nextTier.benefits.first.toLowerCase()} and more premium features',
+            'Unlock ${nextTier.benefits.first.toLowerCase()} and more features',
             style: AppTextStyles.bodySmall.copyWith(
               fontSize: 13,
-              color: _SubscriptionColors.secondaryText,
+              color: _RoleCardColors.secondaryText,
             ),
           ),
           const SizedBox(height: 12),
@@ -453,7 +367,7 @@ class SubscriptionCard extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Upgrade Now',
+                    'Switch Account Type',
                     style: AppTextStyles.buttonMedium.copyWith(
                       fontSize: 14,
                     ),
@@ -469,8 +383,8 @@ class SubscriptionCard extends ConsumerWidget {
     );
   }
 
-  /// Builds the premium member badge for highest tier.
-  Widget _buildPremiumBadge() {
+  /// Builds the top-tier badge for highest role.
+  Widget _buildTopTierBadge() {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(14),
@@ -495,7 +409,7 @@ class SubscriptionCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Premium Member',
+                  'Top Tier Account',
                   style: AppTextStyles.labelLarge.copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -504,7 +418,7 @@ class SubscriptionCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'You have the highest account tier',
+                  'You have the highest account role',
                   style: AppTextStyles.bodySmall.copyWith(
                     fontSize: 12,
                     color: const Color(0xFF047857),
@@ -524,7 +438,7 @@ class SubscriptionCard extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       height: 280,
       decoration: BoxDecoration(
-        color: _SubscriptionColors.cardBackground,
+        color: _RoleCardColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

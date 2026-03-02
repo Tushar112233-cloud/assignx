@@ -214,7 +214,7 @@ export function useChat(projectId: string | null, userId: string | null) {
   const setTyping = useCallback(
     async (isTyping: boolean) => {
       if (!roomId || !userId) return
-      // Typing indicators can be implemented using Supabase presence
+      // Typing indicators can be implemented using API presence
       // For now, this is a placeholder
     },
     [roomId, userId]

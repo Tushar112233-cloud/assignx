@@ -251,31 +251,29 @@ class TicketModel {
 
   factory TicketModel.fromJson(Map<String, dynamic> json) {
     return TicketModel(
-      id: json['id'] as String,
-      ticketNumber: json['ticket_number'] as String?,
-      userId: json['requester_id'] as String? ?? json['user_id'] as String? ?? '',
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      ticketNumber: (json['ticketNumber'] ?? json['ticket_number']) as String?,
+      userId: (json['requesterId'] ?? json['requester_id'] ?? json['userId'] ?? json['user_id'] ?? '').toString(),
       subject: json['subject'] as String? ?? '',
       description: json['description'] as String?,
       category: _parseCategory(json['category'] as String?),
       status: _parseStatus(json['status'] as String?),
       priority: _parsePriority(json['priority'] as String?),
       attachments: (json['attachments'] as List?)?.cast<String>() ?? [],
-      assignedTo: json['assigned_to'] as String?,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
-      lastMessageAt: json['last_message_at'] != null
-          ? DateTime.parse(json['last_message_at'] as String)
-          : null,
-      resolvedAt: json['resolved_at'] != null
-          ? DateTime.parse(json['resolved_at'] as String)
-          : null,
-      closedAt: json['closed_at'] != null
-          ? DateTime.parse(json['closed_at'] as String)
-          : null,
-      rating: json['satisfaction_rating'] as int? ?? json['rating'] as int?,
-      feedback: json['satisfaction_feedback'] as String? ?? json['feedback'] as String?,
+      assignedTo: (json['assignedTo'] ?? json['assigned_to']) as String?,
+      createdAt: _tryParseDateStatic(json['createdAt'] ?? json['created_at']) ?? DateTime.now(),
+      lastMessageAt: _tryParseDateStatic(json['lastMessageAt'] ?? json['last_message_at']),
+      resolvedAt: _tryParseDateStatic(json['resolvedAt'] ?? json['resolved_at']),
+      closedAt: _tryParseDateStatic(json['closedAt'] ?? json['closed_at']),
+      rating: (json['satisfactionRating'] ?? json['satisfaction_rating'] ?? json['rating']) as int?,
+      feedback: (json['satisfactionFeedback'] ?? json['satisfaction_feedback'] ?? json['feedback']) as String?,
     );
+  }
+
+  static DateTime? _tryParseDateStatic(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   Map<String, dynamic> toJson() {
@@ -439,17 +437,30 @@ class TicketMessage {
   }
 
   factory TicketMessage.fromJson(Map<String, dynamic> json) {
+    // Handle populated sender object
+    String senderId = '';
+    String? senderName;
+    String? senderAvatar;
+    final senderRaw = json['sender'] ?? json['senderId'] ?? json['sender_id'];
+    if (senderRaw is Map<String, dynamic>) {
+      senderId = (senderRaw['_id'] ?? senderRaw['id'] ?? '').toString();
+      senderName = (senderRaw['fullName'] ?? senderRaw['full_name']) as String?;
+      senderAvatar = (senderRaw['avatarUrl'] ?? senderRaw['avatar_url']) as String?;
+    } else if (senderRaw is String) {
+      senderId = senderRaw;
+    }
+    senderName ??= (json['senderName'] ?? json['sender_name']) as String?;
+    senderAvatar ??= (json['senderAvatar'] ?? json['sender_avatar']) as String?;
+
     return TicketMessage(
-      id: json['id'] as String,
-      ticketId: json['ticket_id'] as String,
-      senderId: json['sender_id'] as String,
-      message: json['message'] as String? ?? '',
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
-      senderName: json['sender_name'] as String?,
-      senderAvatar: json['sender_avatar'] as String?,
-      isSupport: json['is_support'] as bool? ?? false,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      ticketId: (json['ticketId'] ?? json['ticket_id'] ?? '').toString(),
+      senderId: senderId,
+      message: json['message'] as String? ?? json['content'] as String? ?? '',
+      createdAt: TicketModel._tryParseDateStatic(json['createdAt'] ?? json['created_at']) ?? DateTime.now(),
+      senderName: senderName,
+      senderAvatar: senderAvatar,
+      isSupport: (json['isSupport'] ?? json['is_support']) as bool? ?? false,
       attachments: (json['attachments'] as List?)?.cast<String>() ?? [],
     );
   }
@@ -489,11 +500,11 @@ class FAQItem {
 
   factory FAQItem.fromJson(Map<String, dynamic> json) {
     return FAQItem(
-      id: json['id'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
       question: json['question'] as String? ?? '',
       answer: json['answer'] as String? ?? '',
       category: json['category'] as String?,
-      order: json['order'] as int? ?? 0,
+      order: (json['order'] ?? json['sortOrder'] ?? json['sort_order']) as int? ?? 0,
     );
   }
 
@@ -542,7 +553,7 @@ class FAQCategory {
 
   factory FAQCategory.fromJson(Map<String, dynamic> json) {
     return FAQCategory(
-      id: json['id'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
       name: json['name'] as String? ?? '',
       items: (json['items'] as List?)
               ?.map((e) => FAQItem.fromJson(e as Map<String, dynamic>))

@@ -150,8 +150,8 @@ export default async function WalletDetailPage({
                       transactions.map((txn: any) => (
                         <TableRow key={txn.id}>
                           <TableCell>
-                            <Badge variant={getTransactionTypeVariant(txn.type)}>
-                              {txn.type?.replace(/_/g, " ")}
+                            <Badge variant={getTransactionTypeVariant(txn.transaction_type)}>
+                              {txn.transaction_type?.replace(/_/g, " ")}
                             </Badge>
                           </TableCell>
                           <TableCell className="font-medium tabular-nums">

@@ -4,7 +4,6 @@ import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide StorageException;
 import '../network/api_exceptions.dart';
 import 'snackbar_service.dart';
 
@@ -108,16 +107,8 @@ class ErrorHandler {
       return error.userMessage;
     }
 
-    if (error is AuthException) {
-      return _getAuthErrorMessage(error);
-    }
-
-    if (error is PostgrestException) {
-      return _getPostgrestErrorMessage(error);
-    }
-
-    if (error is StorageException) {
-      return 'Failed to upload or download file. Please try again.';
+    if (error is ApiClientException) {
+      return _getApiClientErrorMessage(error);
     }
 
     if (error.toString().contains('TimeoutException')) {
@@ -140,60 +131,38 @@ class ErrorHandler {
     return 'Something went wrong. Please try again.';
   }
 
-  String _getAuthErrorMessage(AuthException error) {
+  String _getApiClientErrorMessage(ApiClientException error) {
+    final statusCode = error.statusCode;
     final message = error.message.toLowerCase();
 
-    if (message.contains('invalid login credentials') ||
-        message.contains('invalid email or password')) {
-      return 'Invalid email or password. Please try again.';
-    }
-
-    if (message.contains('email not confirmed')) {
-      return 'Please verify your email address before signing in.';
-    }
-
-    if (message.contains('user not found')) {
-      return 'No account found with this email.';
-    }
-
-    if (message.contains('email already registered')) {
-      return 'An account with this email already exists.';
-    }
-
-    if (message.contains('too many requests') ||
-        message.contains('rate limit')) {
-      return 'Too many attempts. Please wait a moment and try again.';
-    }
-
-    if (message.contains('session expired') ||
-        message.contains('token expired')) {
+    if (statusCode == 401) {
+      if (message.contains('invalid') || message.contains('credentials')) {
+        return 'Invalid email or password. Please try again.';
+      }
       return 'Your session has expired. Please sign in again.';
     }
 
-    if (message.contains('weak password')) {
-      return 'Password is too weak. Please use a stronger password.';
+    if (statusCode == 403) {
+      return 'You do not have permission to perform this action.';
     }
 
-    return 'Authentication failed. Please try again.';
-  }
-
-  String _getPostgrestErrorMessage(PostgrestException error) {
-    final code = error.code;
-
-    switch (code) {
-      case '23505':
-        return 'This record already exists.';
-      case '23503':
-        return 'Cannot delete this record because it is referenced elsewhere.';
-      case '42501':
-        return 'You do not have permission to perform this action.';
-      case '42P01':
-        return 'The requested resource was not found.';
-      case 'PGRST116':
-        return 'The requested resource was not found.';
-      default:
-        return 'Database operation failed. Please try again.';
+    if (statusCode == 404) {
+      return 'The requested resource was not found.';
     }
+
+    if (statusCode == 409) {
+      return 'This record already exists.';
+    }
+
+    if (statusCode == 429) {
+      return 'Too many attempts. Please wait a moment and try again.';
+    }
+
+    if (statusCode != null && statusCode >= 500) {
+      return 'Server error. Please try again later.';
+    }
+
+    return 'An error occurred. Please try again.';
   }
 
   void _logError(dynamic error, StackTrace? stackTrace) {
@@ -207,18 +176,29 @@ class ErrorHandler {
     );
 
     if (kDebugMode) {
-      debugPrint('╔══════════════════════════════════════════════════════════');
-      debugPrint('║ ERROR: $error');
-      debugPrint('║ TIME: $timestamp');
+      debugPrint('══════════════════════════════════════════════════════════');
+      debugPrint(' ERROR: $error');
+      debugPrint(' TIME: $timestamp');
       if (stackTrace != null) {
-        debugPrint('║ STACK:');
+        debugPrint(' STACK:');
         for (final line in stackTrace.toString().split('\n').take(10)) {
-          debugPrint('║   $line');
+          debugPrint('   $line');
         }
       }
-      debugPrint('╚══════════════════════════════════════════════════════════');
+      debugPrint('══════════════════════════════════════════════════════════');
     }
   }
+}
+
+/// Wrapper around the ApiClient's ApiException for error handler compatibility.
+class ApiClientException implements Exception {
+  final String message;
+  final int? statusCode;
+
+  ApiClientException(this.message, this.statusCode);
+
+  @override
+  String toString() => 'ApiClientException($statusCode): $message';
 }
 
 /// Provider for error handler.
