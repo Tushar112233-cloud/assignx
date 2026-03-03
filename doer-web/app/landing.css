@@ -9,6 +9,8 @@
    Color Tokens
    ======================================== */
 :root {
+  scroll-behavior: smooth;
+
   /* Backgrounds */
   --landing-bg-primary: oklch(0.985 0.002 180);
   --landing-bg-secondary: oklch(0.97 0.006 175);
