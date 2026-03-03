@@ -121,6 +121,40 @@ router.post('/rooms', authenticate, async (req: Request, res: Response, next: Ne
   }
 });
 
+// POST /chat/rooms/project/:projectId - Get or create a project chat room
+router.post('/rooms/project/:projectId', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { projectId } = req.params;
+    const requesterId = req.body.userId || req.user!.id;
+
+    let room = await ChatRoom.findOne({ projectId, roomType: 'project_all' });
+
+    if (!room) {
+      room = await ChatRoom.create({
+        projectId,
+        roomType: 'project_all',
+        name: 'Project Chat',
+        participants: [{ profileId: requesterId, role: 'member', joinedAt: new Date(), isActive: true }],
+      });
+    } else {
+      const isParticipant = room.participants.some(
+        (p: any) => p.profileId.toString() === requesterId
+      );
+      if (!isParticipant) {
+        await ChatRoom.updateOne(
+          { _id: room._id },
+          { $push: { participants: { profileId: requesterId, role: 'member', joinedAt: new Date(), isActive: true } } }
+        );
+        room = (await ChatRoom.findById(room._id))!;
+      }
+    }
+
+    res.json({ room });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /chat/rooms/:id
 router.get('/rooms/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
