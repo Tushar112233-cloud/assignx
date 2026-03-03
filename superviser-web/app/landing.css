@@ -1,0 +1,167 @@
+/**
+ * @fileoverview Supervisor Landing — design tokens + utility classes
+ * All colors reference existing globals.css CSS variables.
+ */
+
+/* ========================================
+   Landing-specific tokens (mapped from globals.css)
+   ======================================== */
+:root {
+  /* Backgrounds */
+  --sv-bg-primary: hsl(var(--background));
+  --sv-bg-secondary: hsl(var(--muted));
+  --sv-bg-elevated: hsl(var(--card));
+  --sv-bg-dark: var(--cmd-bg);         /* #0a0f14 */
+  --sv-bg-dark-surface: var(--cmd-bg-elevated); /* #0f1419 */
+
+  /* Text */
+  --sv-text-primary: hsl(var(--foreground));
+  --sv-text-secondary: hsl(222 47% 35%);
+  --sv-text-muted: hsl(var(--muted-foreground));
+  --sv-text-inverse: hsl(0 0% 100%);
+
+  /* Accent — Indigo */
+  --sv-accent: hsl(var(--accent));
+  --sv-accent-hover: hsl(234 89% 58%);
+  --sv-accent-light: hsl(var(--accent) / 0.12);
+  --sv-accent-lighter: hsl(var(--accent) / 0.06);
+
+  /* Cyan (from command-center theme) */
+  --sv-cyan: var(--cmd-cyan);      /* #22d3ee */
+  --sv-cyan-light: rgba(34, 211, 238, 0.12);
+
+  /* Gradient */
+  --sv-gradient-start: hsl(var(--gradient-start));
+  --sv-gradient-end: hsl(var(--gradient-end));
+
+  /* Borders */
+  --sv-border: hsl(var(--border));
+  --sv-border-accent: hsl(var(--accent) / 0.2);
+}
+
+/* ========================================
+   Scroll & Overflow
+   ======================================== */
+html:has(.sv-landing),
+body:has(.sv-landing) {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+html:has(.sv-landing)::-webkit-scrollbar,
+body:has(.sv-landing)::-webkit-scrollbar {
+  display: none;
+}
+
+/* ========================================
+   Typography
+   ======================================== */
+@layer components {
+  .sv-heading-xl {
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-size: clamp(40px, 5.5vw, 64px);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    font-weight: 800;
+  }
+  .sv-heading-lg {
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-size: clamp(32px, 4vw, 48px);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+  }
+  .sv-heading-md {
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-size: clamp(24px, 3vw, 36px);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  /* Gradient text — indigo → violet */
+  .sv-text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(
+      135deg,
+      var(--sv-gradient-start) 0%,
+      var(--sv-gradient-end) 100%
+    );
+  }
+
+  /* Primary filled button */
+  .sv-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.75rem;
+    border-radius: 0.875rem;
+    background-color: var(--sv-accent);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+  .sv-btn-primary:hover {
+    background-color: var(--sv-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px hsl(var(--accent) / 0.35);
+  }
+
+  /* Ghost / secondary button */
+  .sv-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.75rem;
+    border-radius: 0.875rem;
+    background-color: var(--sv-accent-lighter);
+    color: var(--sv-accent);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    border: 1px solid var(--sv-border-accent);
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+  .sv-btn-secondary:hover {
+    background-color: var(--sv-accent-light);
+    transform: translateY(-1px);
+  }
+
+  /* Grid pattern overlay */
+  .sv-grid-pattern {
+    background-image: linear-gradient(
+        hsl(var(--border)) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        hsl(var(--border)) 1px,
+        transparent 1px
+      );
+    background-size: 40px 40px;
+  }
+}
+
+/* ========================================
+   Marquee animations
+   ======================================== */
+@layer utilities {
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-100% - var(--gap))); }
+  }
+  @keyframes marquee-vertical {
+    from { transform: translateY(0); }
+    to { transform: translateY(calc(-100% - var(--gap))); }
+  }
+
+  .animate-marquee {
+    animation: marquee var(--duration, 40s) linear infinite;
+  }
+  .animate-marquee-vertical {
+    animation: marquee-vertical var(--duration, 40s) linear infinite;
+  }
+}
