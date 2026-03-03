@@ -1,51 +1,46 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { SplashScreen } from '@/components/onboarding/SplashScreen'
-import { ROUTES } from '@/lib/constants'
-import { getAccessToken } from '@/lib/api/client'
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { getAccessToken } from "@/lib/api/client"
+import { ROUTES } from "@/lib/constants"
+import {
+  Navigation,
+  HeroSection,
+  HowItWorks,
+  TaskCategories,
+  BenefitsSection,
+  EarningsStats,
+  Testimonials,
+  CTASection,
+  Footer,
+} from "@/components/landing"
 
 /**
- * Home page - Entry point for the application
- * Shows splash screen and redirects based on auth state
+ * Home page — shows Doer landing page for unauthenticated visitors.
+ * Authenticated users are redirected to their dashboard immediately.
  */
 export default function HomePage() {
   const router = useRouter()
-  const [showSplash, setShowSplash] = useState(true)
 
   useEffect(() => {
-    if (showSplash) return
-
-    const checkAuthAndRedirect = async () => {
-      const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding')
-
-      if (hasSeenOnboarding) {
-        // Check if user is authenticated via JWT token
-        const token = getAccessToken()
-        if (token) {
-          router.push(ROUTES.dashboard)
-        } else {
-          router.push(ROUTES.login)
-        }
-      } else {
-        // First time user - show onboarding
-        router.push(ROUTES.welcome)
-      }
+    const token = getAccessToken()
+    if (token) {
+      router.replace(ROUTES.dashboard)
     }
+  }, [router])
 
-    checkAuthAndRedirect()
-  }, [showSplash, router])
-
-  /** Handle splash screen completion */
-  const handleSplashComplete = () => {
-    setShowSplash(false)
-  }
-
-  if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} duration={2500} />
-  }
-
-  // Return null while redirecting
-  return null
+  return (
+    <main className="landing-page">
+      <Navigation />
+      <HeroSection />
+      <HowItWorks />
+      <TaskCategories />
+      <BenefitsSection />
+      <EarningsStats />
+      <Testimonials />
+      <CTASection />
+      <Footer />
+    </main>
+  )
 }
