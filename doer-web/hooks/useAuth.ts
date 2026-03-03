@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { ROUTES } from '@/lib/constants'
 import { clearAppStorage } from '@/lib/utils'
 import { logger } from '@/lib/logger'
+import { getStoredUser, clearStoredUser } from '@/lib/api/auth'
 import type { Profile, Doer } from '@/types/database'
 
 let _authInitStarted = false
@@ -88,9 +89,26 @@ export function useAuth() {
 
       try {
         const token = getAccessToken()
+        const storedUser = getStoredUser()
+
         if (!token) {
           logger.debug('Auth', 'No token found')
           clearAuthRef.current()
+
+          // Redirect to login if on a protected route (like supervisor)
+          const pathname = window.location.pathname
+          const isProtectedRoute = pathname.startsWith('/dashboard') ||
+                                   pathname.startsWith('/projects') ||
+                                   pathname.startsWith('/profile') ||
+                                   pathname.startsWith('/resources') ||
+                                   pathname.startsWith('/reviews') ||
+                                   pathname.startsWith('/settings') ||
+                                   pathname.startsWith('/statistics') ||
+                                   pathname.startsWith('/support')
+
+          if (isProtectedRoute) {
+            window.location.href = ROUTES.login
+          }
           return
         }
 
@@ -105,6 +123,11 @@ export function useAuth() {
           return
         }
 
+        // If we have a stored user, set it immediately for fast render
+        if (storedUser && !useAuthStore.getState().user) {
+          setUserRef.current(storedUser as unknown as Profile)
+        }
+
         if (!isMounted) return
 
         logger.debug('Auth', 'Token found, fetching profile')
@@ -112,8 +135,9 @@ export function useAuth() {
         if (!isMounted) return
 
         if (!profile) {
-          logger.debug('Auth', 'No profile found, redirecting to login')
-          routerRef.current.push(ROUTES.login)
+          // Profile fetch failed (network error, API down) — don't redirect to login.
+          // The token is valid; retry will happen on next page load.
+          logger.debug('Auth', 'Profile fetch failed, keeping token')
           return
         }
 
@@ -193,6 +217,7 @@ export function useAuth() {
     _authInitComplete = false
 
     clearAppStorage()
+    clearStoredUser()
 
     try {
       await apiClient('/api/auth/logout', { method: 'POST' })

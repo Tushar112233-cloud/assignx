@@ -32,6 +32,7 @@ import {
   IconSpeakerphone,
   IconFileText,
   IconTargetArrow,
+  IconFileCheck,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
@@ -131,6 +132,7 @@ const sections: NavSection[] = [
     label: "Content & Tools",
     icon: IconTools,
     items: [
+      { title: "Applications", url: "/applications", icon: IconFileCheck },
       { title: "Moderation", url: "/moderation", icon: IconEye },
       { title: "Banners", url: "/banners", icon: IconPhoto },
       { title: "Colleges", url: "/colleges", icon: IconSchool },

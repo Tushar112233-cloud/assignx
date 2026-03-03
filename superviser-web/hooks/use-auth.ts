@@ -119,6 +119,7 @@ export function useAuth() {
    */
   useEffect(() => {
     if (_authInitStarted) {
+      // If store was rehydrated with cached user, ensure loading is cleared
       if (isLoading && user) {
         setLoadingRef.current(false)
       }
@@ -129,7 +130,13 @@ export function useAuth() {
     let isMounted = true
 
     const initAuth = async () => {
-      setLoadingRef.current(true)
+      // Only set loading=true if we don't already have cached user data from rehydration.
+      // If the Zustand store was rehydrated with a cached user, onRehydrateStorage already
+      // set loading=false — re-setting it to true causes a blank flash.
+      const currentState = useAuthStore.getState()
+      if (!currentState.user) {
+        setLoadingRef.current(true)
+      }
 
       try {
         const token = getAccessToken()

@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
 
 /** Public routes that don't require authentication */
-const PUBLIC_ROUTES = ['/login', '/register', '/pending', '/auth/session']
+const PUBLIC_ROUTES = ['/login', '/register', '/pending', '/auth/session', '/auth/verify']
 
 /** Activation routes that require auth but not full activation */
 const ACTIVATION_ROUTES = ['/training', '/quiz', '/bank-details', '/profile-setup', '/pending-approval']

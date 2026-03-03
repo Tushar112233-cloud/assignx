@@ -19,6 +19,7 @@ import adminRoutes from './admin.routes';
 import paymentRoutes from './payment.routes';
 import resourcesRoutes from './resources.routes';
 import connectRoutes from './connect.routes';
+import accessRequestRoutes from './access-request.routes';
 
 const router = Router();
 
@@ -44,5 +45,6 @@ router.use('/admin', adminRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/resources', resourcesRoutes);
 router.use('/connect', connectRoutes);
+router.use('/access-requests', accessRequestRoutes);
 
 export default router;

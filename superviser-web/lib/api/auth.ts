@@ -67,25 +67,55 @@ export function isDevBypassEmail(email: string): boolean {
  * Direct login without OTP for dev bypass emails.
  */
 export async function devLogin(email: string): Promise<AuthTokens> {
-  const data = await apiFetch<AuthTokens>("/api/auth/dev-login", {
+  const data = await apiFetch<{ accessToken: string; refreshToken: string; user?: AuthUser; profile?: AuthUser }>("/api/auth/dev-login", {
     method: "POST",
     body: JSON.stringify({ email, role: "supervisor" }),
   })
 
   setTokens(data.accessToken, data.refreshToken)
-  storeUser(data.user)
+  const user = data.user || data.profile
+  if (user) storeUser(user)
 
-  return data
+  return { accessToken: data.accessToken, refreshToken: data.refreshToken, user: user! }
 }
 
 /**
  * Send a magic link email for passwordless sign-in.
+ * Returns sessionId used to poll for verification status.
  */
-export async function sendMagicLink(email: string): Promise<{ success: boolean }> {
+export async function sendMagicLink(email: string): Promise<{ success: boolean; sessionId: string }> {
+  const callbackUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/auth/verify`
+    : `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/verify`
   return apiFetch("/api/auth/magic-link", {
     method: "POST",
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, role: "supervisor", callbackUrl }),
   })
+}
+
+/**
+ * Poll for magic link verification status.
+ * Returns JWT tokens once the user clicks the email link.
+ */
+export async function checkMagicLinkStatus(
+  email: string,
+  sessionId: string
+): Promise<{ status: 'pending' | 'verified'; accessToken?: string; refreshToken?: string; user?: AuthUser; profile?: AuthUser }> {
+  const data = await apiFetch<{ status: 'pending' | 'verified'; accessToken?: string; refreshToken?: string; user?: AuthUser; profile?: AuthUser }>(
+    "/api/auth/magic-link/check",
+    {
+      method: "POST",
+      body: JSON.stringify({ email, sessionId }),
+    }
+  )
+
+  if (data.status === 'verified' && data.accessToken && data.refreshToken) {
+    setTokens(data.accessToken, data.refreshToken)
+    const user = data.user || data.profile
+    if (user) storeUser(user)
+  }
+
+  return data
 }
 
 /**
@@ -96,16 +126,19 @@ export async function verifyOTP(
   email: string,
   otp: string
 ): Promise<AuthTokens> {
-  const data = await apiFetch<AuthTokens>("/api/auth/verify", {
+  const data = await apiFetch<{ accessToken: string; refreshToken: string; user?: AuthUser; profile?: AuthUser }>("/api/auth/verify", {
     method: "POST",
     body: JSON.stringify({ email, otp }),
   })
 
-  // Store tokens + user
+  // Store tokens
   setTokens(data.accessToken, data.refreshToken)
-  storeUser(data.user)
 
-  return data
+  // API returns `profile` not `user` — handle both
+  const user = data.user || data.profile
+  if (user) storeUser(user)
+
+  return { accessToken: data.accessToken, refreshToken: data.refreshToken, user: user! }
 }
 
 /**

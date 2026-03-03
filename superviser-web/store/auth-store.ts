@@ -66,7 +66,17 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       partialize: (state) => ({
         isOnboarded: state.isOnboarded,
+        user: state.user,
+        supervisor: state.supervisor,
+        isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) return
+        // If cached user data exists, stop loading immediately so pages can render
+        if (state && state.user) {
+          state.setLoading(false)
+        }
+      },
     }
   )
 )

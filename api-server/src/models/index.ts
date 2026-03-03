@@ -37,3 +37,4 @@ export { LearningResource } from './LearningResource';
 export { FormatTemplate } from './FormatTemplate';
 export { ReferenceStyle } from './ReferenceStyle';
 export { AuditLog } from './AuditLog';
+export { AccessRequest } from './AccessRequest';

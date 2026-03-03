@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
-import { sendMagicLink, verifyOTP, refreshTokens, logout } from '../services/auth.service';
+import { sendMagicLink, verifyOTP, verifyMagicLink, checkMagicLinkStatus, refreshTokens, logout } from '../services/auth.service';
 import { generateAccessToken, generateRefreshToken } from '../services/jwt.service';
 import { authenticate } from '../middleware/auth';
 import { authLimiter } from '../middleware/rateLimiter';
@@ -184,9 +184,33 @@ router.get('/access-request', async (req: Request, res: Response, next: NextFunc
 // POST /auth/magic-link
 router.post('/magic-link', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email } = req.body;
+    const { email, role, callbackUrl } = req.body;
     if (!email) throw new AppError('Email is required', 400);
-    const result = await sendMagicLink(email.toLowerCase().trim());
+    const result = await sendMagicLink(email.toLowerCase().trim(), role, callbackUrl);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/magic-link/verify - Mark magic link as verified (called from email link page)
+router.post('/magic-link/verify', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, token } = req.body;
+    if (!email || !token) throw new AppError('Email and token are required', 400);
+    const result = await verifyMagicLink(email.toLowerCase().trim(), token);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/magic-link/check - Poll verification status (called from original login tab)
+router.post('/magic-link/check', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, sessionId } = req.body;
+    if (!email || !sessionId) throw new AppError('Email and sessionId are required', 400);
+    const result = await checkMagicLinkStatus(email.toLowerCase().trim(), sessionId);
     res.json(result);
   } catch (err) {
     next(err);

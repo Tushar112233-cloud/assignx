@@ -6,6 +6,7 @@ import {
   Profile, Project, Doer, Supervisor, Wallet, WalletTransaction,
   SupportTicket, Notification, Banner, FAQ, LearningResource,
   TrainingModule, College, AppSetting, AuditLog, CommunityPost,
+  AccessRequest,
 } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
@@ -786,6 +787,107 @@ router.post('/crm/moderate-post', async (req: Request, res: Response, next: Next
     await CommunityPost.findByIdAndUpdate(postId, update);
     res.json({ success: true });
   } catch (err) { next(err); }
+});
+
+// GET /admin/access-requests
+router.get('/access-requests', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { page = '1', limit = '20', status, role, search } = req.query;
+    const filter: Record<string, unknown> = {};
+    if (status) filter.status = status;
+    if (role) filter.role = role;
+    if (search) {
+      filter.$or = [
+        { fullName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const [requests, total] = await Promise.all([
+      AccessRequest.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+      AccessRequest.countDocuments(filter),
+    ]);
+
+    res.json({ requests, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/access-requests/:id/approve
+router.post('/access-requests/:id/approve', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const request = await AccessRequest.findByIdAndUpdate(
+      req.params.id,
+      { status: 'approved', reviewedAt: new Date(), reviewedBy: req.user!.id },
+      { new: true }
+    );
+    if (!request) throw new AppError('Access request not found', 404);
+
+    // Create profile + role record so they can log in
+    let profile = await Profile.findOne({ email: request.email });
+    if (!profile) {
+      profile = await Profile.create({
+        email: request.email,
+        fullName: request.fullName,
+        userType: request.role,
+        onboardingCompleted: false,
+      });
+    }
+
+    if (request.role === 'doer' && !(await Doer.findOne({ profileId: profile._id }))) {
+      const meta = request.metadata || {};
+      await Doer.create({
+        profileId: profile._id,
+        isAccessGranted: true,
+        isActivated: true,
+        activatedAt: new Date(),
+        qualification: meta.qualification,
+        experienceLevel: meta.experienceLevel,
+        bio: meta.bio || '',
+        bankDetails: {
+          bankName: meta.bankName || '',
+          accountNumber: meta.accountNumber || '',
+          ifscCode: meta.ifscCode || '',
+          upiId: meta.upiId || '',
+        },
+      });
+    }
+
+    if (request.role === 'supervisor' && !(await Supervisor.findOne({ profileId: profile._id }))) {
+      await Supervisor.create({
+        profileId: profile._id,
+        isAccessGranted: true,
+      });
+    }
+
+    await Notification.create({
+      userId: profile._id,
+      type: 'access_approved',
+      title: 'Application Approved',
+      message: `Your ${request.role} application has been approved!`,
+    });
+
+    res.json({ request });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/access-requests/:id/reject
+router.post('/access-requests/:id/reject', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const request = await AccessRequest.findByIdAndUpdate(
+      req.params.id,
+      { status: 'rejected', reviewedAt: new Date(), reviewedBy: req.user!.id },
+      { new: true }
+    );
+    if (!request) throw new AppError('Access request not found', 404);
+    res.json({ request });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // GET /admin/audit-logs

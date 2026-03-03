@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Loader2, Mail, ArrowRight, CheckCircle2, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { sendMagicLink, devLogin, isDevBypassEmail } from '@/lib/api/auth'
+import { sendMagicLink, checkMagicLinkStatus, devLogin, isDevBypassEmail } from '@/lib/api/auth'
 import { apiClient } from '@/lib/api/client'
 
 export default function LoginPage() {
@@ -14,7 +14,10 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [sent, setSent] = useState(false)
+  const [sessionId, setSessionId] = useState('')
+  const [verified, setVerified] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [resendCooldown, setResendCooldown] = useState(0)
 
   useEffect(() => {
     const err = searchParams.get('error')
@@ -22,6 +25,68 @@ export default function LoginPage() {
       setError('The sign-in link was invalid or has expired. Please request a new one.')
     }
   }, [searchParams])
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [resendCooldown])
+
+  // Poll for magic link verification
+  useEffect(() => {
+    if (!sent || !sessionId || verified) return
+
+    const interval = setInterval(async () => {
+      try {
+        const result = await checkMagicLinkStatus(email.trim().toLowerCase(), sessionId)
+        if (result.status === 'verified') {
+          setVerified(true)
+          clearInterval(interval)
+          window.location.href = '/dashboard'
+        }
+      } catch {
+        // Token expired or not found — stop polling
+        clearInterval(interval)
+      }
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [sent, sessionId, email, verified])
+
+  const handleResend = useCallback(async () => {
+    if (resendCooldown > 0) return
+    try {
+      const result = await sendMagicLink(email.trim().toLowerCase(), 'doer')
+      setSessionId(result.sessionId)
+      setVerified(false)
+      setResendCooldown(30)
+    } catch {
+      setError('Failed to resend. Please try again.')
+    }
+  }, [email, resendCooldown])
+
+  const handleLogin = useCallback(async () => {
+    // If already verified by polling, just redirect
+    if (verified) {
+      window.location.href = '/dashboard'
+      return
+    }
+    try {
+      setIsLoading(true)
+      setError(null)
+      const result = await checkMagicLinkStatus(email.trim().toLowerCase(), sessionId)
+      if (result.status === 'verified') {
+        setVerified(true)
+        window.location.href = '/dashboard'
+      } else {
+        setError('Please click the link in your email first.')
+      }
+    } catch {
+      setError('Please click the link in your email first, then try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [email, sessionId, verified])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,7 +129,8 @@ export default function LoginPage() {
       }
 
       // Send magic link via API
-      await sendMagicLink(trimmed, 'doer')
+      const result = await sendMagicLink(trimmed, 'doer')
+      setSessionId(result.sessionId)
       setSent(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
@@ -92,22 +158,37 @@ export default function LoginPage() {
           <div className="relative inline-flex">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#5A7CFF]/15 to-teal-500/15 flex items-center justify-center">
               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#5A7CFF]/25 to-teal-500/25 flex items-center justify-center">
-                <Inbox className="h-7 w-7 text-[#5A7CFF]" />
+                {verified ? (
+                  <CheckCircle2 className="h-7 w-7 text-emerald-500" />
+                ) : (
+                  <Inbox className="h-7 w-7 text-[#5A7CFF]" />
+                )}
               </div>
             </div>
-            <span className="absolute -top-1 -right-1 flex h-6 w-6">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex rounded-full h-6 w-6 bg-emerald-400 items-center justify-center">
-                <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+            {!verified && (
+              <span className="absolute -top-1 -right-1 flex h-6 w-6">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#5A7CFF] opacity-40" />
+                <span className="relative inline-flex rounded-full h-6 w-6 bg-[#5A7CFF]/20 items-center justify-center">
+                  <Loader2 className="h-3.5 w-3.5 text-[#5A7CFF] animate-spin" />
+                </span>
               </span>
-            </span>
+            )}
+            {verified && (
+              <span className="absolute -top-1 -right-1 flex h-6 w-6">
+                <span className="relative inline-flex rounded-full h-6 w-6 bg-emerald-400 items-center justify-center">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                </span>
+              </span>
+            )}
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-              Check your inbox
+              {verified ? 'Email verified!' : 'Check your inbox'}
             </h1>
             <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-              We sent a sign-in link to
+              {verified
+                ? 'You are now verified. Click Login to continue.'
+                : 'We sent a verification link to your email'}
             </p>
           </div>
         </div>
@@ -117,36 +198,85 @@ export default function LoginPage() {
             <Mail className="h-4 w-4 text-[#5A7CFF]" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Sign-in link sent to</p>
+            <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Verification link sent to</p>
             <p className="text-sm font-semibold text-slate-800 truncate">{email}</p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-3 shadow-sm">
-          <p className="text-sm font-semibold text-slate-700">What to do next</p>
-          {[
-            'Open the email from AssignX',
-            'Click the "Sign in" link inside',
-            "You'll be logged in automatically",
-          ].map((step, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="w-5 h-5 rounded-full bg-[#5A7CFF]/10 flex items-center justify-center shrink-0 text-[11px] font-bold text-[#5A7CFF]">
-                {i + 1}
+        {!verified && (
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-3 shadow-sm">
+            <p className="text-sm font-semibold text-slate-700">What to do next</p>
+            {[
+              'Open the email from AssignX',
+              'Click the verification link',
+              'Come back here and click Login',
+            ].map((step, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-[#5A7CFF]/10 flex items-center justify-center shrink-0 text-[11px] font-bold text-[#5A7CFF]">
+                  {i + 1}
+                </div>
+                <p className="text-sm text-slate-600">{step}</p>
               </div>
-              <p className="text-sm text-slate-600">{step}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        <p className="text-center text-xs text-slate-400">
-          Wrong email?{' '}
-          <button
-            onClick={() => { setSent(false); setEmail('') }}
-            className="text-[#5A7CFF] font-semibold hover:underline underline-offset-4"
+        {!verified && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#5A7CFF]/5 border border-[#5A7CFF]/10">
+            <Loader2 className="h-4 w-4 text-[#5A7CFF] animate-spin shrink-0" />
+            <p className="text-xs text-slate-500">Waiting for email verification...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        <Button
+          type="button"
+          size="lg"
+          disabled={isLoading}
+          onClick={handleLogin}
+          className="w-full h-11 text-sm font-semibold rounded-xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white border-0 shadow-[0_8px_24px_rgba(90,124,255,0.30)] hover:shadow-[0_12px_32px_rgba(90,124,255,0.40)] hover:opacity-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Logging in...
+            </>
+          ) : (
+            <>
+              Login
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </>
+          )}
+        </Button>
+
+        <div className="flex flex-col items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={resendCooldown > 0}
+            onClick={handleResend}
+            className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold"
           >
-            Try again
-          </button>
-        </p>
+            {resendCooldown > 0
+              ? `Resend in ${resendCooldown}s`
+              : 'Resend email'}
+          </Button>
+          <p className="text-xs text-slate-400">
+            Wrong email?{' '}
+            <button
+              onClick={() => { setSent(false); setEmail(''); setSessionId(''); setVerified(false) }}
+              className="text-[#5A7CFF] font-semibold hover:underline underline-offset-4"
+            >
+              Try again
+            </button>
+          </p>
+        </div>
       </div>
     )
   }
