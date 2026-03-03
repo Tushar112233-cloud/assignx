@@ -1,11 +1,11 @@
-import { ComponentPropsWithoutRef } from "react"
+import { ComponentPropsWithoutRef, ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
 interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {
   className?: string
   reverse?: boolean
   pauseOnHover?: boolean
-  children: React.ReactNode
+  children: ReactNode
   vertical?: boolean
   repeat?: number
 }
