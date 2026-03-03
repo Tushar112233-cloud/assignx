@@ -217,7 +217,7 @@ export function HeroSection() {
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--sv-accent-lighter)] border border-[var(--sv-border-accent)] text-sm font-medium text-[var(--sv-accent)]">
               <motion.span
                 className="w-2 h-2 rounded-full bg-[var(--sv-accent)]"
-                animate={{ scale: [1, 1.5, 1] }}
+                animate={prefersReducedMotion ? {} : { scale: [1, 1.5, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
               Verified Expert Network
@@ -311,7 +311,7 @@ export function HeroSection() {
 
           {/* Earnings badge */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.9, type: "spring", stiffness: 200 }}
             className="absolute -bottom-4 right-4 bg-white dark:bg-[var(--sv-bg-dark-surface)] border border-[var(--sv-border)] rounded-2xl px-4 py-3 shadow-lg flex items-center gap-3 z-20"
@@ -331,7 +331,7 @@ export function HeroSection() {
 
           {/* Verified badge */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1.1, type: "spring", stiffness: 200 }}
             className="absolute -top-2 left-4 bg-white dark:bg-[var(--sv-bg-dark-surface)] border border-[var(--sv-border)] rounded-2xl px-3 py-2 shadow-lg flex items-center gap-2 z-20"
