@@ -59,7 +59,7 @@ export const ProPostCard = memo(function ProPostCard({
   );
 
   const categoryConfig = getProNetworkCategoryConfig(post.category);
-  const hasImage = post.images.length > 0;
+  const hasImage = (post.images ?? []).length > 0;
 
   return (
     <Link href={`/pro-network/${post.id}`} className="block group">
@@ -126,7 +126,7 @@ export const ProPostCard = memo(function ProPostCard({
                 {categoryConfig.label}
               </Badge>
             )}
-            {post.tags.slice(0, 2).map((tag) => (
+            {(post.tags ?? []).slice(0, 2).map((tag) => (
               <Badge
                 key={tag}
                 variant="secondary"
@@ -135,9 +135,9 @@ export const ProPostCard = memo(function ProPostCard({
                 {tag}
               </Badge>
             ))}
-            {post.tags.length > 2 && (
+            {(post.tags ?? []).length > 2 && (
               <span className="text-xs text-muted-foreground">
-                +{post.tags.length - 2}
+                +{(post.tags ?? []).length - 2}
               </span>
             )}
           </div>

@@ -81,11 +81,9 @@ export const walletService = {
   /**
    * Gets the user's wallet information.
    */
-  async getWallet(profileId: string): Promise<Wallet | null> {
+  async getWallet(_profileId: string): Promise<Wallet | null> {
     try {
-      const result = await apiClient<{ wallet: Wallet }>(
-        `/api/wallets?profileId=${profileId}&walletType=user`
-      )
+      const result = await apiClient<{ wallet: Wallet }>('/api/wallets/me')
       return result.wallet || null
     } catch {
       return null
@@ -171,6 +169,7 @@ export const walletService = {
     projectId: string,
     amount: number
   ): Promise<RazorpayOrder> {
+    if (!amount || amount <= 0) throw new Error('Invalid amount')
     const shortId = projectId.substring(0, 8)
     const shortTime = Date.now().toString().slice(-10)
     const receipt = `pj_${shortId}_${shortTime}`
