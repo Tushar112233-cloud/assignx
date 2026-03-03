@@ -149,7 +149,8 @@ router.post('/rooms/project/:projectId', authenticate, async (req: Request, res:
       }
     }
 
-    res.json({ room });
+    const obj = room.toObject();
+    res.json({ room: { ...obj, id: obj._id.toString() } });
   } catch (err) {
     next(err);
   }
