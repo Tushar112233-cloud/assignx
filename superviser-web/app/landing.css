@@ -82,6 +82,7 @@ body:has(.sv-landing)::-webkit-scrollbar {
   .sv-text-gradient {
     background-clip: text;
     -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     color: transparent;
     background-image: linear-gradient(
       135deg,
