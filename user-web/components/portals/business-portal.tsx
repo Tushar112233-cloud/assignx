@@ -231,7 +231,7 @@ function BusinessPortalHero() {
         <motion.div variants={heroFadeInUp} className="flex flex-wrap gap-2.5 mb-6">
           <LiveStatsBadge value={1240} label="Active Investors" icon={TrendingUp} color="amber" />
           <LiveStatsBadge value={89} label="Funded Startups" icon={Building2} color="blue" autoIncrement={false} />
-          <LiveStatsBadge value={4.2} label="Avg Funding ($M)" icon={DollarSign} color="emerald" autoIncrement={false} />
+          <LiveStatsBadge value={4} label="Avg Raise ($M)" icon={DollarSign} color="emerald" autoIncrement={false} />
         </motion.div>
 
         {/* Headline */}
