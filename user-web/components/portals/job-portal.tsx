@@ -281,32 +281,17 @@ function JobCard({ job }: { job: JobListing }) {
         theme.hoverShadow
       )}
     >
-      {/* Company avatar + type badge */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-3 min-w-0">
-          <div
-            className={cn(
-              "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 text-white font-bold text-sm shadow-sm",
-              theme.avatar
-            )}
-          >
-            {companyInitial}
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-foreground truncate">{job.company}</p>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-              <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
-              <span className="truncate">{job.location}</span>
-            </p>
-          </div>
+      {/* Avatar row: avatar initial + type pill + remote badge */}
+      <div className="flex items-center justify-between gap-2">
+        <div
+          className={cn(
+            "h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm shadow-sm",
+            theme.avatar
+          )}
+        >
+          {companyInitial}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          {job.isRemote && (
-            <span className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-              <Wifi className="h-2.5 w-2.5" aria-hidden="true" />
-              Remote
-            </span>
-          )}
           <span
             className={cn(
               "px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border border-border/30",
@@ -316,6 +301,12 @@ function JobCard({ job }: { job: JobListing }) {
           >
             {job.type}
           </span>
+          {job.isRemote && (
+            <span className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+              <Wifi className="h-2.5 w-2.5" aria-hidden="true" />
+              Remote
+            </span>
+          )}
         </div>
       </div>
 
@@ -328,6 +319,15 @@ function JobCard({ job }: { job: JobListing }) {
       >
         {job.title}
       </h3>
+
+      {/* Company · Location */}
+      <p className="text-xs text-muted-foreground flex items-center gap-1">
+        <Building2 className="h-3 w-3 shrink-0" aria-hidden="true" />
+        <span className="truncate">{job.company}</span>
+        <span className="mx-0.5">·</span>
+        <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
+        <span className="truncate">{job.location}</span>
+      </p>
 
       {/* Salary */}
       <p className={cn("text-xs font-semibold flex items-center gap-1", theme.salary)}>
