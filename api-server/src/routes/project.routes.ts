@@ -1,7 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
-import { Project, Notification } from '../models';
+import { Project, Notification, Supervisor } from '../models';
 import { uploadBufferToCloudinary } from '../services/upload.service';
 import { AppError } from '../middleware/errorHandler';
 import multer from 'multer';
@@ -12,20 +13,46 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 
 // GET /projects
 router.get('/', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { page = '1', limit = '20', status, search } = req.query;
+    const { page = '1', limit = '20', status, search, unassigned } = req.query;
     const filter: Record<string, unknown> = {};
 
-    // Filter by role
-    if (req.user!.role === 'user') {
+    // Filter by role — unknown roles get an empty result set (not all projects)
+    // user-web users can have role 'user', 'student', or 'professional'
+    if (['user', 'student', 'professional'].includes(req.user!.role)) {
       filter.userId = req.user!.id;
     } else if (req.user!.role === 'doer') {
-      filter.doerId = req.user!.id;
+      if (req.query.pool === 'true') {
+        // Open pool: projects sent to pool by supervisor, not yet claimed by any doer
+        filter.isOpenPool = true;
+        filter.doerId = { $exists: false };
+        filter.status = { $in: ['quoted', 'paid'] };
+      } else {
+        filter.doerId = req.user!.id;
+      }
     } else if (req.user!.role === 'supervisor') {
-      filter.supervisorId = req.user!.id;
+      if (unassigned === 'true') {
+        // Supervisor requesting unassigned projects (global pool to claim)
+        filter.supervisorId = { $exists: false };
+        const supervisorDoc = await Supervisor.findOne({ profileId: req.user!.id }).select('subjects');
+        if (supervisorDoc?.subjects?.length) {
+          filter.subjectId = { $in: supervisorDoc.subjects.map(s => s.subjectId) };
+        } else {
+          return res.json({ projects: [], total: 0, page: 1, totalPages: 0 });
+        }
+      } else {
+        filter.supervisorId = req.user!.id;
+      }
+    } else if (req.user!.role !== 'admin') {
+      // Unrecognized role — return empty to prevent data leakage
+      return res.json({ projects: [], total: 0, page: 1, totalPages: 0 });
     }
     // admin sees all
 
-    if (status) filter.status = status;
+    if (status) {
+      // Support comma-separated status values (e.g. "submitted,analyzing")
+      const statuses = (status as string).split(',').map((s: string) => s.trim()).filter(Boolean);
+      filter.status = statuses.length === 1 ? statuses[0] : { $in: statuses };
+    }
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -61,11 +88,17 @@ router.get('/', authenticate, async (req: Request, res: Response, next: NextFunc
         page_count: obj.pageCount,
         progress_percentage: obj.progressPercentage,
         user_quote: obj.pricing?.userQuote,
+        final_quote: obj.pricing?.finalQuote,
+        doer_payout: obj.pricing?.doerPayout || 0,
+        supervisor_commission: obj.pricing?.supervisorCommission || 0,
+        status_updated_at: obj.statusUpdatedAt,
+        doer_assigned_at: obj.doerAssignedAt,
         created_at: obj.createdAt,
         updated_at: obj.updatedAt,
         delivered_at: obj.delivery?.deliveredAt,
         completed_at: obj.delivery?.completedAt,
         subject: obj.subjectId && typeof obj.subjectId === 'object' ? { id: (obj.subjectId as any)._id, name: (obj.subjectId as any).name } : null,
+        is_open_pool: obj.isOpenPool || false,
       };
     });
     res.json({ projects: normalizedProjects, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) });
@@ -88,6 +121,10 @@ router.post('/', authenticate, async (req: Request, res: Response, next: NextFun
     }
     if (body.deadline) {
       body.originalDeadline = body.deadline;
+    }
+    // Cast subjectId to ObjectId so $in queries work correctly
+    if (body.subjectId && typeof body.subjectId === 'string') {
+      body.subjectId = new mongoose.Types.ObjectId(body.subjectId);
     }
 
     const project = await Project.create({
@@ -121,6 +158,20 @@ router.get('/:id', authenticate, async (req: Request, res: Response, next: NextF
       .populate('referenceStyleId', 'name');
 
     if (!project) throw new AppError('Project not found', 404);
+
+    // Ownership check — only participants and admins can view a project
+    const uid = req.user!.id;
+    const resolveId = (field: any): string | undefined => {
+      if (!field) return undefined;
+      // Handles both raw ObjectId (no ._id) and populated documents (have ._id)
+      return (field._id ?? field).toString();
+    };
+    const isParticipant =
+      resolveId(project.userId) === uid ||
+      resolveId(project.supervisorId) === uid ||
+      resolveId(project.doerId) === uid ||
+      req.user!.role === 'admin';
+    if (!isParticipant) throw new AppError('Forbidden', 403);
 
     // Normalize fields for frontend compatibility
     const obj = project.toObject();
@@ -166,6 +217,7 @@ router.get('/:id', authenticate, async (req: Request, res: Response, next: NextF
       doer_assigned_at: obj.doerAssignedAt,
       doer_payout: obj.pricing?.doerPayout || 0,
       supervisor_commission: obj.pricing?.supervisorCommission || 0,
+      is_open_pool: obj.isOpenPool || false,
       subject: obj.subjectId && typeof obj.subjectId === 'object' ? { id: (obj.subjectId as any)._id, name: (obj.subjectId as any).name } : null,
       reference_style: obj.referenceStyleId && typeof obj.referenceStyleId === 'object' ? { id: (obj.referenceStyleId as any)._id, name: (obj.referenceStyleId as any).name } : null,
       files: (obj.files || []).map((f: any) => ({
@@ -177,17 +229,25 @@ router.get('/:id', authenticate, async (req: Request, res: Response, next: NextF
         file_category: f.fileCategory,
         created_at: f.createdAt,
       })),
-      deliverables: (obj.deliverables || []).map((d: any) => ({
-        id: d._id,
-        file_name: d.fileName,
-        file_url: d.fileUrl,
-        file_type: d.fileType,
-        file_size_bytes: d.fileSizeBytes,
-        version: d.version,
-        qc_status: d.qcStatus,
-        is_final: d.version === (obj.deliverables || []).length,
-        created_at: d.createdAt,
-      })),
+      deliverables: (obj.deliverables || []).map((d: any) => {
+        const bytes = d.fileSizeBytes || 0;
+        const sizeStr = bytes > 1024 * 1024
+          ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+          : bytes > 1024
+          ? `${(bytes / 1024).toFixed(0)} KB`
+          : `${bytes} B`;
+        return {
+          id: d._id,
+          name: d.fileName,
+          url: d.fileUrl,
+          file_type: d.fileType,
+          size: sizeStr,
+          version: d.version,
+          qc_status: d.qcStatus,
+          isFinal: d.version === (obj.deliverables || []).length,
+          uploadedAt: d.createdAt,
+        };
+      }),
     };
 
     res.json({ project: normalized });
@@ -199,15 +259,36 @@ router.get('/:id', authenticate, async (req: Request, res: Response, next: NextF
 // PUT /projects/:id
 router.put('/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const project = await Project.findById(req.params.id);
     if (!project) throw new AppError('Project not found', 404);
 
-    const io = req.app.get('io');
-    if (io && project.userId) {
-      io.to(`user:${project.userId}`).emit('project:updated', { projectId: project._id });
+    const uid = req.user!.id;
+    const role = req.user!.role;
+    const isUser = project.userId?.toString() === uid;
+    const isSupervisor = project.supervisorId?.toString() === uid;
+    const isAdmin = role === 'admin';
+
+    if (!isUser && !isSupervisor && !isAdmin) throw new AppError('Forbidden', 403);
+
+    // Role-based field allowlist — prevent privilege escalation via body params
+    const allowedByUser = ['title', 'description', 'requirements', 'budget', 'deadline', 'wordCount', 'pageCount', 'specificInstructions'];
+    const allowedBySupervisor = ['deadline', 'notes', 'liveDocumentUrl', 'progressPercentage'];
+    const allowedByAdmin = Object.keys(req.body);
+
+    const allowedFields = isAdmin ? allowedByAdmin : isSupervisor ? allowedBySupervisor : allowedByUser;
+    const updates: Record<string, unknown> = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
     }
 
-    res.json({ project });
+    const updated = await Project.findByIdAndUpdate(req.params.id, updates, { new: true });
+
+    const io = req.app.get('io');
+    if (io && updated?.userId) {
+      io.to(`user:${updated.userId}`).emit('project:updated', { projectId: updated._id });
+    }
+
+    res.json({ project: updated });
   } catch (err) {
     next(err);
   }
@@ -216,7 +297,16 @@ router.put('/:id', authenticate, async (req: Request, res: Response, next: NextF
 // PUT /projects/:id/status
 router.put('/:id/status', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Only doers, supervisors, and admins can change project status via this endpoint.
+    // Regular users (clients) approve via PUT /projects/:id/approve instead.
+    if (!['doer', 'supervisor', 'admin'].includes(req.user!.role)) {
+      throw new AppError('Insufficient permissions to change project status', 403);
+    }
     const { status, notes } = req.body;
+    const VALID_STATUSES = ['draft', 'submitted', 'quoted', 'paid', 'assigned', 'in_progress', 'delivered', 'revision_requested', 'approved', 'completed', 'cancelled'];
+    if (!VALID_STATUSES.includes(status)) {
+      throw new AppError(`Invalid status value: ${status}`, 400);
+    }
     const project = await Project.findById(req.params.id);
     if (!project) throw new AppError('Project not found', 404);
 
@@ -246,7 +336,131 @@ router.put('/:id/status', authenticate, async (req: Request, res: Response, next
       });
     }
 
+    // Create persistent notifications for key status transitions
+    const statusNotifications: { userId: any; type: string; title: string; message: string; targetRole?: string }[] = [];
+    if (status === 'delivered') {
+      if (project.userId) {
+        statusNotifications.push({
+          userId: project.userId,
+          type: 'project_delivered',
+          title: 'Project Delivered',
+          message: `Your project "${project.title}" has been delivered and is ready for review`,
+        });
+      }
+      if (project.supervisorId) {
+        statusNotifications.push({
+          userId: project.supervisorId,
+          type: 'project_delivered',
+          title: 'Project Delivered',
+          message: `Project "${project.title}" has been delivered by the doer`,
+          targetRole: 'supervisor',
+        });
+      }
+    } else if (status === 'in_progress') {
+      if (project.userId) {
+        statusNotifications.push({
+          userId: project.userId,
+          type: 'project_started',
+          title: 'Work Started',
+          message: `Work has started on your project "${project.title}"`,
+        });
+      }
+    } else if (status === 'revision_requested') {
+      if (project.doerId) {
+        statusNotifications.push({
+          userId: project.doerId,
+          type: 'revision_requested',
+          title: 'Revision Requested',
+          message: `A revision has been requested for project "${project.title}"`,
+          targetRole: 'doer',
+        });
+      }
+    }
+
+    for (const n of statusNotifications) {
+      const notification = await Notification.create({
+        userId: n.userId,
+        type: n.type,
+        title: n.title,
+        message: n.message,
+        data: { projectId: project._id },
+        ...(n.targetRole ? { targetRole: n.targetRole } : {}),
+      });
+      if (io) io.to(`user:${n.userId}`).emit('notification:new', notification);
+    }
+
     res.json({ project });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /projects/:id/files
+router.get('/:id/files', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const project = await Project.findById(req.params.id).select('files');
+    if (!project) throw new AppError('Project not found', 404);
+    const files = (project.files || []).map((f: any) => ({
+      id: f._id,
+      file_name: f.fileName,
+      file_url: f.fileUrl,
+      file_type: f.fileType,
+      file_size_bytes: f.fileSizeBytes,
+      file_category: f.fileCategory,
+      created_at: f.createdAt,
+    }));
+    res.json({ files });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /projects/:id/deliverables
+router.get('/:id/deliverables', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const project = await Project.findById(req.params.id).select('deliverables');
+    if (!project) throw new AppError('Project not found', 404);
+    const deliverables = (project.deliverables || []).map((d: any) => {
+      const bytes = d.fileSizeBytes || 0;
+      const sizeStr = bytes > 1024 * 1024
+        ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+        : bytes > 1024
+        ? `${(bytes / 1024).toFixed(0)} KB`
+        : `${bytes} B`;
+      return {
+        id: d._id,
+        name: d.fileName,
+        url: d.fileUrl,
+        file_type: d.fileType,
+        size: sizeStr,
+        version: d.version,
+        qc_status: d.qcStatus,
+        isFinal: d.version === (project.deliverables || []).length,
+        uploadedAt: d.createdAt,
+      };
+    });
+    res.json({ deliverables });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /projects/:id/revisions
+router.get('/:id/revisions', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const project = await Project.findById(req.params.id).select('revisions');
+    if (!project) throw new AppError('Project not found', 404);
+    const revisions = (project.revisions || []).map((r: any) => ({
+      id: r._id,
+      revision_number: r.revisionNumber,
+      feedback: r.feedback,
+      specific_changes: r.specificChanges,
+      response_notes: r.responseNotes,
+      status: r.status,
+      created_at: r.createdAt,
+      completed_at: r.completedAt,
+    }));
+    res.json({ revisions });
   } catch (err) {
     next(err);
   }
@@ -355,7 +569,11 @@ router.get('/:id/timeline', authenticate, async (req: Request, res: Response, ne
   try {
     const project = await Project.findById(req.params.id).select('statusHistory');
     if (!project) throw new AppError('Project not found', 404);
-    res.json({ timeline: project.statusHistory });
+    const timeline = project.statusHistory.map((s: any) => {
+      const obj = s.toObject ? s.toObject() : s;
+      return { ...obj, id: obj._id?.toString() };
+    });
+    res.json({ timeline });
   } catch (err) {
     next(err);
   }
@@ -365,21 +583,52 @@ router.get('/:id/timeline', authenticate, async (req: Request, res: Response, ne
 router.put('/:id/assign-doer', authenticate, requireRole('supervisor', 'admin'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { doerId } = req.body;
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { doerId, status: 'assigned', statusUpdatedAt: new Date() },
-      { new: true }
-    );
+    if (!doerId) throw new AppError('doerId is required', 400);
+
+    const project = await Project.findById(req.params.id);
     if (!project) throw new AppError('Project not found', 404);
+    if (project.status !== 'paid') throw new AppError('Cannot assign a doer until the client has paid', 403);
+
+    const oldStatus = project.status;
+    project.doerId = doerId;
+    project.status = 'assigned';
+    project.statusUpdatedAt = new Date();
+    project.doerAssignedAt = new Date();
+    project.statusHistory.push({
+      fromStatus: oldStatus,
+      toStatus: 'assigned',
+      changedBy: req.user!.id as any,
+      notes: 'Doer assigned by supervisor after client payment',
+      createdAt: new Date(),
+    });
+    await project.save();
 
     // Notify doer
-    await Notification.create({
+    const doerNotification = await Notification.create({
       userId: doerId,
       type: 'project_assigned',
       title: 'New Project Assigned',
-      message: `You have been assigned to project ${project.title}`,
+      message: `You have been assigned to project "${project.title}"`,
       data: { projectId: project._id },
+      targetRole: 'doer',
     });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user:${doerId}`).emit('notification:new', doerNotification);
+    }
+
+    // Notify project owner
+    if (project.userId) {
+      const ownerNotification = await Notification.create({
+        userId: project.userId,
+        type: 'doer_assigned',
+        title: 'Writer Assigned',
+        message: `A writer has been assigned to your project "${project.title}"`,
+        data: { projectId: project._id },
+      });
+      if (io) io.to(`user:${project.userId}`).emit('notification:new', ownerNotification);
+    }
 
     res.json({ project });
   } catch (err) {
@@ -420,6 +669,25 @@ router.put('/:id/approve', authenticate, async (req: Request, res: Response, nex
     project.delivery.completedAt = new Date();
     await project.save();
 
+    // Notify supervisor and doer that project is completed
+    const io = req.app.get('io');
+    const completionTargets = [
+      { userId: project.supervisorId, targetRole: 'supervisor' },
+      { userId: project.doerId, targetRole: 'doer' },
+    ].filter(t => t.userId);
+
+    for (const target of completionTargets) {
+      const notification = await Notification.create({
+        userId: target.userId,
+        type: 'project_completed',
+        title: 'Project Completed',
+        message: `Project "${project.title}" has been approved and completed`,
+        data: { projectId: project._id },
+        targetRole: target.targetRole,
+      });
+      if (io) io.to(`user:${target.userId}`).emit('notification:new', notification);
+    }
+
     res.json({ project });
   } catch (err) {
     next(err);
@@ -448,26 +716,210 @@ router.get('/:id/quotes', authenticate, async (req: Request, res: Response, next
     if (!project) throw new AppError('Project not found', 404);
 
     const quotes = [];
-    if (project.pricing?.userQuote) {
+    // Return a single quote entry: prefer finalQuote, fall back to userQuote
+    const quoteAmount = project.pricing?.finalQuote || project.pricing?.userQuote;
+    if (quoteAmount) {
       quotes.push({
-        id: `${project._id}-user`,
-        type: 'user_quote',
-        amount: project.pricing.userQuote,
-        status: 'accepted',
-        createdAt: project.createdAt,
-      });
-    }
-    if (project.pricing?.finalQuote) {
-      quotes.push({
-        id: `${project._id}-final`,
+        id: `${project._id}-quote`,
         type: 'final_quote',
-        amount: project.pricing.finalQuote,
+        user_amount: quoteAmount,
         status: 'accepted',
-        createdAt: project.updatedAt,
+        created_at: (project as any).updatedAt || (project as any).createdAt,
       });
     }
 
     res.json({ quotes });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /projects/:id/quote — supervisor sets a quote for the user to pay
+// Doer assignment happens AFTER user payment via /assign-doer or /open-pool
+router.post('/:id/quote', authenticate, requireRole('supervisor', 'admin'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { userQuote, doerPayout } = req.body;
+    if (!userQuote || userQuote <= 0) throw new AppError('userQuote is required and must be positive', 400);
+    if (!doerPayout || doerPayout <= 0) throw new AppError('doerPayout is required and must be positive', 400);
+
+    const project = await Project.findById(req.params.id);
+    if (!project) throw new AppError('Project not found', 404);
+
+    const supervisorCommission = Math.ceil(userQuote * 0.15);
+    const platformFee = Math.ceil(userQuote * 0.20);
+
+    project.pricing = {
+      ...project.pricing,
+      userQuote,
+      doerPayout,
+      supervisorCommission,
+      platformFee,
+      finalQuote: userQuote,
+    };
+
+    const oldStatus = project.status;
+    project.status = 'quoted';
+    project.statusUpdatedAt = new Date();
+    project.statusHistory.push({
+      fromStatus: oldStatus,
+      toStatus: 'quoted',
+      changedBy: req.user!.id as any,
+      notes: `Quote set: ₹${userQuote}. Awaiting client payment.`,
+      createdAt: new Date(),
+    });
+    await project.save();
+
+    const io = req.app.get('io');
+    if (io && project.userId) {
+      io.to(`user:${project.userId}`).emit('project:statusChanged', {
+        projectId: project._id,
+        status: 'quoted',
+        oldStatus,
+      });
+    }
+
+    await Notification.create({
+      userId: project.userId,
+      type: 'project_quoted',
+      title: 'Quote Ready',
+      message: `Your project "${project.title}" has been quoted at ₹${userQuote}. Please complete payment to begin work.`,
+      data: { projectId: project._id },
+      targetRole: 'user',
+    });
+
+    res.json({ success: true, project });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /projects/:id/claim-from-pool — doer self-assigns from the open pool
+router.post('/:id/claim-from-pool', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user!.role !== 'doer') throw new AppError('Only doers can claim from pool', 403);
+
+    const project = await Project.findById(req.params.id);
+    if (!project) throw new AppError('Project not found', 404);
+    if (!project.isOpenPool) throw new AppError('Project is not in the open pool', 400);
+    if (project.doerId) throw new AppError('Project has already been claimed', 400);
+    if (project.status !== 'paid') throw new AppError('Project payment is pending — doer cannot claim yet', 400);
+
+    project.doerId = req.user!.id as any;
+    project.isOpenPool = false;
+    project.doerAssignedAt = new Date();
+    project.status = 'assigned';
+    project.statusUpdatedAt = new Date();
+    project.statusHistory.push({
+      fromStatus: 'quoted',
+      toStatus: 'assigned',
+      changedBy: req.user!.id as any,
+      notes: 'Claimed from open pool by doer',
+      createdAt: new Date(),
+    });
+    await project.save();
+
+    const io = req.app.get('io');
+
+    // Notify supervisor
+    if (project.supervisorId) {
+      const notification = await Notification.create({
+        userId: project.supervisorId,
+        type: 'pool_claimed',
+        title: 'Pool Project Claimed',
+        message: `A doer has claimed "${project.title}" from the open pool`,
+        data: { projectId: project._id },
+        targetRole: 'supervisor',
+      });
+      if (io) io.to(`user:${project.supervisorId}`).emit('notification:new', notification);
+    }
+
+    // Notify project owner
+    if (project.userId) {
+      const ownerNotification = await Notification.create({
+        userId: project.userId,
+        type: 'doer_assigned',
+        title: 'Writer Assigned',
+        message: `A writer has been assigned to your project "${project.title}"`,
+        data: { projectId: project._id },
+      });
+      if (io) io.to(`user:${project.userId}`).emit('notification:new', ownerNotification);
+    }
+
+    res.json({ success: true, project });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /projects/:id/open-pool — supervisor sends project to the open doer pool (only after client pays)
+router.post('/:id/open-pool', authenticate, requireRole('supervisor', 'admin'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) throw new AppError('Project not found', 404);
+    if (project.status !== 'paid') throw new AppError('Cannot open pool until the client has paid', 403);
+
+    project.isOpenPool = true;
+    // Remove any direct doer pre-assignment if there was one
+    if (project.doerId && !project.doerAssignedAt) {
+      project.doerId = undefined as any;
+    }
+    project.statusHistory.push({
+      fromStatus: project.status,
+      toStatus: project.status,
+      changedBy: req.user!.id as any,
+      notes: 'Project sent to open pool',
+      createdAt: new Date(),
+    });
+    await project.save();
+
+    res.json({ success: true, project });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /projects/:id/claim — supervisor self-assigns to an unassigned project
+router.post('/:id/claim', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user!.role !== 'supervisor') throw new AppError('Only supervisors can claim projects', 403);
+
+    const project = await Project.findById(req.params.id);
+    if (!project) throw new AppError('Project not found', 404);
+    if (project.supervisorId) throw new AppError('Project already claimed', 400);
+
+    // Verify subject expertise match
+    const supervisorDoc = await Supervisor.findOne({ profileId: req.user!.id }).select('subjects');
+    if (!supervisorDoc) throw new AppError('Supervisor profile not found', 404);
+
+    const supervisorSubjectIds = (supervisorDoc.subjects || []).map(s => s.subjectId.toString());
+    if (project.subjectId && !supervisorSubjectIds.includes(project.subjectId.toString())) {
+      throw new AppError('This project does not match your subject expertise', 403);
+    }
+
+    project.supervisorId = req.user!.id as any;
+    project.statusHistory.push({
+      fromStatus: project.status,
+      toStatus: project.status,
+      changedBy: req.user!.id as any,
+      notes: 'Project claimed by supervisor',
+      createdAt: new Date(),
+    });
+    await project.save();
+
+    // Notify project owner that a supervisor has been assigned
+    if (project.userId) {
+      const notification = await Notification.create({
+        userId: project.userId,
+        type: 'project_claimed',
+        title: 'Supervisor Assigned',
+        message: `A supervisor has been assigned to "${project.title}"`,
+        data: { projectId: project._id },
+      });
+      const io = req.app.get('io');
+      if (io) io.to(`user:${project.userId}`).emit('notification:new', notification);
+    }
+
+    res.json({ success: true, project });
   } catch (err) {
     next(err);
   }
