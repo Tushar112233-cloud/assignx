@@ -225,6 +225,7 @@ const JOB_TYPE_THEME: Record<
 
 /** Distributes items round-robin across N columns for masonry layout */
 function distributeIntoColumns<T>(items: T[], colCount: number): T[][] {
+  if (colCount <= 0) return [items];
   const columns: T[][] = Array.from({ length: colCount }, () => []);
   items.forEach((item, i) => columns[i % colCount].push(item));
   return columns;
@@ -232,7 +233,7 @@ function distributeIntoColumns<T>(items: T[], colCount: number): T[][] {
 
 /** Reactive column count: 3 ≥1024px, 2 ≥640px, 1 mobile */
 function useColumnCount(): number {
-  const [cols, setCols] = useState(2);
+  const [cols, setCols] = useState<number | null>(null);
   useEffect(() => {
     const update = () => {
       if (window.innerWidth >= 1024) setCols(3);
@@ -243,7 +244,7 @@ function useColumnCount(): number {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-  return cols;
+  return cols ?? 1;
 }
 
 const staggerContainer = {
@@ -263,13 +264,14 @@ const HERO_SPARKLE_INDICES = [0, 1, 2, 3, 4, 5];
  * Color-tinted per job type; masonry-safe (no fixed height).
  */
 function JobCard({ job }: { job: JobListing }) {
+  const prefersReducedMotion = useReducedMotion();
   const theme = JOB_TYPE_THEME[job.type];
   const companyInitial = job.company.charAt(0).toUpperCase();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+      animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
       className={cn(
         "group rounded-2xl border bg-gradient-to-br to-transparent",
@@ -293,7 +295,7 @@ function JobCard({ job }: { job: JobListing }) {
           <div className="min-w-0">
             <p className="text-xs font-semibold text-foreground truncate">{job.company}</p>
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-              <MapPin className="h-3 w-3 shrink-0" />
+              <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
               <span className="truncate">{job.location}</span>
             </p>
           </div>
@@ -301,13 +303,13 @@ function JobCard({ job }: { job: JobListing }) {
         <div className="flex items-center gap-1 shrink-0">
           {job.isRemote && (
             <span className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-              <Wifi className="h-2.5 w-2.5" />
+              <Wifi className="h-2.5 w-2.5" aria-hidden="true" />
               Remote
             </span>
           )}
           <span
             className={cn(
-              "px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border border-current/10",
+              "px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border border-border/30",
               theme.badgeBg,
               theme.badgeText
             )}
@@ -329,7 +331,7 @@ function JobCard({ job }: { job: JobListing }) {
 
       {/* Salary */}
       <p className={cn("text-xs font-semibold flex items-center gap-1", theme.salary)}>
-        <DollarSign className="h-3 w-3" />
+        <DollarSign className="h-3 w-3" aria-hidden="true" />
         {job.salary}
       </p>
 
@@ -353,18 +355,18 @@ function JobCard({ job }: { job: JobListing }) {
       {/* Footer: posted time + apply button */}
       <div className="flex items-center justify-between pt-2 border-t border-border/40">
         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-          <Clock className="h-3 w-3" />
+          <Clock className="h-3 w-3" aria-hidden="true" />
           {job.postedAt}
         </span>
         <button
           type="button"
           className={cn(
             "flex items-center gap-1 text-white text-[11px] font-medium px-3 py-1 rounded-lg transition-all",
-            "sm:opacity-0 sm:group-hover:opacity-100",
+            "sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100",
             theme.button
           )}
         >
-          <ExternalLink className="h-3 w-3" />
+          <ExternalLink className="h-3 w-3" aria-hidden="true" />
           Apply
         </button>
       </div>
@@ -514,6 +516,11 @@ export function JobPortal() {
     });
   }, [search, selectedCategory, selectedType, remoteOnly]);
 
+  const columns = useMemo(
+    () => distributeIntoColumns(filtered, colCount),
+    [filtered, colCount]
+  );
+
   return (
     <div className="space-y-6">
       <JobPortalHero />
@@ -535,6 +542,7 @@ export function JobPortal() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
           {CATEGORIES.map((cat) => (
             <button
+              type="button"
               key={cat.value}
               onClick={() => setSelectedCategory(cat.value)}
               className={cn(
@@ -564,6 +572,7 @@ export function JobPortal() {
 
         {/* Remote Toggle */}
         <button
+          type="button"
           onClick={() => setRemoteOnly(!remoteOnly)}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
@@ -585,7 +594,7 @@ export function JobPortal() {
       {/* Masonry job grid */}
       {filtered.length > 0 ? (
         <div className="-ml-4 flex w-auto items-start">
-          {distributeIntoColumns(filtered, colCount).map((col, colIdx) => (
+          {columns.map((col, colIdx) => (
             <div key={colIdx} className="pl-4 flex-1 min-w-0 flex flex-col gap-4">
               {col.map((job) => (
                 <JobCard key={job.id} job={job} />
@@ -604,6 +613,7 @@ export function JobPortal() {
           <p className="text-sm font-medium text-foreground mb-1">No jobs match your filters</p>
           <p className="text-xs text-muted-foreground mb-3">Try adjusting your search or filters</p>
           <button
+            type="button"
             onClick={() => {
               setSearch("");
               setSelectedCategory("all");
