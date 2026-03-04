@@ -153,16 +153,18 @@ export const notificationService = {
     }
 
     const socket: Socket = getSocket()
-    const eventName = `notification:${userId}`
 
     const handler = (raw: any) => {
-      callback(normalizeNotification(raw))
+      const normalized = normalizeNotification(raw)
+      // Only pass through notifications for 'user' role or unscoped ones
+      if (normalized.target_role && normalized.target_role !== 'user') return
+      callback(normalized)
     }
 
-    socket.on(eventName, handler)
+    socket.on('notification:new', handler)
 
     const cleanup = () => {
-      socket.off(eventName, handler)
+      socket.off('notification:new', handler)
       this._cleanup = null
     }
 
