@@ -146,7 +146,7 @@ export const notificationService = {
    * Subscribes to new notifications via Socket.IO.
    * @returns Cleanup function
    */
-  subscribe(userId: string, callback: NotificationCallback): () => void {
+  subscribe(_userId: string, callback: NotificationCallback): () => void {
     // Clean up existing subscription
     if (this._cleanup) {
       this._cleanup()
