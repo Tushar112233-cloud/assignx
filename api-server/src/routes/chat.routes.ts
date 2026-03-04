@@ -174,13 +174,26 @@ router.get('/rooms/:id/messages', authenticate, async (req: Request, res: Respon
     const { page = '1', limit = '50' } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
+    // Build filter based on caller's role:
+    // supervisor → all messages
+    // doer → own messages + approved messages
+    // user → approved messages + own messages
+    const baseFilter: Record<string, any> = { chatRoomId: req.params.id, isDeleted: false };
+    const callerRole = req.user!.role;
+    if (callerRole !== 'supervisor') {
+      baseFilter.$or = [
+        { approvalStatus: 'approved' },
+        { senderId: req.user!.id },
+      ];
+    }
+
     const [messages, total] = await Promise.all([
-      ChatMessage.find({ chatRoomId: req.params.id, isDeleted: false })
+      ChatMessage.find(baseFilter)
         .populate('senderId', 'fullName avatarUrl')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit)),
-      ChatMessage.countDocuments({ chatRoomId: req.params.id, isDeleted: false }),
+      ChatMessage.countDocuments(baseFilter),
     ]);
 
     res.json({ messages: messages.reverse(), total, page: Number(page) });
@@ -206,6 +219,9 @@ router.post('/rooms/:id/messages', authenticate, async (req: Request, res: Respo
       ? (bodySenderRole as 'user' | 'supervisor' | 'doer')
       : jwtDerivedRole;
 
+    // Doer messages start as pending (need supervisor approval before user sees them)
+    const approvalStatus = senderRole === 'doer' ? 'pending' : 'approved';
+
     const message = await ChatMessage.create({
       chatRoomId: req.params.id,
       senderId: req.user!.id,
@@ -214,6 +230,7 @@ router.post('/rooms/:id/messages', authenticate, async (req: Request, res: Respo
       content: req.body.content || '',
       file: req.body.file,
       replyToId: req.body.replyToId,
+      approvalStatus,
     });
 
     // Update room lastMessageAt
@@ -271,6 +288,8 @@ router.post('/rooms/:id/files', authenticate, upload.single('file'), async (req:
       ? (bodySenderRole as 'user' | 'supervisor' | 'doer')
       : jwtDerivedRole;
 
+    const fileApprovalStatus = senderRole === 'doer' ? 'pending' : 'approved';
+
     const message = await ChatMessage.create({
       chatRoomId: req.params.id,
       senderId: req.user!.id,
@@ -283,6 +302,7 @@ router.post('/rooms/:id/files', authenticate, upload.single('file'), async (req:
         type: req.file.mimetype,
         sizeBytes: result.bytes,
       },
+      approvalStatus: fileApprovalStatus,
     });
 
     await ChatRoom.findByIdAndUpdate(req.params.id, { lastMessageAt: new Date() });
@@ -334,6 +354,60 @@ router.put('/rooms/:id/unsuspend', authenticate, async (req: Request, res: Respo
     const io = req.app.get('io');
     if (io) {
       io.to(`chat:${req.params.id}`).emit('chat:unsuspended', { roomId: req.params.id });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /chat/messages/:id/approve - Supervisor approves a pending doer message
+router.put('/messages/:id/approve', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user!.role !== 'supervisor') {
+      throw new AppError('Only supervisors can approve messages', 403);
+    }
+    const message = await ChatMessage.findByIdAndUpdate(
+      req.params.id,
+      { approvalStatus: 'approved', approvedBy: req.user!.id, approvedAt: new Date() },
+      { new: true }
+    ).populate('senderId', 'fullName avatarUrl');
+    if (!message) throw new AppError('Message not found', 404);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`chat:${message.chatRoomId}`).emit('chat:messageApproved', {
+        messageId: req.params.id,
+        roomId: message.chatRoomId,
+      });
+    }
+
+    res.json({ success: true, message });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /chat/messages/:id/reject - Supervisor rejects a pending doer message
+router.put('/messages/:id/reject', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user!.role !== 'supervisor') {
+      throw new AppError('Only supervisors can reject messages', 403);
+    }
+    const message = await ChatMessage.findByIdAndUpdate(
+      req.params.id,
+      { approvalStatus: 'rejected', approvedBy: req.user!.id, approvedAt: new Date() },
+      { new: true }
+    );
+    if (!message) throw new AppError('Message not found', 404);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`chat:${message.chatRoomId}`).emit('chat:messageRejected', {
+        messageId: req.params.id,
+        roomId: message.chatRoomId,
+      });
     }
 
     res.json({ success: true });

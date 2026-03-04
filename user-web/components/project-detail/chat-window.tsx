@@ -206,19 +206,17 @@ function MessageBubble({
           isCurrentUser ? "items-end" : "items-start"
         )}
       >
-        {!isCurrentUser && (
-          <span className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-            {senderName}
-            {(message as any).sender_role && (message as any).sender_role !== "user" && (
-              <Badge
-                variant="outline"
-                className="px-1 py-0 text-[9px] h-4 capitalize"
-              >
-                {(message as any).sender_role}
-              </Badge>
-            )}
-          </span>
-        )}
+        <span className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+          {senderName}
+          {(message as any).sender_role && (
+            <Badge
+              variant="outline"
+              className="px-1 py-0 text-[9px] h-4 capitalize"
+            >
+              {(message as any).sender_role}
+            </Badge>
+          )}
+        </span>
 
         <div className="relative">
           <div

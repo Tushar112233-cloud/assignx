@@ -331,6 +331,7 @@ export interface ChatMessage {
   metadata: Json | null
   /** API alias for metadata */
   action_metadata?: Json | null
+  approval_status?: 'pending' | 'approved' | 'rejected' | null
   created_at: string
   updated_at: string | null
 }

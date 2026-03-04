@@ -147,6 +147,7 @@ function normalizeMessage(raw: Record<string, unknown>): ChatMessageWithSender {
     is_deleted: Boolean(raw.isDeleted ?? raw.is_deleted ?? false),
     flag_reason: (raw.flagReason as string) || (raw.flag_reason as string) || null,
     metadata: (raw.metadata as Json) || null,
+    approval_status: ((raw.approvalStatus || raw.approval_status || "approved") as 'pending' | 'approved' | 'rejected'),
     created_at: String(raw.createdAt || raw.created_at || ""),
     updated_at: (raw.updatedAt || raw.updated_at || null) as string | null,
     profiles: profiles as ChatMessageWithSender["profiles"],

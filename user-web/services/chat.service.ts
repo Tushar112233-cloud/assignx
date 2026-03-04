@@ -28,6 +28,7 @@ function normalizeMessage(raw: any): MessageWithSender {
     file_url: raw.file?.url || raw.fileUrl || raw.file_url || null,
     action_metadata: raw.actionMetadata || raw.action_metadata || null,
     read_by: raw.readBy || raw.read_by || null,
+    approval_status: raw.approvalStatus || raw.approval_status || null,
     created_at: raw.createdAt || raw.created_at || null,
     sender,
   }

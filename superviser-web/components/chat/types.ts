@@ -14,6 +14,7 @@ export interface ChatRoom {
   type: ChatRoomType
   name: string
   participants: ChatParticipant[]
+  messages?: ChatMessage[]
   last_message?: ChatMessage
   unread_count: number
   is_suspended?: boolean
@@ -50,6 +51,7 @@ export interface ChatMessage {
   read_at?: string
   created_at: string
   updated_at?: string
+  approval_status?: "pending" | "approved" | "rejected"
 }
 
 export interface ContactDetectionResult {

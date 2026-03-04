@@ -212,17 +212,22 @@ export function ChatPanel({
                 : 'bg-muted rounded-bl-md'
             )}
           >
-            {/* Sender name + role badge */}
-            {showAvatar && !isOwn && (
-              <p className="text-xs font-medium mb-1 opacity-70 flex items-center gap-1">
-                {message.sender_name}
-                {message.sender_role && message.sender_role !== 'doer' && (
-                  <span className="text-[9px] border border-current rounded px-1 capitalize opacity-60">
-                    {message.sender_role}
-                  </span>
-                )}
-              </p>
-            )}
+            {/* Sender name + role badge - shown on every message */}
+            <p className="text-xs font-medium mb-1 opacity-70 flex items-center gap-1 flex-wrap">
+              {isOwn ? currentUserName : message.sender_name}
+              {message.sender_role && (
+                <span className="text-[9px] border border-current rounded px-1 capitalize opacity-60">
+                  {message.sender_role}
+                </span>
+              )}
+              {/* Show pending status for own messages */}
+              {isOwn && (message as any).approval_status === 'pending' && (
+                <span className="flex items-center gap-0.5 text-[9px] text-amber-300">
+                  <Clock className="h-2.5 w-2.5" />
+                  awaiting approval
+                </span>
+              )}
+            </p>
 
             {/* Content */}
             {message.message_type === 'text' && (

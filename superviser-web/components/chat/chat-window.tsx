@@ -72,6 +72,8 @@ interface ChatWindowProps {
   onSuspendChat: (roomId: string, reason: string) => Promise<void>
   onResumeChat: (roomId: string) => Promise<void>
   onDownloadFile?: (message: ChatMessage) => void
+  onApproveMessage?: (messageId: string) => Promise<void>
+  onRejectMessage?: (messageId: string) => Promise<void>
 }
 
 function getRoomIcon(type: ChatRoomType) {
@@ -136,6 +138,8 @@ export function ChatWindow({
   onSuspendChat,
   onResumeChat,
   onDownloadFile,
+  onApproveMessage,
+  onRejectMessage,
 }: ChatWindowProps) {
   const [activeRoomId, setActiveRoomId] = useState(rooms[0]?.id || "")
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
@@ -360,10 +364,12 @@ export function ChatWindow({
 
             {/* Message List */}
             <MessageList
-              messages={activeRoom.last_message ? [activeRoom.last_message] : []}
+              messages={activeRoom.messages || []}
               participants={activeRoom.participants}
               currentUserId={currentUserId}
               onDownloadFile={onDownloadFile}
+              onApproveMessage={onApproveMessage}
+              onRejectMessage={onRejectMessage}
             />
 
             {/* Message Input */}

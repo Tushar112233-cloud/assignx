@@ -61,15 +61,16 @@ export default function ChatRoomPage() {
           id: msg.id,
           room_id: msg.chat_room_id || msg.room_id,
           sender_id: msg.sender_id || "",
-          sender_name: msg.profiles?.full_name || "Unknown",
+          sender_name: msg.sender?.full_name || msg.profiles?.full_name || "Unknown",
           sender_role: (msg.sender_role || msg.action_metadata?.sender_role || "user") as "user" | "supervisor" | "doer" | "support" | "system",
           type: msg.message_type || msg.type || "text",
           content: msg.content || "",
-          file_url: msg.file_url || undefined,
-          file_name: msg.file_name || undefined,
-          file_size: msg.file_size_bytes || msg.file_size || undefined,
+          file_url: msg.file?.url || msg.file_url || undefined,
+          file_name: msg.file?.name || msg.file_name || undefined,
+          file_size: msg.file?.sizeBytes || msg.file_size_bytes || msg.file_size || undefined,
           is_read: msg.is_deleted === false,
           created_at: msg.created_at || new Date().toISOString(),
+          approval_status: (msg.approvalStatus || msg.approval_status || "approved") as "pending" | "approved" | "rejected",
         } as ChatMessage))
       }))
     }
@@ -137,6 +138,45 @@ export default function ChatRoomPage() {
       toast.error("Failed to resume chat. Please try again.")
     }
   }, [supervisor, refetchRooms])
+
+  const handleApproveMessage = useCallback(async (messageId: string) => {
+    try {
+      await apiFetch(`/api/chat/messages/${messageId}/approve`, { method: "PUT" })
+      // Update local messages map
+      setMessagesMap(prev => {
+        const updated = { ...prev }
+        for (const roomId in updated) {
+          updated[roomId] = updated[roomId].map(m =>
+            m.id === messageId ? { ...m, approval_status: "approved" } : m
+          )
+        }
+        return updated
+      })
+      toast.success("Message approved")
+    } catch (error) {
+      console.error("Failed to approve message:", error)
+      toast.error("Failed to approve message")
+    }
+  }, [])
+
+  const handleRejectMessage = useCallback(async (messageId: string) => {
+    try {
+      await apiFetch(`/api/chat/messages/${messageId}/reject`, { method: "PUT" })
+      setMessagesMap(prev => {
+        const updated = { ...prev }
+        for (const roomId in updated) {
+          updated[roomId] = updated[roomId].map(m =>
+            m.id === messageId ? { ...m, approval_status: "rejected" } : m
+          )
+        }
+        return updated
+      })
+      toast.success("Message rejected")
+    } catch (error) {
+      console.error("Failed to reject message:", error)
+      toast.error("Failed to reject message")
+    }
+  }, [])
 
   const handleDownloadFile = useCallback(async (message: ChatMessage) => {
     if (!message.file_url) {
@@ -222,6 +262,7 @@ export default function ChatRoomPage() {
     })),
     is_suspended: room.is_suspended || false,
     suspension_reason: room.suspension_reason || undefined,
+    messages: messagesMap[room.id] || [],
     last_message: messagesMap[room.id]?.[messagesMap[room.id].length - 1],
     unread_count: 0,
     created_at: room.created_at || new Date().toISOString(),
@@ -239,6 +280,8 @@ export default function ChatRoomPage() {
         onSuspendChat={handleSuspendChat}
         onResumeChat={handleResumeChat}
         onDownloadFile={handleDownloadFile}
+        onApproveMessage={handleApproveMessage}
+        onRejectMessage={handleRejectMessage}
       />
     </div>
   )

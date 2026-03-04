@@ -14,6 +14,9 @@ import {
   AlertTriangle,
   CheckCheck,
   Check,
+  CheckCircle,
+  XCircle,
+  Clock,
 } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -33,6 +36,8 @@ interface MessageListProps {
   participants: ChatParticipant[]
   currentUserId: string
   onDownloadFile?: (message: ChatMessage) => void
+  onApproveMessage?: (messageId: string) => Promise<void>
+  onRejectMessage?: (messageId: string) => Promise<void>
 }
 
 function formatMessageDate(date: Date): string {
@@ -49,14 +54,17 @@ function MessageBubble({
   message,
   participant,
   isOwn,
-  showAvatar,
   onDownloadFile,
+  onApproveMessage,
+  onRejectMessage,
 }: {
   message: ChatMessage
   participant?: ChatParticipant
   isOwn: boolean
-  showAvatar: boolean
+  showAvatar?: boolean
   onDownloadFile?: (message: ChatMessage) => void
+  onApproveMessage?: (messageId: string) => Promise<void>
+  onRejectMessage?: (messageId: string) => Promise<void>
 }) {
   const initials = message.sender_name
     .split(" ")
@@ -108,20 +116,31 @@ function MessageBubble({
 
       {/* Message Content */}
       <div className={cn("space-y-1", isOwn ? "items-end" : "items-start")}>
-        {/* Sender Info */}
-        {showAvatar && (
-          <div
-            className={cn(
-              "flex items-center gap-2 text-xs",
-              isOwn ? "flex-row-reverse" : ""
-            )}
-          >
-            <span className="font-medium">{message.sender_name}</span>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-              {message.sender_role}
-            </Badge>
-          </div>
-        )}
+        {/* Sender Info - always shown */}
+        <div
+          className={cn(
+            "flex items-center gap-2 text-xs",
+            isOwn ? "flex-row-reverse" : ""
+          )}
+        >
+          <span className="font-medium">{message.sender_name}</span>
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">
+            {message.sender_role}
+          </Badge>
+          {/* Approval status indicator */}
+          {message.approval_status === "pending" && (
+            <span className="flex items-center gap-1 text-[10px] text-amber-600">
+              <Clock className="h-3 w-3" />
+              pending
+            </span>
+          )}
+          {message.approval_status === "rejected" && (
+            <span className="flex items-center gap-1 text-[10px] text-destructive">
+              <XCircle className="h-3 w-3" />
+              rejected
+            </span>
+          )}
+        </div>
 
         {/* Message Bubble */}
         <div
@@ -222,6 +241,42 @@ function MessageBubble({
             )
           )}
         </div>
+
+        {/* Approve/Reject controls for pending doer messages */}
+        {message.sender_role === "doer" && message.approval_status === "pending" && (onApproveMessage || onRejectMessage) && (
+          <div className={cn("flex items-center gap-1.5", isOwn ? "flex-row-reverse" : "")}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                    onClick={() => onApproveMessage?.(message.id)}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Approve (send to user)</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => onRejectMessage?.(message.id)}
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reject message</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -232,6 +287,8 @@ export function MessageList({
   participants,
   currentUserId,
   onDownloadFile,
+  onApproveMessage,
+  onRejectMessage,
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const participantMap = new Map(participants.map((p) => [p.user_id, p]))
@@ -279,9 +336,6 @@ export function MessageList({
           {/* Messages */}
           {group.messages.map((message, index) => {
             const isOwn = message.sender_role === "supervisor" || (!message.sender_role && message.sender_id === currentUserId)
-            const prevMessage = group.messages[index - 1]
-            const showAvatar =
-              !prevMessage || prevMessage.sender_id !== message.sender_id
 
             return (
               <MessageBubble
@@ -289,8 +343,9 @@ export function MessageList({
                 message={message}
                 participant={participantMap.get(message.sender_id)}
                 isOwn={isOwn}
-                showAvatar={showAvatar}
                 onDownloadFile={onDownloadFile}
+                onApproveMessage={onApproveMessage}
+                onRejectMessage={onRejectMessage}
               />
             )
           })}

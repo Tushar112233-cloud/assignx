@@ -19,6 +19,9 @@ export interface IChatMessage extends Document {
   flaggedReason: string;
   containsContactInfo: boolean;
   readBy: Types.ObjectId[];
+  approvalStatus: 'pending' | 'approved' | 'rejected';
+  approvedBy?: Types.ObjectId;
+  approvedAt?: Date;
   createdAt: Date;
 }
 
@@ -41,6 +44,9 @@ const chatMessageSchema = new Schema<IChatMessage>({
   flaggedReason: { type: String },
   containsContactInfo: { type: Boolean, default: false },
   readBy: [{ type: Schema.Types.ObjectId, ref: 'Profile' }],
+  approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },
+  approvedBy: { type: Schema.Types.ObjectId, ref: 'Profile' },
+  approvedAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });
 
