@@ -209,7 +209,7 @@ function JobPortalHero() {
             scale: [1, 1.2, 1],
             opacity: [0.5, 0.8, 0.5],
           }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
+          transition={prefersReducedMotion ? {} : { duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
         />
         {/* Orb 2 */}
         <motion.div
@@ -218,7 +218,7 @@ function JobPortalHero() {
             scale: [1, 1.2, 1],
             opacity: [0.5, 0.8, 0.5],
           }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          transition={prefersReducedMotion ? {} : { duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
         />
         {/* Orb 3 */}
         <motion.div
@@ -227,7 +227,7 @@ function JobPortalHero() {
             scale: [1, 1.2, 1],
             opacity: [0.5, 0.8, 0.5],
           }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          transition={prefersReducedMotion ? {} : { duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
         />
 
         {/* Grid overlay */}
