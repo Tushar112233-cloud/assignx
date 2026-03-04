@@ -297,14 +297,14 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
   const timeInfo = getTimeRemaining();
 
   return (
-    <div className="h-screen flex overflow-hidden bg-stone-50 dark:bg-stone-950">
+    <div className="h-screen flex overflow-hidden bg-background">
       {/* Left Panel - Project Info */}
-      <div className="hidden lg:flex flex-col w-[55%] max-w-2xl border-r border-stone-200 dark:border-stone-800 h-screen bg-white dark:bg-stone-900">
+      <div className="hidden lg:flex flex-col w-[55%] max-w-2xl border-r border-border h-screen bg-card">
         {/* Header */}
-        <div className="flex items-center gap-4 p-4 border-b border-stone-100 dark:border-stone-800">
+        <div className="flex items-center gap-4 p-4 border-b border-border">
           <button
             onClick={() => router.push("/projects")}
-            className="h-9 w-9 rounded-xl border border-stone-200 dark:border-stone-700 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+            className="h-9 w-9 rounded-xl border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
@@ -314,7 +314,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="h-9 w-9 rounded-xl border border-stone-200 dark:border-stone-700 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
+              <button className="h-9 w-9 rounded-xl border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
@@ -381,7 +381,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                       "h-2 rounded-full flex-1 transition-all duration-200",
                       isCompleted && "bg-emerald-500 cursor-pointer hover:bg-emerald-600",
                       isCurrent && "bg-violet-500 cursor-pointer hover:bg-violet-600",
-                      !isCompleted && !isCurrent && "bg-stone-200 dark:bg-stone-700 cursor-not-allowed"
+                      !isCompleted && !isCurrent && "bg-muted cursor-not-allowed"
                     )}
                     title={isClickable ? `View: ${step.label}` : step.label}
                   />
@@ -390,7 +390,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
             </div>
 
             {/* Current Step Info */}
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-muted border border-border">
               <div className={cn(
                 "h-10 w-10 rounded-xl flex items-center justify-center text-lg",
                 stepIndex >= 7
@@ -469,7 +469,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
           {/* Timeline Info */}
           {stepIndex >= 3 && stepIndex < 7 && project.deadline && (
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
+              <div className="p-4 rounded-2xl bg-card border border-border">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                   <Calendar className="h-3 w-3" />
                   Deadline
@@ -483,7 +483,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                   "p-4 rounded-2xl",
                   timeInfo.urgent
                     ? "border-2 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30"
-                    : "bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800"
+                    : "bg-card border border-border"
                 )}>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                     <Timer className="h-3 w-3" />
@@ -499,7 +499,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
 
           {/* Expert Info */}
           {stepIndex >= 4 && stepIndex < 7 && project.supervisorName && (
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border">
               <div className="h-10 w-10 rounded-xl bg-violet-600 flex items-center justify-center text-white font-medium">
                 {project.supervisorName.charAt(0)}
               </div>
@@ -518,7 +518,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               <div className="space-y-3">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Details</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
+                  <div className="p-4 rounded-2xl bg-card border border-border">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                       <BookOpen className="h-3 w-3" />
                       Subject
@@ -526,7 +526,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                     <p className="text-sm font-medium">{project.subjectName || "Not specified"}</p>
                   </div>
                   {project.wordCount && (
-                    <div className="p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
+                    <div className="p-4 rounded-2xl bg-card border border-border">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         <Hash className="h-3 w-3" />
                         Word Count
@@ -535,7 +535,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                     </div>
                   )}
                   {project.deadline && (
-                    <div className="p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
+                    <div className="p-4 rounded-2xl bg-card border border-border">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         <Calendar className="h-3 w-3" />
                         Deadline
@@ -549,7 +549,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               </div>
 
               {project.instructions && (
-                <div className="p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
+                <div className="p-4 rounded-2xl bg-card border border-border">
                   <p className="text-xs font-medium text-muted-foreground mb-2">Instructions</p>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.instructions}</p>
                 </div>
@@ -568,9 +568,9 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800 hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
+                        className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
                       >
-                        <div className="h-9 w-9 rounded-lg bg-stone-100 dark:bg-stone-700 flex items-center justify-center text-muted-foreground">
+                        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                           <FileText className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -600,7 +600,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                       variant="outline"
                       size="sm"
                       onClick={() => setIsRevisionDialogOpen(true)}
-                      className="flex-1 border-stone-200 dark:border-stone-700"
+                      className="flex-1 border-border"
                     >
                       Request Revision
                     </Button>
@@ -628,9 +628,9 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
       </div>
 
       {/* Right Panel - Chat */}
-      <div className="flex-1 flex flex-col h-screen bg-white dark:bg-stone-900">
+      <div className="flex-1 flex flex-col h-screen bg-card">
         {/* Mobile Header */}
-        <div className="lg:hidden flex items-center gap-3 p-3 border-b border-stone-200 dark:border-stone-800">
+        <div className="lg:hidden flex items-center gap-3 p-3 border-b border-border">
           <button onClick={() => router.push("/projects")} className="p-2 -ml-1">
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -652,7 +652,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
         </div>
 
         {/* Mobile Tabs */}
-        <div className="lg:hidden flex border-b border-stone-200 dark:border-stone-800">
+        <div className="lg:hidden flex border-b border-border">
           <button
             className={cn(
               "flex-1 py-3 text-sm font-medium border-b-2 transition-colors",
@@ -687,7 +687,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                     "h-2 rounded-full flex-1 transition-all",
                     i < stepIndex && "bg-emerald-500",
                     i === stepIndex && "bg-violet-500",
-                    i > stepIndex && "bg-stone-200 dark:bg-stone-700"
+                    i > stepIndex && "bg-muted"
                   )}
                 />
               ))}
@@ -702,12 +702,12 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800">
+              <div className="p-3 rounded-xl bg-muted">
                 <p className="text-xs text-muted-foreground mb-1">Subject</p>
                 <p className="text-sm font-medium">{project.subjectName || "N/A"}</p>
               </div>
               {project.deadline && (
-                <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800">
+                <div className="p-3 rounded-xl bg-muted">
                   <p className="text-xs text-muted-foreground mb-1">Deadline</p>
                   <p className="text-sm font-medium">
                     {new Date(project.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
@@ -717,7 +717,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
             </div>
 
             {project.instructions && (
-              <div className="p-4 rounded-xl bg-stone-50 dark:bg-stone-800">
+              <div className="p-4 rounded-xl bg-muted">
                 <p className="text-xs font-medium text-muted-foreground mb-2">Instructions</p>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.instructions}</p>
               </div>
@@ -773,7 +773,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
             {/* Step-specific content */}
             {selectedStepIndex === 0 && (
               <div className="space-y-3">
-                <div className="p-3 rounded-xl bg-stone-100 dark:bg-stone-800">
+                <div className="p-3 rounded-xl bg-muted">
                   <p className="text-xs text-muted-foreground mb-1">Submitted</p>
                   <p className="text-sm font-medium">
                     {project.createdAt
@@ -786,7 +786,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                   </p>
                 </div>
                 {project.attachedFiles.length > 0 && (
-                  <div className="p-3 rounded-xl bg-stone-100 dark:bg-stone-800">
+                  <div className="p-3 rounded-xl bg-muted">
                     <p className="text-xs text-muted-foreground mb-1">Files Attached</p>
                     <p className="text-sm font-medium">{project.attachedFiles.length} files</p>
                   </div>
@@ -813,7 +813,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
             )}
 
             {selectedStepIndex === 4 && project.supervisorName && (
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-stone-100 dark:bg-stone-800">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
                 <div className="h-10 w-10 rounded-xl bg-violet-600 flex items-center justify-center text-white font-medium">
                   {project.supervisorName.charAt(0)}
                 </div>
@@ -1028,7 +1028,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
   return (
     <>
       {/* Chat Header */}
-      <div className="p-4 border-b border-stone-200 dark:border-stone-800">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold">Chat</h2>
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
@@ -1036,10 +1036,10 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
             Online
           </span>
         </div>
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted border border-border">
           <div className="h-10 w-10 rounded-xl bg-violet-600 flex items-center justify-center text-white font-medium relative">
             {supervisor.charAt(0)}
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-stone-900" />
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background" />
           </div>
           <div>
             <p className="text-sm font-medium">{supervisor}</p>
@@ -1067,7 +1067,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
 
         {!isLoading && messages.length === 0 && timelineEvents.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="h-12 w-12 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center mb-3">
+            <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-3">
               <Send className="h-5 w-5 text-muted-foreground" />
             </div>
             <p className="text-sm font-medium mb-1">Start the conversation</p>
@@ -1080,7 +1080,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
         {/* Project Activity Header - shown when there are timeline events */}
         {timelineEvents.length > 0 && messages.length === 0 && !isLoading && (
           <div className="flex justify-center mb-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-border">
               <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-xs font-medium text-muted-foreground">Project Activity</span>
             </div>
@@ -1116,8 +1116,19 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
             }
 
             const msg = item.data;
-            const isUser = msg.sender_id === userId;
-            const senderName = msg.sender?.full_name || supervisor;
+            // Use sender_role for platform isolation — NOT sender_id alone (same account logs into all platforms)
+            const role = (msg as any).sender_role as string | null | undefined;
+            const isUser = role === "user" || (!role && msg.sender_id === userId);
+            const isDoer = role === "doer";
+            const isSupervisor = role === "supervisor";
+
+            const senderLabel = isUser ? "You" : (msg.sender?.full_name || (isSupervisor ? supervisor : isDoer ? "Doer" : "Unknown"));
+            const roleBadgeColor = isUser
+              ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+              : isDoer
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+              : "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300";
+            const roleLabel = isUser ? "user" : isSupervisor ? "supervisor" : isDoer ? "doer" : role || "unknown";
 
             return (
               <div key={msg.id} className={cn("flex gap-2 mb-3", isUser ? "flex-row-reverse justify-start" : "justify-start")}>
@@ -1126,18 +1137,27 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
                     "h-8 w-8 rounded-xl flex items-center justify-center text-xs font-medium shrink-0",
                     isUser
                       ? "bg-violet-600 text-white"
-                      : "bg-stone-100 dark:bg-stone-800 text-muted-foreground border border-stone-200 dark:border-stone-700"
+                      : isDoer
+                      ? "bg-emerald-600 text-white"
+                      : "bg-blue-600 text-white"
                   )}
                 >
-                  {isUser ? <User className="h-4 w-4" /> : senderName.charAt(0)}
+                  {isUser ? <User className="h-4 w-4" /> : senderLabel.charAt(0).toUpperCase()}
                 </div>
                 <div className={cn("flex flex-col max-w-[75%]", isUser ? "items-end" : "items-start")}>
+                  {/* Sender name + role badge — always shown */}
+                  <div className={cn("flex items-center gap-1.5 mb-1", isUser ? "flex-row-reverse" : "flex-row")}>
+                    <span className="text-xs font-medium text-foreground">{senderLabel}</span>
+                    <span className={cn("text-[10px] px-1.5 py-0 rounded font-medium", roleBadgeColor)}>
+                      {roleLabel}
+                    </span>
+                  </div>
                   <div
                     className={cn(
                       "px-4 py-2.5 rounded-2xl text-sm",
                       isUser
                         ? "bg-violet-600 text-white rounded-br-sm"
-                        : "bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-bl-sm"
+                        : "bg-muted border border-border rounded-bl-sm"
                     )}
                   >
                     <p className="whitespace-pre-wrap break-words">{msg.content}</p>
@@ -1163,8 +1183,8 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-stone-200 dark:border-stone-800">
-        <div className="flex items-center gap-2 p-1.5 pl-4 rounded-full border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 focus-within:border-violet-500 focus-within:ring-2 focus-within:ring-violet-500/20 transition-all">
+      <div className="p-4 border-t border-border">
+        <div className="flex items-center gap-2 p-1.5 pl-4 rounded-full border border-border bg-muted focus-within:border-violet-500 focus-within:ring-2 focus-within:ring-violet-500/20 transition-all">
           <input
             type="file"
             ref={fileInputRef}
@@ -1184,7 +1204,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isSending}
-            className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+            className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <Paperclip className="h-4 w-4" />
           </button>
@@ -1223,7 +1243,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
 function SystemMessage({ emoji, text, timestamp }: { emoji: string; text: string; timestamp: string }) {
   return (
     <div className="flex justify-center my-4">
-      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm">
+      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-border shadow-sm">
         <span className="text-sm">{emoji}</span>
         <span className="text-xs text-muted-foreground">{text}</span>
         <span className="text-[10px] text-muted-foreground/70">{formatTime(timestamp)}</span>
@@ -1294,7 +1314,7 @@ function TimelineEventCard({ event, supervisorName }: { event: TimelineEvent; su
   if (event.type === "quote") {
     return (
       <div className="flex gap-2 mb-4">
-        <div className="h-8 w-8 rounded-xl flex items-center justify-center text-xs font-medium shrink-0 bg-stone-100 dark:bg-stone-800 text-muted-foreground border border-stone-200 dark:border-stone-700">
+        <div className="h-8 w-8 rounded-xl flex items-center justify-center text-xs font-medium shrink-0 bg-muted text-muted-foreground border border-border">
           {supervisor.charAt(0)}
         </div>
         <div className="max-w-[80%]">
@@ -1502,7 +1522,7 @@ function TimelineEventCard({ event, supervisorName }: { event: TimelineEvent; su
   // Default: System/supervisor status changes (WhatsApp-style centered notification)
   return (
     <div className="flex justify-center my-3">
-      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm">
+      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-border shadow-sm">
         <span className="text-sm">{config.emoji}</span>
         <span className="text-xs text-muted-foreground">{config.label}</span>
         {notes && <span className="text-[10px] text-muted-foreground/70">• {notes}</span>}
