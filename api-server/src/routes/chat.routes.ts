@@ -192,11 +192,19 @@ router.get('/rooms/:id/messages', authenticate, async (req: Request, res: Respon
 // POST /chat/rooms/:id/messages
 router.post('/rooms/:id/messages', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const ROLE_MAP: Record<string, 'user' | 'supervisor' | 'doer'> = {
+    // Use senderRole explicitly sent by frontend (more reliable than JWT role, since the
+    // same account may log into different platforms with the same JWT role).
+    // Fall back to JWT-based detection if not provided.
+    const VALID_ROLES = ['user', 'supervisor', 'doer'] as const;
+    const JWT_ROLE_MAP: Record<string, 'user' | 'supervisor' | 'doer'> = {
       supervisor: 'supervisor',
       doer: 'doer',
     };
-    const senderRole = ROLE_MAP[req.user!.role] ?? 'user';
+    const jwtDerivedRole = JWT_ROLE_MAP[req.user!.role] ?? 'user';
+    const bodySenderRole = req.body.senderRole as string | undefined;
+    const senderRole: 'user' | 'supervisor' | 'doer' = (VALID_ROLES as readonly string[]).includes(bodySenderRole ?? '')
+      ? (bodySenderRole as 'user' | 'supervisor' | 'doer')
+      : jwtDerivedRole;
 
     const message = await ChatMessage.create({
       chatRoomId: req.params.id,
@@ -252,11 +260,16 @@ router.post('/rooms/:id/files', authenticate, upload.single('file'), async (req:
     if (!req.file) throw new AppError('No file provided', 400);
     const result = await uploadBufferToCloudinary(req.file.buffer, 'assignx/chat');
 
-    const ROLE_MAP: Record<string, 'user' | 'supervisor' | 'doer'> = {
+    const VALID_ROLES = ['user', 'supervisor', 'doer'] as const;
+    const JWT_ROLE_MAP: Record<string, 'user' | 'supervisor' | 'doer'> = {
       supervisor: 'supervisor',
       doer: 'doer',
     };
-    const senderRole = ROLE_MAP[req.user!.role] ?? 'user';
+    const jwtDerivedRole = JWT_ROLE_MAP[req.user!.role] ?? 'user';
+    const bodySenderRole = req.body.senderRole as string | undefined;
+    const senderRole: 'user' | 'supervisor' | 'doer' = (VALID_ROLES as readonly string[]).includes(bodySenderRole ?? '')
+      ? (bodySenderRole as 'user' | 'supervisor' | 'doer')
+      : jwtDerivedRole;
 
     const message = await ChatMessage.create({
       chatRoomId: req.params.id,

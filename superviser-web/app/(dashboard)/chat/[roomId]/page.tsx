@@ -62,7 +62,7 @@ export default function ChatRoomPage() {
           room_id: msg.chat_room_id || msg.room_id,
           sender_id: msg.sender_id || "",
           sender_name: msg.profiles?.full_name || "Unknown",
-          sender_role: (msg.action_metadata?.sender_role as "user" | "supervisor" | "doer" | "support" | "system") || (msg.profiles?.user_type as "user" | "supervisor" | "doer" | "support" | "system") || "user",
+          sender_role: (msg.sender_role || msg.action_metadata?.sender_role || "user") as "user" | "supervisor" | "doer" | "support" | "system",
           type: msg.message_type || msg.type || "text",
           content: msg.content || "",
           file_url: msg.file_url || undefined,

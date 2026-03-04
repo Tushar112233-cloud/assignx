@@ -211,6 +211,7 @@ export const chatService = {
         content,
         fileUrl: attachmentUrl,
         messageType: attachmentUrl ? 'file' : 'text',
+        senderRole: 'user',
       }),
     })
     return normalizeMessage(result.message || result)

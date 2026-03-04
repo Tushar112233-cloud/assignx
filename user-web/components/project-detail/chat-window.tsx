@@ -711,8 +711,11 @@ export function ChatWindow({
                     key={message.id}
                     message={message}
                     isCurrentUser={
+                      // For new messages: only own if sender_role is "user" (not supervisor/doer)
+                      // For legacy messages (no sender_role): fall back to sender_id match
                       (message as any).sender_role === "user"
-                      || (!(message as any).sender_role && message.sender_id === userId)
+                        ? message.sender_id === userId
+                        : !(message as any).sender_role && message.sender_id === userId
                     }
                     userRole={effectiveRole}
                     userId={userId}

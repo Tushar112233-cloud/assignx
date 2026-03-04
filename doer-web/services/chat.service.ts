@@ -40,7 +40,7 @@ export async function sendMessage(
 ): Promise<ChatMessage> {
   return apiClient<ChatMessage>(`/api/chat/rooms/${roomId}/messages`, {
     method: 'POST',
-    body: JSON.stringify({ content, message_type: 'text' }),
+    body: JSON.stringify({ content, message_type: 'text', senderRole: 'doer' }),
   })
 }
 
