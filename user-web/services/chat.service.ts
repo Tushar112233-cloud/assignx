@@ -3,6 +3,37 @@ import { getSocket } from '@/lib/socket/client'
 import type { Socket } from 'socket.io-client'
 
 /**
+ * Normalize a raw MongoDB message (camelCase) to the snake_case interface.
+ * API stores senderId/createdAt/etc; client code expects sender_id/created_at/etc.
+ */
+function normalizeMessage(raw: any): MessageWithSender {
+  const isPopulated = raw.senderId && typeof raw.senderId === 'object'
+  const sender: MessageWithSender['sender'] = isPopulated
+    ? {
+        id: raw.senderId.id || raw.senderId._id?.toString() || '',
+        full_name: raw.senderId.fullName || raw.senderId.full_name || '',
+        avatar_url: raw.senderId.avatarUrl ?? raw.senderId.avatar_url ?? null,
+        email: raw.senderId.email,
+      }
+    : raw.sender
+
+  return {
+    ...raw,
+    id: raw.id || raw._id?.toString() || '',
+    chat_room_id: raw.chatRoomId?.toString() || raw.chat_room_id || '',
+    sender_id: (isPopulated ? sender?.id : raw.senderId?.toString()) || raw.sender_id || '',
+    sender_role: raw.senderRole || raw.sender_role || null,
+    content: raw.content ?? null,
+    message_type: raw.messageType || raw.message_type || null,
+    file_url: raw.file?.url || raw.fileUrl || raw.file_url || null,
+    action_metadata: raw.actionMetadata || raw.action_metadata || null,
+    read_by: raw.readBy || raw.read_by || null,
+    created_at: raw.createdAt || raw.created_at || null,
+    sender,
+  }
+}
+
+/**
  * Chat room type
  */
 interface ChatRoom {
@@ -21,6 +52,7 @@ interface ChatMessage {
   id: string
   chat_room_id: string
   sender_id: string
+  sender_role: 'user' | 'supervisor' | 'doer' | 'system' | null
   content: string | null
   message_type: string | null
   file_url: string | null
@@ -156,10 +188,11 @@ export const chatService = {
     const params = new URLSearchParams({ limit: String(limit) })
     if (before) params.set('before', before)
 
-    const result = await apiClient<{ messages: MessageWithSender[] }>(
+    const result = await apiClient<{ messages: any[] }>(
       `/api/chat/rooms/${roomId}/messages?${params.toString()}`
     )
-    return result.messages || result as any
+    const raw = result.messages || (result as any)
+    return Array.isArray(raw) ? raw.map(normalizeMessage) : []
   },
 
   /**
@@ -171,7 +204,7 @@ export const chatService = {
     content: string,
     attachmentUrl?: string
   ): Promise<ChatMessage> {
-    const result = await apiClient<{ message: ChatMessage }>(`/api/chat/rooms/${roomId}/messages`, {
+    const result = await apiClient<{ message: any }>(`/api/chat/rooms/${roomId}/messages`, {
       method: 'POST',
       body: JSON.stringify({
         senderId,
@@ -180,7 +213,7 @@ export const chatService = {
         messageType: attachmentUrl ? 'file' : 'text',
       }),
     })
-    return result.message || result as any
+    return normalizeMessage(result.message || result)
   },
 
   /**
@@ -204,8 +237,7 @@ export const chatService = {
    */
   async markAsRead(roomId: string, userId: string): Promise<void> {
     await apiClient(`/api/chat/rooms/${roomId}/read`, {
-      method: 'POST',
-      body: JSON.stringify({ userId }),
+      method: 'PUT',
     })
   },
 
@@ -227,17 +259,16 @@ export const chatService = {
 
     const socket: Socket = getSocket()
 
-    // Join the room
-    socket.emit('join-room', roomId)
+    // Join the room (server handles 'chat:join')
+    socket.emit('chat:join', roomId)
     this._setConnectionState('connecting')
 
-    // Listen for new messages
-    const eventName = `chat:${roomId}`
-    const handler = (message: ChatMessage) => {
-      callback(message)
+    // Server emits 'chat:message' to the chat:${roomId} room
+    const handler = (message: any) => {
+      callback(normalizeMessage(message))
     }
 
-    socket.on(eventName, handler)
+    socket.on('chat:message', handler)
 
     // Track connection state
     const onConnect = () => this._setConnectionState('connected')
@@ -253,11 +284,11 @@ export const chatService = {
     }
 
     const cleanup = () => {
-      socket.off(eventName, handler)
+      socket.off('chat:message', handler)
       socket.off('connect', onConnect)
       socket.off('disconnect', onDisconnect)
       socket.off('reconnect_attempt', onReconnect)
-      socket.emit('leave-room', roomId)
+      socket.emit('chat:leave', roomId)
       this._listeners.delete(roomId)
     }
 

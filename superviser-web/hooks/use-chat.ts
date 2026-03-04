@@ -14,7 +14,8 @@ import type {
   ChatRoomWithParticipants,
   ChatMessageWithSender,
   ChatRoomType,
-  MessageType
+  MessageType,
+  Json
 } from "@/types/database"
 
 interface UseChatRoomsOptions {
@@ -48,13 +49,16 @@ export function useChatRooms(options: UseChatRoomsOptions = {}): UseChatRoomsRet
         `/api/chat/rooms?${params.toString()}`
       )
 
-      let chatRooms = (data.rooms || []).map((room: Record<string, unknown>) => ({
-        ...room,
-        id: room._id || room.id,
-        room_type: room.roomType || room.room_type,
-        last_message_at: room.lastMessageAt || room.last_message_at,
-        created_at: room.createdAt || room.created_at,
-      })) as ChatRoomWithParticipants[]
+      let chatRooms = (data.rooms || []).map((room: ChatRoomWithParticipants) => {
+        const r = room as unknown as Record<string, unknown>
+        return {
+          ...r,
+          id: r._id || r.id,
+          room_type: r.roomType || r.room_type,
+          last_message_at: r.lastMessageAt || r.last_message_at,
+          created_at: r.createdAt || r.created_at,
+        }
+      }) as ChatRoomWithParticipants[]
 
       // Sort by last message
       chatRooms.sort((a, b) => {
@@ -77,14 +81,11 @@ export function useChatRooms(options: UseChatRoomsOptions = {}): UseChatRoomsRet
 
   // Real-time: new rooms via Socket.IO
   useEffect(() => {
-    try {
-      const socket = getSocket()
-      const handler = () => fetchRooms()
-      socket.on("chat:rooms", handler)
-      return () => { socket.off("chat:rooms", handler) }
-    } catch {
-      return undefined
-    }
+    const socket = getSocket()
+    if (!socket) return
+    const handler = () => fetchRooms()
+    socket.on("chat:rooms", handler)
+    return () => { socket.off("chat:rooms", handler) }
   }, [fetchRooms])
 
   return {
@@ -103,6 +104,53 @@ interface UseChatMessagesReturn {
   sendFile: (file: File) => Promise<void>
   loadMore: () => Promise<void>
   hasMore: boolean
+}
+
+/**
+ * Normalize a raw API/socket message (Mongoose camelCase) into the
+ * snake_case shape the frontend components expect.
+ */
+function normalizeMessage(raw: Record<string, unknown>): ChatMessageWithSender {
+  // senderId may be a populated object { _id, fullName, avatarUrl } or a plain string
+  const senderObj =
+    raw.senderId && typeof raw.senderId === "object"
+      ? (raw.senderId as Record<string, unknown>)
+      : null
+
+  const senderId = senderObj
+    ? String(senderObj._id || senderObj.id || "")
+    : String(raw.senderId || raw.sender_id || "")
+
+  const profiles = senderObj
+    ? {
+        full_name: (senderObj.fullName as string) || null,
+        avatar_url: (senderObj.avatarUrl as string) || null,
+      }
+    : raw.profiles
+      ? raw.profiles
+      : null
+
+  const fileObj = raw.file as Record<string, unknown> | null | undefined
+
+  return {
+    id: String(raw._id || raw.id || ""),
+    room_id: String(raw.chatRoomId || raw.chat_room_id || raw.room_id || ""),
+    sender_id: senderId,
+    sender_role: ((raw.senderRole || raw.sender_role || null) as 'user' | 'supervisor' | 'doer' | 'system' | null),
+    type: (raw.messageType || raw.message_type || raw.type || "text") as MessageType,
+    message_type: String(raw.messageType || raw.message_type || raw.type || "text"),
+    content: (raw.content as string) || null,
+    file_url: (fileObj?.url as string) || (raw.file_url as string) || null,
+    file_name: (fileObj?.name as string) || (raw.file_name as string) || null,
+    is_read: Boolean(raw.isRead ?? raw.is_read ?? false),
+    is_flagged: Boolean(raw.isFlagged ?? raw.is_flagged ?? false),
+    is_deleted: Boolean(raw.isDeleted ?? raw.is_deleted ?? false),
+    flag_reason: (raw.flagReason as string) || (raw.flag_reason as string) || null,
+    metadata: (raw.metadata as Json) || null,
+    created_at: String(raw.createdAt || raw.created_at || ""),
+    updated_at: (raw.updatedAt || raw.updated_at || null) as string | null,
+    profiles: profiles as ChatMessageWithSender["profiles"],
+  } as ChatMessageWithSender
 }
 
 export function useChatMessages(roomId: string): UseChatMessagesReturn {
@@ -128,7 +176,8 @@ export function useChatMessages(roomId: string): UseChatMessagesReturn {
         `/api/chat/rooms/${roomId}/messages?${params.toString()}`
       )
 
-      const newMessages = (data.messages || []).reverse()
+      const rawMessages = (data.messages || []) as unknown as Record<string, unknown>[]
+      const newMessages = rawMessages.map(normalizeMessage).reverse()
 
       if (append) {
         setMessages(prev => [...newMessages, ...prev])
@@ -152,7 +201,7 @@ export function useChatMessages(roomId: string): UseChatMessagesReturn {
   const sendMessage = useCallback(async (content: string, messageType: MessageType = "text") => {
     if (!roomId || !content.trim()) return
 
-    await apiFetch(`/api/chat/rooms/${roomId}/messages`, {
+    const data = await apiFetch<{ message: ChatMessageWithSender }>(`/api/chat/rooms/${roomId}/messages`, {
       method: "POST",
       body: JSON.stringify({
         content: content.trim(),
@@ -160,6 +209,15 @@ export function useChatMessages(roomId: string): UseChatMessagesReturn {
         senderRole: "supervisor",
       }),
     })
+
+    // Optimistically add sent message so it shows immediately without waiting for socket
+    if (data?.message) {
+      const normalized = normalizeMessage(data.message as unknown as Record<string, unknown>)
+      setMessages(prev => {
+        if (prev.some(m => m.id === normalized.id)) return prev
+        return [...prev, normalized]
+      })
+    }
   }, [roomId])
 
   const sendFile = useCallback(async (file: File) => {
@@ -208,27 +266,31 @@ export function useChatMessages(roomId: string): UseChatMessagesReturn {
   useEffect(() => {
     if (!roomId) return
 
-    try {
-      const socket = getSocket()
+    const socket = getSocket()
+    if (!socket) return
 
-      // Join the room
-      socket.emit("join-room", roomId)
+    // Join the chat room (server listens for "chat:join")
+    socket.emit("chat:join", roomId)
 
-      const handleNewMessage = (message: ChatMessageWithSender) => {
-        setMessages(prev => {
-          if (prev.some(m => m.id === message.id)) return prev
-          return [...prev, message]
-        })
-      }
+    const handleNewMessage = (message: ChatMessageWithSender & { chatRoomId?: string }) => {
+      // Filter to only this room's messages
+      const raw = message as unknown as Record<string, unknown>
+      const msgRoomId = raw.chatRoomId || raw.chat_room_id || raw.room_id
+      if (msgRoomId && String(msgRoomId) !== roomId) return
 
-      socket.on(`chat:${roomId}`, handleNewMessage)
+      const normalized = normalizeMessage(raw)
+      setMessages(prev => {
+        if (prev.some(m => m.id === normalized.id)) return prev
+        return [...prev, normalized]
+      })
+    }
 
-      return () => {
-        socket.off(`chat:${roomId}`, handleNewMessage)
-        socket.emit("leave-room", roomId)
-      }
-    } catch {
-      return undefined
+    // Server emits "chat:message" (not "chat:{roomId}")
+    socket.on("chat:message", handleNewMessage)
+
+    return () => {
+      socket.off("chat:message", handleNewMessage)
+      socket.emit("chat:leave", roomId)
     }
   }, [roomId])
 
@@ -284,14 +346,11 @@ export function useUnreadMessages(): UseUnreadMessagesReturn {
     fetchUnreadCounts()
 
     // Real-time: unread count updates via Socket.IO
-    try {
-      const socket = getSocket()
-      const handler = () => fetchUnreadCounts()
-      socket.on("chat:unread", handler)
-      return () => { socket.off("chat:unread", handler) }
-    } catch {
-      return undefined
-    }
+    const socket = getSocket()
+    if (!socket) return
+    const handler = () => fetchUnreadCounts()
+    socket.on("chat:unread", handler)
+    return () => { socket.off("chat:unread", handler) }
   }, [fetchUnreadCounts])
 
   return {

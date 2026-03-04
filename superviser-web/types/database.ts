@@ -314,6 +314,8 @@ export interface ChatMessage {
   /** API alias for room_id */
   chat_room_id?: string
   sender_id: string | null
+  /** Platform role of the sender: user-web → 'user', supervisor-web → 'supervisor', doer-web → 'doer' */
+  sender_role?: 'user' | 'supervisor' | 'doer' | 'system' | null
   type: MessageType
   /** API alias for type */
   message_type?: string

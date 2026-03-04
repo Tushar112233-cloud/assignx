@@ -124,6 +124,8 @@ export interface ChatMessage {
   sender_name?: string | null
   /** Sender avatar URL (from profile join) */
   sender_avatar?: string | null
+  /** Platform role of the sender: user-web → 'user', supervisor-web → 'supervisor', doer-web → 'doer' */
+  sender_role?: 'user' | 'supervisor' | 'doer' | 'system' | null
 }
 
 /**

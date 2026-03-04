@@ -192,9 +192,16 @@ router.get('/rooms/:id/messages', authenticate, async (req: Request, res: Respon
 // POST /chat/rooms/:id/messages
 router.post('/rooms/:id/messages', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const ROLE_MAP: Record<string, 'user' | 'supervisor' | 'doer'> = {
+      supervisor: 'supervisor',
+      doer: 'doer',
+    };
+    const senderRole = ROLE_MAP[req.user!.role] ?? 'user';
+
     const message = await ChatMessage.create({
       chatRoomId: req.params.id,
       senderId: req.user!.id,
+      senderRole,
       messageType: req.body.messageType || 'text',
       content: req.body.content || '',
       file: req.body.file,
@@ -245,9 +252,16 @@ router.post('/rooms/:id/files', authenticate, upload.single('file'), async (req:
     if (!req.file) throw new AppError('No file provided', 400);
     const result = await uploadBufferToCloudinary(req.file.buffer, 'assignx/chat');
 
+    const ROLE_MAP: Record<string, 'user' | 'supervisor' | 'doer'> = {
+      supervisor: 'supervisor',
+      doer: 'doer',
+    };
+    const senderRole = ROLE_MAP[req.user!.role] ?? 'user';
+
     const message = await ChatMessage.create({
       chatRoomId: req.params.id,
       senderId: req.user!.id,
+      senderRole,
       messageType: 'file',
       content: req.body.content || '',
       file: {

@@ -162,7 +162,8 @@ export function ChatPanel({
 
   /** Render message bubble */
   const renderMessage = (message: ChatMessage, index: number) => {
-    const isOwn = message.sender_id === currentUserId
+    const isOwn = message.sender_role === 'doer'
+      || (!message.sender_role && message.sender_id === currentUserId)
     const previous = index > 0 ? messages[index - 1] : null
     const showDateSeparator = shouldShowDateSeparator(message, previous)
     const showAvatar = !previous || previous.sender_id !== message.sender_id
@@ -211,10 +212,15 @@ export function ChatPanel({
                 : 'bg-muted rounded-bl-md'
             )}
           >
-            {/* Sender name */}
+            {/* Sender name + role badge */}
             {showAvatar && !isOwn && (
-              <p className="text-xs font-medium mb-1 opacity-70">
+              <p className="text-xs font-medium mb-1 opacity-70 flex items-center gap-1">
                 {message.sender_name}
+                {message.sender_role && message.sender_role !== 'doer' && (
+                  <span className="text-[9px] border border-current rounded px-1 capitalize opacity-60">
+                    {message.sender_role}
+                  </span>
+                )}
               </p>
             )}
 

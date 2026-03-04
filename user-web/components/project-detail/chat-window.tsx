@@ -207,8 +207,16 @@ function MessageBubble({
         )}
       >
         {!isCurrentUser && (
-          <span className="mb-1 text-xs text-muted-foreground">
+          <span className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
             {senderName}
+            {(message as any).sender_role && (message as any).sender_role !== "user" && (
+              <Badge
+                variant="outline"
+                className="px-1 py-0 text-[9px] h-4 capitalize"
+              >
+                {(message as any).sender_role}
+              </Badge>
+            )}
           </span>
         )}
 
@@ -703,8 +711,8 @@ export function ChatWindow({
                     key={message.id}
                     message={message}
                     isCurrentUser={
-                      (message.action_metadata as Record<string, unknown>)?.sender_role === "user"
-                      || (!(message.action_metadata as Record<string, unknown>)?.sender_role && message.sender_id === userId)
+                      (message as any).sender_role === "user"
+                      || (!(message as any).sender_role && message.sender_id === userId)
                     }
                     userRole={effectiveRole}
                     userId={userId}
