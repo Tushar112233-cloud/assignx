@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
-import { Supervisor, SupervisorActivation, Profile, Project, Doer, DoerReview, Wallet, WalletTransaction, SupportTicket } from '../models';
+import { Supervisor, SupervisorActivation, Profile, Project, Doer, DoerReview, Wallet, WalletTransaction, SupportTicket, Subject, Notification } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
@@ -9,7 +9,8 @@ const router = Router();
 // GET /supervisors/me - Get current supervisor's data
 router.get('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findOne({ profileId: req.user!.id })
+      .populate('subjects.subjectId', 'name category');
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
     const obj = supervisor.toObject();
@@ -17,6 +18,21 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
       ...obj,
       id: obj._id,
       profile_id: obj.profileId,
+      // Flat snake_case bank fields expected by frontend types
+      bank_name: obj.bankDetails?.bankName || null,
+      bank_account_number: obj.bankDetails?.accountNumber || null,
+      bank_account_name: obj.bankDetails?.accountName || null,
+      bank_ifsc_code: obj.bankDetails?.ifscCode || null,
+      upi_id: obj.bankDetails?.upiId || null,
+      bank_verified: obj.bankDetails?.verified || false,
+      // Flat snake_case supervisor fields
+      years_of_experience: obj.yearsOfExperience ?? 0,
+      is_available: obj.isAvailable ?? true,
+      is_activated: obj.isActivated ?? false,
+      is_access_granted: obj.isAccessGranted ?? false,
+      average_rating: obj.averageRating ?? 0,
+      total_reviews: obj.totalReviews ?? 0,
+      total_earnings: obj.totalEarnings ?? 0,
     });
   } catch (err) {
     next(err);
@@ -33,6 +49,32 @@ router.get('/me/activation', authenticate, async (req: Request, res: Response, n
 
     const activation = await SupervisorActivation.findOne({ supervisorId: supervisor._id });
     res.json(activation || { trainingCompleted: false, quizPassed: false, isActivated: supervisor.isActivated || false });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /supervisors/me/activation - Update activation fields (e.g. mark training complete)
+router.put('/me/activation', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    if (!supervisor) throw new AppError('Supervisor not found', 404);
+
+    const allowedFields = ['trainingCompleted', 'quizPassed'];
+    const updates: Record<string, unknown> = {};
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key];
+      }
+    }
+
+    const activation = await SupervisorActivation.findOneAndUpdate(
+      { supervisorId: supervisor._id },
+      { $set: updates },
+      { new: true, upsert: true }
+    );
+
+    res.json(activation);
   } catch (err) {
     next(err);
   }
@@ -186,9 +228,62 @@ router.delete('/me/blacklist/:doerId', authenticate, async (req: Request, res: R
 // GET /supervisors/me/expertise - Get supervisor expertise/subjects
 router.get('/me/expertise', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const supervisor = await Supervisor.findOne({ profileId: req.user!.id })
+      .populate('subjects.subjectId', 'name category');
+    if (!supervisor) return res.json({ expertise: [], subjects: [] });
+
+    const subjects = (supervisor.subjects || []).map(s => ({
+      id: (s.subjectId as any)?._id || s.subjectId,
+      name: (s.subjectId as any)?.name || '',
+      category: (s.subjectId as any)?.category || '',
+      isPrimary: s.isPrimary,
+    }));
+
+    res.json({
+      expertise: supervisor.expertise || [],
+      subjects,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /supervisors/me/subjects - Update supervisor subjects
+router.put('/me/subjects', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { subjects } = req.body as { subjects: { subjectId: string; isPrimary: boolean }[] };
+    if (!Array.isArray(subjects)) throw new AppError('subjects must be an array', 400);
+
+    // Validate all subjectIds exist
+    const subjectIds = subjects.map(s => s.subjectId);
+    const validSubjects = await Subject.find({ _id: { $in: subjectIds }, isActive: true });
+    if (validSubjects.length !== subjectIds.length) {
+      throw new AppError('One or more subject IDs are invalid', 400);
+    }
+
     const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
-    if (!supervisor) return res.json({ expertise: [] });
-    res.json({ expertise: (supervisor as any).expertise || [] });
+    if (!supervisor) throw new AppError('Supervisor not found', 404);
+
+    supervisor.subjects = subjects.map(s => ({
+      subjectId: s.subjectId as any,
+      isPrimary: s.isPrimary ?? false,
+    }));
+
+    // Also update legacy expertise strings
+    supervisor.expertise = validSubjects.map(s => s.name);
+
+    await supervisor.save();
+
+    // Return populated subjects
+    await supervisor.populate('subjects.subjectId', 'name category');
+    const populated = (supervisor.subjects || []).map(s => ({
+      id: (s.subjectId as any)?._id || s.subjectId,
+      name: (s.subjectId as any)?.name || '',
+      category: (s.subjectId as any)?.category || '',
+      isPrimary: s.isPrimary,
+    }));
+
+    res.json({ subjects: populated, expertise: supervisor.expertise });
   } catch (err) {
     next(err);
   }
@@ -315,20 +410,51 @@ router.get('/profile/availability', authenticate, async (req: Request, res: Resp
 // GET /supervisor/projects - Get projects for current supervisor
 router.get('/projects', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { status, statuses, sort, order, limit = '50', page = '1', search } = req.query;
-    const filter: Record<string, unknown> = { supervisorId: req.user!.id };
+    const { status, statuses, sort, order, limit = '50', page = '1', search, view } = req.query;
+    const filter: Record<string, unknown> = {};
 
-    if (status) {
-      filter.status = status;
-    } else if (statuses) {
-      filter.status = { $in: (statuses as string).split(',') };
+    // Build base filter based on view mode
+    if (view === 'pool') {
+      // Unassigned projects matching supervisor's subjects
+      const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+      const subjectIds = (supervisor?.subjects || []).map(s => s.subjectId);
+      filter.supervisorId = null;
+      filter.subjectId = { $in: subjectIds };
+      filter.status = { $in: ['submitted', 'analyzing', 'quoted', 'paid'] };
+    } else if (view === 'all') {
+      // Both assigned + matching pool
+      const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+      const subjectIds = (supervisor?.subjects || []).map(s => s.subjectId);
+      filter.$or = [
+        { supervisorId: req.user!.id },
+        { supervisorId: null, subjectId: { $in: subjectIds }, status: { $in: ['submitted', 'analyzing', 'quoted', 'paid'] } },
+      ];
+    } else {
+      // Default: assigned projects only
+      filter.supervisorId = req.user!.id;
+    }
+
+    // Additional status filter (only for non-pool views where status isn't already set)
+    if (view !== 'pool') {
+      if (status) {
+        filter.status = status;
+      } else if (statuses) {
+        filter.status = { $in: (statuses as string).split(',') };
+      }
     }
 
     if (search) {
-      filter.$or = [
+      const searchFilter = [
         { title: { $regex: search, $options: 'i' } },
         { topic: { $regex: search, $options: 'i' } },
       ];
+      // If $or already exists (from 'all' view), wrap in $and
+      if (filter.$or) {
+        filter.$and = [{ $or: filter.$or as any[] }, { $or: searchFilter }];
+        delete filter.$or;
+      } else {
+        filter.$or = searchFilter;
+      }
     }
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -490,6 +616,22 @@ router.post('/projects/:id/quote', authenticate, async (req: Request, res: Respo
       { new: true }
     );
     if (!project) throw new AppError('Project not found', 404);
+
+    // Notify project owner about the quote
+    const quoteAmount = user_amount || base_price;
+    if (project.userId) {
+      const notification = await Notification.create({
+        userId: project.userId,
+        type: 'project_quoted',
+        title: 'Quote Ready',
+        message: `Your project "${project.title}" has been quoted at R${quoteAmount}`,
+        data: { projectId: project._id },
+        targetRole: 'user',
+      });
+      const io = req.app.get('io');
+      if (io) io.to(`user:${project.userId}`).emit('notification:new', notification);
+    }
+
     res.json({ success: true, project });
   } catch (err) {
     next(err);
@@ -506,6 +648,35 @@ router.post('/projects/:id/assign-doer', authenticate, async (req: Request, res:
       { new: true }
     );
     if (!project) throw new AppError('Project not found', 404);
+
+    const io = req.app.get('io');
+
+    // Notify the doer they've been assigned
+    if (doer_id) {
+      const doerNotification = await Notification.create({
+        userId: doer_id,
+        type: 'project_assigned',
+        title: 'New Project Assigned',
+        message: `You have been assigned to project "${project.title}"`,
+        data: { projectId: project._id },
+        targetRole: 'doer',
+      });
+      if (io) io.to(`user:${doer_id}`).emit('notification:new', doerNotification);
+    }
+
+    // Notify the project owner
+    if (project.userId) {
+      const ownerNotification = await Notification.create({
+        userId: project.userId,
+        type: 'doer_assigned',
+        title: 'Writer Assigned',
+        message: `A writer has been assigned to your project "${project.title}"`,
+        data: { projectId: project._id },
+        targetRole: 'user',
+      });
+      if (io) io.to(`user:${project.userId}`).emit('notification:new', ownerNotification);
+    }
+
     res.json({ success: true, project });
   } catch (err) {
     next(err);
@@ -533,6 +704,20 @@ router.post('/projects/:id/revisions', authenticate, async (req: Request, res: R
     project.status = 'revision_requested';
     project.statusUpdatedAt = new Date();
     await project.save();
+
+    // Notify the doer about revision request
+    if (project.doerId) {
+      const notification = await Notification.create({
+        userId: project.doerId,
+        type: 'revision_requested',
+        title: 'Revision Requested',
+        message: `A revision has been requested for project "${project.title}"`,
+        data: { projectId: project._id },
+        targetRole: 'doer',
+      });
+      const io = req.app.get('io');
+      if (io) io.to(`user:${project.doerId}`).emit('notification:new', notification);
+    }
 
     res.json({ success: true, project });
   } catch (err) {

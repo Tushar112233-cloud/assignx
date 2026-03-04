@@ -626,6 +626,7 @@ router.put('/:id/assign-doer', authenticate, requireRole('supervisor', 'admin'),
         title: 'Writer Assigned',
         message: `A writer has been assigned to your project "${project.title}"`,
         data: { projectId: project._id },
+        targetRole: 'user',
       });
       if (io) io.to(`user:${project.userId}`).emit('notification:new', ownerNotification);
     }
@@ -657,6 +658,10 @@ router.put('/:id/approve', authenticate, async (req: Request, res: Response, nex
   try {
     const project = await Project.findById(req.params.id);
     if (!project) throw new AppError('Project not found', 404);
+    // Only the project owner (client) can approve their own project
+    if (String(project.userId) !== req.user!.id) {
+      throw new AppError('Only the project owner can approve this project', 403);
+    }
 
     project.userApproval = {
       approved: true,
@@ -697,13 +702,17 @@ router.put('/:id/approve', authenticate, async (req: Request, res: Response, nex
 // PUT /projects/:id/grade
 router.put('/:id/grade', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const project = await Project.findByIdAndUpdate(
+    const project = await Project.findById(req.params.id).select('userId');
+    if (!project) throw new AppError('Project not found', 404);
+    if (String(project.userId) !== req.user!.id) {
+      throw new AppError('Only the project owner can grade this project', 403);
+    }
+    const updated = await Project.findByIdAndUpdate(
       req.params.id,
       { 'userApproval.grade': req.body.grade, 'userApproval.feedback': req.body.feedback },
       { new: true }
     );
-    if (!project) throw new AppError('Project not found', 404);
-    res.json({ project });
+    res.json({ project: updated });
   } catch (err) {
     next(err);
   }
@@ -841,6 +850,7 @@ router.post('/:id/claim-from-pool', authenticate, async (req: Request, res: Resp
         title: 'Writer Assigned',
         message: `A writer has been assigned to your project "${project.title}"`,
         data: { projectId: project._id },
+        targetRole: 'user',
       });
       if (io) io.to(`user:${project.userId}`).emit('notification:new', ownerNotification);
     }
@@ -914,6 +924,7 @@ router.post('/:id/claim', authenticate, async (req: Request, res: Response, next
         title: 'Supervisor Assigned',
         message: `A supervisor has been assigned to "${project.title}"`,
         data: { projectId: project._id },
+        targetRole: 'user',
       });
       const io = req.app.get('io');
       if (io) io.to(`user:${project.userId}`).emit('notification:new', notification);
