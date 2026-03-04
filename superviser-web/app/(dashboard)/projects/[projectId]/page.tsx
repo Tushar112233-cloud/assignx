@@ -25,10 +25,11 @@ import {
   Send,
   Paperclip,
   Loader2,
+  Globe,
+  Users,
 } from "lucide-react"
 import Link from "next/link"
 import { apiFetch } from "@/lib/api/client"
-import { getStoredUser } from "@/lib/api/auth"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -200,14 +201,25 @@ export default function ProjectDetailPage() {
                   Project #{project.project_number}
                 </p>
               </div>
-              {project.status === "paid" && !project.doer_id && (
+              {(project.status === "submitted" || project.status === "analyzing") && (
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button
+                    onClick={() => setQuoteModalOpen(true)}
+                    className="rounded-full bg-amber-500 hover:bg-amber-600 text-white"
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Set Quote
+                  </Button>
+                </div>
+              )}
+              {(project.status === "paid" || project.status === "quoted") && !project.doer_id && (
                 <div className="flex gap-2 flex-shrink-0">
                   <Button
                     onClick={() => setAssignModalOpen(true)}
                     className="rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white"
                   >
                     <UserCircle className="h-4 w-4 mr-2" />
-                    Assign Expert
+                    Assign Doer
                   </Button>
                 </div>
               )}
@@ -283,11 +295,10 @@ export default function ProjectDetailPage() {
                 </div>
                 <h3 className="text-sm font-semibold text-[#1C1C1C]">Expert</h3>
               </div>
+
               {project.doer_id && project.doers ? (
-                <Link
-                  href={`/doers/${project.doer_id}`}
-                  className="flex items-center gap-3 group"
-                >
+                /* Doer is assigned */
+                <Link href={`/doers/${project.doer_id}`} className="flex items-center gap-3 group">
                   <Avatar className="h-12 w-12 ring-2 ring-white shadow-sm">
                     <AvatarImage src={project.doers.profiles?.avatar_url || undefined} />
                     <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold">
@@ -298,22 +309,73 @@ export default function ProjectDetailPage() {
                     <p className="font-semibold text-[#1C1C1C] group-hover:text-[#F97316] transition-colors truncate">
                       {project.doers.profiles?.full_name || "Unknown Doer"}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="h-2 w-2 rounded-full bg-green-500" />
+                      <p className="text-xs text-green-600 font-medium">Assigned</p>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">
                       Rating: {project.doers.average_rating?.toFixed(1) || "N/A"} ⭐
                     </p>
                   </div>
                 </Link>
-              ) : (
+              ) : (project as any).is_open_pool ? (
+                /* Project is in the open doer pool */
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-500">Not assigned yet</p>
-                  {project.status === "paid" && (
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 border border-purple-200">
+                    <div className="h-9 w-9 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                      <Globe className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-purple-800">In Open Pool</p>
+                      <p className="text-xs text-purple-600 mt-0.5">
+                        Qualified experts can see and claim this project
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-semibold bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full flex-shrink-0">
+                      POOL
+                    </span>
+                  </div>
+                  {(project.status === "quoted" || project.status === "paid") && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full rounded-xl border-gray-200 hover:border-orange-300 hover:bg-orange-50"
+                      onClick={() => setAssignModalOpen(true)}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Assign Directly Instead
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                /* No doer, not in pool — assign later */
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
+                    <div className="h-9 w-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-700">Not Assigned Yet</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {project.status === "quoted"
+                          ? "Waiting for client payment before assigning"
+                          : project.status === "paid"
+                          ? "Ready to assign — client has paid"
+                          : "No expert selected"}
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full flex-shrink-0">
+                      PENDING
+                    </span>
+                  </div>
+                  {(project.status === "quoted" || project.status === "paid") && (
                     <Button
                       size="sm"
                       className="w-full rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white shadow-lg"
                       onClick={() => setAssignModalOpen(true)}
                     >
                       <UserCircle className="h-4 w-4 mr-2" />
-                      Assign Expert
+                      Assign Doer
                     </Button>
                   )}
                 </div>
@@ -337,7 +399,7 @@ export default function ProjectDetailPage() {
                   <span className="text-sm text-gray-600">Your Commission:</span>
                   <span className="text-lg font-bold text-green-600">₹{project.supervisor_commission || 0}</span>
                 </div>
-                {project.status === "analyzing" && (
+                {(project.status === "submitted" || project.status === "analyzing") && (
                   <Button
                     size="sm"
                     className="w-full mt-3 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-xl shadow-lg"
@@ -518,6 +580,7 @@ export default function ProjectDetailPage() {
           project_number: project.project_number,
           title: project.title,
           subject: project.subjects?.name || "General",
+          subject_id: project.subject_id ? String(project.subject_id) : undefined,
           service_type: project.service_type,
           user_name: project.profiles?.full_name || "Unknown User",
           deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
@@ -533,13 +596,14 @@ export default function ProjectDetailPage() {
         }}
       />
 
-      {/* Assign Expert Modal */}
+      {/* Assign Doer Modal */}
       <AssignDoerModal
         project={project ? {
           id: project.id,
           project_number: project.project_number,
           title: project.title,
           subject: project.subjects?.name || "General",
+          subject_id: project.subject_id || null,
           service_type: project.service_type,
           user_name: project.profiles?.full_name || "Unknown User",
           deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
@@ -566,7 +630,8 @@ export default function ProjectDetailPage() {
  * Uses useChatRooms to find the project's chat room and useChatMessages for real-time messaging.
  */
 function ProjectChatPanel({ projectId }: { projectId: string }) {
-  const { rooms, isLoading: roomsLoading, error: roomsError } = useChatRooms({ projectId })
+  const { rooms, isLoading: roomsLoading, error: roomsError, refetch: refetchRooms } = useChatRooms({ projectId })
+  const [creatingRoom, setCreatingRoom] = useState(false)
   const activeRoomId = rooms.length > 0 ? rooms[0].id : ""
   const {
     messages,
@@ -578,17 +643,24 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
     loadMore,
   } = useChatMessages(activeRoomId)
 
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  // Auto-create a chat room if none exists
+  const handleCreateRoom = async () => {
+    setCreatingRoom(true)
+    try {
+      await apiFetch(`/api/chat/rooms/project/${projectId}`, { method: "POST" })
+      await refetchRooms()
+    } catch (err) {
+      toast.error("Failed to create chat room")
+    } finally {
+      setCreatingRoom(false)
+    }
+  }
+
   const [messageText, setMessageText] = useState("")
   const [isSending, setIsSending] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    const user = getStoredUser()
-    if (user) setCurrentUserId(user.id)
-  }, [])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -658,7 +730,7 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
   // Group messages by date
   const groupedMessages = useMemo(() => {
     const groups: { date: string; label: string; messages: typeof messages }[] = []
-    let currentDateStr = ""
+    let currentDateStr: string | null = null
 
     for (const msg of messages) {
       const dateStr = msg.created_at ? new Date(msg.created_at).toDateString() : ""
@@ -669,7 +741,7 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
           label: formatMessageDate(msg.created_at),
           messages: [msg],
         })
-      } else {
+      } else if (groups.length > 0) {
         groups[groups.length - 1].messages.push(msg)
       }
     }
@@ -707,7 +779,7 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
     )
   }
 
-  // No chat room exists yet
+  // No chat room exists yet — allow supervisor to start one
   if (rooms.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
@@ -718,9 +790,20 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
             <MessageSquare className="h-8 w-8 text-[#F97316]" />
           </div>
           <p className="text-sm text-gray-600 font-medium">No conversations yet</p>
-          <p className="text-xs text-gray-400 mt-1">
-            A chat room will be created when communication begins for this project
+          <p className="text-xs text-gray-400 mt-1 mb-5">
+            Start a chat room to communicate with the client and expert
           </p>
+          <Button
+            onClick={handleCreateRoom}
+            disabled={creatingRoom}
+            className="bg-[#F97316] hover:bg-[#EA580C] text-white rounded-full px-6"
+          >
+            {creatingRoom ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creating...</>
+            ) : (
+              <><MessageSquare className="h-4 w-4 mr-2" />Start Chat</>
+            )}
+          </Button>
         </div>
       </div>
     )
@@ -789,8 +872,8 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
 
               {/* Messages in this group */}
               {group.messages.map((msg, idx) => {
-                const isOwn = msg.sender_id === currentUserId
-                const senderProfile = msg.profiles
+                const isOwn = msg.sender_role === "supervisor"
+                const senderProfile = (msg as any).profiles
                 const senderName = senderProfile?.full_name || "Unknown"
                 const senderInitial = senderName.charAt(0).toUpperCase()
                 const prevMsg = group.messages[idx - 1]
@@ -816,18 +899,35 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
                     <div className={`shrink-0 ${!showSender ? "invisible" : ""}`}>
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={senderProfile?.avatar_url || undefined} />
-                        <AvatarFallback className={`text-xs font-semibold ${isOwn ? "bg-[#F97316] text-white" : "bg-blue-100 text-blue-700"}`}>
+                        <AvatarFallback className={`text-xs font-semibold ${
+                          isOwn ? "bg-[#F97316] text-white"
+                          : (msg as any).sender_role === "doer" ? "bg-emerald-100 text-emerald-700"
+                          : "bg-blue-100 text-blue-700"
+                        }`}>
                           {senderInitial}
                         </AvatarFallback>
                       </Avatar>
                     </div>
 
                     <div className={`space-y-1 ${isOwn ? "items-end" : "items-start"}`}>
-                      {/* Sender name */}
+                      {/* Sender name + role badge */}
                       {showSender && (
-                        <p className={`text-xs font-medium text-gray-500 ${isOwn ? "text-right" : ""}`}>
-                          {isOwn ? "You" : senderName}
-                        </p>
+                        <div className={`flex items-center gap-1.5 ${isOwn ? "justify-end" : ""}`}>
+                          <p className="text-xs font-medium text-gray-500">
+                            {isOwn ? "You" : senderName}
+                          </p>
+                          {(msg as any).sender_role && (
+                            <span className={`text-[9px] px-1 py-0.5 rounded border font-medium ${
+                              isOwn
+                                ? "text-orange-600 border-orange-200 bg-orange-50"
+                                : (msg as any).sender_role === "doer"
+                                ? "text-emerald-600 border-emerald-200 bg-emerald-50"
+                                : "text-blue-600 border-blue-200 bg-blue-50"
+                            }`}>
+                              {isOwn ? "supervisor" : (msg as any).sender_role}
+                            </span>
+                          )}
+                        </div>
                       )}
 
                       {/* Message bubble */}
