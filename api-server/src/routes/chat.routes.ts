@@ -8,6 +8,11 @@ import multer from 'multer';
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
+const JWT_ROLE_MAP: Record<string, 'user' | 'supervisor' | 'doer'> = {
+  supervisor: 'supervisor',
+  doer: 'doer',
+};
+
 // GET /chat/unread - Get unread message counts
 router.get('/unread', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -125,7 +130,7 @@ router.post('/rooms', authenticate, async (req: Request, res: Response, next: Ne
 router.post('/rooms/project/:projectId', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId } = req.params;
-    const requesterId = req.body.userId || req.user!.id;
+    const requesterId = req.user!.id;
 
     let room = await ChatRoom.findOne({ projectId, roomType: 'project_all' });
 
@@ -151,6 +156,28 @@ router.post('/rooms/project/:projectId', authenticate, async (req: Request, res:
 
     const obj = room.toObject();
     res.json({ room: { ...obj, id: obj._id.toString() } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /chat/rooms/:id/join - Add participant to a chat room
+router.post('/rooms/:id/join', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const requesterId = req.user!.id;
+    const room = await ChatRoom.findById(req.params.id);
+    if (!room) throw new AppError('Chat room not found', 404);
+
+    const isParticipant = room.participants.some(
+      (p: any) => p.profileId.toString() === requesterId
+    );
+    if (!isParticipant) {
+      await ChatRoom.updateOne(
+        { _id: room._id },
+        { $push: { participants: { profileId: requesterId, role: req.body.role || 'member', joinedAt: new Date(), isActive: true } } }
+      );
+    }
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }
@@ -205,19 +232,8 @@ router.get('/rooms/:id/messages', authenticate, async (req: Request, res: Respon
 // POST /chat/rooms/:id/messages
 router.post('/rooms/:id/messages', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Use senderRole explicitly sent by frontend (more reliable than JWT role, since the
-    // same account may log into different platforms with the same JWT role).
-    // Fall back to JWT-based detection if not provided.
-    const VALID_ROLES = ['user', 'supervisor', 'doer'] as const;
-    const JWT_ROLE_MAP: Record<string, 'user' | 'supervisor' | 'doer'> = {
-      supervisor: 'supervisor',
-      doer: 'doer',
-    };
-    const jwtDerivedRole = JWT_ROLE_MAP[req.user!.role] ?? 'user';
-    const bodySenderRole = req.body.senderRole as string | undefined;
-    const senderRole: 'user' | 'supervisor' | 'doer' = (VALID_ROLES as readonly string[]).includes(bodySenderRole ?? '')
-      ? (bodySenderRole as 'user' | 'supervisor' | 'doer')
-      : jwtDerivedRole;
+    // Derive senderRole from JWT only — never trust the request body for role claims.
+    const senderRole: 'user' | 'supervisor' | 'doer' = JWT_ROLE_MAP[req.user!.role] ?? 'user';
 
     // Doer messages start as pending (need supervisor approval before user sees them)
     const approvalStatus = senderRole === 'doer' ? 'pending' : 'approved';
@@ -277,16 +293,8 @@ router.post('/rooms/:id/files', authenticate, upload.single('file'), async (req:
     if (!req.file) throw new AppError('No file provided', 400);
     const result = await uploadBufferToCloudinary(req.file.buffer, 'assignx/chat');
 
-    const VALID_ROLES = ['user', 'supervisor', 'doer'] as const;
-    const JWT_ROLE_MAP: Record<string, 'user' | 'supervisor' | 'doer'> = {
-      supervisor: 'supervisor',
-      doer: 'doer',
-    };
-    const jwtDerivedRole = JWT_ROLE_MAP[req.user!.role] ?? 'user';
-    const bodySenderRole = req.body.senderRole as string | undefined;
-    const senderRole: 'user' | 'supervisor' | 'doer' = (VALID_ROLES as readonly string[]).includes(bodySenderRole ?? '')
-      ? (bodySenderRole as 'user' | 'supervisor' | 'doer')
-      : jwtDerivedRole;
+    // Derive senderRole from JWT only — never trust the request body for role claims.
+    const senderRole: 'user' | 'supervisor' | 'doer' = JWT_ROLE_MAP[req.user!.role] ?? 'user';
 
     const fileApprovalStatus = senderRole === 'doer' ? 'pending' : 'approved';
 
