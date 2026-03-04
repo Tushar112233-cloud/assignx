@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
-import { ChatRoom, ChatMessage } from '../models';
+import { ChatRoom, ChatMessage, Project } from '../models';
 import { uploadBufferToCloudinary } from '../services/upload.service';
 import { AppError } from '../middleware/errorHandler';
 import multer from 'multer';
@@ -132,26 +132,44 @@ router.post('/rooms/project/:projectId', authenticate, async (req: Request, res:
     const { projectId } = req.params;
     const requesterId = req.user!.id;
 
-    let room = await ChatRoom.findOne({ projectId, roomType: 'project_all' });
+    // Verify caller is a participant on this project (or is admin)
+    const project = await Project.findById(projectId).select('userId supervisorId doerId');
+    if (project) {
+      const projectParticipants = [
+        project.userId?.toString(),
+        project.supervisorId?.toString(),
+        project.doerId?.toString(),
+      ].filter(Boolean);
+      const isProjectMember = projectParticipants.includes(requesterId) || req.user!.role === 'admin';
+      if (!isProjectMember) throw new AppError('Forbidden: not a project participant', 403);
+    }
 
-    if (!room) {
-      room = await ChatRoom.create({
-        projectId,
-        roomType: 'project_all',
-        name: 'Project Chat',
-        participants: [{ profileId: requesterId, role: 'member', joinedAt: new Date(), isActive: true }],
-      });
-    } else {
-      const isParticipant = room.participants.some(
-        (p: any) => p.profileId.toString() === requesterId
+    // Atomic upsert — prevents duplicate rooms from race conditions
+    const room = await ChatRoom.findOneAndUpdate(
+      { projectId, roomType: 'project_all' },
+      {
+        $setOnInsert: {
+          projectId,
+          roomType: 'project_all',
+          name: 'Project Chat',
+          participants: [],
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    // Add caller as participant if not already present
+    const isParticipant = room.participants.some(
+      (p: any) => p.profileId.toString() === requesterId
+    );
+    if (!isParticipant) {
+      await ChatRoom.updateOne(
+        { _id: room._id },
+        { $push: { participants: { profileId: requesterId, role: 'member', joinedAt: new Date(), isActive: true } } }
       );
-      if (!isParticipant) {
-        await ChatRoom.updateOne(
-          { _id: room._id },
-          { $push: { participants: { profileId: requesterId, role: 'member', joinedAt: new Date(), isActive: true } } }
-        );
-        room = (await ChatRoom.findById(room._id))!;
-      }
+      const updated = await ChatRoom.findById(room._id);
+      const obj = updated!.toObject();
+      return res.json({ room: { ...obj, id: obj._id.toString() } });
     }
 
     const obj = room.toObject();
@@ -164,17 +182,30 @@ router.post('/rooms/project/:projectId', authenticate, async (req: Request, res:
 // POST /chat/rooms/:id/join - Add participant to a chat room
 router.post('/rooms/:id/join', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const requesterId = req.user!.id;
     const room = await ChatRoom.findById(req.params.id);
     if (!room) throw new AppError('Chat room not found', 404);
 
-    const isParticipant = room.participants.some(
-      (p: any) => p.profileId.toString() === requesterId
+    // Verify the caller is on the associated project
+    if (room.projectId) {
+      const project = await Project.findById(room.projectId).select('userId supervisorId doerId');
+      if (!project) throw new AppError('Forbidden: associated project not found', 403);
+
+      const projectParticipants = [
+        project.userId?.toString(),
+        project.supervisorId?.toString(),
+        project.doerId?.toString(),
+      ].filter(Boolean);
+      const isProjectMember = projectParticipants.includes(req.user!.id) || req.user!.role === 'admin';
+      if (!isProjectMember) throw new AppError('Forbidden: not a project participant', 403);
+    }
+
+    const isAlreadyParticipant = room.participants.some(
+      (p: any) => p.profileId.toString() === req.user!.id
     );
-    if (!isParticipant) {
+    if (!isAlreadyParticipant) {
       await ChatRoom.updateOne(
         { _id: room._id },
-        { $push: { participants: { profileId: requesterId, role: req.body.role || 'member', joinedAt: new Date(), isActive: true } } }
+        { $push: { participants: { profileId: req.user!.id, role: req.body.role || 'member', joinedAt: new Date(), isActive: true } } }
       );
     }
     res.json({ success: true });
@@ -331,6 +362,9 @@ router.post('/rooms/:id/files', authenticate, upload.single('file'), async (req:
 // PUT /chat/rooms/:id/suspend
 router.put('/rooms/:id/suspend', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!['supervisor', 'admin'].includes(req.user!.role)) {
+      throw new AppError('Only supervisors can suspend chat rooms', 403);
+    }
     const room = await ChatRoom.findByIdAndUpdate(
       req.params.id,
       { isSuspended: true, suspendedBy: req.user!.id, suspendedAt: new Date(), suspensionReason: req.body.reason || '' },
@@ -352,6 +386,9 @@ router.put('/rooms/:id/suspend', authenticate, async (req: Request, res: Respons
 // PUT /chat/rooms/:id/unsuspend
 router.put('/rooms/:id/unsuspend', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!['supervisor', 'admin'].includes(req.user!.role)) {
+      throw new AppError('Only supervisors can unsuspend chat rooms', 403);
+    }
     const room = await ChatRoom.findByIdAndUpdate(
       req.params.id,
       { isSuspended: false, suspendedBy: null, suspendedAt: null, suspensionReason: '' },
@@ -427,12 +464,18 @@ router.put('/messages/:id/reject', authenticate, async (req: Request, res: Respo
 // DELETE /chat/messages/:id
 router.delete('/messages/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const message = await ChatMessage.findByIdAndUpdate(
-      req.params.id,
-      { isDeleted: true, deletedBy: req.user!.id, deletedAt: new Date() },
-      { new: true }
-    );
+    const message = await ChatMessage.findById(req.params.id);
     if (!message) throw new AppError('Message not found', 404);
+
+    // Only the sender or a supervisor/admin can delete
+    const isSender = message.senderId.toString() === req.user!.id;
+    const isPrivileged = ['supervisor', 'admin'].includes(req.user!.role);
+    if (!isSender && !isPrivileged) throw new AppError('Forbidden', 403);
+
+    await ChatMessage.findByIdAndUpdate(
+      req.params.id,
+      { isDeleted: true, deletedBy: req.user!.id, deletedAt: new Date() }
+    );
 
     const io = req.app.get('io');
     if (io) {

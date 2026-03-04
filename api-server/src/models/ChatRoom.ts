@@ -44,5 +44,6 @@ const chatRoomSchema = new Schema<IChatRoom>(
 
 chatRoomSchema.index({ projectId: 1 });
 chatRoomSchema.index({ 'participants.profileId': 1 });
+chatRoomSchema.index({ projectId: 1, roomType: 1 }, { unique: true, sparse: true });
 
 export const ChatRoom = mongoose.model<IChatRoom>('ChatRoom', chatRoomSchema, 'chat_rooms');
