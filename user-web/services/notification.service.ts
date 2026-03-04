@@ -40,6 +40,26 @@ interface NotificationFilters {
 type NotificationCallback = (notification: Notification) => void
 
 /**
+ * Normalize raw MongoDB notification (camelCase) to the snake_case interface.
+ */
+function normalizeNotification(raw: any): Notification {
+  return {
+    ...raw,
+    id: raw.id || raw._id?.toString() || '',
+    type: raw.type || raw.notificationType || null,
+    notification_type: raw.type || raw.notificationType || null,
+    title: raw.title || null,
+    message: raw.message || null,
+    body: raw.message || null,
+    is_read: raw.isRead ?? raw.is_read ?? false,
+    read_at: raw.readAt || raw.read_at || null,
+    created_at: raw.createdAt ? new Date(raw.createdAt).toISOString() : raw.created_at || null,
+    target_role: raw.targetRole || raw.target_role || null,
+    metadata: raw.data || raw.metadata || null,
+  }
+}
+
+/**
  * Notification service for managing user notifications.
  * Uses API client for data and Socket.IO for realtime.
  */
@@ -63,10 +83,11 @@ export const notificationService = {
     if (filters?.limit) params.set('limit', String(filters.limit))
     if (filters?.offset) params.set('offset', String(filters.offset))
 
-    const result = await apiClient<{ notifications: Notification[] }>(
+    const result = await apiClient<{ notifications: any[] }>(
       `/api/notifications?userId=${userId}&${params.toString()}`
     )
-    return result.notifications || result as any
+    const raw = result.notifications || (result as any)
+    return Array.isArray(raw) ? raw.map(normalizeNotification) : []
   },
 
   /**
@@ -134,8 +155,8 @@ export const notificationService = {
     const socket: Socket = getSocket()
     const eventName = `notification:${userId}`
 
-    const handler = (notification: Notification) => {
-      callback(notification)
+    const handler = (raw: any) => {
+      callback(normalizeNotification(raw))
     }
 
     socket.on(eventName, handler)

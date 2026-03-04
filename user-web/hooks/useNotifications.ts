@@ -97,7 +97,7 @@ export function useNotifications(userId: string | null) {
 
           // Show toast for new notification
           toast(notification.title, {
-            description: notification.body,
+            description: notification.message || notification.body,
           })
         })
       } catch (error) {

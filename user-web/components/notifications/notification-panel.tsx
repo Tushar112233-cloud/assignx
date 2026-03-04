@@ -1,7 +1,27 @@
 "use client"
 
 import { useState } from "react"
-import { Bell, Check, CheckCheck, Trash2, Settings, Loader2 } from "lucide-react"
+import {
+  Bell,
+  Check,
+  CheckCheck,
+  Trash2,
+  Settings,
+  Loader2,
+  IndianRupee,
+  MessageCircle,
+  UserCheck,
+  Package,
+  RefreshCw,
+  FileText,
+  AlertCircle,
+  ShieldCheck,
+  ShieldX,
+  Wallet,
+  UserPlus,
+  CheckCircle2,
+  Star,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -16,10 +36,13 @@ import { useNotifications } from "@/hooks/useNotifications"
 import type { Notification } from "@/services"
 
 /**
- * Format relative time
+ * Format relative time — safe against null / Invalid Date
  */
-function formatRelativeTime(timestamp: string): string {
+function formatRelativeTime(timestamp: string | null | undefined): string {
+  if (!timestamp) return ""
   const date = new Date(timestamp)
+  if (isNaN(date.getTime())) return ""
+
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   const diffMins = Math.floor(diffMs / 60000)
@@ -31,32 +54,133 @@ function formatRelativeTime(timestamp: string): string {
   if (diffHours < 24) return `${diffHours}h ago`
   if (diffDays < 7) return `${diffDays}d ago`
 
-  return date.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-  })
+  return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" })
 }
 
 /**
- * Get notification icon based on type
+ * Per-type icon + color config
  */
-function getNotificationStyle(type: string): { bg: string; text: string } {
+interface NotificationStyle {
+  Icon: React.ElementType
+  iconBg: string
+  iconColor: string
+  accent: string
+}
+
+function getNotificationStyle(type: string | null | undefined): NotificationStyle {
   switch (type) {
-    case "project_update":
-      return { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-600 dark:text-blue-400" }
-    case "payment":
-      return { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-600 dark:text-green-400" }
-    case "message":
-      return { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-600 dark:text-purple-400" }
-    case "system":
-      return { bg: "bg-gray-100 dark:bg-gray-900/30", text: "text-gray-600 dark:text-gray-400" }
+    case "doer_assigned":
+    case "task_assigned":
+    case "writer_assigned":
+      return {
+        Icon: UserCheck,
+        iconBg: "bg-violet-100 dark:bg-violet-900/40",
+        iconColor: "text-violet-600 dark:text-violet-400",
+        accent: "bg-violet-500",
+      }
+    case "project_claimed":
+    case "supervisor_assigned":
+    case "project_assigned":
+      return {
+        Icon: UserPlus,
+        iconBg: "bg-blue-100 dark:bg-blue-900/40",
+        iconColor: "text-blue-600 dark:text-blue-400",
+        accent: "bg-blue-500",
+      }
+    case "project_quoted":
+    case "quote_ready":
+      return {
+        Icon: IndianRupee,
+        iconBg: "bg-emerald-100 dark:bg-emerald-900/40",
+        iconColor: "text-emerald-600 dark:text-emerald-400",
+        accent: "bg-emerald-500",
+      }
+    case "payment_received":
+    case "project_payment":
+    case "top_up":
+      return {
+        Icon: Wallet,
+        iconBg: "bg-green-100 dark:bg-green-900/40",
+        iconColor: "text-green-600 dark:text-green-400",
+        accent: "bg-green-500",
+      }
+    case "new_message":
+      return {
+        Icon: MessageCircle,
+        iconBg: "bg-purple-100 dark:bg-purple-900/40",
+        iconColor: "text-purple-600 dark:text-purple-400",
+        accent: "bg-purple-500",
+      }
+    case "project_completed":
+    case "auto_approved":
+      return {
+        Icon: CheckCircle2,
+        iconBg: "bg-teal-100 dark:bg-teal-900/40",
+        iconColor: "text-teal-600 dark:text-teal-400",
+        accent: "bg-teal-500",
+      }
+    case "project_delivered":
+      return {
+        Icon: Package,
+        iconBg: "bg-cyan-100 dark:bg-cyan-900/40",
+        iconColor: "text-cyan-600 dark:text-cyan-400",
+        accent: "bg-cyan-500",
+      }
+    case "revision_requested":
+    case "in_revision":
+      return {
+        Icon: RefreshCw,
+        iconBg: "bg-amber-100 dark:bg-amber-900/40",
+        iconColor: "text-amber-600 dark:text-amber-400",
+        accent: "bg-amber-500",
+      }
+    case "qc_approved":
+      return {
+        Icon: ShieldCheck,
+        iconBg: "bg-green-100 dark:bg-green-900/40",
+        iconColor: "text-green-600 dark:text-green-400",
+        accent: "bg-green-500",
+      }
+    case "qc_rejected":
+      return {
+        Icon: ShieldX,
+        iconBg: "bg-red-100 dark:bg-red-900/40",
+        iconColor: "text-red-600 dark:text-red-400",
+        accent: "bg-red-500",
+      }
+    case "project_submitted":
+      return {
+        Icon: FileText,
+        iconBg: "bg-blue-100 dark:bg-blue-900/40",
+        iconColor: "text-blue-600 dark:text-blue-400",
+        accent: "bg-blue-500",
+      }
+    case "payout_processed":
+      return {
+        Icon: Star,
+        iconBg: "bg-yellow-100 dark:bg-yellow-900/40",
+        iconColor: "text-yellow-600 dark:text-yellow-400",
+        accent: "bg-yellow-500",
+      }
+    case "system_alert":
+      return {
+        Icon: AlertCircle,
+        iconBg: "bg-orange-100 dark:bg-orange-900/40",
+        iconColor: "text-orange-600 dark:text-orange-400",
+        accent: "bg-orange-500",
+      }
     default:
-      return { bg: "bg-primary/10", text: "text-primary" }
+      return {
+        Icon: Bell,
+        iconBg: "bg-muted",
+        iconColor: "text-muted-foreground",
+        accent: "bg-muted-foreground/40",
+      }
   }
 }
 
 /**
- * Single notification item
+ * Single notification item — rich, detailed, beautiful
  */
 function NotificationItem({
   notification,
@@ -67,56 +191,77 @@ function NotificationItem({
   onRead: (id: string) => void
   onDelete: (id: string) => void
 }) {
-  const style = getNotificationStyle(notification.notification_type)
+  const type = notification.type || notification.notification_type
+  const style = getNotificationStyle(type)
+  const { Icon } = style
+  const isUnread = !notification.is_read
+  const body = notification.message || notification.body
+  const time = formatRelativeTime(notification.created_at)
 
   return (
     <div
       className={cn(
-        "group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50",
-        !notification.is_read && "bg-primary/5"
+        "group relative flex items-start gap-3 px-4 py-3.5 transition-all hover:bg-muted/40",
+        isUnread && "bg-primary/[0.03]"
       )}
     >
+      {/* Unread accent bar */}
+      {isUnread && (
+        <span className={cn("absolute left-0 top-3 h-8 w-[3px] rounded-r-full", style.accent)} />
+      )}
+
       {/* Icon */}
-      <div className={cn("mt-0.5 rounded-full p-2", style.bg)}>
-        <Bell className={cn("h-4 w-4", style.text)} />
+      <div className={cn("mt-0.5 flex-shrink-0 rounded-xl p-2.5", style.iconBg)}>
+        <Icon className={cn("h-4 w-4", style.iconColor)} />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <p className={cn("text-sm font-medium", !notification.is_read && "text-foreground")}>
+        <div className="flex items-start justify-between gap-2 mb-0.5">
+          <p className={cn(
+            "text-sm leading-snug",
+            isUnread ? "font-semibold text-foreground" : "font-medium text-foreground/80"
+          )}>
             {notification.title}
           </p>
-          <span className="shrink-0 text-xs text-muted-foreground">
-            {notification.created_at && formatRelativeTime(notification.created_at)}
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isUnread && (
+              <span className="h-1.5 w-1.5 rounded-full bg-primary mt-1" />
+            )}
+            {time && (
+              <span className="text-[11px] text-muted-foreground whitespace-nowrap">{time}</span>
+            )}
+          </div>
         </div>
-        <p className="mt-0.5 text-sm text-muted-foreground line-clamp-2">
-          {notification.body}
-        </p>
+
+        {body && (
+          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mt-0.5">
+            {body}
+          </p>
+        )}
       </div>
 
-      {/* Actions */}
-      <div className="flex shrink-0 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {!notification.is_read && (
+      {/* Hover actions */}
+      <div className="absolute right-3 top-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm rounded-lg p-0.5 shadow-sm border border-border/50">
+        {isUnread && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-7 w-7 text-muted-foreground hover:text-primary"
             onClick={() => onRead(notification.id)}
+            title="Mark as read"
           >
-            <Check className="h-4 w-4" />
-            <span className="sr-only">Mark as read</span>
+            <Check className="h-3.5 w-3.5" />
           </Button>
         )}
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-destructive hover:text-destructive"
+          className="h-7 w-7 text-muted-foreground hover:text-destructive"
           onClick={() => onDelete(notification.id)}
+          title="Delete"
         >
-          <Trash2 className="h-4 w-4" />
-          <span className="sr-only">Delete</span>
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>
@@ -147,9 +292,6 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
     deleteNotification,
   } = useNotifications(userId)
 
-  /**
-   * Handle push toggle
-   */
   const handlePushToggle = async (enabled: boolean) => {
     if (enabled) {
       await subscribeToPush()
@@ -175,29 +317,36 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-96 p-0" align="end">
+      <PopoverContent className="w-[400px] p-0" align="end">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <h3 className="font-semibold">Notifications</h3>
           <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm">Notifications</h3>
+            {unreadCount > 0 && (
+              <span className="inline-flex items-center justify-center h-5 min-w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1.5">
+                {unreadCount}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
             {unreadCount > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 gap-1 text-xs"
+                className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                 onClick={markAllAsRead}
               >
-                <CheckCheck className="h-4 w-4" />
+                <CheckCheck className="h-3.5 w-3.5" />
                 Mark all read
               </Button>
             )}
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
               onClick={() => setShowSettings(!showSettings)}
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-3.5 w-3.5" />
               <span className="sr-only">Settings</span>
             </Button>
           </div>
@@ -205,11 +354,11 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
 
         {/* Settings panel */}
         {showSettings && (
-          <div className="border-b px-4 py-3">
+          <div className="border-b px-4 py-3 bg-muted/30">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">Push Notifications</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {pushSupported
                     ? "Get notified even when the app is closed"
                     : "Not supported in this browser"}
@@ -225,19 +374,24 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
         )}
 
         {/* Notifications list */}
-        <ScrollArea className="h-[400px]">
+        <ScrollArea className="h-[420px]">
           {isLoading && notifications.length === 0 ? (
             <div className="flex h-32 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex h-32 flex-col items-center justify-center text-center">
-              <Bell className="h-8 w-8 text-muted-foreground/50" />
-              <p className="mt-2 text-sm text-muted-foreground">No notifications yet</p>
+            <div className="flex h-48 flex-col items-center justify-center text-center px-8">
+              <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mb-3">
+                <Bell className="h-6 w-6 text-muted-foreground/60" />
+              </div>
+              <p className="text-sm font-medium mb-1">You're all caught up!</p>
+              <p className="text-xs text-muted-foreground">
+                New notifications about your projects will appear here.
+              </p>
             </div>
           ) : (
             <>
-              <div className="divide-y">
+              <div className="divide-y divide-border/60">
                 {notifications.map((notification) => (
                   <NotificationItem
                     key={notification.id}
@@ -248,20 +402,19 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
                 ))}
               </div>
 
-              {/* Load more */}
               {hasMore && (
-                <div className="p-4">
+                <div className="p-4 border-t">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="w-full"
+                    className="w-full text-xs text-muted-foreground hover:text-foreground"
                     onClick={loadMore}
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      "Load more"
+                      "Load older notifications"
                     )}
                   </Button>
                 </div>
