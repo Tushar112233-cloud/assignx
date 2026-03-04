@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Search,
@@ -11,13 +11,12 @@ import {
   CheckCircle,
   Clock,
   Star,
-  ArrowUpRight,
   Rocket,
   DollarSign,
+  Users,
+  Ticket,
 } from "lucide-react";
 import { LiveStatsBadge } from "@/components/campus-connect/live-stats-badge";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { InvestorCard, FundingStage, PitchDeck } from "@/types/portals";
 
@@ -125,6 +124,68 @@ const STAGE_COLORS: Record<FundingStage, string> = {
   growth: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
 };
 
+/** Per-stage color theme for glassmorphism investor cards */
+const STAGE_THEME: Record<
+  FundingStage,
+  {
+    cardGradient: string;
+    border: string;
+    hoverShadow: string;
+    avatar: string;
+    button: string;
+    ticket: string;
+  }
+> = {
+  "pre-seed": {
+    cardGradient: "from-violet-500/10",
+    border: "border-violet-500/20",
+    hoverShadow: "hover:shadow-violet-500/10",
+    avatar: "bg-gradient-to-br from-violet-500 to-purple-600",
+    button: "bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500",
+    ticket: "text-violet-600 dark:text-violet-400",
+  },
+  seed: {
+    cardGradient: "from-emerald-500/10",
+    border: "border-emerald-500/20",
+    hoverShadow: "hover:shadow-emerald-500/10",
+    avatar: "bg-gradient-to-br from-emerald-500 to-teal-600",
+    button: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500",
+    ticket: "text-emerald-600 dark:text-emerald-400",
+  },
+  "series-a": {
+    cardGradient: "from-blue-500/10",
+    border: "border-blue-500/20",
+    hoverShadow: "hover:shadow-blue-500/10",
+    avatar: "bg-gradient-to-br from-blue-500 to-indigo-600",
+    button: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500",
+    ticket: "text-blue-600 dark:text-blue-400",
+  },
+  "series-b": {
+    cardGradient: "from-amber-500/10",
+    border: "border-amber-500/20",
+    hoverShadow: "hover:shadow-amber-500/10",
+    avatar: "bg-gradient-to-br from-amber-500 to-orange-600",
+    button: "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500",
+    ticket: "text-amber-600 dark:text-amber-400",
+  },
+  "series-c": {
+    cardGradient: "from-rose-500/10",
+    border: "border-rose-500/20",
+    hoverShadow: "hover:shadow-rose-500/10",
+    avatar: "bg-gradient-to-br from-rose-500 to-red-600",
+    button: "bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500",
+    ticket: "text-rose-600 dark:text-rose-400",
+  },
+  growth: {
+    cardGradient: "from-cyan-500/10",
+    border: "border-cyan-500/20",
+    hoverShadow: "hover:shadow-cyan-500/10",
+    avatar: "bg-gradient-to-br from-cyan-500 to-blue-600",
+    button: "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500",
+    ticket: "text-cyan-600 dark:text-cyan-400",
+  },
+};
+
 const DECK_STATUS_STYLES: Record<PitchDeck["status"], { color: string; icon: React.ElementType }> = {
   pending: { color: "text-amber-600 dark:text-amber-400", icon: Clock },
   reviewed: { color: "text-blue-600 dark:text-blue-400", icon: CheckCircle },
@@ -143,18 +204,136 @@ const heroFadeInUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
 };
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06 },
-  },
-};
+/** Returns up to 2 initials from an investor's full name */
+function getInvestorInitials(name: string): string {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
+/** Distributes items round-robin across N columns for masonry layout */
+function distributeIntoColumns<T>(items: T[], colCount: number): T[][] {
+  if (colCount <= 0) return [items];
+  const columns: T[][] = Array.from({ length: colCount }, () => []);
+  items.forEach((item, i) => columns[i % colCount].push(item));
+  return columns;
+}
+
+/** Reactive column count: 3 >=1024px, 2 >=640px, 1 mobile */
+function useColumnCount(): number {
+  const [cols, setCols] = useState<number | null>(null);
+  useEffect(() => {
+    const update = () => {
+      if (window.innerWidth >= 1024) setCols(3);
+      else if (window.innerWidth >= 640) setCols(2);
+      else setCols(1);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  return cols ?? 1;
+}
+
+/**
+ * InvestorTile — glassmorphism card for a single investor.
+ * Color-tinted per primary funding stage; masonry-safe (no fixed height).
+ */
+function InvestorTile({ investor }: { investor: InvestorCard }) {
+  const prefersReducedMotion = useReducedMotion();
+  const primaryStage = investor.fundingStages[0];
+  const theme = STAGE_THEME[primaryStage];
+  const initials = getInvestorInitials(investor.name);
+
+  return (
+    <motion.div
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+      animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className={cn(
+        "group rounded-2xl border bg-gradient-to-br to-transparent",
+        "shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 p-5 space-y-3",
+        theme.cardGradient,
+        theme.border,
+        theme.hoverShadow
+      )}
+    >
+      {/* Avatar row: initials circle + deal count badge */}
+      <div className="flex items-center justify-between gap-2">
+        <div
+          className={cn(
+            "h-11 w-11 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm shadow-sm",
+            theme.avatar
+          )}
+        >
+          {initials}
+        </div>
+        <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted/50 border border-border/40 rounded-full px-2 py-0.5">
+          <Users className="h-2.5 w-2.5" aria-hidden="true" />
+          {investor.portfolio} deals
+        </span>
+      </div>
+
+      {/* Name + Firm */}
+      <div>
+        <h3 className="text-sm font-bold text-foreground leading-snug">{investor.name}</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">{investor.firm}</p>
+      </div>
+
+      {/* Funding stage pills */}
+      <div className="flex flex-wrap gap-1.5">
+        {investor.fundingStages.map((stage) => (
+          <span
+            key={stage}
+            className={cn(
+              "px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border border-border/30",
+              STAGE_COLORS[stage]
+            )}
+          >
+            {stage}
+          </span>
+        ))}
+      </div>
+
+      {/* Sector chips */}
+      <div className="flex flex-wrap gap-1.5">
+        {investor.sectors.map((sector) => (
+          <span
+            key={sector}
+            className="px-2 py-0.5 rounded-md bg-muted/50 border border-border/40 text-[10px] font-medium text-muted-foreground"
+          >
+            {sector}
+          </span>
+        ))}
+      </div>
+
+      {/* Ticket size */}
+      <p className={cn("text-xs font-semibold flex items-center gap-1", theme.ticket)}>
+        <Ticket className="h-3 w-3" aria-hidden="true" />
+        {investor.ticketSize}
+      </p>
+
+      {/* Bio */}
+      <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
+        {investor.bio}
+      </p>
+
+      {/* Connect button */}
+      <button
+        type="button"
+        className={cn(
+          "w-full flex items-center justify-center gap-1.5 text-white text-[11px] font-medium px-3 py-2 rounded-lg transition-all",
+          theme.button
+        )}
+      >
+        Connect
+      </button>
+    </motion.div>
+  );
+}
 
 /**
  * BusinessPortalHero - Premium hero section for the Business tab
@@ -259,14 +438,14 @@ function BusinessPortalHero() {
             type="button"
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-medium shadow-lg shadow-orange-500/25 hover:-translate-y-0.5 transition-all text-sm"
           >
-            <Rocket className="h-4 w-4" />
+            <Rocket className="h-4 w-4" aria-hidden="true" />
             Pitch Your Idea
           </button>
           <button
             type="button"
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 backdrop-blur-sm text-white font-medium transition-all text-sm"
           >
-            <Search className="h-4 w-4" />
+            <Search className="h-4 w-4" aria-hidden="true" />
             Find Investors
           </button>
         </motion.div>
@@ -283,6 +462,7 @@ export function BusinessPortal() {
   const [search, setSearch] = useState("");
   const [selectedStage, setSelectedStage] = useState<FundingStage | "all">("all");
   const [selectedSector, setSelectedSector] = useState("All");
+  const colCount = useColumnCount();
 
   const filtered = useMemo(() => {
     return MOCK_INVESTORS.filter((inv) => {
@@ -294,6 +474,11 @@ export function BusinessPortal() {
       return true;
     });
   }, [search, selectedStage, selectedSector]);
+
+  const columns = useMemo(
+    () => distributeIntoColumns(filtered, colCount),
+    [filtered, colCount]
+  );
 
   return (
     <div className="space-y-6">
@@ -317,12 +502,13 @@ export function BusinessPortal() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
           {FUNDING_STAGES.map((stage) => (
             <button
+              type="button"
               key={stage.value}
               onClick={() => setSelectedStage(stage.value)}
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border",
                 selectedStage === stage.value
-                  ? "bg-primary text-primary-foreground border-primary"
+                  ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white border-transparent shadow-sm"
                   : "bg-muted/50 text-muted-foreground border-border/40 hover:bg-muted hover:text-foreground"
               )}
             >
@@ -348,69 +534,39 @@ export function BusinessPortal() {
       {/* Investors Grid */}
       <div>
         <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-primary" />
+          <TrendingUp className="h-4 w-4 text-primary" aria-hidden="true" />
           Investors & VCs
           <span className="text-xs text-muted-foreground font-normal">({filtered.length})</span>
         </h2>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="grid gap-4 sm:grid-cols-2"
-        >
-          {filtered.map((inv) => (
-            <motion.div
-              key={inv.id}
-              variants={itemVariants}
-              className="action-card-glass rounded-xl p-5 space-y-3 hover:shadow-lg transition-shadow"
-            >
-              {/* Header */}
-              <div className="flex items-start gap-3">
-                <div className="h-11 w-11 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 border border-border/30">
-                  <Building2 className="h-5 w-5 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold text-foreground">{inv.name}</h3>
-                  <p className="text-xs text-muted-foreground">{inv.firm}</p>
-                </div>
-                <span className="text-xs text-muted-foreground shrink-0">{inv.portfolio} deals</span>
-              </div>
-
-              {/* Bio */}
-              <p className="text-xs text-muted-foreground line-clamp-2">{inv.bio}</p>
-
-              {/* Stages */}
-              <div className="flex flex-wrap gap-1.5">
-                {inv.fundingStages.map((stage) => (
-                  <Badge key={stage} className={cn("text-[10px]", STAGE_COLORS[stage])}>
-                    {stage}
-                  </Badge>
+        {filtered.length > 0 ? (
+          <div className="-ml-4 flex w-auto items-start">
+            {columns.map((col, colIdx) => (
+              <div key={colIdx} className="pl-4 flex-1 min-w-0 flex flex-col gap-4">
+                {col.map((inv) => (
+                  <InvestorTile key={inv.id} investor={inv} />
                 ))}
               </div>
-
-              {/* Sectors + Ticket */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span className="truncate">{inv.sectors.join(", ")}</span>
-                <span className="shrink-0 font-medium">{inv.ticketSize}</span>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <div className="relative inline-flex mb-4">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-amber-500/20 rounded-full blur-xl" />
+              <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg">
+                <Building2 className="h-6 w-6 text-white" aria-hidden="true" />
               </div>
-
-              {/* Action */}
-              <Button size="sm" className="w-full mt-1" variant="outline">
-                <ArrowUpRight className="h-3.5 w-3.5 mr-1.5" />
-                Connect
-              </Button>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-12">
-            <Building2 className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">No investors match your filters</p>
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">No investors match your filters</p>
+            <p className="text-xs text-muted-foreground mb-3">Try adjusting your search or filters</p>
             <button
-              onClick={() => { setSearch(""); setSelectedStage("all"); setSelectedSector("All"); }}
-              className="text-xs text-primary mt-2 hover:underline"
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setSelectedStage("all");
+                setSelectedSector("All");
+              }}
+              className="text-xs text-orange-600 dark:text-orange-400 hover:underline font-medium"
             >
               Clear all filters
             </button>
@@ -421,37 +577,49 @@ export function BusinessPortal() {
       {/* Pitch Deck Section */}
       <div className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-          <FileText className="h-4 w-4 text-primary" />
+          <FileText className="h-4 w-4 text-primary" aria-hidden="true" />
           Pitch Decks
         </h2>
 
         {/* Upload Zone */}
-        <button className="w-full border-2 border-dashed border-border/50 rounded-xl p-6 flex flex-col items-center gap-2 hover:border-primary/40 hover:bg-primary/5 transition-colors group">
-          <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-          <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-            Drop your pitch deck here or click to upload
-          </span>
-          <span className="text-[10px] text-muted-foreground/60">PDF, PPTX up to 25MB</span>
+        <button
+          type="button"
+          className="w-full border-2 border-dashed border-orange-500/30 bg-orange-500/5 rounded-xl p-6 flex flex-col items-center gap-2 hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors group"
+        >
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-sm">
+            <Rocket className="h-5 w-5 text-white" aria-hidden="true" />
+          </div>
+          <span className="text-xs font-medium text-foreground">Drop your pitch deck here</span>
+          <span className="text-[10px] text-muted-foreground">Pitch to 1,240+ active investors · PDF, PPTX up to 25MB</span>
         </button>
 
         {/* Deck List */}
         <div className="space-y-2">
           {MOCK_DECKS.map((deck) => {
             const StatusConfig = DECK_STATUS_STYLES[deck.status];
+            const borderColor =
+              deck.status === "shortlisted"
+                ? "border-l-emerald-500"
+                : deck.status === "reviewed"
+                ? "border-l-blue-500"
+                : "border-l-amber-500";
             return (
               <div
                 key={deck.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30"
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30 border-l-4",
+                  borderColor
+                )}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{deck.name}</p>
                     <p className="text-[10px] text-muted-foreground">{deck.uploadedAt}</p>
                   </div>
                 </div>
                 <div className={cn("flex items-center gap-1 text-xs font-medium", StatusConfig.color)}>
-                  <StatusConfig.icon className="h-3.5 w-3.5" />
+                  <StatusConfig.icon className="h-3.5 w-3.5" aria-hidden="true" />
                   <span className="capitalize">{deck.status}</span>
                 </div>
               </div>
