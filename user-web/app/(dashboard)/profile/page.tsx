@@ -13,6 +13,7 @@ import {
   SettingsTabs,
   SettingsSection,
   PaymentMethodsSection,
+  SubjectsSection,
 } from "@/components/profile";
 import { ProfilePro } from "./profile-pro";
 import { useUserStore, type User } from "@/stores/user-store";
@@ -94,7 +95,6 @@ function transformToAcademicInfo(user: User | null): AcademicInfo | null {
  */
 const defaultPreferences: UserPreferences = {
   theme: "system",
-  language: "en",
   notifications: {
     emailNotifications: true,
     pushNotifications: true,
@@ -169,7 +169,6 @@ export default function ProfilePage() {
         const prefs = await getUserPreferences();
         setPreferences({
           theme: prefs.theme,
-          language: prefs.language,
           notifications: prefs.notifications,
         });
       } catch {
@@ -260,7 +259,6 @@ export default function ProfilePage() {
     try {
       const result = await updateUserPreferences({
         theme: data.theme,
-        language: data.language,
         notifications: data.notifications,
       });
 
@@ -419,14 +417,19 @@ export default function ProfilePage() {
           />
         );
       case "academic":
-        return academicInfo ? (
-          <AcademicInfoSection
-            academicInfo={academicInfo}
-            onSave={handleAcademicSave}
-          />
-        ) : (
-          <div className="p-4 text-muted-foreground">
-            Academic info not available for {user?.user_type} accounts
+        return (
+          <div className="space-y-4">
+            {academicInfo ? (
+              <AcademicInfoSection
+                academicInfo={academicInfo}
+                onSave={handleAcademicSave}
+              />
+            ) : (
+              <div className="p-4 text-muted-foreground">
+                Academic info not available for {user?.user_type} accounts
+              </div>
+            )}
+            <SubjectsSection />
           </div>
         );
       case "preferences":

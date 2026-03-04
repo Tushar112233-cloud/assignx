@@ -26,6 +26,9 @@ export { UpgradeDialog } from "./upgrade-dialog";
 // Payment methods
 export { PaymentMethodsSection } from "./payment-methods-section";
 
+// Preferred subjects
+export { SubjectsSection } from "./subjects-section";
+
 // Account type badge
 export {
   AccountBadge,

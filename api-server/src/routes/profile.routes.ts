@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
-import { Profile, Student, Professional, Doer, Supervisor, Wallet } from '../models';
+import { Profile, Student, Professional, Doer, Supervisor, Wallet, WalletTransaction, Project } from '../models';
 import { uploadBufferToCloudinary } from '../services/upload.service';
 import { AppError } from '../middleware/errorHandler';
 import multer from 'multer';
@@ -28,6 +28,9 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
 
     // Build flat response that frontend expects
     const profileObj = profile.toObject();
+    const roles = Array.isArray(profileObj.roles) && profileObj.roles.length > 0
+      ? profileObj.roles
+      : [profileObj.userType];
     res.json({
       ...profileObj,
       id: profileObj._id,
@@ -35,7 +38,7 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
       user_type: profileObj.userType,
       avatar_url: profileObj.avatarUrl,
       is_active: true,
-      user_roles: [profileObj.userType],
+      user_roles: roles,
       wallet: wallet ? { id: wallet._id, profile_id: wallet.profileId, balance: wallet.balance, currency: wallet.currency } : null,
       students: roleData && profile.userType === 'user' ? roleData : null,
       roleData,
@@ -49,7 +52,7 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
 // PUT /profiles/me
 router.put('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const allowedFields = ['fullName', 'phone', 'onboardingStep', 'onboardingCompleted', 'twoFactorEnabled'];
+    const allowedFields = ['fullName', 'phone', 'onboardingStep', 'onboardingCompleted', 'twoFactorEnabled', 'userType'];
     const updates: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -82,9 +85,17 @@ router.post('/student', authenticate, async (req: Request, res: Response, next: 
     const existing = await Student.findOne({ profileId: req.user!.id });
     if (existing) {
       const updated = await Student.findByIdAndUpdate(existing._id, req.body, { new: true });
+      // Mark onboarding complete and set userType on Profile
+      const profileUpdates: Record<string, unknown> = { onboardingCompleted: true, userType: 'student' };
+      if (req.body.fullName) profileUpdates.fullName = req.body.fullName;
+      await Profile.findByIdAndUpdate(req.user!.id, profileUpdates);
       return res.json({ student: updated });
     }
     const student = await Student.create({ ...req.body, profileId: req.user!.id });
+    // Mark onboarding complete and set userType on Profile
+    const profileUpdates: Record<string, unknown> = { onboardingCompleted: true, userType: 'student' };
+    if (req.body.fullName) profileUpdates.fullName = req.body.fullName;
+    await Profile.findByIdAndUpdate(req.user!.id, profileUpdates);
     res.status(201).json({ student });
   } catch (err) {
     next(err);
@@ -125,10 +136,104 @@ router.post('/professional', authenticate, async (req: Request, res: Response, n
     const existing = await Professional.findOne({ profileId: req.user!.id });
     if (existing) {
       const updated = await Professional.findByIdAndUpdate(existing._id, req.body, { new: true });
+      // Mark onboarding complete and set userType on Profile
+      const profileUpdates: Record<string, unknown> = { onboardingCompleted: true, userType: 'professional' };
+      if (req.body.fullName) profileUpdates.fullName = req.body.fullName;
+      await Profile.findByIdAndUpdate(req.user!.id, profileUpdates);
       return res.json({ professional: updated });
     }
     const professional = await Professional.create({ ...req.body, profileId: req.user!.id });
+    // Mark onboarding complete and set userType on Profile
+    const profileUpdates: Record<string, unknown> = { onboardingCompleted: true, userType: 'professional' };
+    if (req.body.fullName) profileUpdates.fullName = req.body.fullName;
+    await Profile.findByIdAndUpdate(req.user!.id, profileUpdates);
     res.status(201).json({ professional });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /profiles/search?email=... — find a user by email
+router.get('/search', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.query;
+    if (!email || typeof email !== 'string') throw new AppError('Email is required', 400);
+
+    const profile = await Profile.findOne({ email: email.toLowerCase().trim() })
+      .select('fullName email avatarUrl userType');
+
+    if (!profile) {
+      return res.json({ user: null });
+    }
+
+    // Doers and supervisors cannot receive peer transfers
+    const nonTransferRoles = ['doer', 'supervisor', 'admin'];
+    if (nonTransferRoles.includes(profile.userType)) {
+      return res.json({ user: null });
+    }
+
+    res.json({
+      user: {
+        id: profile._id,
+        email: profile.email,
+        full_name: profile.fullName || '',
+        avatar_url: profile.avatarUrl || null,
+        user_type: profile.userType,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /profiles/roles — add a role to the current user
+router.post('/roles', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { role } = req.body;
+    if (!role) throw new AppError('Role is required', 400);
+
+    const profile = await Profile.findById(req.user!.id);
+    if (!profile) throw new AppError('Profile not found', 404);
+
+    // Ensure roles array includes primary userType
+    if (!profile.roles || profile.roles.length === 0) {
+      profile.roles = [profile.userType];
+    }
+
+    if (!profile.roles.includes(role)) {
+      profile.roles.push(role);
+      await profile.save();
+    }
+
+    res.json({ roles: profile.roles });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /profiles/roles — remove a role from the current user
+router.delete('/roles', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { role } = req.body;
+    if (!role) throw new AppError('Role is required', 400);
+
+    const profile = await Profile.findById(req.user!.id);
+    if (!profile) throw new AppError('Profile not found', 404);
+
+    // Cannot remove primary role
+    if (role === profile.userType) {
+      throw new AppError('Cannot remove your primary role', 400);
+    }
+
+    // Ensure roles array includes primary userType
+    if (!profile.roles || profile.roles.length === 0) {
+      profile.roles = [profile.userType];
+    }
+
+    profile.roles = profile.roles.filter((r: string) => r !== role);
+    await profile.save();
+
+    res.json({ roles: profile.roles });
   } catch (err) {
     next(err);
   }
@@ -190,6 +295,33 @@ router.put('/me/preferences', authenticate, async (req: Request, res: Response, 
   }
 });
 
+// GET /profiles/me/export — export all user data as JSON
+router.get('/me/export', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profileId = req.user!.id;
+
+    const [profile, wallet, projects] = await Promise.all([
+      Profile.findById(profileId).select('-refreshTokens -password'),
+      Wallet.findOne({ profileId }),
+      Project.find({ userId: profileId }).select('-__v').sort({ createdAt: -1 }),
+    ]);
+
+    const transactions = wallet
+      ? await WalletTransaction.find({ walletId: wallet._id }).sort({ createdAt: -1 }).limit(500)
+      : [];
+
+    res.json({
+      exported_at: new Date().toISOString(),
+      profile,
+      wallet,
+      transactions,
+      projects,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /profiles/me/referral
 router.get('/me/referral', authenticate, async (req: Request, res: Response) => {
   res.json({
@@ -209,6 +341,51 @@ router.get('/me/payment-methods', authenticate, async (_req: Request, res: Respo
   res.json({ paymentMethods: [] });
 });
 
+// GET /profiles/me/subjects — fetch current user's preferred subjects
+router.get('/me/subjects', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const student = await Student.findOne({ profileId: req.user!.id });
+    if (!student) return res.json({ subjects: [] });
+
+    await student.populate('preferredSubjects', 'name category');
+    const subjects = (student.preferredSubjects || []).map((s: any) => ({
+      id: String(s._id || s),
+      name: s.name || null,
+      category: s.category || null,
+    }));
+    res.json({ subjects });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /profiles/me/subjects — update current user's preferred subjects
+router.put('/me/subjects', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { subjects } = req.body as { subjects: string[] };
+    if (!Array.isArray(subjects)) throw new AppError('subjects must be an array', 400);
+
+    let student = await Student.findOne({ profileId: req.user!.id });
+    if (!student) {
+      // Create student record if it doesn't exist
+      student = await Student.create({ profileId: req.user!.id, preferredSubjects: subjects });
+    } else {
+      student.preferredSubjects = subjects as any;
+      await student.save();
+    }
+
+    await student.populate('preferredSubjects', 'name category');
+    const populated = (student.preferredSubjects || []).map((s: any) => ({
+      id: String(s._id),
+      name: s.name,
+      category: s.category,
+    }));
+    res.json({ subjects: populated });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /profiles/me/payment-methods
 router.post('/me/payment-methods', authenticate, async (req: Request, res: Response) => {
   // Stub: accept but return the input as-is
@@ -220,12 +397,48 @@ router.delete('/me/payment-methods/:id', authenticate, async (_req: Request, res
   res.json({ success: true });
 });
 
+// GET /profiles/:id/preferences
+router.get('/:id/preferences', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profile = await Profile.findById(req.params.id).select('preferences');
+    if (!profile) throw new AppError('Profile not found', 404);
+    res.json(profile.preferences || {});
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /profiles/:id/preferences
+router.put('/:id/preferences', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profile = await Profile.findById(req.params.id).select('preferences');
+    if (!profile) throw new AppError('Profile not found', 404);
+
+    const merged = { ...(profile.preferences || {}), ...req.body };
+    profile.preferences = merged;
+    profile.markModified('preferences');
+    await profile.save();
+
+    res.json(merged);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /profiles/:id
 router.get('/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const profile = await Profile.findById(req.params.id).select('fullName email avatarUrl userType');
     if (!profile) throw new AppError('Profile not found', 404);
-    res.json({ profile });
+    const obj = profile.toObject();
+    res.json({
+      ...obj,
+      id: obj._id,
+      full_name: obj.fullName || null,
+      email: obj.email || null,
+      avatar_url: obj.avatarUrl || null,
+      user_type: obj.userType || null,
+    });
   } catch (err) {
     next(err);
   }
