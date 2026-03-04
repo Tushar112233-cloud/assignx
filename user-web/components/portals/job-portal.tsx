@@ -480,11 +480,11 @@ function JobPortalHero() {
         {/* CTA Buttons */}
         <motion.div variants={fadeInUp} className="flex flex-wrap gap-3">
           <button type="button" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5 transition-all text-sm">
-            <Briefcase className="h-4 w-4" />
+            <Briefcase className="h-4 w-4" aria-hidden="true" />
             Browse Jobs
           </button>
           <button type="button" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 backdrop-blur-sm text-white font-medium transition-all text-sm">
-            <Upload className="h-4 w-4" />
+            <Upload className="h-4 w-4" aria-hidden="true" />
             Upload Resume
           </button>
         </motion.div>
@@ -581,7 +581,7 @@ export function JobPortal() {
               : "bg-muted/50 text-muted-foreground border-border/40 hover:bg-muted"
           )}
         >
-          <Wifi className="h-3 w-3" />
+          <Wifi className="h-3 w-3" aria-hidden="true" />
           Remote
         </button>
       </div>
