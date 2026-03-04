@@ -28,14 +28,18 @@ export function PortalPage() {
 
   // Determine available roles from user profile
   const roles: PortalRole[] = useMemo(() => {
+    const VALID: PortalRole[] = ["student", "professional", "business"];
+
     if (!user) return ["student"];
 
-    // Prefer user_roles array, fallback to user_type
+    // Prefer user_roles array, fallback to user_type — filter to known portal roles only
     if (user.user_roles && user.user_roles.length > 0) {
-      return user.user_roles;
+      const valid = user.user_roles.filter((r): r is PortalRole => VALID.includes(r as PortalRole));
+      if (valid.length > 0) return valid;
     }
 
-    return [user.user_type];
+    const fallback = user.user_type as PortalRole;
+    return VALID.includes(fallback) ? [fallback] : ["student"];
   }, [user]);
 
   // Ensure active portal is a valid role for this user
