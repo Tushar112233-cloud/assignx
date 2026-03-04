@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Search,
   MapPin,
@@ -11,7 +11,11 @@ import {
   ExternalLink,
   Filter,
   Wifi,
+  Building2,
+  Upload,
+  Users,
 } from "lucide-react";
+import { LiveStatsBadge } from "@/components/campus-connect/live-stats-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -170,6 +174,140 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
 };
 
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+}
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } }
+}
+
+const pulseGlow = {
+  initial: { scale: 1, opacity: 0.5 },
+  animate: {
+    scale: [1, 1.2, 1],
+    opacity: [0.5, 0.8, 0.5],
+    transition: { duration: 3, repeat: Infinity, ease: 'easeInOut' as const }
+  }
+}
+
+/**
+ * JobPortalHero - Premium hero banner for the Professional jobs tab
+ * Displays animated stats, headline, and CTA buttons
+ */
+function JobPortalHero() {
+  const prefersReducedMotion = useReducedMotion()
+
+  return (
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={staggerContainer}
+      className="relative overflow-hidden rounded-3xl mb-8 bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950"
+    >
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Orb 1 - top-left */}
+        <motion.div
+          variants={prefersReducedMotion ? {} : pulseGlow}
+          initial="initial"
+          animate="animate"
+          className="absolute -top-20 -left-20 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl"
+        />
+        {/* Orb 2 - bottom-right */}
+        <motion.div
+          variants={prefersReducedMotion ? {} : pulseGlow}
+          initial="initial"
+          animate="animate"
+          transition={{ delay: 1 }}
+          className="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"
+        />
+        {/* Orb 3 - center */}
+        <motion.div
+          variants={prefersReducedMotion ? {} : pulseGlow}
+          initial="initial"
+          animate="animate"
+          transition={{ delay: 2 }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-violet-500/15 rounded-full blur-3xl"
+        />
+
+        {/* Grid overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0d_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0d_1px,transparent_1px)] bg-[size:50px_50px]" />
+
+        {/* Sparkle particles */}
+        {!prefersReducedMotion && (
+          <>
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute h-1 w-1 rounded-full"
+                style={{
+                  left: `${15 + i * 14}%`,
+                  top: `${25 + (i % 3) * 25}%`,
+                  backgroundColor: i % 2 === 0 ? 'rgb(129 140 248 / 0.6)' : 'rgb(96 165 250 / 0.5)',
+                }}
+                animate={{
+                  opacity: [0, 1, 0],
+                  scale: [0, 1, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  delay: i * 0.5,
+                  ease: 'easeInOut',
+                }}
+              />
+            ))}
+          </>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 p-6 md:p-8 lg:p-12">
+        {/* Stats row */}
+        <motion.div variants={fadeInUp} className="flex flex-wrap gap-2.5 mb-6">
+          <LiveStatsBadge value={2847} label="Active Jobs" icon={Briefcase} color="blue" />
+          <LiveStatsBadge value={340} label="Top Companies" icon={Building2} color="violet" />
+          <LiveStatsBadge value={156} label="Hired This Month" icon={Users} color="blue" autoIncrement={false} />
+        </motion.div>
+
+        {/* Headline */}
+        <motion.h1
+          variants={fadeInUp}
+          className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4"
+        >
+          Find Your{' '}
+          <span className="bg-gradient-to-r from-indigo-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">
+            Dream Career
+          </span>
+        </motion.h1>
+
+        {/* Subheading */}
+        <motion.p
+          variants={fadeInUp}
+          className="text-sm md:text-base text-slate-300/90 max-w-xl leading-relaxed mb-6"
+        >
+          Connect with top companies, discover opportunities, and land the role you&apos;ve been working toward.
+        </motion.p>
+
+        {/* CTA Buttons */}
+        <motion.div variants={fadeInUp} className="flex flex-wrap gap-3">
+          <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5 transition-all text-sm">
+            <Briefcase className="h-4 w-4" />
+            Browse Jobs
+          </button>
+          <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 backdrop-blur-sm text-white font-medium transition-all text-sm">
+            <Upload className="h-4 w-4" />
+            Upload Resume
+          </button>
+        </motion.div>
+      </div>
+    </motion.div>
+  )
+}
+
 /**
  * Job Portal component
  * Search, filter, and browse job listings with category chips and type filters
@@ -194,6 +332,7 @@ export function JobPortal() {
 
   return (
     <div className="space-y-6">
+      <JobPortalHero />
       {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
