@@ -121,8 +121,10 @@ export function ChatPanel({
   )
 
   /** Format timestamp */
-  const formatTime = (timestamp: string) => {
+  const formatTime = (timestamp: string | null | undefined) => {
+    if (!timestamp) return ''
     const date = new Date(timestamp)
+    if (isNaN(date.getTime())) return ''
     return date.toLocaleTimeString('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
@@ -130,8 +132,10 @@ export function ChatPanel({
   }
 
   /** Format date for separator */
-  const formatDate = (timestamp: string) => {
+  const formatDate = (timestamp: string | null | undefined) => {
+    if (!timestamp) return ''
     const date = new Date(timestamp)
+    if (isNaN(date.getTime())) return ''
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
@@ -155,6 +159,7 @@ export function ChatPanel({
     previous: ChatMessage | null
   ) => {
     if (!previous) return true
+    if (!current.created_at || !previous.created_at) return false
     const currentDate = new Date(current.created_at).toDateString()
     const previousDate = new Date(previous.created_at).toDateString()
     return currentDate !== previousDate
