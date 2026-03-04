@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Search,
@@ -16,8 +16,6 @@ import {
   Users,
 } from "lucide-react";
 import { LiveStatsBadge } from "@/components/campus-connect/live-stats-badge";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { JobListing, JobCategory, JobType } from "@/types/portals";
 
@@ -153,26 +151,100 @@ const JOB_TYPES: { value: JobType | "all"; label: string }[] = [
   { value: "freelance", label: "Freelance" },
 ];
 
-const TYPE_COLORS: Record<JobType, string> = {
-  "full-time": "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  "part-time": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  contract: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  internship: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-  freelance: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
-};
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06 },
+/** Per-type color theme for glassmorphism cards */
+const JOB_TYPE_THEME: Record<
+  JobType,
+  {
+    cardGradient: string;
+    border: string;
+    hoverShadow: string;
+    avatar: string;
+    badgeBg: string;
+    badgeText: string;
+    salary: string;
+    titleHover: string;
+    button: string;
+  }
+> = {
+  "full-time": {
+    cardGradient: "from-emerald-500/10",
+    border: "border-emerald-500/20",
+    hoverShadow: "hover:shadow-emerald-500/10",
+    avatar: "bg-gradient-to-br from-emerald-500 to-teal-500",
+    badgeBg: "bg-emerald-500/15",
+    badgeText: "text-emerald-700 dark:text-emerald-400",
+    salary: "text-emerald-600 dark:text-emerald-400",
+    titleHover: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
+    button: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500",
+  },
+  "part-time": {
+    cardGradient: "from-blue-500/10",
+    border: "border-blue-500/20",
+    hoverShadow: "hover:shadow-blue-500/10",
+    avatar: "bg-gradient-to-br from-blue-500 to-cyan-500",
+    badgeBg: "bg-blue-500/15",
+    badgeText: "text-blue-700 dark:text-blue-400",
+    salary: "text-blue-600 dark:text-blue-400",
+    titleHover: "group-hover:text-blue-600 dark:group-hover:text-blue-400",
+    button: "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500",
+  },
+  contract: {
+    cardGradient: "from-amber-500/10",
+    border: "border-amber-500/20",
+    hoverShadow: "hover:shadow-amber-500/10",
+    avatar: "bg-gradient-to-br from-amber-500 to-orange-500",
+    badgeBg: "bg-amber-500/15",
+    badgeText: "text-amber-700 dark:text-amber-400",
+    salary: "text-amber-600 dark:text-amber-400",
+    titleHover: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
+    button: "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500",
+  },
+  internship: {
+    cardGradient: "from-violet-500/10",
+    border: "border-violet-500/20",
+    hoverShadow: "hover:shadow-violet-500/10",
+    avatar: "bg-gradient-to-br from-violet-500 to-purple-500",
+    badgeBg: "bg-violet-500/15",
+    badgeText: "text-violet-700 dark:text-violet-400",
+    salary: "text-violet-600 dark:text-violet-400",
+    titleHover: "group-hover:text-violet-600 dark:group-hover:text-violet-400",
+    button: "bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500",
+  },
+  freelance: {
+    cardGradient: "from-rose-500/10",
+    border: "border-rose-500/20",
+    hoverShadow: "hover:shadow-rose-500/10",
+    avatar: "bg-gradient-to-br from-rose-500 to-pink-500",
+    badgeBg: "bg-rose-500/15",
+    badgeText: "text-rose-700 dark:text-rose-400",
+    salary: "text-rose-600 dark:text-rose-400",
+    titleHover: "group-hover:text-rose-600 dark:group-hover:text-rose-400",
+    button: "bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500",
   },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
+/** Distributes items round-robin across N columns for masonry layout */
+function distributeIntoColumns<T>(items: T[], colCount: number): T[][] {
+  const columns: T[][] = Array.from({ length: colCount }, () => []);
+  items.forEach((item, i) => columns[i % colCount].push(item));
+  return columns;
+}
+
+/** Reactive column count: 3 ≥1024px, 2 ≥640px, 1 mobile */
+function useColumnCount(): number {
+  const [cols, setCols] = useState(2);
+  useEffect(() => {
+    const update = () => {
+      if (window.innerWidth >= 1024) setCols(3);
+      else if (window.innerWidth >= 640) setCols(2);
+      else setCols(1);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  return cols;
+}
 
 const staggerContainer = {
   hidden: {},
@@ -185,6 +257,120 @@ const fadeInUp = {
 };
 
 const HERO_SPARKLE_INDICES = [0, 1, 2, 3, 4, 5];
+
+/**
+ * JobCard — glassmorphism card for a single job listing.
+ * Color-tinted per job type; masonry-safe (no fixed height).
+ */
+function JobCard({ job }: { job: JobListing }) {
+  const theme = JOB_TYPE_THEME[job.type];
+  const companyInitial = job.company.charAt(0).toUpperCase();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className={cn(
+        "group rounded-2xl border bg-gradient-to-br to-transparent",
+        "shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 p-5 space-y-3",
+        theme.cardGradient,
+        theme.border,
+        theme.hoverShadow
+      )}
+    >
+      {/* Company avatar + type badge */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className={cn(
+              "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 text-white font-bold text-sm shadow-sm",
+              theme.avatar
+            )}
+          >
+            {companyInitial}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-foreground truncate">{job.company}</p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">{job.location}</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {job.isRemote && (
+            <span className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+              <Wifi className="h-2.5 w-2.5" />
+              Remote
+            </span>
+          )}
+          <span
+            className={cn(
+              "px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border border-current/10",
+              theme.badgeBg,
+              theme.badgeText
+            )}
+          >
+            {job.type}
+          </span>
+        </div>
+      </div>
+
+      {/* Job title */}
+      <h3
+        className={cn(
+          "text-sm font-bold text-foreground line-clamp-2 leading-snug transition-colors",
+          theme.titleHover
+        )}
+      >
+        {job.title}
+      </h3>
+
+      {/* Salary */}
+      <p className={cn("text-xs font-semibold flex items-center gap-1", theme.salary)}>
+        <DollarSign className="h-3 w-3" />
+        {job.salary}
+      </p>
+
+      {/* Description */}
+      <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
+        {job.description}
+      </p>
+
+      {/* Skill chips */}
+      <div className="flex flex-wrap gap-1.5">
+        {job.tags.map((tag) => (
+          <span
+            key={tag}
+            className="px-2 py-0.5 rounded-md bg-muted/50 border border-border/40 text-[10px] font-medium text-muted-foreground"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      {/* Footer: posted time + apply button */}
+      <div className="flex items-center justify-between pt-2 border-t border-border/40">
+        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          {job.postedAt}
+        </span>
+        <button
+          type="button"
+          className={cn(
+            "flex items-center gap-1 text-white text-[11px] font-medium px-3 py-1 rounded-lg transition-all",
+            "sm:opacity-0 sm:group-hover:opacity-100",
+            theme.button
+          )}
+        >
+          <ExternalLink className="h-3 w-3" />
+          Apply
+        </button>
+      </div>
+    </motion.div>
+  );
+}
 
 /**
  * JobPortalHero - Premium hero banner for the Professional jobs tab
@@ -314,6 +500,7 @@ export function JobPortal() {
   const [selectedCategory, setSelectedCategory] = useState<JobCategory | "all">("all");
   const [selectedType, setSelectedType] = useState<JobType | "all">("all");
   const [remoteOnly, setRemoteOnly] = useState(false);
+  const colCount = useColumnCount();
 
   const filtered = useMemo(() => {
     return MOCK_JOBS.filter((job) => {
@@ -353,7 +540,7 @@ export function JobPortal() {
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border",
                 selectedCategory === cat.value
-                  ? "bg-primary text-primary-foreground border-primary"
+                  ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white border-transparent shadow-sm"
                   : "bg-muted/50 text-muted-foreground border-border/40 hover:bg-muted hover:text-foreground"
               )}
             >
@@ -381,7 +568,7 @@ export function JobPortal() {
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
             remoteOnly
-              ? "bg-primary text-primary-foreground border-primary"
+              ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white border-transparent shadow-sm"
               : "bg-muted/50 text-muted-foreground border-border/40 hover:bg-muted"
           )}
         >
@@ -395,92 +582,35 @@ export function JobPortal() {
         {filtered.length} job{filtered.length !== 1 ? "s" : ""} found
       </p>
 
-      {/* Job Cards Grid */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="show"
-        className="grid gap-4 sm:grid-cols-2"
-      >
-        {filtered.map((job) => (
-          <motion.div
-            key={job.id}
-            variants={itemVariants}
-            className="action-card-glass rounded-xl p-5 space-y-3 hover:shadow-lg transition-shadow"
-          >
-            {/* Header */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 border border-border/30">
-                  <Briefcase className="h-4.5 w-4.5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-foreground truncate">{job.title}</h3>
-                  <p className="text-xs text-muted-foreground truncate">{job.company}</p>
-                </div>
-              </div>
-              <Badge className={cn("text-[10px] shrink-0", TYPE_COLORS[job.type])}>
-                {job.type}
-              </Badge>
-            </div>
-
-            {/* Description */}
-            <p className="text-xs text-muted-foreground line-clamp-2">{job.description}</p>
-
-            {/* Meta */}
-            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {job.location}
-              </span>
-              <span className="flex items-center gap-1">
-                <DollarSign className="h-3 w-3" />
-                {job.salary}
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {job.postedAt}
-              </span>
-              {job.isRemote && (
-                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                  <Wifi className="h-3 w-3" />
-                  Remote
-                </span>
-              )}
-            </div>
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-1.5">
-              {job.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 rounded-md bg-muted/60 text-[10px] font-medium text-muted-foreground"
-                >
-                  {tag}
-                </span>
+      {/* Masonry job grid */}
+      {filtered.length > 0 ? (
+        <div className="-ml-4 flex w-auto items-start">
+          {distributeIntoColumns(filtered, colCount).map((col, colIdx) => (
+            <div key={colIdx} className="pl-4 flex-1 min-w-0 flex flex-col gap-4">
+              {col.map((job) => (
+                <JobCard key={job.id} job={job} />
               ))}
             </div>
-
-            {/* Action */}
-            <Button
-              size="sm"
-              className="w-full mt-1"
-              variant="outline"
-            >
-              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-              Apply Now
-            </Button>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {filtered.length === 0 && (
-        <div className="text-center py-12">
-          <Filter className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">No jobs match your filters</p>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16">
+          <div className="relative inline-flex mb-4">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/20 to-blue-500/20 rounded-full blur-xl" />
+            <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg">
+              <Filter className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <p className="text-sm font-medium text-foreground mb-1">No jobs match your filters</p>
+          <p className="text-xs text-muted-foreground mb-3">Try adjusting your search or filters</p>
           <button
-            onClick={() => { setSearch(""); setSelectedCategory("all"); setSelectedType("all"); setRemoteOnly(false); }}
-            className="text-xs text-primary mt-2 hover:underline"
+            onClick={() => {
+              setSearch("");
+              setSelectedCategory("all");
+              setSelectedType("all");
+              setRemoteOnly(false);
+            }}
+            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
           >
             Clear all filters
           </button>
