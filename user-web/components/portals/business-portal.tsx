@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Search,
   Building2,
@@ -12,7 +12,10 @@ import {
   Clock,
   Star,
   ArrowUpRight,
+  Rocket,
+  DollarSign,
 } from "lucide-react";
+import { LiveStatsBadge } from "@/components/campus-connect/live-stats-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -128,6 +131,18 @@ const DECK_STATUS_STYLES: Record<PitchDeck["status"], { color: string; icon: Rea
   shortlisted: { color: "text-emerald-600 dark:text-emerald-400", icon: Star },
 };
 
+const BUSINESS_SPARKLE_INDICES = [0, 1, 2, 3, 4, 5];
+
+const heroStaggerContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.15 } },
+};
+
+const heroFadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+};
+
 const containerVariants = {
   hidden: { opacity: 0 },
   show: {
@@ -140,6 +155,125 @@ const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
 };
+
+/**
+ * BusinessPortalHero - Premium hero section for the Business tab
+ * Displays animated background orbs, live stats badges, headline, and CTA buttons
+ */
+function BusinessPortalHero() {
+  const prefersReducedMotion = useReducedMotion();
+
+  return (
+    <motion.div
+      initial="hidden"
+      animate="show"
+      variants={heroStaggerContainer}
+      className="relative overflow-hidden rounded-3xl mb-8 bg-gradient-to-br from-slate-900 via-orange-950 to-amber-950"
+    >
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+        {/* Orb 1 - top-left */}
+        <motion.div
+          className="absolute -top-20 -left-20 w-96 h-96 bg-orange-600/30 rounded-full blur-3xl"
+          animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+          transition={prefersReducedMotion ? {} : { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0 }}
+        />
+        {/* Orb 2 - bottom-right */}
+        <motion.div
+          className="absolute -bottom-20 -right-20 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl"
+          animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+          transition={prefersReducedMotion ? {} : { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        />
+        {/* Orb 3 - center */}
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-red-500/15 rounded-full blur-3xl"
+          animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+          transition={prefersReducedMotion ? {} : { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        />
+
+        {/* Grid overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0d_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0d_1px,transparent_1px)] bg-[size:50px_50px]" />
+
+        {/* Sparkle particles */}
+        {!prefersReducedMotion && (
+          <>
+            {BUSINESS_SPARKLE_INDICES.map((i) => (
+              <motion.div
+                key={i}
+                className="absolute h-1 w-1 rounded-full"
+                style={{
+                  left: `${15 + i * 14}%`,
+                  top: `${25 + (i % 3) * 25}%`,
+                  backgroundColor:
+                    i % 2 === 0
+                      ? "rgb(251 146 60 / 0.6)"
+                      : "rgb(245 158 11 / 0.5)",
+                }}
+                animate={{
+                  opacity: [0, 1, 0],
+                  scale: [0, 1, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  delay: i * 0.5,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 p-6 md:p-8 lg:p-12">
+        {/* Stats row */}
+        <motion.div variants={heroFadeInUp} className="flex flex-wrap gap-2.5 mb-6">
+          <LiveStatsBadge value={1240} label="Active Investors" icon={TrendingUp} color="amber" />
+          <LiveStatsBadge value={89} label="Funded Startups" icon={Building2} color="blue" autoIncrement={false} />
+          <LiveStatsBadge value={4.2} label="Avg Funding ($M)" icon={DollarSign} color="emerald" autoIncrement={false} />
+        </motion.div>
+
+        {/* Headline */}
+        <motion.h1
+          variants={heroFadeInUp}
+          className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4"
+        >
+          Connect With{" "}
+          <span className="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent">
+            Top Investors
+          </span>
+        </motion.h1>
+
+        {/* Subheading */}
+        <motion.p
+          variants={heroFadeInUp}
+          className="text-sm md:text-base text-slate-300/90 max-w-xl leading-relaxed mb-6"
+        >
+          Pitch your idea, meet the right investors, and turn your vision into a funded reality.
+        </motion.p>
+
+        {/* CTA Buttons */}
+        <motion.div variants={heroFadeInUp} className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-medium shadow-lg shadow-orange-500/25 hover:-translate-y-0.5 transition-all text-sm"
+          >
+            <Rocket className="h-4 w-4" />
+            Pitch Your Idea
+          </button>
+          <button
+            type="button"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 backdrop-blur-sm text-white font-medium transition-all text-sm"
+          >
+            <Search className="h-4 w-4" />
+            Find Investors
+          </button>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
 
 /**
  * Business Portal component
@@ -163,6 +297,8 @@ export function BusinessPortal() {
 
   return (
     <div className="space-y-6">
+      <BusinessPortalHero />
+
       {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
