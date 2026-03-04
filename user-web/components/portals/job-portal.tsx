@@ -175,23 +175,16 @@ const itemVariants = {
 };
 
 const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
-}
+  hidden: {},
+  show: { transition: { staggerChildren: 0.15 } },
+};
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } }
-}
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+};
 
-const pulseGlow = {
-  initial: { scale: 1, opacity: 0.5 },
-  animate: {
-    scale: [1, 1.2, 1],
-    opacity: [0.5, 0.8, 0.5],
-    transition: { duration: 3, repeat: Infinity, ease: 'easeInOut' as const }
-  }
-}
+const HERO_SPARKLE_INDICES = [0, 1, 2, 3, 4, 5];
 
 /**
  * JobPortalHero - Premium hero banner for the Professional jobs tab
@@ -203,34 +196,38 @@ function JobPortalHero() {
   return (
     <motion.div
       initial="hidden"
-      animate="visible"
+      animate="show"
       variants={staggerContainer}
       className="relative overflow-hidden rounded-3xl mb-8 bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950"
     >
       {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Orb 1 - top-left */}
+      <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+        {/* Orb 1 */}
         <motion.div
-          variants={prefersReducedMotion ? {} : pulseGlow}
-          initial="initial"
-          animate="animate"
           className="absolute -top-20 -left-20 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl"
+          animate={prefersReducedMotion ? {} : {
+            scale: [1, 1.2, 1],
+            opacity: [0.5, 0.8, 0.5],
+          }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
         />
-        {/* Orb 2 - bottom-right */}
+        {/* Orb 2 */}
         <motion.div
-          variants={prefersReducedMotion ? {} : pulseGlow}
-          initial="initial"
-          animate="animate"
-          transition={{ delay: 1 }}
           className="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"
+          animate={prefersReducedMotion ? {} : {
+            scale: [1, 1.2, 1],
+            opacity: [0.5, 0.8, 0.5],
+          }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
         />
-        {/* Orb 3 - center */}
+        {/* Orb 3 */}
         <motion.div
-          variants={prefersReducedMotion ? {} : pulseGlow}
-          initial="initial"
-          animate="animate"
-          transition={{ delay: 2 }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-violet-500/15 rounded-full blur-3xl"
+          animate={prefersReducedMotion ? {} : {
+            scale: [1, 1.2, 1],
+            opacity: [0.5, 0.8, 0.5],
+          }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
         />
 
         {/* Grid overlay */}
@@ -239,7 +236,7 @@ function JobPortalHero() {
         {/* Sparkle particles */}
         {!prefersReducedMotion && (
           <>
-            {[...Array(6)].map((_, i) => (
+            {HERO_SPARKLE_INDICES.map((i) => (
               <motion.div
                 key={i}
                 className="absolute h-1 w-1 rounded-full"
@@ -294,11 +291,11 @@ function JobPortalHero() {
 
         {/* CTA Buttons */}
         <motion.div variants={fadeInUp} className="flex flex-wrap gap-3">
-          <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5 transition-all text-sm">
+          <button type="button" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5 transition-all text-sm">
             <Briefcase className="h-4 w-4" />
             Browse Jobs
           </button>
-          <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 backdrop-blur-sm text-white font-medium transition-all text-sm">
+          <button type="button" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 backdrop-blur-sm text-white font-medium transition-all text-sm">
             <Upload className="h-4 w-4" />
             Upload Resume
           </button>
