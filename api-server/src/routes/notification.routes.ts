@@ -5,18 +5,29 @@ import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 
+const roleFilter = (role: string) => ({
+  $or: [
+    { targetRole: role },
+    { targetRole: { $exists: false } },
+    { targetRole: null },
+  ],
+});
+
 // GET /notifications
 router.get('/', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page = '1', limit = '20', unreadOnly } = req.query;
-    const filter: Record<string, unknown> = { userId: req.user!.id };
+    const filter: Record<string, unknown> = {
+      userId: req.user!.id,
+      $or: [{ targetRole: req.user!.role }, { targetRole: { $exists: false } }, { targetRole: null }],
+    };
     if (unreadOnly === 'true') filter.isRead = false;
 
     const skip = (Number(page) - 1) * Number(limit);
     const [notifications, total, unreadCount] = await Promise.all([
       Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
       Notification.countDocuments(filter),
-      Notification.countDocuments({ userId: req.user!.id, isRead: false }),
+      Notification.countDocuments({ userId: req.user!.id, isRead: false, ...roleFilter(req.user!.role) }),
     ]);
 
     res.json({ notifications, total, unreadCount, page: Number(page) });
@@ -44,7 +55,7 @@ router.put('/:id/read', authenticate, async (req: Request, res: Response, next: 
 router.put('/read-all', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     await Notification.updateMany(
-      { userId: req.user!.id, isRead: false },
+      { userId: req.user!.id, isRead: false, ...roleFilter(req.user!.role) },
       { isRead: true, readAt: new Date() }
     );
     res.json({ success: true });
@@ -56,7 +67,7 @@ router.put('/read-all', authenticate, async (req: Request, res: Response, next: 
 // GET /notifications/unread-count
 router.get('/unread-count', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const count = await Notification.countDocuments({ userId: req.user!.id, isRead: false });
+    const count = await Notification.countDocuments({ userId: req.user!.id, isRead: false, ...roleFilter(req.user!.role) });
     res.json({ count });
   } catch (err) {
     next(err);
@@ -67,7 +78,7 @@ router.get('/unread-count', authenticate, async (req: Request, res: Response, ne
 router.put('/mark-all-read', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     await Notification.updateMany(
-      { userId: req.user!.id, isRead: false },
+      { userId: req.user!.id, isRead: false, ...roleFilter(req.user!.role) },
       { isRead: true, readAt: new Date() }
     );
     res.json({ success: true });
@@ -79,7 +90,7 @@ router.put('/mark-all-read', authenticate, async (req: Request, res: Response, n
 // DELETE /notifications/all
 router.delete('/all', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await Notification.deleteMany({ userId: req.user!.id });
+    await Notification.deleteMany({ userId: req.user!.id, ...roleFilter(req.user!.role) });
     res.json({ success: true });
   } catch (err) {
     next(err);
