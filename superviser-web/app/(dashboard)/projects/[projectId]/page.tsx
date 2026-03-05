@@ -212,7 +212,7 @@ export default function ProjectDetailPage() {
                   </Button>
                 </div>
               )}
-              {(project.status === "paid" || project.status === "quoted") && !project.doer_id && (
+              {project.status === "paid" && !project.doer_id && (
                 <div className="flex gap-2 flex-shrink-0">
                   <Button
                     onClick={() => setAssignModalOpen(true)}
@@ -335,7 +335,7 @@ export default function ProjectDetailPage() {
                       POOL
                     </span>
                   </div>
-                  {(project.status === "quoted" || project.status === "paid") && (
+                  {project.status === "paid" && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -368,7 +368,7 @@ export default function ProjectDetailPage() {
                       PENDING
                     </span>
                   </div>
-                  {(project.status === "quoted" || project.status === "paid") && (
+                  {project.status === "paid" && (
                     <Button
                       size="sm"
                       className="w-full rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white shadow-lg"
@@ -706,6 +706,24 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
     }
   }
 
+  const handleApproveMessage = async (messageId: string) => {
+    try {
+      await apiFetch(`/api/chat/messages/${messageId}/approve`, { method: "PUT" })
+      toast.success("Message approved — now visible to user")
+    } catch (err) {
+      toast.error("Failed to approve message")
+    }
+  }
+
+  const handleRejectMessage = async (messageId: string) => {
+    try {
+      await apiFetch(`/api/chat/messages/${messageId}/reject`, { method: "PUT" })
+      toast.success("Message rejected")
+    } catch (err) {
+      toast.error("Failed to reject message")
+    }
+  }
+
   const formatMessageTime = (dateString: string | null) => {
     if (!dateString) return ""
     return new Date(dateString).toLocaleTimeString("en-US", {
@@ -972,10 +990,40 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
                         )}
                       </div>
 
-                      {/* Timestamp */}
-                      <p className={`text-[10px] text-gray-400 ${isOwn ? "text-right" : ""}`}>
-                        {formatMessageTime(msg.created_at)}
-                      </p>
+                      {/* Timestamp + approval status */}
+                      <div className={`flex items-center gap-1.5 ${isOwn ? "justify-end" : ""}`}>
+                        <p className="text-[10px] text-gray-400">
+                          {formatMessageTime(msg.created_at)}
+                        </p>
+                        {(msg as any).approval_status === "pending" && (
+                          <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
+                            <Clock className="h-3 w-3" /> pending
+                          </span>
+                        )}
+                        {(msg as any).approval_status === "rejected" && (
+                          <span className="text-[10px] text-red-500 flex items-center gap-0.5">
+                            <XCircle className="h-3 w-3" /> rejected
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Approve/Reject controls for pending doer messages */}
+                      {(msg as any).sender_role === "doer" && (msg as any).approval_status === "pending" && (
+                        <div className={`flex items-center gap-1 ${isOwn ? "justify-end" : ""}`}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleApproveMessage(msg.id) }}
+                            className="flex items-center gap-1 text-[10px] text-green-600 hover:text-green-700 hover:bg-green-50 px-2 py-0.5 rounded-full border border-green-200 transition-colors"
+                          >
+                            <CheckCircle2 className="h-3 w-3" /> Approve
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRejectMessage(msg.id) }}
+                            className="flex items-center gap-1 text-[10px] text-red-500 hover:text-red-600 hover:bg-red-50 px-2 py-0.5 rounded-full border border-red-200 transition-colors"
+                          >
+                            <XCircle className="h-3 w-3" /> Reject
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )

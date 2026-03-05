@@ -137,7 +137,7 @@ export function useProject(projectId: string): UseProjectReturn {
   }, [projectId, fetchProject])
 
   const assignDoer = useCallback(async (doerId: string) => {
-    await apiFetch(`/api/projects/${projectId}/assign`, {
+    await apiFetch(`/api/projects/${projectId}/assign-doer`, {
       method: "PUT",
       body: JSON.stringify({ doerId }),
     })

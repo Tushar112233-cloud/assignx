@@ -33,11 +33,11 @@ router.get('/', authenticate, async (req: Request, res: Response, next: NextFunc
       if (unassigned === 'true') {
         // Supervisor requesting unassigned projects (global pool to claim)
         filter.supervisorId = { $exists: false };
-        const supervisorDoc = await Supervisor.findById(req.user!.id).select('subjects');
-        if (supervisorDoc?.subjects?.length) {
-          filter.subjectId = { $in: supervisorDoc.subjects.map(s => s.subjectId) };
+        const supervisorDoc = await Supervisor.findById(req.user!.id).select('expertise');
+        if (supervisorDoc?.expertise?.length) {
+          filter.subjectId = { $in: supervisorDoc.expertise };
         } else {
-          return res.json({ projects: [], total: 0, page: 1, totalPages: 0 });
+          // No expertise set — show all unassigned projects
         }
       } else {
         filter.supervisorId = req.user!.id;
@@ -122,8 +122,8 @@ router.post('/', authenticate, async (req: Request, res: Response, next: NextFun
     if (body.deadline) {
       body.originalDeadline = body.deadline;
     }
-    // Cast subjectId to ObjectId so $in queries work correctly
-    if (body.subjectId && typeof body.subjectId === 'string') {
+    // Cast subjectId to ObjectId only if it's a valid 24-char hex string
+    if (body.subjectId && typeof body.subjectId === 'string' && /^[0-9a-fA-F]{24}$/.test(body.subjectId)) {
       body.subjectId = new mongoose.Types.ObjectId(body.subjectId);
     }
 
@@ -188,10 +188,12 @@ router.get('/:id', authenticate, async (req: Request, res: Response, next: NextF
       user_id: userPopulated ? (obj.userId as any)._id : obj.userId,
       doer_id: doerPopulated ? (obj.doerId as any)._id : obj.doerId,
       supervisor_id: supervisorPopulated ? (obj.supervisorId as any)._id : obj.supervisorId,
-      // Provide populated user/doer data as frontend-expected shapes
+      // Provide populated user/doer/supervisor data as frontend-expected shapes
       profiles: userPopulated ? { full_name: (obj.userId as any).fullName, email: (obj.userId as any).email, avatar_url: (obj.userId as any).avatarUrl, phone: (obj.userId as any).phone } : null,
-      doers: doerPopulated ? { profiles: { full_name: (obj.doerId as any).fullName, email: (obj.doerId as any).email, avatar_url: (obj.doerId as any).avatarUrl }, average_rating: null } : null,
+      user: userPopulated ? { full_name: (obj.userId as any).fullName, email: (obj.userId as any).email, avatar_url: (obj.userId as any).avatarUrl, phone: (obj.userId as any).phone } : null,
+      doers: doerPopulated ? { full_name: (obj.doerId as any).fullName, email: (obj.doerId as any).email, avatar_url: (obj.doerId as any).avatarUrl, average_rating: null, profiles: { full_name: (obj.doerId as any).fullName, email: (obj.doerId as any).email, avatar_url: (obj.doerId as any).avatarUrl } } : null,
       supervisors: supervisorPopulated ? { full_name: (obj.supervisorId as any).fullName, email: (obj.supervisorId as any).email, avatar_url: (obj.supervisorId as any).avatarUrl } : null,
+      supervisor: supervisorPopulated ? { full_name: (obj.supervisorId as any).fullName, email: (obj.supervisorId as any).email, avatar_url: (obj.supervisorId as any).avatarUrl } : null,
       // Also keep subjects in frontend-expected shape
       subjects: obj.subjectId && typeof obj.subjectId === 'object' ? { name: (obj.subjectId as any).name } : null,
       service_type: obj.serviceType,
@@ -303,7 +305,7 @@ router.put('/:id/status', authenticate, async (req: Request, res: Response, next
       throw new AppError('Insufficient permissions to change project status', 403);
     }
     const { status, notes } = req.body;
-    const VALID_STATUSES = ['draft', 'submitted', 'quoted', 'paid', 'assigned', 'in_progress', 'delivered', 'revision_requested', 'approved', 'completed', 'cancelled'];
+    const VALID_STATUSES = ['draft', 'submitted', 'analyzing', 'quoted', 'payment_pending', 'paid', 'assigned', 'in_progress', 'submitted_for_qc', 'qc_in_progress', 'qc_approved', 'delivered', 'revision_requested', 'in_revision', 'approved', 'auto_approved', 'completed', 'cancelled'];
     if (!VALID_STATUSES.includes(status)) {
       throw new AppError(`Invalid status value: ${status}`, 400);
     }
@@ -365,6 +367,16 @@ router.put('/:id/status', authenticate, async (req: Request, res: Response, next
           type: 'project_started',
           title: 'Work Started',
           message: `Work has started on your project "${project.title}"`,
+        });
+      }
+    } else if (status === 'submitted_for_qc') {
+      if (project.supervisorId) {
+        statusNotifications.push({
+          recipientId: project.supervisorId,
+          recipientRole: 'supervisor',
+          type: 'project_submitted_for_qc',
+          title: 'Project Submitted for QC',
+          message: `Project "${project.title}" has been submitted for quality check`,
         });
       }
     } else if (status === 'revision_requested') {
@@ -573,7 +585,14 @@ router.get('/:id/timeline', authenticate, async (req: Request, res: Response, ne
     if (!project) throw new AppError('Project not found', 404);
     const timeline = project.statusHistory.map((s: any) => {
       const obj = s.toObject ? s.toObject() : s;
-      return { ...obj, id: obj._id?.toString() };
+      return {
+        id: obj._id?.toString(),
+        from_status: obj.fromStatus || '',
+        to_status: obj.toStatus || '',
+        notes: obj.notes || '',
+        created_at: obj.createdAt || obj.created_at || null,
+        changed_by: obj.changedBy?.toString() || null,
+      };
     });
     res.json({ timeline });
   } catch (err) {
@@ -730,12 +749,15 @@ router.get('/:id/quotes', authenticate, async (req: Request, res: Response, next
     // Return a single quote entry: prefer finalQuote, fall back to userQuote
     const quoteAmount = project.pricing?.finalQuote || project.pricing?.userQuote;
     if (quoteAmount) {
+      // Find the "quoted" status change timestamp for accurate positioning in timeline
+      const fullProject = await Project.findById(req.params.id).select('statusHistory');
+      const quotedEntry = fullProject?.statusHistory?.find((s: any) => s.toStatus === 'quoted');
       quotes.push({
         id: `${project._id}-quote`,
         type: 'final_quote',
         user_amount: quoteAmount,
         status: 'accepted',
-        created_at: (project as any).updatedAt || (project as any).createdAt,
+        created_at: quotedEntry?.createdAt || (project as any).createdAt,
       });
     }
 
@@ -900,11 +922,11 @@ router.post('/:id/claim', authenticate, async (req: Request, res: Response, next
     if (project.supervisorId) throw new AppError('Project already claimed', 400);
 
     // Verify subject expertise match
-    const supervisorDoc = await Supervisor.findById(req.user!.id).select('subjects');
+    const supervisorDoc = await Supervisor.findById(req.user!.id).select('expertise');
     if (!supervisorDoc) throw new AppError('Supervisor profile not found', 404);
 
-    const supervisorSubjectIds = (supervisorDoc.subjects || []).map(s => s.subjectId.toString());
-    if (project.subjectId && !supervisorSubjectIds.includes(project.subjectId.toString())) {
+    const expertiseList = (supervisorDoc.expertise || []).map((e: string) => e.toLowerCase());
+    if (project.subjectId && expertiseList.length > 0 && !expertiseList.includes(project.subjectId.toString().toLowerCase())) {
       throw new AppError('This project does not match your subject expertise', 403);
     }
 

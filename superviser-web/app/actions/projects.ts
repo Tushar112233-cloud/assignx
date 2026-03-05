@@ -46,7 +46,7 @@ export async function fetchNewRequestsAction() {
 }
 
 const claimProjectSchema = z.object({
-  projectId: z.string().uuid("Invalid project ID"),
+  projectId: z.string().min(1, "Invalid project ID"),
 })
 
 /**

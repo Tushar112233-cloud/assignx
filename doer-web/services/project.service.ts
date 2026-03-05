@@ -64,7 +64,8 @@ export async function getDoerProjects(
 
 export async function getProjectById(projectId: string): Promise<Project | null> {
   try {
-    return await apiClient<Project>(`/api/projects/${projectId}`)
+    const data = await apiClient<{ project: Project }>(`/api/projects/${projectId}`)
+    return data.project || null
   } catch (err) {
     logger.error('Project', 'Error fetching project:', err)
     throw err
@@ -110,10 +111,11 @@ export async function updateProjectStatus(
   status: ProjectStatus
 ): Promise<Project> {
   try {
-    return await apiClient<Project>(`/api/projects/${projectId}/status`, {
+    const data = await apiClient<{ project: Project }>(`/api/projects/${projectId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
     })
+    return data.project
   } catch (err) {
     logger.error('Project', 'Error updating project status:', err)
     throw err

@@ -171,8 +171,8 @@ export function AssignDoerModal({
 
     setIsAssigning(true)
     try {
-      await apiFetch(`/api/projects/${project.id}/assign`, {
-        method: "POST",
+      await apiFetch(`/api/projects/${project.id}/assign-doer`, {
+        method: "PUT",
         body: JSON.stringify({ doerId: selectedDoer.id }),
       })
 

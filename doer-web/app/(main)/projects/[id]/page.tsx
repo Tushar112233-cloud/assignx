@@ -187,8 +187,10 @@ export default function ProjectWorkspacePage() {
   /** Handle submit project */
   const handleSubmitProject = useCallback(async () => {
     try {
-      const updatedProject = await submitProject(projectId)
-      setProject(updatedProject)
+      await submitProject(projectId)
+      // Re-fetch to get fully normalized project data
+      const fresh = await getProjectById(projectId)
+      if (fresh) setProject(fresh)
       toast.success('Project submitted for review')
     } catch (error) {
       console.error('Error submitting project:', error)
@@ -199,8 +201,10 @@ export default function ProjectWorkspacePage() {
   /** Handle start project */
   const handleStartProject = useCallback(async () => {
     try {
-      const updatedProject = await startProject(projectId)
-      setProject(updatedProject)
+      await startProject(projectId)
+      // Re-fetch to get fully normalized project data
+      const fresh = await getProjectById(projectId)
+      if (fresh) setProject(fresh)
       toast.success('Project started')
     } catch (error) {
       console.error('Error starting project:', error)

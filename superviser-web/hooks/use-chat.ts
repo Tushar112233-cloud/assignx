@@ -292,8 +292,24 @@ export function useChatMessages(roomId: string): UseChatMessagesReturn {
     // Server emits "chat:message" (not "chat:{roomId}")
     socket.on("chat:message", handleNewMessage)
 
+    // Handle approval/rejection status updates
+    const handleApproved = (data: { messageId: string }) => {
+      setMessages(prev => prev.map(m =>
+        m.id === data.messageId ? { ...m, approval_status: 'approved' as const } : m
+      ))
+    }
+    const handleRejected = (data: { messageId: string }) => {
+      setMessages(prev => prev.map(m =>
+        m.id === data.messageId ? { ...m, approval_status: 'rejected' as const } : m
+      ))
+    }
+    socket.on("chat:messageApproved", handleApproved)
+    socket.on("chat:messageRejected", handleRejected)
+
     return () => {
       socket.off("chat:message", handleNewMessage)
+      socket.off("chat:messageApproved", handleApproved)
+      socket.off("chat:messageRejected", handleRejected)
       socket.emit("chat:leave", roomId)
     }
   }, [roomId])

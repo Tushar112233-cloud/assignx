@@ -11,7 +11,7 @@ import { cookies } from "next/headers"
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
 
 const submitQuoteSchema = z.object({
-  projectId: z.string().uuid("Invalid project ID"),
+  projectId: z.string().min(1, "Invalid project ID"),
   userQuote: z.number().positive("User quote must be positive"),
   doerPayout: z.number().positive("Doer payout must be positive"),
 })

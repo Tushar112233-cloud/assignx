@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
-import { ChatRoom, ChatMessage, Project } from '../models';
+import { ChatRoom, ChatMessage, Project, User, Supervisor, Doer } from '../models';
 import { uploadBufferToCloudinary } from '../services/upload.service';
 import { AppError } from '../middleware/errorHandler';
 import multer from 'multer';
@@ -247,7 +247,29 @@ router.get('/rooms/:id/messages', authenticate, async (req: Request, res: Respon
       ChatMessage.countDocuments(baseFilter),
     ]);
 
-    res.json({ messages: messages.reverse(), total, page: Number(page) });
+    // Populate sender names from all role collections
+    const senderIds = [...new Set(messages.map(m => m.senderId.toString()))];
+    const [users, supervisors, doers] = await Promise.all([
+      User.find({ _id: { $in: senderIds } }).select('fullName avatarUrl').lean(),
+      Supervisor.find({ _id: { $in: senderIds } }).select('fullName avatarUrl').lean(),
+      Doer.find({ _id: { $in: senderIds } }).select('fullName avatarUrl').lean(),
+    ]);
+    const senderMap = new Map<string, { fullName?: string; avatarUrl?: string }>();
+    for (const s of [...users, ...supervisors, ...doers]) {
+      senderMap.set(s._id.toString(), s);
+    }
+
+    const enriched = messages.reverse().map(m => {
+      const obj = m.toObject();
+      const sender = senderMap.get(obj.senderId.toString());
+      return {
+        ...obj,
+        sender: sender ? { id: obj.senderId, full_name: sender.fullName, avatar_url: sender.avatarUrl } : null,
+        sender_name: sender?.fullName || 'Unknown',
+      };
+    });
+
+    res.json({ messages: enriched, total, page: Number(page) });
   } catch (err) {
     next(err);
   }
@@ -276,13 +298,24 @@ router.post('/rooms/:id/messages', authenticate, async (req: Request, res: Respo
     // Update room lastMessageAt
     await ChatRoom.findByIdAndUpdate(req.params.id, { lastMessageAt: new Date() });
 
+    // Enrich with sender info (check all role collections)
+    const senderId = req.user!.id;
+    const senderUser = await User.findById(senderId).select('fullName avatarUrl').lean()
+      || await Supervisor.findById(senderId).select('fullName avatarUrl').lean()
+      || await Doer.findById(senderId).select('fullName avatarUrl').lean();
+    const enrichedMessage = {
+      ...message.toObject(),
+      sender: senderUser ? { id: senderId, full_name: senderUser.fullName, avatar_url: senderUser.avatarUrl } : null,
+      sender_name: senderUser?.fullName || 'Unknown',
+    };
+
     // Emit to room via socket
     const io = req.app.get('io');
     if (io) {
-      io.to(`chat:${req.params.id}`).emit('chat:message', message);
+      io.to(`chat:${req.params.id}`).emit('chat:message', enrichedMessage);
     }
 
-    res.status(201).json({ message });
+    res.status(201).json({ message: enrichedMessage });
   } catch (err) {
     next(err);
   }
