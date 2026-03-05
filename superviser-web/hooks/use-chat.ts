@@ -55,8 +55,24 @@ export function useChatRooms(options: UseChatRoomsOptions = {}): UseChatRoomsRet
           ...r,
           id: r._id || r.id,
           room_type: r.roomType || r.room_type,
+          type: r.roomType || r.room_type || r.type,
           last_message_at: r.lastMessageAt || r.last_message_at,
           created_at: r.createdAt || r.created_at,
+          is_suspended: r.isSuspended ?? r.is_suspended ?? false,
+          // Map flat project fields into nested projects object for components
+          projects: (r.project_title || r.project_number)
+            ? { title: r.project_title as string, project_number: r.project_number as string }
+            : r.projects || null,
+          // Components expect chat_participants with full_name, map from participants
+          chat_participants: ((r.participants || r.chat_participants || []) as any[]).map((p: any) => ({
+            id: p.id || p._id,
+            user_id: p.id || p._id,
+            full_name: p.full_name || p.fullName || null,
+            avatar_url: p.avatar_url || p.avatarUrl || null,
+            email: p.email || null,
+            role: p.role || p.participant_role || null,
+            joined_at: p.joinedAt || p.joined_at || null,
+          })),
         }
       }) as ChatRoomWithParticipants[]
 

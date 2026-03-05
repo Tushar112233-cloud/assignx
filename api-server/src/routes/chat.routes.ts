@@ -82,6 +82,22 @@ router.get('/rooms', authenticate, async (req: Request, res: Response, next: Nex
     const projects = await Project.find({ _id: { $in: projectIds } }).select('title projectNumber').lean();
     const projectMap = new Map(projects.map(p => [p._id.toString(), p]));
 
+    // Populate participant names
+    const allParticipantIds = [...new Set(rooms.flatMap(r => (r.participants || []).map((p: any) => p.id?.toString()).filter(Boolean)))];
+    const [users, supervisors, doers] = await Promise.all([
+      User.find({ _id: { $in: allParticipantIds } }).select('fullName avatarUrl email').lean(),
+      Supervisor.find({ _id: { $in: allParticipantIds } }).select('fullName avatarUrl email').lean(),
+      Doer.find({ _id: { $in: allParticipantIds } }).select('fullName avatarUrl email').lean(),
+    ]);
+    const nameMap = new Map<string, { full_name: string | null; avatar_url: string | null; email: string | null }>();
+    for (const u of [...users, ...supervisors, ...doers]) {
+      nameMap.set(u._id.toString(), {
+        full_name: (u as any).fullName || null,
+        avatar_url: (u as any).avatarUrl || null,
+        email: (u as any).email || null,
+      });
+    }
+
     const normalizedRooms = rooms.map(room => {
       const obj = room.toObject();
       const project = obj.projectId ? projectMap.get(obj.projectId.toString()) : null;
@@ -94,12 +110,18 @@ router.get('/rooms', authenticate, async (req: Request, res: Response, next: Nex
         room_type: obj.roomType,
         last_message_at: obj.lastMessageAt,
         created_at: obj.createdAt,
-        participants: (obj.participants || []).map((p: any) => ({
-          id: p.id,
-          role: p.role,
-          joinedAt: p.joinedAt,
-          isActive: p.isActive,
-        })),
+        participants: (obj.participants || []).map((p: any) => {
+          const info = nameMap.get(p.id?.toString() || '');
+          return {
+            id: p.id,
+            role: p.role,
+            full_name: info?.full_name || null,
+            avatar_url: info?.avatar_url || null,
+            email: info?.email || null,
+            joinedAt: p.joinedAt,
+            isActive: p.isActive,
+          };
+        }),
       };
     });
 

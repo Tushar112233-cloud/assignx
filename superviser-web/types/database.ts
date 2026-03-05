@@ -330,6 +330,9 @@ export interface ChatParticipant {
   role: string | null
   /** API alias for role */
   participant_role?: string | null
+  full_name?: string | null
+  avatar_url?: string | null
+  email?: string | null
   joined_at: string
   last_read_at: string | null
 }
