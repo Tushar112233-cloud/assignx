@@ -24,9 +24,9 @@ const steps = [
     title: "Apply & Get Verified",
     description:
       "Submit your credentials and domain expertise. Our team reviews your application and verifies you as an expert supervisor.",
-    iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
-    iconColor: "text-indigo-600 dark:text-indigo-400",
-    numColor: "text-indigo-200 dark:text-indigo-900",
+    iconBg: "bg-orange-100 dark:bg-orange-900/30",
+    iconColor: "text-orange-600 dark:text-orange-400",
+    numColor: "text-orange-200 dark:text-orange-900",
   },
   {
     number: "02",
@@ -34,9 +34,9 @@ const steps = [
     title: "Receive Matched Projects",
     description:
       "Projects in your domain appear in your dashboard automatically. Accept the ones that fit your schedule.",
-    iconBg: "bg-violet-100 dark:bg-violet-900/30",
-    iconColor: "text-violet-600 dark:text-violet-400",
-    numColor: "text-violet-200 dark:text-violet-900",
+    iconBg: "bg-amber-100 dark:bg-amber-900/30",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    numColor: "text-amber-200 dark:text-amber-900",
   },
   {
     number: "03",

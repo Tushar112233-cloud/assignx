@@ -42,8 +42,8 @@ const metricCards = [
     label: "Active Projects",
     value: "12",
     sub: "this month",
-    iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
-    iconColor: "text-indigo-600 dark:text-indigo-400",
+    iconBg: "bg-orange-100 dark:bg-orange-900/30",
+    iconColor: "text-orange-600 dark:text-orange-400",
   },
   {
     id: 2,
@@ -180,7 +180,7 @@ export function HeroSection() {
       {/* Grid overlay */}
       <div className="absolute inset-0 sv-grid-pattern opacity-30" />
 
-      {/* Indigo orb — top right */}
+      {/* Orange orb — top right */}
       <motion.div
         className="absolute top-20 right-16 w-96 h-96 rounded-full blur-3xl pointer-events-none"
         style={{ background: "hsl(var(--accent) / 0.08)" }}

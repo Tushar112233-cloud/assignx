@@ -89,6 +89,7 @@ export function ApplicationsDataTable({
   const [searchValue, setSearchValue] = useState(
     searchParams.get("search") || ""
   );
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const updateParams = useCallback(
     (key: string, value: string | null) => {
@@ -164,24 +165,22 @@ export function ApplicationsDataTable({
       cell: ({ getValue }) => statusBadge(getValue() as string),
     },
     {
-      id: "skills",
-      header: "Skills",
+      id: "details",
+      header: "Details",
       cell: ({ row }) => {
-        const skills = (row.original.metadata?.skills as string[]) || [];
-        if (!skills.length) return <span className="text-muted-foreground">-</span>;
+        const m = row.original.metadata || {};
+        const expertise = (m.expertiseAreas as string[]) || (m.skills as string[]) || [];
+        const qualification = m.qualification as string || "";
+        const years = m.yearsOfExperience as number;
+        const parts: string[] = [];
+        if (qualification) parts.push(qualification.replace(/_/g, " "));
+        if (years) parts.push(`${years}y exp`);
+        if (expertise.length) parts.push(expertise.map(e => (e as string).replace(/_/g, " ")).join(", "));
+        if (!parts.length) return <span className="text-muted-foreground">-</span>;
         return (
-          <div className="flex flex-wrap gap-1 max-w-48">
-            {skills.slice(0, 3).map((s) => (
-              <Badge key={s} variant="secondary" className="text-xs">
-                {s}
-              </Badge>
-            ))}
-            {skills.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
-                +{skills.length - 3}
-              </Badge>
-            )}
-          </div>
+          <span className="text-xs text-muted-foreground max-w-64 truncate block" title={parts.join(" · ")}>
+            {parts.join(" · ")}
+          </span>
         );
       },
     },
@@ -293,18 +292,91 @@ export function ApplicationsDataTable({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const req = row.original;
+                const isExpanded = expandedId === req._id;
+                const m = req.metadata || {};
+                return (
+                  <>
+                    <TableRow
+                      key={row.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => setExpandedId(isExpanded ? null : req._id)}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                    {isExpanded && (
+                      <TableRow key={`${row.id}-detail`}>
+                        <TableCell colSpan={columns.length} className="bg-muted/30 px-6 py-4">
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                            {m.qualification && (
+                              <div>
+                                <p className="text-muted-foreground text-xs font-medium">Qualification</p>
+                                <p className="capitalize">{(m.qualification as string).replace(/_/g, " ")}</p>
+                              </div>
+                            )}
+                            {m.yearsOfExperience != null && (
+                              <div>
+                                <p className="text-muted-foreground text-xs font-medium">Experience</p>
+                                <p>{m.yearsOfExperience as number} years</p>
+                              </div>
+                            )}
+                            {((m.expertiseAreas as string[]) || []).length > 0 && (
+                              <div>
+                                <p className="text-muted-foreground text-xs font-medium">Expertise</p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {((m.expertiseAreas as string[]) || []).map((e) => (
+                                    <Badge key={e as string} variant="secondary" className="text-xs capitalize">
+                                      {(e as string).replace(/_/g, " ")}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {m.bio && (
+                              <div className="col-span-full">
+                                <p className="text-muted-foreground text-xs font-medium">Bio</p>
+                                <p>{m.bio as string}</p>
+                              </div>
+                            )}
+                            {m.bankName && (
+                              <div>
+                                <p className="text-muted-foreground text-xs font-medium">Bank</p>
+                                <p className="uppercase">{m.bankName as string}</p>
+                              </div>
+                            )}
+                            {m.accountNumber && (
+                              <div>
+                                <p className="text-muted-foreground text-xs font-medium">Account Number</p>
+                                <p>{"*".repeat(Math.max(0, (m.accountNumber as string).length - 4)) + (m.accountNumber as string).slice(-4)}</p>
+                              </div>
+                            )}
+                            {m.ifscCode && (
+                              <div>
+                                <p className="text-muted-foreground text-xs font-medium">IFSC Code</p>
+                                <p>{m.ifscCode as string}</p>
+                              </div>
+                            )}
+                            {m.upiId && (
+                              <div>
+                                <p className="text-muted-foreground text-xs font-medium">UPI ID</p>
+                                <p>{m.upiId as string}</p>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell

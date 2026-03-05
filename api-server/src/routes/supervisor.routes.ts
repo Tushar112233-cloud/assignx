@@ -9,8 +9,7 @@ const router = Router();
 // GET /supervisors/me - Get current supervisor's data
 router.get('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findById(req.user!.id)
-      .populate('subjects.subjectId', 'name category');
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
     const obj = supervisor.toObject();
@@ -227,16 +226,10 @@ router.delete('/me/blacklist/:doerId', authenticate, async (req: Request, res: R
 // GET /supervisors/me/expertise - Get supervisor expertise/subjects
 router.get('/me/expertise', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findById(req.user!.id)
-      .populate('subjects.subjectId', 'name category');
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) return res.json({ expertise: [], subjects: [] });
 
-    const subjects = (supervisor.subjects || []).map(s => ({
-      id: (s.subjectId as any)?._id || s.subjectId,
-      name: (s.subjectId as any)?.name || '',
-      category: (s.subjectId as any)?.category || '',
-      isPrimary: s.isPrimary,
-    }));
+    const subjects: any[] = [];
 
     res.json({
       expertise: supervisor.expertise || [],

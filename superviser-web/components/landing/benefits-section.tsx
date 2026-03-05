@@ -27,9 +27,9 @@ const benefits = [
     description:
       "Earn 15% of every project value you supervise. Transparent, guaranteed, and paid within 48 hours of completion.",
     size: "lg" as const,
-    gradient: "from-indigo-500/10 to-indigo-500/5",
-    iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
-    iconColor: "text-indigo-600 dark:text-indigo-400",
+    gradient: "from-orange-500/10 to-orange-500/5",
+    iconBg: "bg-orange-100 dark:bg-orange-900/30",
+    iconColor: "text-orange-600 dark:text-orange-400",
   },
   {
     id: "flexible",
@@ -38,9 +38,9 @@ const benefits = [
     description:
       "Accept projects around your existing commitments. No minimum hours required.",
     size: "sm" as const,
-    gradient: "from-violet-500/10 to-violet-500/5",
-    iconBg: "bg-violet-100 dark:bg-violet-900/30",
-    iconColor: "text-violet-600 dark:text-violet-400",
+    gradient: "from-amber-500/10 to-amber-500/5",
+    iconBg: "bg-amber-100 dark:bg-amber-900/30",
+    iconColor: "text-amber-600 dark:text-amber-400",
   },
   {
     id: "domain",
@@ -71,9 +71,9 @@ const benefits = [
     description:
       "Every task is legitimate. Every payment guaranteed by AssignX.",
     size: "sm" as const,
-    gradient: "from-indigo-500/10 to-indigo-500/5",
-    iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
-    iconColor: "text-indigo-600 dark:text-indigo-400",
+    gradient: "from-orange-500/10 to-orange-500/5",
+    iconBg: "bg-orange-100 dark:bg-orange-900/30",
+    iconColor: "text-orange-600 dark:text-orange-400",
   },
   {
     id: "growth",
@@ -82,9 +82,9 @@ const benefits = [
     description:
       "Exposure to diverse academic problems sharpens your domain knowledge every month.",
     size: "sm" as const,
-    gradient: "from-violet-500/10 to-indigo-500/5",
-    iconBg: "bg-violet-100 dark:bg-violet-900/30",
-    iconColor: "text-violet-600 dark:text-violet-400",
+    gradient: "from-amber-500/10 to-orange-500/5",
+    iconBg: "bg-amber-100 dark:bg-amber-900/30",
+    iconColor: "text-amber-600 dark:text-amber-400",
   },
 ]
 

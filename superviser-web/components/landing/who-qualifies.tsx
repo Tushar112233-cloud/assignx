@@ -50,7 +50,7 @@ export function WhoQualifies() {
     >
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--sv-border)] to-transparent" />
 
-      {/* Decorative indigo orb */}
+      {/* Decorative orange orb */}
       <div
         className="absolute top-1/2 left-0 -translate-y-1/2 w-96 h-96 rounded-full blur-3xl pointer-events-none"
         style={{ background: "hsl(var(--accent) / 0.06)" }}

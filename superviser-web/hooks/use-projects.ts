@@ -306,8 +306,17 @@ export function useProjectsByStatus() {
   }, [refetchProjects, refetchNewReq, refetchReady])
 
   const groupedProjects = useMemo(() => {
+    // Merge unassigned new requests with assigned projects that still need quoting
+    const assignedNeedsQuote = allProjects.filter(p =>
+      PROJECT_STATUS_GROUPS.needsQuote.includes(p.status as ProjectStatus)
+    )
+    // Deduplicate by id
+    const allNeedsQuote = Array.from(
+      new Map([...newRequests, ...assignedNeedsQuote].map(p => [p.id, p])).values()
+    )
+
     return {
-      needsQuote: newRequests,
+      needsQuote: allNeedsQuote,
       readyToAssign: readyProjects,
       inProgress: allProjects.filter(p =>
         PROJECT_STATUS_GROUPS.inProgress.includes(p.status as ProjectStatus)

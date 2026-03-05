@@ -20,23 +20,23 @@
   --sv-text-muted: hsl(var(--muted-foreground));
   --sv-text-inverse: hsl(0 0% 100%);
 
-  /* Accent — Indigo */
-  --sv-accent: hsl(var(--accent));
-  --sv-accent-hover: hsl(234 89% 58%);
-  --sv-accent-light: hsl(var(--accent) / 0.12);
-  --sv-accent-lighter: hsl(var(--accent) / 0.06);
+  /* Accent — Terracotta/Orange */
+  --sv-accent: hsl(25 95% 53%);
+  --sv-accent-hover: hsl(21 90% 48%);
+  --sv-accent-light: hsl(25 95% 53% / 0.12);
+  --sv-accent-lighter: hsl(25 95% 53% / 0.06);
 
   /* Cyan (from command-center theme) */
   --sv-cyan: var(--cmd-cyan);      /* #22d3ee */
   --sv-cyan-light: rgba(34, 211, 238, 0.12);
 
-  /* Gradient */
-  --sv-gradient-start: hsl(var(--gradient-start));
-  --sv-gradient-end: hsl(var(--gradient-end));
+  /* Gradient — Terracotta → warm brown */
+  --sv-gradient-start: hsl(25 95% 53%);
+  --sv-gradient-end: hsl(16 47% 56%);
 
   /* Borders */
   --sv-border: hsl(var(--border));
-  --sv-border-accent: hsl(var(--accent) / 0.2);
+  --sv-border-accent: hsl(25 95% 53% / 0.2);
 }
 
 /* ========================================
@@ -78,7 +78,7 @@ body:has(.sv-landing)::-webkit-scrollbar {
     font-weight: 700;
   }
 
-  /* Gradient text — indigo → violet */
+  /* Gradient text — orange → terracotta */
   .sv-text-gradient {
     background-clip: text;
     -webkit-background-clip: text;
@@ -108,7 +108,7 @@ body:has(.sv-landing)::-webkit-scrollbar {
   .sv-btn-primary:hover {
     background-color: var(--sv-accent-hover);
     transform: translateY(-1px);
-    box-shadow: 0 8px 24px hsl(var(--accent) / 0.35);
+    box-shadow: 0 8px 24px hsl(25 95% 53% / 0.35);
   }
 
   /* Ghost / secondary button */

@@ -897,7 +897,7 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
                     {/* Avatar */}
                     <div className={`shrink-0 ${!showSender ? "invisible" : ""}`}>
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={senderProfile?.avatar_url || undefined} />
+                        <AvatarImage src={(msg as any).sender?.avatar_url || undefined} />
                         <AvatarFallback className={`text-xs font-semibold ${
                           isOwn ? "bg-[#F97316] text-white"
                           : (msg as any).sender_role === "doer" ? "bg-emerald-100 text-emerald-700"

@@ -170,7 +170,7 @@ export async function verifySupervisorOTP(
 ): Promise<{ accessToken: string; refreshToken: string; user: AuthUser; profile: AuthUser }> {
   const data = await apiFetch<{ accessToken: string; refreshToken: string; user?: AuthUser; profile?: AuthUser }>('/api/auth/verify', {
     method: 'POST',
-    body: JSON.stringify({ email, otp }),
+    body: JSON.stringify({ email, otp, purpose: 'login', role: 'supervisor' }),
   })
 
   setTokens(data.accessToken, data.refreshToken)

@@ -37,9 +37,9 @@ const roles: Role[] = [
     description:
       "Review incoming task requests, assess complexity, set the right price, and confirm feasibility before the client pays.",
     size: "lg",
-    gradient: "from-indigo-500/10 to-indigo-500/5",
-    iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
-    iconColor: "text-indigo-600 dark:text-indigo-400",
+    gradient: "from-orange-500/10 to-orange-500/5",
+    iconBg: "bg-orange-100 dark:bg-orange-900/30",
+    iconColor: "text-orange-600 dark:text-orange-400",
   },
   {
     id: "brief",
@@ -48,9 +48,9 @@ const roles: Role[] = [
     description:
       "Assign the right expert, share full requirements, set deadlines, and keep them on track.",
     size: "sm",
-    gradient: "from-violet-500/10 to-violet-500/5",
-    iconBg: "bg-violet-100 dark:bg-violet-900/30",
-    iconColor: "text-violet-600 dark:text-violet-400",
+    gradient: "from-amber-500/10 to-amber-500/5",
+    iconBg: "bg-amber-100 dark:bg-amber-900/30",
+    iconColor: "text-amber-600 dark:text-amber-400",
   },
   {
     id: "qc",
@@ -70,9 +70,9 @@ const roles: Role[] = [
     description:
       "Keep clients informed on progress, handle questions, and manage expectations throughout the project lifecycle.",
     size: "sm",
-    gradient: "from-indigo-500/10 to-violet-500/5",
-    iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
-    iconColor: "text-indigo-600 dark:text-indigo-400",
+    gradient: "from-orange-500/10 to-amber-500/5",
+    iconBg: "bg-orange-100 dark:bg-orange-900/30",
+    iconColor: "text-orange-600 dark:text-orange-400",
   },
   {
     id: "track",
