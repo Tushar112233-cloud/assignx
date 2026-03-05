@@ -233,11 +233,11 @@ export async function sendCustomerNotification(customerId: string, title: string
   await serverFetch(`/api/notifications`, {
     method: "POST",
     body: JSON.stringify({
-      profileId: customerId,
+      recipientId: customerId,
+      recipientRole: "user",
       notificationType: "system_alert",
       title,
       body,
-      targetRole: "user",
     }),
   });
 

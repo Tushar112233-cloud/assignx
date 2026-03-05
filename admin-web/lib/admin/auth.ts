@@ -5,7 +5,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export type AdminSession = {
   id: string;
-  profileId: string;
   email: string;
   role: string;
   permissions: Record<string, boolean> | null;
@@ -87,7 +86,6 @@ export async function verifyAdmin(): Promise<AdminSession> {
 
     return {
       id: profile._id || profile.id,
-      profileId: profile._id || profile.id,
       email: profile.email || "",
       role: role || "admin",
       permissions: data?.roleData?.permissions || null,
