@@ -149,17 +149,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         RoutePaths.splash,
         RoutePaths.login,
         RoutePaths.register,
-        RoutePaths.forgotPassword,
         RoutePaths.onboarding,
       ];
 
-      // Semi-protected routes (require auth but not activation)
-      final registrationRoutes = [
+      // Routes allowed without activation (auth required but not activation)
+      final preActivationRoutes = [
         RoutePaths.registration,
         RoutePaths.registrationPending,
+        RoutePaths.activation,
+        RoutePaths.activationComplete,
       ];
 
       final isPublicRoute = publicRoutes.contains(location);
+      final isPreActivationRoute = preActivationRoutes.any(
+        (route) => location.startsWith(route),
+      );
 
       // If not logged in and trying to access protected route
       if (!isLoggedIn && !isPublicRoute) {
@@ -168,29 +172,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // If logged in and trying to access auth routes
       if (isLoggedIn && isPublicRoute && location != RoutePaths.splash) {
-        // Check if user has completed registration
-        // For now, redirect to registration pending or dashboard
         if (isActivated) {
           return RoutePaths.dashboard;
         } else {
-          return RoutePaths.registrationPending;
+          return RoutePaths.activation;
         }
       }
 
-      // Allow access to registration routes if logged in
-      final isRegistrationRoute = registrationRoutes.any(
-        (route) => location.startsWith(route),
-      );
-      if (isLoggedIn && isRegistrationRoute) {
-        return null; // Allow access
+      // Allow access to pre-activation routes if logged in
+      if (isLoggedIn && isPreActivationRoute) {
+        return null;
       }
 
-      // If logged in but not activated, redirect to registration pending
-      // (except for registration routes)
-      if (isLoggedIn && !isActivated && !isRegistrationRoute) {
-        if (!isPublicRoute && location != RoutePaths.activation) {
-          return RoutePaths.registrationPending;
-        }
+      // If logged in but not activated, redirect to activation (training modules)
+      if (isLoggedIn && !isActivated && !isPreActivationRoute && !isPublicRoute) {
+        return RoutePaths.activation;
       }
 
       return null;

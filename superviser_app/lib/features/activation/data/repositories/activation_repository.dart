@@ -8,7 +8,7 @@ class ActivationRepository {
   /// Fetches training modules for the current user.
   Future<List<TrainingModule>> getTrainingModules() async {
     try {
-      final response = await ApiClient.get('/supervisor/activation/modules');
+      final response = await ApiClient.get('/supervisors/me/modules');
       if (response != null && response is List) {
         return response
             .map((json) => TrainingModule.fromJson(json as Map<String, dynamic>))
@@ -39,13 +39,13 @@ class ActivationRepository {
 
   /// Marks a training module as complete.
   Future<void> markModuleComplete(String moduleId) async {
-    await ApiClient.post('/supervisor/activation/modules/$moduleId/complete', {});
+    await ApiClient.put('/supervisors/me/modules/$moduleId/complete');
   }
 
   /// Fetches the supervisor quiz.
   Future<Quiz> getQuiz(String quizId) async {
     try {
-      final response = await ApiClient.get('/supervisor/activation/quiz/$quizId');
+      final response = await ApiClient.get('/supervisors/me/quiz/$quizId');
       if (response != null) {
         // Parse quiz from API response if available
         return defaultSupervisorQuiz;
@@ -58,7 +58,7 @@ class ActivationRepository {
 
   /// Submits quiz result.
   Future<void> submitQuizResult(QuizResult result) async {
-    await ApiClient.post('/supervisor/activation/quiz/submit', result.toJson());
+    await ApiClient.post('/supervisors/me/quiz/submit', result.toJson());
 
     // If passed, mark the quiz module as complete
     if (result.passed) {
@@ -70,7 +70,7 @@ class ActivationRepository {
   Future<int> getQuizAttempts(String quizId) async {
     try {
       final response = await ApiClient.get(
-        '/supervisor/activation/quiz/$quizId/attempts',
+        '/supervisors/me/quiz/$quizId/attempts',
       );
       if (response is Map<String, dynamic>) {
         return response['count'] as int? ?? 0;
@@ -92,6 +92,6 @@ class ActivationRepository {
 
   /// Activates the supervisor account.
   Future<void> activateSupervisor() async {
-    await ApiClient.post('/supervisor/activation/activate', {});
+    await ApiClient.post('/supervisors/me/activate', {});
   }
 }
