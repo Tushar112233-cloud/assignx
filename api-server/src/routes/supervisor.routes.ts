@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
-import { Supervisor, SupervisorActivation, Profile, Project, Doer, DoerReview, Wallet, WalletTransaction, SupportTicket, Subject, Notification } from '../models';
+import { Supervisor, SupervisorActivation, Profile, Project, Doer, DoerReview, Wallet, WalletTransaction, SupportTicket, Subject, Notification, TrainingModule } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
@@ -1519,6 +1519,120 @@ router.put('/:id', authenticate, async (req: Request, res: Response, next: NextF
     const supervisor = await Supervisor.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!supervisor) throw new AppError('Supervisor not found', 404);
     res.json({ supervisor });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /supervisors/me/modules — Get training modules with completion status
+router.get('/me/modules', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profile = await Profile.findById(req.user!.id);
+    if (!profile) throw new AppError('Profile not found', 404);
+
+    const supervisor = await Supervisor.findOne({ profileId: profile._id });
+    if (!supervisor) throw new AppError('Supervisor not found', 404);
+
+    // Get all active training modules for supervisors
+    const modules = await TrainingModule.find({
+      isActive: true,
+      targetRole: { $in: ['supervisor', 'all'] },
+    }).sort({ order: 1 });
+
+    // Get completion status
+    const activation = await SupervisorActivation.findOne({ supervisorId: supervisor._id });
+    const completedSteps = activation?.completedSteps || [];
+
+    const modulesWithStatus = modules.map((m) => ({
+      _id: m._id,
+      title: m.title,
+      description: m.description,
+      videoUrl: m.videoUrl,
+      thumbnailUrl: m.thumbnailUrl,
+      duration: m.duration,
+      category: m.category,
+      order: m.order,
+      isCompleted: completedSteps.includes(m._id.toString()),
+    }));
+
+    const totalRequired = modules.length;
+    const totalCompleted = completedSteps.filter((s: string) =>
+      modules.some((m) => m._id.toString() === s)
+    ).length;
+
+    res.json({
+      modules: modulesWithStatus,
+      totalRequired,
+      totalCompleted,
+      allCompleted: totalRequired > 0 && totalCompleted >= totalRequired,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /supervisors/me/modules/:moduleId/complete — Mark a module as completed
+router.put('/me/modules/:moduleId/complete', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const profile = await Profile.findById(req.user!.id);
+    if (!profile) throw new AppError('Profile not found', 404);
+
+    const supervisor = await Supervisor.findOne({ profileId: profile._id });
+    if (!supervisor) throw new AppError('Supervisor not found', 404);
+
+    const moduleId = req.params.moduleId as string;
+
+    // Verify module exists
+    const trainingModule = await TrainingModule.findById(moduleId);
+    if (!trainingModule) throw new AppError('Training module not found', 404);
+
+    // Upsert activation record
+    let activation = await SupervisorActivation.findOne({ supervisorId: supervisor._id });
+    if (!activation) {
+      activation = await SupervisorActivation.create({
+        supervisorId: supervisor._id,
+        step: 0,
+        completedSteps: [],
+      });
+    }
+
+    // Add module to completed steps if not already there
+    const steps = activation.completedSteps as string[];
+    if (!steps.includes(moduleId)) {
+      steps.push(moduleId);
+      activation.step = steps.length;
+    }
+
+    // Check if all required modules are completed
+    const allModules = await TrainingModule.find({
+      isActive: true,
+      targetRole: { $in: ['supervisor', 'all'] },
+    });
+
+    const allModuleIds = allModules.map((m) => m._id.toString());
+    const allCompleted = allModuleIds.every((id) => activation!.completedSteps.includes(id));
+
+    if (allCompleted && allModules.length > 0) {
+      activation.isCompleted = true;
+      activation.isActivated = true;
+      activation.trainingCompleted = true;
+      activation.completedAt = new Date();
+      activation.activatedAt = new Date();
+
+      // Also update the supervisor record
+      supervisor.isActivated = true;
+      supervisor.activatedAt = new Date();
+      await supervisor.save();
+    }
+
+    await activation.save();
+
+    res.json({
+      success: true,
+      completedSteps: activation.completedSteps,
+      allCompleted,
+      isActivated: supervisor.isActivated,
+    });
   } catch (err) {
     next(err);
   }

@@ -856,9 +856,24 @@ router.post('/access-requests/:id/approve', async (req: Request, res: Response, 
     }
 
     if (request.role === 'supervisor' && !(await Supervisor.findOne({ profileId: profile._id }))) {
+      const meta = request.metadata || {};
       await Supervisor.create({
         profileId: profile._id,
         isAccessGranted: true,
+        isApproved: true,
+        isActivated: false,
+        qualification: meta.qualification || '',
+        yearsOfExperience: meta.yearsOfExperience || 0,
+        bio: meta.bio || '',
+        expertise: meta.expertiseAreas || [],
+        bankDetails: {
+          accountName: request.fullName,
+          accountNumber: meta.accountNumber || '',
+          ifscCode: meta.ifscCode || '',
+          bankName: meta.bankName || '',
+          upiId: meta.upiId || '',
+          verified: false,
+        },
       });
     }
 
