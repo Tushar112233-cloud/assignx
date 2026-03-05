@@ -265,7 +265,7 @@ export default function ProjectWorkspacePage() {
     try {
       await apiClient(`/api/projects/${projectId}`, {
         method: 'PUT',
-        body: JSON.stringify({ live_document_url: url }),
+        body: JSON.stringify({ liveDocumentUrl: url }),
       })
 
       setProject((prev) => (prev ? { ...prev, live_document_url: url } : null))

@@ -267,17 +267,19 @@ router.put('/:id', authenticate, async (req: Request, res: Response, next: NextF
     const uid = req.user!.id;
     const role = req.user!.role;
     const isUser = project.userId?.toString() === uid;
+    const isDoer = project.doerId?.toString() === uid;
     const isSupervisor = project.supervisorId?.toString() === uid;
     const isAdmin = role === 'admin';
 
-    if (!isUser && !isSupervisor && !isAdmin) throw new AppError('Forbidden', 403);
+    if (!isUser && !isDoer && !isSupervisor && !isAdmin) throw new AppError('Forbidden', 403);
 
     // Role-based field allowlist — prevent privilege escalation via body params
     const allowedByUser = ['title', 'description', 'requirements', 'budget', 'deadline', 'wordCount', 'pageCount', 'specificInstructions'];
+    const allowedByDoer = ['liveDocumentUrl', 'progressPercentage', 'notes'];
     const allowedBySupervisor = ['deadline', 'notes', 'liveDocumentUrl', 'progressPercentage'];
     const allowedByAdmin = Object.keys(req.body);
 
-    const allowedFields = isAdmin ? allowedByAdmin : isSupervisor ? allowedBySupervisor : allowedByUser;
+    const allowedFields = isAdmin ? allowedByAdmin : isSupervisor ? allowedBySupervisor : isDoer ? allowedByDoer : allowedByUser;
     const updates: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
