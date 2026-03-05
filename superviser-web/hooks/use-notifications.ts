@@ -114,8 +114,8 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
     try {
       const socket = getSocket()
 
-      const handleNew = (newNotification: Notification & { target_role?: string }) => {
-        if (newNotification.target_role && newNotification.target_role !== "supervisor") return
+      const handleNew = (newNotification: Notification & { recipient_role?: string }) => {
+        if (newNotification.recipient_role && newNotification.recipient_role !== "supervisor") return
 
         setNotifications(prev => [newNotification, ...prev])
         setUnreadCount(prev => prev + 1)

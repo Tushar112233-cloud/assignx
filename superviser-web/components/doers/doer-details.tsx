@@ -116,7 +116,7 @@ export function DoerDetails({ doer, open, onOpenChange, onBlacklistChange }: Doe
         project_id: review.project_id || "",
         project_number: review.project_number || review.projects?.project_number || "",
         project_title: review.project_title || review.projects?.title || "Unknown Project",
-        reviewer_name: review.reviewer_name || review.profiles?.full_name || "Anonymous",
+        reviewer_name: review.reviewer_name || "Anonymous",
         reviewer_type: review.reviewer_type as "user" | "supervisor",
         rating: review.overall_rating || review.rating,
         comment: review.review_text || review.comment || "",

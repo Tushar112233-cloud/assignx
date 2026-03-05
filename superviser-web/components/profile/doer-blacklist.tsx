@@ -149,8 +149,8 @@ export function DoerBlacklist() {
     return blacklistedDoersData.map((doer) => ({
       id: doer.id,
       doer_id: doer.id,
-      doer_name: doer.profiles?.full_name || "Unknown",
-      doer_avatar: doer.profiles?.avatar_url || undefined,
+      doer_name: doer.full_name || "Unknown",
+      doer_avatar: doer.avatar_url || undefined,
       doer_rating: doer.average_rating || 0,
       reason: doer.blacklistReason || "No reason provided",
       blacklisted_at: new Date().toISOString(),

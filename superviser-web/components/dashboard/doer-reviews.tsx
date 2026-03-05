@@ -70,7 +70,7 @@ export function DoerReviews({ doer, onViewProfile }: DoerReviewsProps) {
         id: review.id,
         project_id: review.project_id || "",
         project_title: review.project_title || review.projects?.title || "Project",
-        reviewer_name: review.reviewer_name || review.profiles?.full_name || (review.reviewer_type === "supervisor" ? "Supervisor" : "Client"),
+        reviewer_name: review.reviewer_name || (review.reviewer_type === "supervisor" ? "Supervisor" : "Client"),
         reviewer_type: review.reviewer_type === "supervisor" ? "supervisor" : "user",
         rating: review.overall_rating || review.rating || 0,
         comment: review.review_text || review.comment || "",

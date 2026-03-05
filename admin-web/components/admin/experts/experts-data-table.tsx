@@ -59,7 +59,6 @@ import { IconPlus } from "@tabler/icons-react";
 
 type Expert = {
   id: string;
-  profile_id: string;
   full_name: string;
   email: string;
   avatar_url: string | null;

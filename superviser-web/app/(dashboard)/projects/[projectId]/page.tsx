@@ -271,17 +271,17 @@ export default function ProjectDetailPage() {
                 className="flex items-center gap-3 group"
               >
                 <Avatar className="h-12 w-12 ring-2 ring-white shadow-sm">
-                  <AvatarImage src={project.profiles?.avatar_url || undefined} />
+                  <AvatarImage src={project.user?.avatar_url || undefined} />
                   <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white font-semibold">
-                    {project.profiles?.full_name?.charAt(0) || "U"}
+                    {project.user?.full_name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-[#1C1C1C] group-hover:text-[#F97316] transition-colors truncate">
-                    {project.profiles?.full_name || "Unknown User"}
+                    {project.user?.full_name || "Unknown User"}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
-                    {project.profiles?.email || "No email"}
+                    {project.user?.email || "No email"}
                   </p>
                 </div>
               </Link>
@@ -300,14 +300,14 @@ export default function ProjectDetailPage() {
                 /* Doer is assigned */
                 <Link href={`/doers/${project.doer_id}`} className="flex items-center gap-3 group">
                   <Avatar className="h-12 w-12 ring-2 ring-white shadow-sm">
-                    <AvatarImage src={project.doers.profiles?.avatar_url || undefined} />
+                    <AvatarImage src={project.doers.avatar_url || undefined} />
                     <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold">
-                      {project.doers.profiles?.full_name?.charAt(0) || "D"}
+                      {project.doers.full_name?.charAt(0) || "D"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-[#1C1C1C] group-hover:text-[#F97316] transition-colors truncate">
-                      {project.doers.profiles?.full_name || "Unknown Doer"}
+                      {project.doers.full_name || "Unknown Doer"}
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="h-2 w-2 rounded-full bg-green-500" />
@@ -546,9 +546,9 @@ export default function ProjectDetailPage() {
           subject: project.subjects?.name || "General",
           service_type: project.service_type,
           status: project.status,
-          user_name: project.profiles?.full_name || "Unknown User",
+          user_name: project.user?.full_name || "Unknown User",
           user_id: project.user_id || "",
-          doer_name: project.doers?.profiles?.full_name || "Unassigned",
+          doer_name: project.doers?.full_name || "Unassigned",
           doer_id: project.doer_id || "",
           deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
           word_count: project.word_count ?? undefined,
@@ -582,7 +582,7 @@ export default function ProjectDetailPage() {
           subject: project.subjects?.name || "General",
           subject_id: project.subject_id ? String(project.subject_id) : undefined,
           service_type: project.service_type,
-          user_name: project.profiles?.full_name || "Unknown User",
+          user_name: project.user?.full_name || "Unknown User",
           deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
           word_count: project.word_count ?? undefined,
           page_count: project.page_count ?? undefined,
@@ -605,7 +605,7 @@ export default function ProjectDetailPage() {
           subject: project.subjects?.name || "General",
           subject_id: project.subject_id || null,
           service_type: project.service_type,
-          user_name: project.profiles?.full_name || "Unknown User",
+          user_name: project.user?.full_name || "Unknown User",
           deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
           word_count: project.word_count ?? undefined,
           page_count: project.page_count ?? undefined,

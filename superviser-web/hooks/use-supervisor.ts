@@ -9,24 +9,19 @@
 import { useEffect, useState, useCallback } from "react"
 import { apiFetch } from "@/lib/api/client"
 import { getStoredUser } from "@/lib/api/auth"
-import type {
-  SupervisorWithProfile,
-  Profile
-} from "@/types/database"
+import type { SupervisorWithProfile } from "@/types/database"
 
 interface UseSupervisorReturn {
   supervisor: SupervisorWithProfile | null
-  profile: Profile | null
   isLoading: boolean
   error: Error | null
   refetch: () => Promise<void>
   updateAvailability: (isAvailable: boolean) => Promise<void>
-  updateProfile: (data: Partial<Profile>) => Promise<void>
+  updateProfile: (data: Partial<{ full_name: string; phone: string }>) => Promise<void>
 }
 
 export function useSupervisor(): UseSupervisorReturn {
   const [supervisor, setSupervisor] = useState<SupervisorWithProfile | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
@@ -37,41 +32,15 @@ export function useSupervisor(): UseSupervisorReturn {
 
       const user = getStoredUser()
       if (!user) {
-        setProfile(null)
         setSupervisor(null)
         return
       }
 
-      // Get profile
-      try {
-        const rawProfile = await apiFetch<{ profile: Profile } | Profile>(`/api/profiles/${user.id}`)
-
-        // API returns { profile: {...} } — extract the inner object
-        const profileData = (rawProfile && typeof rawProfile === 'object' && 'profile' in rawProfile)
-          ? (rawProfile as { profile: Profile }).profile
-          : rawProfile as Profile
-
-        // Normalize camelCase → snake_case aliases
-        const normalized = {
-          ...profileData,
-          full_name: profileData.full_name || (profileData as Record<string, unknown>).fullName as string,
-          avatar_url: profileData.avatar_url || (profileData as Record<string, unknown>).avatarUrl as string,
-          created_at: profileData.created_at || (profileData as Record<string, unknown>).createdAt as string,
-          user_sub_type: profileData.user_sub_type || (profileData as Record<string, unknown>).userSubType as string,
-        } as Profile
-
-        setProfile(normalized)
-      } catch (err) {
-        console.error("[useSupervisor] Profile lookup failed:", err)
-        throw err
-      }
-
-      // Get supervisor data with profile
+      // Get supervisor data (now includes auth fields directly)
       try {
         const supervisorData = await apiFetch<SupervisorWithProfile>("/api/supervisors/me")
         setSupervisor(supervisorData)
       } catch (err) {
-        // PGRST116 equivalent -- no supervisor record found
         const apiErr = err as { status?: number }
         if (apiErr.status === 404) {
           setSupervisor(null)
@@ -97,16 +66,16 @@ export function useSupervisor(): UseSupervisorReturn {
     setSupervisor(prev => prev ? { ...prev, is_available: isAvailable } : null)
   }, [supervisor])
 
-  const updateProfile = useCallback(async (data: Partial<Profile>) => {
-    if (!profile) return
+  const updateProfile = useCallback(async (data: Partial<{ full_name: string; phone: string }>) => {
+    if (!supervisor) return
 
-    await apiFetch(`/api/profiles/${profile.id}`, {
+    await apiFetch("/api/supervisors/me", {
       method: "PUT",
       body: JSON.stringify(data),
     })
 
-    setProfile(prev => prev ? { ...prev, ...data } : null)
-  }, [profile])
+    setSupervisor(prev => prev ? { ...prev, ...data } : null)
+  }, [supervisor])
 
   useEffect(() => {
     fetchSupervisor()
@@ -114,7 +83,6 @@ export function useSupervisor(): UseSupervisorReturn {
 
   return {
     supervisor,
-    profile,
     isLoading,
     error,
     refetch: fetchSupervisor,

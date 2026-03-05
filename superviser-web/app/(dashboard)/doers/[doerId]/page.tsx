@@ -215,16 +215,16 @@ export default function DoerDetailPage() {
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-6">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={doer.profiles?.avatar_url || undefined} />
+              <AvatarImage src={doer.avatar_url || undefined} />
               <AvatarFallback className="text-2xl">
-                {doer.profiles?.full_name?.charAt(0) || "D"}
+                {doer.full_name?.charAt(0) || "D"}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-2xl font-bold">
-                    {doer.profiles?.full_name || "Unknown Doer"}
+                    {doer.full_name || "Unknown Doer"}
                   </h3>
                   {isBlacklisted && (
                     <Badge variant="destructive">Blacklisted</Badge>
@@ -244,16 +244,16 @@ export default function DoerDetailPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  {doer.profiles?.email && (
+                  {doer.email && (
                     <span className="flex items-center gap-1">
                       <Mail className="h-3 w-3" />
-                      {doer.profiles.email}
+                      {doer.email}
                     </span>
                   )}
-                  {doer.profiles?.phone && (
+                  {doer.phone && (
                     <span className="flex items-center gap-1">
                       <Phone className="h-3 w-3" />
-                      {doer.profiles.phone}
+                      {doer.phone}
                     </span>
                   )}
                 </div>

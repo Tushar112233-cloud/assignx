@@ -5,7 +5,7 @@
  *
  * Auth flow:
  * 1. OTP verify -> stores JWT tokens + user in localStorage
- * 2. initAuth on mount -> reads user from localStorage, fetches profile from API
+ * 2. initAuth on mount -> reads user from localStorage, fetches supervisor from API
  * 3. signOut -> clears tokens, navigates to login
  */
 
@@ -24,7 +24,7 @@ import {
   verifyOTP as apiVerifyOTP,
 } from "@/lib/api/auth"
 import { disconnectSocket } from "@/lib/socket/client"
-import type { Profile, Supervisor, SupervisorActivation } from "@/types/database"
+import type { Supervisor, SupervisorActivation } from "@/types/database"
 
 /**
  * Module-level flag to prevent duplicate auth initialization.
@@ -36,13 +36,11 @@ let _authInitStarted = false
  */
 export function useAuth() {
   const {
-    user,
     supervisor,
     activation,
     isLoading,
     isAuthenticated,
     isOnboarded,
-    setUser,
     setSupervisor,
     setActivation,
     setLoading,
@@ -51,21 +49,9 @@ export function useAuth() {
   } = useAuthStore()
 
   /**
-   * Fetch user profile from API
-   */
-  const fetchProfile = useCallback(async (userId: string) => {
-    try {
-      const profile = await apiFetch<Profile>(`/api/profiles/${userId}`)
-      return profile
-    } catch {
-      return null
-    }
-  }, [])
-
-  /**
    * Fetch supervisor data from API
    */
-  const fetchSupervisor = useCallback(async (_profileId: string) => {
+  const fetchSupervisor = useCallback(async () => {
     try {
       const supervisorData = await apiFetch<Supervisor>("/api/supervisors/me")
       return supervisorData
@@ -87,14 +73,10 @@ export function useAuth() {
   }, [])
 
   // Stable refs for callbacks used inside effects
-  const fetchProfileRef = useRef(fetchProfile)
-  fetchProfileRef.current = fetchProfile
   const fetchSupervisorRef = useRef(fetchSupervisor)
   fetchSupervisorRef.current = fetchSupervisor
   const fetchActivationRef = useRef(fetchActivation)
   fetchActivationRef.current = fetchActivation
-  const setUserRef = useRef(setUser)
-  setUserRef.current = setUser
   const setSupervisorRef = useRef(setSupervisor)
   setSupervisorRef.current = setSupervisor
   const setActivationRef = useRef(setActivation)
@@ -108,12 +90,12 @@ export function useAuth() {
 
   /**
    * One-time auth initialization.
-   * Reads user from localStorage then fetches profile/supervisor data from API.
+   * Reads user from localStorage then fetches supervisor data from API.
    */
   useEffect(() => {
     if (_authInitStarted) {
-      // If store was rehydrated with cached user, ensure loading is cleared
-      if (isLoading && user) {
+      // If store was rehydrated with cached supervisor, ensure loading is cleared
+      if (isLoading && supervisor) {
         setLoadingRef.current(false)
       }
       return
@@ -123,11 +105,11 @@ export function useAuth() {
     let isMounted = true
 
     const initAuth = async () => {
-      // Only set loading=true if we don't already have cached user data from rehydration.
-      // If the Zustand store was rehydrated with a cached user, onRehydrateStorage already
+      // Only set loading=true if we don't already have cached supervisor data from rehydration.
+      // If the Zustand store was rehydrated with a cached supervisor, onRehydrateStorage already
       // set loading=false — re-setting it to true causes a blank flash.
       const currentState = useAuthStore.getState()
-      if (!currentState.user) {
+      if (!currentState.supervisor) {
         setLoadingRef.current(true)
       }
 
@@ -138,40 +120,27 @@ export function useAuth() {
         if (!isMounted) return
 
         if (token && authUser) {
-          let profile: Profile | null = null
-          try {
-            profile = await fetchProfileRef.current(authUser.id)
-          } catch {
-            // Profile fetch failed
-          }
-
-          if (!isMounted) return
-
-          if (!profile) {
-            setLoadingRef.current(false)
-            return
-          }
-
-          setUserRef.current(profile)
-
           let supervisorData: Supervisor | null = null
           try {
-            supervisorData = await fetchSupervisorRef.current(profile.id)
+            supervisorData = await fetchSupervisorRef.current()
           } catch {
             // Supervisor fetch failed
           }
 
           if (!isMounted) return
 
+          if (!supervisorData) {
+            setLoadingRef.current(false)
+            return
+          }
+
           setSupervisorRef.current(supervisorData)
 
-          if (supervisorData) {
-            try {
-              const activationData = await fetchActivationRef.current(supervisorData.id)
-              if (activationData) setActivationRef.current(activationData)
-            } catch {
-              // Activation fetch failed
-            }
+          try {
+            const activationData = await fetchActivationRef.current(supervisorData.id)
+            if (activationData) setActivationRef.current(activationData)
+          } catch {
+            // Activation fetch failed
           }
 
           setOnboardedRef.current(true)
@@ -252,7 +221,7 @@ export function useAuth() {
   }
 
   return {
-    user,
+    user: supervisor,
     supervisor,
     activation,
     isLoading,
@@ -261,7 +230,6 @@ export function useAuth() {
     signOut,
     sendPhoneOtp,
     verifyPhoneOtp,
-    fetchProfile,
     fetchSupervisor,
     fetchActivation,
   }

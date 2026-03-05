@@ -113,28 +113,12 @@ export type TicketPriority = "low" | "medium" | "high" | "urgent"
 
 // ─── Table Row Types ─────────────────────────────────────────────
 
-export interface Profile {
-  id: string
-  full_name: string | null
-  email: string | null
-  phone: string | null
-  avatar_url: string | null
-  role: string | null
-  /** API alias for role */
-  user_type?: string | null
-  is_active: boolean
-  created_at: string
-  updated_at: string | null
-  college_id: string | null
-  city: string | null
-  state: string | null
-  country: string | null
-  bio: string | null
-}
-
 export interface Supervisor {
   id: string
-  profile_id: string
+  email: string
+  full_name: string | null
+  phone: string | null
+  avatar_url: string | null
   qualification: string | null
   years_of_experience: number | null
   cv_url: string | null
@@ -218,7 +202,10 @@ export interface Project {
 
 export interface Doer {
   id: string
-  profile_id: string
+  email: string
+  full_name: string | null
+  phone: string | null
+  avatar_url: string | null
   qualification: string | null
   years_of_experience: number | null
   is_available: boolean
@@ -314,7 +301,7 @@ export interface ChatMessage {
   /** API alias for room_id */
   chat_room_id?: string
   sender_id: string | null
-  /** Platform role of the sender: user-web → 'user', supervisor-web → 'supervisor', doer-web → 'doer' */
+  /** Platform role of the sender: user-web -> 'user', supervisor-web -> 'supervisor', doer-web -> 'doer' */
   sender_role?: 'user' | 'supervisor' | 'doer' | 'system' | null
   type: MessageType
   /** API alias for type */
@@ -340,8 +327,6 @@ export interface ChatParticipant {
   id: string
   room_id: string
   user_id: string
-  /** API alias for user_id */
-  profile_id?: string
   role: string | null
   /** API alias for role */
   participant_role?: string | null
@@ -351,7 +336,8 @@ export interface ChatParticipant {
 
 export interface Notification {
   id: string
-  user_id: string
+  recipient_id: string
+  recipient_role: string | null
   type: NotificationType
   /** API alias for type */
   notification_type?: NotificationType
@@ -359,7 +345,6 @@ export interface Notification {
   message: string | null
   /** API alias for message */
   body?: string | null
-  target_role?: string | null
   reference_id: string | null
   reference_type: string | null
   read: boolean
@@ -372,7 +357,8 @@ export interface Notification {
 
 export interface SupportTicket {
   id: string
-  user_id: string
+  raised_by_id: string
+  raised_by_role: string | null
   ticket_number?: string
   subject: string
   description: string | null
@@ -415,39 +401,26 @@ export interface Subject {
 export interface User {
   id: string
   email?: string
-  phone?: string
+  role?: string
   created_at: string
   updated_at?: string
-  app_metadata: Record<string, unknown>
-  user_metadata: Record<string, unknown>
-  aud: string
-  role?: string
 }
 
 // ─── Extended Types with Relationships ───────────────────────────
 
-export interface SupervisorWithProfile extends Supervisor {
-  profiles?: Profile
-}
+export type SupervisorWithProfile = Supervisor
 
 export interface ProjectWithRelations extends Project {
-  profiles?: Profile // user
-  supervisors?: SupervisorWithProfile
-  doers?: DoerWithProfile
+  user?: { id: string; full_name: string | null; email: string | null; avatar_url: string | null }
+  supervisors?: Supervisor
+  doers?: Doer
   subjects?: Subject
 }
 
-export interface DoerWithProfile extends Doer {
-  profiles?: Profile
-  // Extended fields from relations/computed
+export type DoerWithProfile = Doer & {
   skills?: string[]
   subjects?: string[]
   active_projects_count?: number
-  // Fields commonly flattened from profiles or computed by API
-  full_name?: string
-  email?: string
-  phone?: string | null
-  avatar_url?: string | null
   bio?: string | null
   rating?: number
   joined_at?: string
@@ -456,21 +429,18 @@ export interface DoerWithProfile extends Doer {
 }
 
 export interface ChatRoomWithParticipants extends ChatRoom {
-  chat_participants?: (ChatParticipant & { profiles?: Profile })[]
+  chat_participants?: ChatParticipant[]
   projects?: Project
 }
 
 export interface ChatMessageWithSender extends ChatMessage {
-  profiles?: Profile
+  sender?: { id: string; full_name: string | null; avatar_url: string | null }
 }
 
-export interface NotificationWithProfile extends Notification {
-  profiles?: Profile
-}
+export type NotificationWithProfile = Notification
 
 export interface SupportTicketWithMessages extends SupportTicket {
   ticket_messages?: TicketMessage[]
-  profiles?: Profile
 }
 
 export interface WalletWithTransactions extends Wallet {

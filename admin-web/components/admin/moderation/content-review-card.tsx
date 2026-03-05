@@ -15,7 +15,8 @@ type FlaggedItem = {
   created_at: string;
   author_id?: string;
   seller_id?: string;
-  profiles?: { full_name: string; email: string } | null;
+  author_name?: string | null;
+  author_email?: string | null;
 };
 
 const contentTypeLabels: Record<string, string> = {
@@ -40,8 +41,8 @@ export function ContentReviewCard({ item }: { item: FlaggedItem }) {
     action: string;
   }>({ open: false, action: "" });
 
-  const authorName = item.profiles?.full_name || "Unknown User";
-  const authorEmail = item.profiles?.email || "";
+  const authorName = item.author_name || "Unknown User";
+  const authorEmail = item.author_email || "";
 
   return (
     <>

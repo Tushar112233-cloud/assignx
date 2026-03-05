@@ -1,30 +1,26 @@
 /**
- * @fileoverview Zustand store for authentication state and user session management.
+ * @fileoverview Zustand store for authentication state and supervisor session management.
  * @module store/auth-store
  */
 
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { Profile, Supervisor, SupervisorActivation } from "@/types/database"
+import type { Supervisor, SupervisorActivation } from "@/types/database"
 
 /**
  * Auth state interface
  */
 interface AuthState {
-  /** Current user profile */
-  user: Profile | null
-  /** Current supervisor data */
+  /** Current supervisor (primary identity) */
   supervisor: Supervisor | null
   /** Supervisor activation data */
   activation: SupervisorActivation | null
   /** Loading state */
   isLoading: boolean
-  /** Whether user is authenticated */
+  /** Whether supervisor is authenticated */
   isAuthenticated: boolean
   /** Whether onboarding is complete */
   isOnboarded: boolean
-  /** Set user profile */
-  setUser: (user: Profile | null) => void
   /** Set supervisor data */
   setSupervisor: (supervisor: Supervisor | null) => void
   /** Set activation data */
@@ -43,19 +39,16 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: null,
       supervisor: null,
       activation: null,
       isLoading: true,
       isAuthenticated: false,
       isOnboarded: false,
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
-      setSupervisor: (supervisor) => set({ supervisor }),
+      setSupervisor: (supervisor) => set({ supervisor, isAuthenticated: !!supervisor }),
       setActivation: (activation) => set({ activation }),
       setLoading: (isLoading) => set({ isLoading }),
       setOnboarded: (isOnboarded) => set({ isOnboarded }),
       clearAuth: () => set({
-        user: null,
         supervisor: null,
         activation: null,
         isAuthenticated: false,
@@ -66,14 +59,13 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       partialize: (state) => ({
         isOnboarded: state.isOnboarded,
-        user: state.user,
         supervisor: state.supervisor,
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state, error) => {
         if (error) return
-        // If cached user data exists, stop loading immediately so pages can render
-        if (state && state.user) {
+        // If cached supervisor data exists, stop loading immediately so pages can render
+        if (state && state.supervisor) {
           state.setLoading(false)
         }
       },

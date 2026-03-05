@@ -107,9 +107,9 @@ export function AssignDoerModal({
 
       const formattedDoers: Doer[] = doersList.map((doer: any) => ({
         id: doer.id,
-        full_name: doer.full_name || doer.profiles?.full_name || "Unknown",
-        email: doer.email || doer.profiles?.email || "",
-        avatar_url: doer.avatar_url || doer.profiles?.avatar_url || null,
+        full_name: doer.full_name || "Unknown",
+        email: doer.email || "",
+        avatar_url: doer.avatar_url || null,
         rating: doer.average_rating || doer.rating || 0,
         total_projects: doer.total_projects_completed || doer.total_projects || 0,
         success_rate: doer.success_rate || 95,

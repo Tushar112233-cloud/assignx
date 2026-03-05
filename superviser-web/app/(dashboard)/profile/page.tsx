@@ -152,7 +152,7 @@ function ProfileSkeleton() {
 }
 
 export default function ProfilePage() {
-  const { supervisor, profile, isLoading: supervisorLoading, error: supervisorError, refetch } = useSupervisor()
+  const { supervisor, isLoading: supervisorLoading, error: supervisorError, refetch } = useSupervisor()
   const { stats, isLoading: statsLoading } = useSupervisorStats()
   const { signOut } = useAuth()
 
@@ -209,21 +209,21 @@ export default function ProfilePage() {
 
   // Build the SupervisorProfile object from real data
   const buildProfile = useCallback((): SupervisorProfile | null => {
-    if (!supervisor || !profile) return null
+    if (!supervisor) return null
 
     return {
       id: supervisor.id,
-      full_name: profile.full_name || "Unknown",
-      email: profile.email || "",
-      phone: profile.phone || "",
-      avatar_url: profile.avatar_url || undefined,
+      full_name: supervisor.full_name || "Unknown",
+      email: supervisor.email || "",
+      phone: supervisor.phone || "",
+      avatar_url: supervisor.avatar_url || undefined,
       qualification: supervisor.qualification || "",
       years_of_experience: supervisor.years_of_experience || 0,
       expertise_areas: expertiseAreas,
-      bio: undefined, // Bio not stored in current schema
+      bio: undefined,
       rating: supervisor.average_rating || 0,
       total_reviews: supervisor.total_reviews || 0,
-      joined_at: profile.created_at || new Date().toISOString(),
+      joined_at: supervisor.created_at || new Date().toISOString(),
       is_available: supervisor.is_available ?? true,
       bank_details: {
         bank_name: supervisor.bank_name || "",
@@ -235,7 +235,7 @@ export default function ProfilePage() {
         account_holder_name: supervisor.bank_account_name || "",
       },
     }
-  }, [supervisor, profile, expertiseAreas])
+  }, [supervisor, expertiseAreas])
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -250,25 +250,17 @@ export default function ProfilePage() {
   }
 
   const handleProfileSave = async (updatedProfile: SupervisorProfile) => {
-    if (!profile?.id || !supervisor?.id) {
+    if (!supervisor?.id) {
       toast.error("Profile data not loaded. Please refresh the page.")
       return
     }
 
     try {
-      // Update profile table
-      await apiFetch(`/api/profiles/${profile.id}`, {
+      await apiFetch("/api/supervisors/me", {
         method: "PUT",
         body: JSON.stringify({
           full_name: updatedProfile.full_name,
           phone: updatedProfile.phone,
-        }),
-      })
-
-      // Update supervisor table
-      await apiFetch("/api/supervisors/me", {
-        method: "PUT",
-        body: JSON.stringify({
           qualification: updatedProfile.qualification,
           years_of_experience: updatedProfile.years_of_experience,
           bank_name: updatedProfile.bank_details.bank_name,

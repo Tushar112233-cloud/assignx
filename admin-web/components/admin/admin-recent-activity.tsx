@@ -24,7 +24,6 @@ interface SupportTicket {
   status: string;
   priority: string;
   created_at: string;
-  profiles?: { full_name: string } | null;
 }
 
 function statusVariant(
@@ -109,7 +108,7 @@ export function AdminRecentActivity({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {ticket.userName || ticket.fullName || ticket.profiles?.full_name || ticket.user?.fullName || "Unknown"}
+                    {ticket.userName || ticket.fullName || ticket.user?.fullName || "Unknown"}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(ticket.createdAt || ticket.created_at).toLocaleDateString("en-US", {

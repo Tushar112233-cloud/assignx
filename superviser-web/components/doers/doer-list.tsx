@@ -86,10 +86,10 @@ export function DoerList() {
   // Transform database doers to component format
   const transformDoer = (doer: DoerWithProfile): Doer => ({
     id: doer.id,
-    full_name: doer.profiles?.full_name || "Unknown",
-    email: doer.profiles?.email || "",
-    phone: doer.profiles?.phone ?? undefined,
-    avatar_url: doer.profiles?.avatar_url ?? undefined,
+    full_name: doer.full_name || "Unknown",
+    email: doer.email || "",
+    phone: doer.phone ?? undefined,
+    avatar_url: doer.avatar_url ?? undefined,
     qualification: doer.qualification || "Graduate",
     years_of_experience: doer.years_of_experience || 0,
     skills: [], // Would need to fetch from doer_skills table

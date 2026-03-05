@@ -29,10 +29,10 @@ export async function getUserById(userId: string) {
   await verifyAdmin();
 
   const [profile, wallet, projects, activity] = await Promise.all([
-    serverFetch(`/api/profiles/${userId}`),
-    serverFetch(`/api/wallets/by-profile/${userId}`).catch(() => null),
+    serverFetch(`/api/users/${userId}`),
+    serverFetch(`/api/wallets/by-user/${userId}`).catch(() => null),
     serverFetch(`/api/projects?userId=${userId}&limit=10&sort=-createdAt`).catch(() => ({ data: [] })),
-    serverFetch(`/api/admin/activity-logs?profileId=${userId}&limit=20`).catch(() => []),
+    serverFetch(`/api/admin/activity-logs?userId=${userId}&limit=20`).catch(() => []),
   ]);
 
   return {

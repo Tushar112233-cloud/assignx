@@ -63,10 +63,10 @@ export default function TrainingPage() {
   const completedCount = mandatoryModules.filter((m) => completedIds.has(m.id)).length
   const allComplete = mandatoryModules.length > 0 && completedCount === mandatoryModules.length
 
-  const loadData = useCallback(async (profileId: string) => {
+  const loadData = useCallback(async () => {
     const [mods, prog] = await Promise.all([
       getTrainingModules("supervisor"),
-      getTrainingProgress(profileId),
+      getTrainingProgress(),
     ])
     setModules(mods as TrainingModule[])
     setProgress(prog as TrainingProgressRecord[])
@@ -94,7 +94,7 @@ export default function TrainingPage() {
           return
         }
 
-        await loadData(user.id)
+        await loadData()
       } catch (err) {
         console.error("Training init error:", err)
       } finally {
@@ -109,8 +109,8 @@ export default function TrainingPage() {
     if (!userId) return
     setCompleting(moduleId)
     try {
-      await markModuleComplete(userId, moduleId)
-      await loadData(userId)
+      await markModuleComplete(moduleId)
+      await loadData()
     } catch (err) {
       console.error("Failed to mark module complete:", err)
     } finally {

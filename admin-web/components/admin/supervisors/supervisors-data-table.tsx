@@ -41,7 +41,6 @@ import { toast } from "sonner";
 
 type Supervisor = {
   id: string;
-  profile_id: string;
   full_name: string | null;
   email: string | null;
   avatar_url: string | null;
@@ -210,13 +209,13 @@ export function SupervisorsDataTable({
               {s.is_active ? (
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={() => handleAction(s.profile_id, "suspend")}
+                  onClick={() => handleAction(s.id, "suspend")}
                 >
                   <IconBan className="size-4" />
                   Suspend
                 </DropdownMenuItem>
               ) : (
-                <DropdownMenuItem onClick={() => handleAction(s.profile_id, "activate")}>
+                <DropdownMenuItem onClick={() => handleAction(s.id, "activate")}>
                   <IconCheck className="size-4" />
                   Activate
                 </DropdownMenuItem>

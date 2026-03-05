@@ -4,7 +4,6 @@ export type AdminRole = "super_admin" | "admin" | "moderator" | "support" | "vie
 /** Admin user record from the admins table */
 export type AdminUser = {
   id: string;
-  profile_id: string;
   email: string | null;
   admin_role: AdminRole;
   permissions: AdminPermissions | null;
@@ -136,8 +135,8 @@ export type TransactionLedgerItem = {
   description: string | null;
   reference_id: string | null;
   created_at: string;
-  profile_name: string | null;
-  profile_email: string | null;
+  user_name: string | null;
+  user_email: string | null;
 };
 
 /** Ticket stats (returned by admin_get_ticket_stats) */

@@ -52,7 +52,6 @@ import { Label } from "@/components/ui/label";
 
 type Doer = {
   id: string;
-  profile_id: string;
   full_name: string | null;
   email: string | null;
   avatar_url: string | null;
@@ -288,13 +287,13 @@ export function DoersDataTable({
               ) : d.is_active ? (
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={() => handleAction(d.profile_id, "suspend")}
+                  onClick={() => handleAction(d.id, "suspend")}
                 >
                   <IconBan className="size-4" />
                   Suspend
                 </DropdownMenuItem>
               ) : (
-                <DropdownMenuItem onClick={() => handleAction(d.profile_id, "activate")}>
+                <DropdownMenuItem onClick={() => handleAction(d.id, "activate")}>
                   <IconCheck className="size-4" />
                   Activate
                 </DropdownMenuItem>

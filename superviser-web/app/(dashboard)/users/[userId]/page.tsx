@@ -31,7 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-import type { Profile, ProjectWithRelations } from "@/types/database"
+import type { ProjectWithRelations } from "@/types/database"
 import { useSupervisor } from "@/hooks"
 
 export default function UserDetailPage() {
@@ -40,7 +40,7 @@ export default function UserDetailPage() {
   const userId = params.userId as string
 
   const { supervisor } = useSupervisor()
-  const [user, setUser] = useState<Profile | null>(null)
+  const [user, setUser] = useState<any | null>(null)
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -51,25 +51,10 @@ export default function UserDetailPage() {
       setError(null)
 
       // Fetch user profile
-      const rawProfile = await apiFetch<{ profile: Profile } | Profile>(`/api/profiles/${userId}`)
-
-      // API returns { profile: {...} } — extract the inner object
-      const userData = (rawProfile && typeof rawProfile === 'object' && 'profile' in rawProfile)
-        ? (rawProfile as { profile: Profile }).profile
-        : rawProfile as Profile
-
+      const rawUser = await apiFetch<any>(`/api/users/${userId}`)
+      const userData = rawUser?.user || rawUser
       if (!userData) throw new Error("User not found")
-
-      // Normalize camelCase → snake_case aliases
-      const normalized = {
-        ...userData,
-        full_name: userData.full_name || (userData as Record<string, unknown>).fullName as string,
-        avatar_url: userData.avatar_url || (userData as Record<string, unknown>).avatarUrl as string,
-        created_at: userData.created_at || (userData as Record<string, unknown>).createdAt as string,
-        user_sub_type: userData.user_sub_type || (userData as Record<string, unknown>).userSubType as string,
-      } as Profile
-
-      setUser(normalized)
+      setUser(userData)
 
       // Fetch projects for this user
       if (supervisor?.id) {
@@ -334,7 +319,7 @@ export default function UserDetailPage() {
                         <p className="font-medium">{project.title}</p>
                         <p className="text-sm text-muted-foreground">
                           {project.project_number} • {project.subjects?.name || "General"} •
-                          {project.doers?.profiles?.full_name ? ` Assigned to ${project.doers.profiles.full_name}` : " Unassigned"}
+                          {project.doers?.full_name ? ` Assigned to ${project.doers.full_name}` : " Unassigned"}
                         </p>
                       </div>
                       <div className="flex items-center gap-3">

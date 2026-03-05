@@ -129,11 +129,11 @@ export const authService = {
  */
 export const supervisorService = {
   /**
-   * Get supervisor profile by profile ID
+   * Get current supervisor profile
    */
-  async getSupervisorByProfileId(profileId: string): Promise<Supervisor | null> {
+  async getSupervisor(): Promise<Supervisor | null> {
     try {
-      const data = await apiFetch<Supervisor>(`/api/supervisors/by-profile/${profileId}`)
+      const data = await apiFetch<Supervisor>("/api/supervisors/me")
       return data
     } catch {
       return null
@@ -158,18 +158,14 @@ export const supervisorService = {
    * Create supervisor profile with required values
    * Called from profile-setup page after user provides qualification/experience
    */
-  async createSupervisor(
-    profileId: string,
-    data: {
-      qualification: string
-      years_of_experience: number
-      cv_url?: string
-    }
-  ): Promise<Supervisor> {
+  async createSupervisor(data: {
+    qualification: string
+    years_of_experience: number
+    cv_url?: string
+  }): Promise<Supervisor> {
     const supervisor = await apiFetch<Supervisor>("/api/supervisors", {
       method: "POST",
       body: JSON.stringify({
-        profile_id: profileId,
         qualification: data.qualification,
         years_of_experience: data.years_of_experience,
         cv_url: data.cv_url || null,

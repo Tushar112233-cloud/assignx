@@ -32,7 +32,7 @@ type Profile = {
 
 type Wallet = {
   id: string;
-  profile_id: string;
+  user_id: string;
   balance: number;
   currency: string;
   created_at: string;

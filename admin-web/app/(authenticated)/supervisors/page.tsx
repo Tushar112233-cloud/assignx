@@ -23,15 +23,13 @@ export default async function SupervisorsPage({
 
   // Normalize camelCase API response to snake_case for component
   const supervisors = (result.data || []).map((s: any) => {
-    const profile = s.profileId && typeof s.profileId === 'object' ? s.profileId : null;
     return {
       id: s._id || s.id,
-      profile_id: profile?._id || s.profileId || s.profile_id,
-      full_name: profile?.fullName || s.fullName || s.full_name || null,
-      email: profile?.email || s.email || null,
-      avatar_url: profile?.avatarUrl || s.avatarUrl || s.avatar_url || null,
+      full_name: s.fullName || s.full_name || null,
+      email: s.email || null,
+      avatar_url: s.avatarUrl || s.avatar_url || null,
       is_active: s.isAccessGranted ?? s.isActive ?? s.is_active ?? false,
-      phone: profile?.phone || s.phone || null,
+      phone: s.phone || null,
       city: s.city || null,
       created_at: s.createdAt || s.created_at || new Date().toISOString(),
       projects_assigned: s.projectsAssigned ?? s.projects_assigned ?? 0,

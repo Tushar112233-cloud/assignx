@@ -98,7 +98,7 @@ export default function SettingsPage() {
         if (!user) return
 
         const data = await apiFetch<{ settings?: Record<string, unknown> }>(
-          `/api/profiles/${user.id}`
+          `/api/supervisors/me`
         )
 
         if (data?.settings) {
@@ -120,7 +120,7 @@ export default function SettingsPage() {
       const user = getStoredUser()
       if (!user) return
 
-      await apiFetch(`/api/profiles/${user.id}`, {
+      await apiFetch(`/api/supervisors/me`, {
         method: "PUT",
         body: JSON.stringify({
           settings: settingsData,

@@ -101,7 +101,7 @@ export default function ChatRoomPage() {
   }, [sendMessage, sendFile])
 
   const handleSuspendChat = useCallback(async (roomId: string, reason: string) => {
-    if (!supervisor?.profile_id) {
+    if (!supervisor?.id) {
       toast.error("Unable to suspend chat: Supervisor not found")
       return
     }
@@ -121,7 +121,7 @@ export default function ChatRoomPage() {
   }, [supervisor, refetchRooms])
 
   const handleResumeChat = useCallback(async (roomId: string) => {
-    if (!supervisor?.profile_id) {
+    if (!supervisor?.id) {
       toast.error("Unable to resume chat: Supervisor not found")
       return
     }
@@ -239,7 +239,7 @@ export default function ChatRoomPage() {
   }
 
   // Transform rooms to ChatWindow format
-  // The API may return field names like room_type, profile_id, participant_role
+  // The API may return field names like room_type, participant_role
   // which differ from the database type definitions, so we cast to any during mapping.
   const chatRooms: ChatRoom[] = rooms.map((room: any) => ({
     id: room.id,
@@ -253,10 +253,10 @@ export default function ChatRoomPage() {
         : "Group Chat",
     participants: (room.chat_participants || []).map((p: any) => ({
       id: p.id,
-      user_id: p.profile_id || p.user_id,
-      name: p.profiles?.full_name || "Unknown",
+      user_id: p.user_id || p.id,
+      name: p.full_name || "Unknown",
       role: (p.participant_role || p.role) as "user" | "supervisor" | "doer",
-      avatar_url: p.profiles?.avatar_url || undefined,
+      avatar_url: p.avatar_url || undefined,
       is_online: false, // Would need presence tracking
       joined_at: p.joined_at || new Date().toISOString(),
     })),
@@ -275,7 +275,7 @@ export default function ChatRoomPage() {
         projectId={rooms[0]?.project_id || roomId}
         projectNumber={rooms[0]?.projects?.project_number || "Unknown"}
         rooms={chatRooms}
-        currentUserId={supervisor?.profile_id || ""}
+        currentUserId={supervisor?.id || ""}
         onSendMessage={handleSendMessage}
         onSuspendChat={handleSuspendChat}
         onResumeChat={handleResumeChat}

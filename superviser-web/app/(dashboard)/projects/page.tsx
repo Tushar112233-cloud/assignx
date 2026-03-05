@@ -129,7 +129,7 @@ function ProjectsPage() {
     const p = project as Record<string, unknown>
     const userId = p.userId as Record<string, unknown> | undefined
     const user = p.user as Record<string, unknown> | undefined
-    return (userId?.fullName as string) || (userId?.full_name as string) || project.profiles?.full_name || (user?.fullName as string) || fallback
+    return (userId?.fullName as string) || (userId?.full_name as string) || project.user?.full_name || (user?.fullName as string) || fallback
   }
 
   // Helper to extract user quote amount
@@ -148,7 +148,7 @@ function ProjectsPage() {
     status: project.status,
     deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
     user_name: getClientName(project),
-    doer_name: project.doers?.profiles?.full_name || undefined,
+    doer_name: project.doers?.full_name || undefined,
     quoted_amount: getQuoteAmount(project),
     supervisor_commission: project.supervisor_commission || 0,
     has_unread_messages: false,
@@ -166,7 +166,7 @@ function ProjectsPage() {
     status: project.status,
     user_name: getClientName(project),
     user_id: project.user_id || "",
-    doer_name: project.doers?.profiles?.full_name || "Unassigned",
+    doer_name: project.doers?.full_name || "Unassigned",
     doer_id: project.doer_id || "",
     deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
     word_count: project.word_count ?? undefined,

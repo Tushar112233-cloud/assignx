@@ -52,58 +52,50 @@ export default async function DashboardLayoutV2({
     redirect("/login")
   }
 
-  // Get user profile
-  let profile: UserProfile | null = null
+  // Get supervisor data (now includes auth fields)
+  let supervisorProfile: any = null
   try {
-    const profileRes = await fetch(`${API_BASE}/api/profiles/${user.id}`, {
+    const supervisorRes = await fetch(`${API_BASE}/api/supervisors/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-    if (profileRes.ok) {
-      profile = await profileRes.json()
+    if (supervisorRes.ok) {
+      supervisorProfile = await supervisorRes.json()
     }
   } catch {
-    // Profile fetch may fail
+    // Supervisor fetch may fail
   }
 
   const userData = {
-    name: profile?.full_name || user.full_name || user.user_metadata?.full_name || "Supervisor",
-    email: profile?.email || user.email || "",
-    avatarUrl: profile?.avatar_url || null,
+    name: supervisorProfile?.full_name || user.full_name || user.user_metadata?.full_name || "Supervisor",
+    email: supervisorProfile?.email || user.email || "",
+    avatarUrl: supervisorProfile?.avatar_url || null,
   }
 
-  // Fetch stats
+  // Fetch notification stats
   let notificationCount = 0
   let pendingProjects = 0
   let unreadChats = 0
 
   try {
-    const supervisorRes = await fetch(`${API_BASE}/api/supervisors/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    if (supervisorProfile?.id) {
+      const [notificationsRes, pendingRes] = await Promise.all([
+        fetch(
+          `${API_BASE}/api/notifications?recipientId=${supervisorProfile.id}&recipientRole=supervisor&read=false&countOnly=true`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ).catch(() => null),
+        fetch(
+          `${API_BASE}/api/projects?supervisorId=${supervisorProfile.id}&status=submitted_for_qc&countOnly=true`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ).catch(() => null),
+      ])
 
-    if (supervisorRes.ok) {
-      const supervisor = await supervisorRes.json()
-
-      if (supervisor?.id) {
-        const [notificationsRes, pendingRes] = await Promise.all([
-          fetch(
-            `${API_BASE}/api/notifications?userId=${user.id}&targetRole=supervisor&read=false&countOnly=true`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          ).catch(() => null),
-          fetch(
-            `${API_BASE}/api/projects?supervisorId=${supervisor.id}&status=submitted_for_qc&countOnly=true`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          ).catch(() => null),
-        ])
-
-        if (notificationsRes?.ok) {
-          const notifData = await notificationsRes.json()
-          notificationCount = notifData.count || 0
-        }
-        if (pendingRes?.ok) {
-          const pendingData = await pendingRes.json()
-          pendingProjects = pendingData.count || 0
-        }
+      if (notificationsRes?.ok) {
+        const notifData = await notificationsRes.json()
+        notificationCount = notifData.count || 0
+      }
+      if (pendingRes?.ok) {
+        const pendingData = await pendingRes.json()
+        pendingProjects = pendingData.count || 0
       }
     }
   } catch {

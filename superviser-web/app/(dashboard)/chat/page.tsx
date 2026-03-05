@@ -124,7 +124,7 @@ export default function ChatPage() {
           : ""
         const participants =
           room.chat_participants
-            ?.map((p) => p.profiles?.full_name?.toLowerCase() || "")
+            ?.map((p) => p.full_name?.toLowerCase() || "")
             .join(" ") || ""
 
         return (

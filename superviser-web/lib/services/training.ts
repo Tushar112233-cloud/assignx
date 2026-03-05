@@ -13,18 +13,15 @@ export async function getTrainingModules(role: string) {
   return data.modules || []
 }
 
-export async function getTrainingProgress(profileId: string) {
-  const data = await apiFetch<{ progress: unknown[] }>(
-    `/api/training/progress?profileId=${profileId}`
-  )
+export async function getTrainingProgress() {
+  const data = await apiFetch<{ progress: unknown[] }>("/api/training/progress")
   return data.progress || []
 }
 
-export async function markModuleComplete(profileId: string, moduleId: string) {
+export async function markModuleComplete(moduleId: string) {
   await apiFetch("/api/training/progress", {
     method: "POST",
     body: JSON.stringify({
-      profileId,
       moduleId,
       status: "completed",
       progressPercentage: 100,
@@ -32,9 +29,7 @@ export async function markModuleComplete(profileId: string, moduleId: string) {
   })
 }
 
-export async function isTrainingComplete(profileId: string, role: string) {
-  const data = await apiFetch<{ complete: boolean }>(
-    `/api/training/status?profileId=${profileId}&role=${role}`
-  )
+export async function isTrainingComplete(role: string) {
+  const data = await apiFetch<{ complete: boolean }>(`/api/training/status?role=${role}`)
   return data.complete
 }
