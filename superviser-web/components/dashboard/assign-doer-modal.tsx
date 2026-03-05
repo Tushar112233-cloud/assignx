@@ -211,8 +211,8 @@ export function AssignDoerModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] p-0 bg-white">
-        <DialogHeader className="p-6 pb-4 border-b border-gray-200 bg-white">
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0 bg-white flex flex-col">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-200 bg-white flex-shrink-0">
           <DialogTitle className="flex items-center gap-3 text-2xl font-bold text-[#1C1C1C]">
             <div className="h-10 w-10 rounded-xl bg-orange-100 flex items-center justify-center">
               <User className="h-5 w-5 text-[#F97316]" />
@@ -225,7 +225,7 @@ export function AssignDoerModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Project Info Bar */}
           <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200 p-4 shadow-sm">
             <div className="flex items-center justify-between flex-wrap gap-3">
@@ -339,29 +339,42 @@ export function AssignDoerModal({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {filteredDoers.map((doer) => (
+                    {filteredDoers.length > 0 && !selectedDoer && (
+                      <p className="text-xs text-gray-500 text-center py-1">Click on an expert to select them</p>
+                    )}
+                    {filteredDoers.map((doer) => {
+                      const isSelected = selectedDoer?.id === doer.id
+                      return (
                       <Card
                         key={doer.id}
                         className={cn(
-                          "cursor-pointer transition-all hover:shadow-md hover:border-orange-200 rounded-xl",
-                          selectedDoer?.id === doer.id &&
-                            "border-orange-500 ring-2 ring-orange-200 shadow-md",
+                          "cursor-pointer transition-all rounded-xl border-2",
+                          isSelected
+                            ? "border-orange-500 ring-2 ring-orange-200 shadow-md bg-orange-50"
+                            : "border-transparent hover:border-orange-200 hover:shadow-md",
                           !doer.is_available && "opacity-60"
                         )}
                         onClick={() => setSelectedDoer(doer)}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start gap-4">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage src={doer.avatar_url || undefined} />
-                              <AvatarFallback>
-                                {doer.full_name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")
-                                  .toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
+                            <div className="relative">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={doer.avatar_url || undefined} />
+                                <AvatarFallback>
+                                  {doer.full_name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              {isSelected && (
+                                <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-orange-500 flex items-center justify-center">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                                </div>
+                              )}
+                            </div>
 
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
@@ -426,15 +439,21 @@ export function AssignDoerModal({
                               </div>
                             </div>
 
-                            {selectedDoer?.id === doer.id && (
-                              <div className="flex-shrink-0">
-                                <CheckCircle2 className="h-6 w-6 text-primary" />
+                            <div className="flex-shrink-0 self-center">
+                              <div className={cn(
+                                "h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all",
+                                isSelected
+                                  ? "border-orange-500 bg-orange-500"
+                                  : "border-gray-300"
+                              )}>
+                                {isSelected && <CheckCircle2 className="h-4 w-4 text-white" />}
                               </div>
-                            )}
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </ScrollArea>
@@ -520,7 +539,7 @@ export function AssignDoerModal({
           </Tabs>
         </div>
 
-        <DialogFooter className="gap-3 p-6 border-t border-gray-200 bg-white">
+        <DialogFooter className="gap-3 p-6 border-t border-gray-200 bg-white flex-shrink-0">
           <Button
             variant="outline"
             onClick={onClose}
