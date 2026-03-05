@@ -129,7 +129,7 @@ export const walletService = {
     const result = await apiClient<RazorpayOrder>('/api/payments/create-order', {
       method: 'POST',
       body: JSON.stringify({
-        amount: amount * 100,
+        amount,
         currency: 'INR',
         receipt,
         notes: {
@@ -177,7 +177,7 @@ export const walletService = {
     const result = await apiClient<RazorpayOrder>('/api/payments/create-order', {
       method: 'POST',
       body: JSON.stringify({
-        amount: amount * 100,
+        amount,
         currency: 'INR',
         receipt,
         notes: {
@@ -222,7 +222,7 @@ export const walletService = {
     const result = await apiClient<RazorpayOrder>('/api/payments/create-order', {
       method: 'POST',
       body: JSON.stringify({
-        amount: razorpayAmount * 100,
+        amount: razorpayAmount,
         currency: 'INR',
         receipt,
         notes: {
