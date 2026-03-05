@@ -69,7 +69,7 @@ export function NotificationItem({
   onDelete,
   onClick,
 }: NotificationItemProps) {
-  const config = NOTIFICATION_TYPE_CONFIG[notification.type]
+  const config = NOTIFICATION_TYPE_CONFIG[notification.type] || { label: "Notification", color: "text-gray-600", icon: "AlertCircle" }
   const IconComponent = ICONS[config.icon] || AlertCircle
 
   const formatTime = (dateString: string) => {

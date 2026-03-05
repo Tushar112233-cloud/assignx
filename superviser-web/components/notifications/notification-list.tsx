@@ -62,15 +62,16 @@ export function NotificationList() {
   const dbNotifications: Notification[] = rawNotifications.map((n) => {
     const raw = n as unknown as Record<string, unknown>
     return {
-      id: n.id,
-      type: (raw.notification_type as NotificationType) || "system_alert",
+      id: (raw._id as string) || n.id,
+      type: (raw.type as NotificationType) || (raw.notification_type as NotificationType) || "system_alert",
       title: (raw.title as string) || "Notification",
-      message: (raw.body as string) || "",
-      project_id: (raw.reference_type === "project" ? raw.reference_id as string : undefined),
+      message: (raw.message as string) || (raw.body as string) || "",
+      project_id: (raw.reference_type === "project" ? raw.reference_id as string : undefined)
+        || ((raw.data as any)?.projectId as string) || undefined,
       project_number: undefined,
       action_url: (raw.action_url as string) || undefined,
-      is_read: (raw.is_read as boolean) || false,
-      created_at: n.created_at || new Date().toISOString(),
+      is_read: (raw.isRead as boolean) || (raw.is_read as boolean) || false,
+      created_at: (raw.createdAt as string) || n.created_at || new Date().toISOString(),
     }
   })
 
