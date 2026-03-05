@@ -8,7 +8,6 @@ import '../../features/add_project/screens/project_wizard_screen.dart';
 import '../../features/add_project/screens/proofreading_form.dart';
 import '../../features/add_project/screens/report_request_form.dart';
 import '../../features/auth/screens/login_screen.dart';
-import '../../features/auth/screens/magic_link_screen.dart';
 import '../../features/auth/screens/signin_screen.dart';
 import '../../features/chat/screens/project_chat_screen.dart';
 import '../../features/experts/screens/booking_screen.dart';
@@ -83,8 +82,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         RouteNames.onboarding,
         RouteNames.login,
         RouteNames.signin,
-        RouteNames.magicLink,
-        RouteNames.authCallback,
       ];
 
       // Profile completion routes
@@ -157,31 +154,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const SignInScreen(),
           state: state,
         ),
-      ),
-
-      // Magic Link confirmation screen
-      GoRoute(
-        path: RouteNames.magicLink,
-        name: 'magicLink',
-        pageBuilder: (context, state) {
-          final email = state.uri.queryParameters['email'] ?? '';
-          return AppPageTransitions.fadeScale(
-            child: MagicLinkScreen(email: email),
-            state: state,
-          );
-        },
-      ),
-
-      // Auth callback - handles deep link from magic link email
-      // Pattern: assignx://auth-callback?access_token=...&refresh_token=...
-      GoRoute(
-        path: RouteNames.authCallback,
-        name: 'authCallback',
-        redirect: (context, state) {
-          // The Supabase auth listener will handle the session
-          // Just redirect to home - if not authenticated, the main redirect will handle it
-          return RouteNames.home;
-        },
       ),
 
       // Role Selection - fade scale transition

@@ -323,24 +323,24 @@ export async function verifyCollegeEmail(email: string, isAddingToAccount: boole
 }
 
 /**
- * Sign in with Magic Link (server action wrapper)
+ * Send OTP (server action wrapper)
  */
-export async function signInWithMagicLink(email: string, redirectTo?: string) {
+export async function sendOTPAction(email: string, purpose: 'login' | 'signup', role?: string) {
   try {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-    const res = await fetch(`${API_URL}/api/auth/magic-link`, {
+    const res = await fetch(`${API_URL}/api/auth/send-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.toLowerCase().trim() }),
+      body: JSON.stringify({ email: email.toLowerCase().trim(), purpose, role }),
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      return { error: data.message || data.error || "Failed to send magic link" };
+      return { error: data.message || data.error || "Failed to send OTP" };
     }
 
-    return { success: true, message: "Magic link sent successfully" };
+    return { success: true, message: "Verification code sent" };
   } catch (error: any) {
     return { error: error.message || "Network error" };
   }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Sparkles,
@@ -24,49 +25,44 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { apiClient } from "@/lib/api/client";
-import { getStoredUser, isLoggedIn } from "@/lib/api/auth";
+import { sendOTP, verifyOTP } from "@/lib/api/auth";
 import { toast } from "sonner";
+
+import "../onboarding/onboarding.css";
 
 /**
  * Supported college email domain patterns
  */
 const COLLEGE_EMAIL_PATTERNS = [
   /\.edu$/i,
-  /\.edu\.in$/i,
   /\.ac\.in$/i,
   /\.ac\.uk$/i,
   /\.edu\.au$/i,
   /\.edu\.ca$/i,
-  /\.edu\.[a-z]{2}$/i,
 ];
 
 /**
- * Validates if email is from a college domain
+ * Validates if email is from a college/university domain
  */
 function isCollegeEmail(email: string): boolean {
   const domain = email.toLowerCase().split("@")[1];
   if (!domain) return false;
-  return COLLEGE_EMAIL_PATTERNS.some(pattern => pattern.test(domain));
+  return COLLEGE_EMAIL_PATTERNS.some((pattern) => pattern.test(domain));
 }
-
-import "../onboarding/onboarding.css";
 
 // Animation configuration
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-type RoleType = "student" | "professional" | "business" | null;
+type RoleType = "student" | "professional" | "business";
 
 interface Role {
   id: RoleType;
   icon: React.ElementType;
   title: string;
   description: string;
-  color: string;
   emailHint?: string;
 }
 
-// Role definitions
 const roles: Role[] = [
   {
     id: "student",
@@ -74,8 +70,7 @@ const roles: Role[] = [
     title: "Student",
     description:
       "Get expert help with your academic projects. From essays to dissertations, we have you covered.",
-    color: "primary",
-    emailHint: "Use your college/university email (e.g., name@college.edu)",
+    emailHint: "Requires educational email (.edu, .ac.in, etc.)",
   },
   {
     id: "professional",
@@ -83,7 +78,6 @@ const roles: Role[] = [
     title: "Professional",
     description:
       "Professional assistance for career growth. Resumes, portfolios, and interview prep.",
-    color: "accent",
   },
   {
     id: "business",
@@ -91,79 +85,41 @@ const roles: Role[] = [
     title: "Other",
     description:
       "General users, businesses, and anyone else looking for expert assistance.",
-    color: "secondary",
   },
 ];
 
-// Visual config for role selection
-const ROLE_VISUAL_CONFIG = {
-  visualHeading: "Join AssignX Today",
-  visualSubheading: "Create your account and get access to expert academic assistance tailored just for you.",
-  cards: [
-    {
-      icon: Users,
-      iconBg: "bg-primary",
-      title: "Students",
-      value: "10K+",
-      label: "Active users",
-      position: "position-1",
-      delay: 0.3,
-    },
-    {
-      icon: Star,
-      iconBg: "bg-accent",
-      title: "Rating",
-      value: "4.9",
-      label: "User satisfaction",
-      position: "position-2",
-      delay: 0.5,
-    },
-    {
-      icon: TrendingUp,
-      iconBg: "bg-success",
-      title: "Success",
-      value: "95%",
-      label: "Grade improvement",
-      position: "position-3",
-      delay: 0.7,
-    },
-  ],
-};
-
-// Sign-in visual config
-const SIGNIN_VISUAL_CONFIG = {
-  visualHeading: "Almost There!",
-  visualSubheading: "Enter your email to receive a secure magic link and start your journey.",
-  cards: [
-    {
-      icon: Shield,
-      iconBg: "bg-success",
-      title: "Secure",
-      value: "Magic",
-      label: "Link",
-      position: "position-1",
-      delay: 0.3,
-    },
-    {
-      icon: Award,
-      iconBg: "bg-primary",
-      title: "Quick",
-      value: "1-Click",
-      label: "Sign up",
-      position: "position-2",
-      delay: 0.5,
-    },
-    {
-      icon: Star,
-      iconBg: "bg-accent",
-      title: "No",
-      value: "Password",
-      label: "Needed",
-      position: "position-3",
-      delay: 0.7,
-    },
-  ],
-};
+// Visual configs for each step
+const STEP_VISUAL_CONFIGS = [
+  {
+    visualHeading: "Join AssignX Today",
+    visualSubheading:
+      "Create your account and get access to expert academic assistance tailored just for you.",
+    cards: [
+      { icon: Users, iconBg: "bg-primary", title: "Students", value: "10K+", label: "Active users", position: "position-1", delay: 0.3 },
+      { icon: Star, iconBg: "bg-accent", title: "Rating", value: "4.9", label: "User satisfaction", position: "position-2", delay: 0.5 },
+      { icon: TrendingUp, iconBg: "bg-success", title: "Success", value: "95%", label: "Grade improvement", position: "position-3", delay: 0.7 },
+    ],
+  },
+  {
+    visualHeading: "Verify Your Identity",
+    visualSubheading:
+      "We'll send a secure 6-digit code to your email. No passwords needed.",
+    cards: [
+      { icon: Shield, iconBg: "bg-success", title: "Secure", value: "OTP", label: "Verification", position: "position-1", delay: 0.3 },
+      { icon: Award, iconBg: "bg-primary", title: "Quick", value: "1-Min", label: "Setup", position: "position-2", delay: 0.5 },
+      { icon: Star, iconBg: "bg-accent", title: "No", value: "Password", label: "Needed", position: "position-3", delay: 0.7 },
+    ],
+  },
+  {
+    visualHeading: "You're All Set!",
+    visualSubheading: "Setting up your account. You'll be redirected momentarily.",
+    cards: [
+      { icon: CheckCircle2, iconBg: "bg-success", title: "Verified", value: "Done", label: "Email confirmed", position: "position-1", delay: 0.3 },
+      { icon: Award, iconBg: "bg-primary", title: "Account", value: "Ready", label: "All set", position: "position-2", delay: 0.5 },
+      { icon: Star, iconBg: "bg-accent", title: "Welcome", value: "Hello!", label: "Let's go", position: "position-3", delay: 0.7 },
+    ],
+  },
+];
 
 /**
  * Floating card component for the visual panel
@@ -251,7 +207,9 @@ function ProgressBar({
         />
       </div>
       <div className="onboarding-progress-label">
-        <span>Step {currentStep + 1} of {totalSteps}</span>
+        <span>
+          Step {currentStep + 1} of {totalSteps}
+        </span>
         <span>{Math.round(progress)}% complete</span>
       </div>
     </div>
@@ -259,62 +217,122 @@ function ProgressBar({
 }
 
 /**
- * Google logo SVG component
+ * OTP input component - 6 individual digit boxes with auto-advance and paste support
  */
-function GoogleIcon({ className }: { className?: string }) {
+function OTPInput({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (otp: string) => void;
+  disabled?: boolean;
+}) {
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const digits = value.padEnd(6, "").split("").slice(0, 6);
+
+  const focusInput = (index: number) => {
+    if (index >= 0 && index < 6) {
+      inputRefs.current[index]?.focus();
+    }
+  };
+
+  const handleChange = (index: number, char: string) => {
+    // Only allow digits
+    if (char && !/^\d$/.test(char)) return;
+
+    const newDigits = [...digits];
+    newDigits[index] = char;
+    const newOtp = newDigits.join("");
+    onChange(newOtp);
+
+    // Auto-advance to next input
+    if (char && index < 5) {
+      focusInput(index + 1);
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      if (digits[index]) {
+        // Clear current digit
+        handleChange(index, "");
+      } else if (index > 0) {
+        // Move to previous and clear it
+        focusInput(index - 1);
+        handleChange(index - 1, "");
+      }
+      e.preventDefault();
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      focusInput(index - 1);
+      e.preventDefault();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      focusInput(index + 1);
+      e.preventDefault();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pastedText) {
+      onChange(pastedText);
+      // Focus the input after the last pasted digit
+      focusInput(Math.min(pastedText.length, 5));
+    }
+  };
+
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-        fill="#4285F4"
-      />
-      <path
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-        fill="#34A853"
-      />
-      <path
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-        fill="#FBBC05"
-      />
-      <path
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-        fill="#EA4335"
-      />
-    </svg>
+    <div className="flex gap-2 justify-center" onPaste={handlePaste}>
+      {digits.map((digit, index) => (
+        <input
+          key={index}
+          ref={(el) => { inputRefs.current[index] = el; }}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={digit}
+          disabled={disabled}
+          onChange={(e) => handleChange(index, e.target.value.slice(-1))}
+          onKeyDown={(e) => handleKeyDown(index, e)}
+          onFocus={(e) => e.target.select()}
+          className="w-12 h-14 text-center text-xl font-semibold rounded-lg border-1.5 border-[var(--onboarding-border)] bg-[var(--onboarding-bg)] text-[var(--onboarding-text)] focus:outline-none focus:border-[var(--onboarding-accent)] focus:ring-2 focus:ring-[var(--onboarding-accent)]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label={`Digit ${index + 1}`}
+        />
+      ))}
+    </div>
   );
 }
 
 /**
- * Signup page content with premium split-screen design
+ * Signup page content with 3-step stepper: Role -> Email+OTP -> Redirect
  */
 function SignupContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const prefersReducedMotion = useReducedMotion();
 
-  const [currentStep, setCurrentStep] = useState(0); // 0: role, 1: signin
-  const [selectedRole, setSelectedRole] = useState<RoleType>(null);
+  // Step state: 0 = role selection, 1 = email + OTP, 2 = redirect
+  const [currentStep, setCurrentStep] = useState(0);
+  const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
+
+  // Email + OTP state
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accountExistsError, setAccountExistsError] = useState(false);
+
+  // Resend cooldown
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const cooldownRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Email error banner from URL
   const [showEmailError, setShowEmailError] = useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = useState("");
-  // Magic link states
-  const [showMagicLink, setShowMagicLink] = useState(false);
-  const [magicLinkEmail, setMagicLinkEmail] = useState("");
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
-  const [magicLinkError, setMagicLinkError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check if user is already authenticated (e.g., redirected from login)
-  useEffect(() => {
-    setIsAuthenticated(isLoggedIn());
-  }, []);
-
-  // Handle error from URL (invalid student email or no account)
+  // Handle error from URL params
   useEffect(() => {
     const urlError = searchParams.get("error");
     const message = searchParams.get("message");
@@ -327,182 +345,198 @@ function SignupContent() {
     }
   }, [searchParams]);
 
-  const handleRoleSelect = async (roleId: RoleType) => {
+  // Cleanup cooldown timer
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+    };
+  }, []);
+
+  /**
+   * Start the 60-second resend cooldown
+   */
+  const startResendCooldown = useCallback(() => {
+    setResendCooldown(60);
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+    cooldownRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          if (cooldownRef.current) clearInterval(cooldownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  /**
+   * Validates basic email format
+   */
+  const isValidEmail = (em: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em);
+  };
+
+  /**
+   * Step 1: Select a role and advance
+   */
+  const handleRoleSelect = (roleId: RoleType) => {
     setSelectedRole(roleId);
     setError(null);
-
-    if (isAuthenticated) {
-      // User is already authenticated (came from login redirect)
-      // Set cookies and redirect directly to registration form
-      document.cookie = `signup_role=${roleId}; path=/; max-age=600; SameSite=Lax`;
-      document.cookie = `signup_intent=true; path=/; max-age=600; SameSite=Lax`;
-
-      // Update their profile with the selected role
-      const user = getStoredUser();
-      if (user) {
-        try {
-          await apiClient(`/api/profiles/${user.id}`, {
-            method: "PUT",
-            body: JSON.stringify({
-              user_type: roleId === "business" ? "professional" : roleId,
-            }),
-          });
-        } catch {
-          // Best-effort profile update
-        }
-      }
-
-      if (roleId === "student") {
-        router.push("/signup/student");
-      } else {
-        const typeParam = roleId === "business" ? "?type=business" : "";
-        router.push(`/signup/professional${typeParam}`);
-      }
-      return;
-    }
-
+    setAccountExistsError(false);
     setCurrentStep(1);
   };
 
-  const handleBack = () => {
-    if (showMagicLink) {
-      // Go back from magic link to auth options
-      setShowMagicLink(false);
-      setMagicLinkEmail("");
-      setMagicLinkError(null);
-      setMagicLinkSent(false);
-    } else {
-      // Go back from auth options to role selection
-      setSelectedRole(null);
-      setCurrentStep(0);
-      setError(null);
-    }
-  };
-
   /**
-   * Validates email format
+   * Step 2a: Send OTP to the entered email
    */
-  const isValidEmailFormat = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  const handleSendOTP = async () => {
+    if (!selectedRole) return;
 
-  /**
-   * Handle magic link sign in
-   */
-  const handleMagicLinkSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMagicLinkError(null);
+    const trimmedEmail = email.trim().toLowerCase();
+    setError(null);
+    setAccountExistsError(false);
 
-    const email = magicLinkEmail.trim().toLowerCase();
-
-    // Basic validation
-    if (!email) {
-      setMagicLinkError("Please enter your email address");
+    if (!trimmedEmail) {
+      setError("Please enter your email address.");
       return;
     }
-
-    if (!isValidEmailFormat(email)) {
-      setMagicLinkError("Please enter a valid email address");
+    if (!isValidEmail(trimmedEmail)) {
+      setError("Please enter a valid email address.");
       return;
     }
-
-    // For students, validate educational email
-    if (selectedRole === "student" && !isCollegeEmail(email)) {
-      setMagicLinkError(
-        "Student accounts require a valid educational email (.edu, .ac.in, .ac.uk, etc.)"
+    if (selectedRole === "student" && !isCollegeEmail(trimmedEmail)) {
+      setError(
+        "Student accounts require a valid educational email (.edu, .ac.in, .ac.uk, .edu.au, .edu.ca)."
       );
       return;
     }
 
     setIsLoading(true);
 
-    try {
-      // Store role in cookie (same as OAuth flow)
-      document.cookie = `signup_role=${selectedRole}; path=/; max-age=600; SameSite=Lax`;
-      document.cookie = `signup_intent=true; path=/; max-age=600; SameSite=Lax`;
+    const result = await sendOTP(trimmedEmail, "signup", selectedRole);
 
-      const response = await fetch("/api/auth/magic-link", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          role: selectedRole,
-          redirectTo: "/home",
-        }),
-      });
+    setIsLoading(false);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to send magic link");
+    if (!result.success) {
+      // Detect 409 "account already exists" from the error message
+      if (result.error && /already exists/i.test(result.error)) {
+        setAccountExistsError(true);
+        setError(null);
+      } else {
+        setError(result.error || "Failed to send verification code.");
       }
-
-      setMagicLinkSent(true);
-      toast.success("Magic link sent!", {
-        description: "Check your email inbox for the sign-in link.",
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong";
-      setMagicLinkError(message);
-      toast.error("Failed to send magic link", {
-        description: message,
-      });
-    } finally {
-      setIsLoading(false);
+      return;
     }
+
+    setOtpSent(true);
+    setOtp("");
+    startResendCooldown();
+    toast.success("Verification code sent!", {
+      description: "Check your email inbox for the 6-digit code.",
+    });
   };
 
   /**
-   * Reset magic link form to try different email
+   * Step 2b: Verify the OTP
    */
-  const handleTryDifferentEmail = () => {
-    setMagicLinkSent(false);
-    setMagicLinkEmail("");
-    setMagicLinkError(null);
-  };
-
-  const handleGoogleSignIn = async () => {
+  const handleVerifyOTP = async () => {
     if (!selectedRole) return;
 
-    setIsLoading(true);
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedOtp = otp.trim();
+
     setError(null);
 
-    try {
-      // Store the selected role in a cookie (survives OAuth redirect)
-      document.cookie = `signup_role=${selectedRole}; path=/; max-age=600; SameSite=Lax`;
-      document.cookie = `signup_intent=true; path=/; max-age=600; SameSite=Lax`;
+    if (trimmedOtp.length !== 6) {
+      setError("Please enter the complete 6-digit code.");
+      return;
+    }
 
-      // Redirect to API server's Google OAuth endpoint
-      const callbackUrl = `${window.location.origin}/auth/callback`;
-      const params = new URLSearchParams({
-        role: selectedRole,
-        redirect: callbackUrl,
-      });
+    setIsLoading(true);
 
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/auth/google?${params.toString()}`;
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setIsLoading(false);
+    const result = await verifyOTP(trimmedEmail, trimmedOtp, "signup", selectedRole);
+
+    setIsLoading(false);
+
+    if (!result.success) {
+      setError(result.error || "Verification failed. Please try again.");
+      return;
+    }
+
+    // Step 3: Redirect
+    setCurrentStep(2);
+
+    // Store role in cookie
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `signup_role=${selectedRole}; path=/; max-age=600; SameSite=Lax${secure}`;
+
+    // Small delay for the success animation, then redirect
+    setTimeout(() => {
+      if (selectedRole === "student") {
+        router.push("/signup/student");
+      } else {
+        const typeParam = selectedRole === "business" ? "?type=business" : "";
+        router.push(`/signup/professional${typeParam}`);
+      }
+    }, 1200);
+  };
+
+  /**
+   * Resend OTP
+   */
+  const handleResendOTP = async () => {
+    if (resendCooldown > 0 || !selectedRole) return;
+    setError(null);
+    setIsLoading(true);
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const result = await sendOTP(trimmedEmail, "signup", selectedRole);
+
+    setIsLoading(false);
+
+    if (!result.success) {
+      setError(result.error || "Failed to resend code.");
+      return;
+    }
+
+    setOtp("");
+    startResendCooldown();
+    toast.success("Code resent!", {
+      description: "A new verification code has been sent to your email.",
+    });
+  };
+
+  /**
+   * Navigate back one step
+   */
+  const handleBack = () => {
+    setError(null);
+    setAccountExistsError(false);
+
+    if (otpSent) {
+      // Go back from OTP entry to email entry
+      setOtpSent(false);
+      setOtp("");
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+      setResendCooldown(0);
+    } else if (currentStep === 1) {
+      // Go back from email to role selection
+      setCurrentStep(0);
+      setSelectedRole(null);
+      setEmail("");
     }
   };
 
-  // Get current visual config based on step
-  const visualConfig = currentStep === 0 ? ROLE_VISUAL_CONFIG : SIGNIN_VISUAL_CONFIG;
-  const totalSteps = 2;
+  const totalSteps = 3;
+  const visualConfig = STEP_VISUAL_CONFIGS[currentStep] || STEP_VISUAL_CONFIGS[0];
   const selectedRoleData = roles.find((r) => r.id === selectedRole);
 
   return (
     <div className="onboarding-page">
-      {/* Error Alert for invalid student email */}
+      {/* Error Alert for invalid student email (from URL) */}
       {showEmailError && (
         <div className="fixed inset-x-0 top-0 z-50 p-4">
-          <Alert
-            variant="destructive"
-            className="mx-auto max-w-lg shadow-lg"
-          >
+          <Alert variant="destructive" className="mx-auto max-w-lg shadow-lg">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Invalid Student Email</AlertTitle>
             <AlertDescription className="pr-8">
@@ -522,7 +556,6 @@ function SignupContent() {
 
       {/* Left Panel - Visual Side */}
       <div className="onboarding-visual">
-        {/* Floating cards */}
         <div className="onboarding-floating-cards">
           <AnimatePresence mode="wait">
             {visualConfig.cards.map((card, index) => (
@@ -540,7 +573,6 @@ function SignupContent() {
           </AnimatePresence>
         </div>
 
-        {/* Content */}
         <div className="onboarding-visual-content">
           <motion.div
             initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
@@ -581,7 +613,6 @@ function SignupContent() {
           </AnimatePresence>
         </div>
 
-        {/* Step indicators */}
         <motion.div
           initial={prefersReducedMotion ? {} : { opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -612,13 +643,14 @@ function SignupContent() {
 
           {/* Content */}
           <AnimatePresence mode="wait">
-            {/* Step 0: Role Selection */}
+            {/* ===== STEP 0: Role Selection ===== */}
             {currentStep === 0 && (
               <motion.div
-                key="role-selection"
+                key="step-role"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: EASE }}
                 className="onboarding-form-content"
               >
                 <div className="onboarding-form-header">
@@ -644,10 +676,17 @@ function SignupContent() {
                             <role.icon className="h-6 w-6" />
                           </div>
                           <div className="onboarding-role-card-text">
-                            <div className="onboarding-role-card-title">{role.title}</div>
+                            <div className="onboarding-role-card-title">
+                              {role.title}
+                            </div>
                             <div className="onboarding-role-card-description">
                               {role.description}
                             </div>
+                            {role.emailHint && (
+                              <div className="mt-1 text-xs text-[var(--onboarding-accent)] font-medium">
+                                {role.emailHint}
+                              </div>
+                            )}
                           </div>
                           <ArrowRight className="h-5 w-5 onboarding-role-card-arrow" />
                         </div>
@@ -658,226 +697,260 @@ function SignupContent() {
 
                 <p className="text-center text-sm text-muted-foreground mt-8">
                   Already have an account?{" "}
-                  <button
-                    onClick={() => router.push("/login")}
+                  <Link
+                    href="/login"
                     className="text-primary font-medium hover:underline"
                   >
                     Sign in
-                  </button>
+                  </Link>
                 </p>
               </motion.div>
             )}
 
-            {/* Step 1: Sign-in Options */}
+            {/* ===== STEP 1: Email + OTP ===== */}
             {currentStep === 1 && selectedRoleData && (
               <motion.div
-                key="signin-options"
+                key="step-email-otp"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: EASE }}
                 className="onboarding-form-content"
               >
-                <button
-                  onClick={handleBack}
-                  className="onboarding-back-button"
-                >
+                <button onClick={handleBack} className="onboarding-back-button">
                   <ArrowLeft className="h-4 w-4" />
-                  {showMagicLink ? "Back to sign-in options" : "Back to role selection"}
+                  {otpSent ? "Change email" : "Back to role selection"}
                 </button>
 
-                {/* Magic Link Success State */}
-                {magicLinkSent ? (
+                <div className="onboarding-form-header">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#765341]/10 text-[#765341] border border-[#765341]/30 dark:bg-[#765341]/20 dark:text-[#A07A65] dark:border-[#765341]/40">
+                    <selectedRoleData.icon className="h-8 w-8" />
+                  </div>
+                  <h2 className="onboarding-form-title">
+                    {otpSent ? "Enter Verification Code" : `Sign up as ${selectedRoleData.title}`}
+                  </h2>
+                  <p className="onboarding-form-subtitle">
+                    {otpSent
+                      ? <>We sent a 6-digit code to <span className="font-medium text-[var(--onboarding-text)]">{email.trim().toLowerCase()}</span></>
+                      : "Enter your email to receive a secure verification code"}
+                  </p>
+                </div>
+
+                {/* Student email requirement notice */}
+                {selectedRole === "student" && !otpSent && (
+                  <Alert className="mb-6 border-[#765341]/30 bg-[#765341]/10 dark:border-[#765341]/40 dark:bg-[#765341]/20">
+                    <AlertCircle className="h-4 w-4 text-[#765341]" />
+                    <AlertDescription className="text-[#5C4233] dark:text-[#A07A65]">
+                      <strong>Educational email required</strong>
+                      <br />
+                      Use your college email (.edu, .ac.in, .ac.uk, .edu.au, .edu.ca)
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Account exists error with link */}
+                {accountExistsError && (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-center"
                   >
-                    <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                      <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
-                    </div>
-                    <h2 className="mb-2 text-2xl font-semibold text-foreground">
-                      Check your email
-                    </h2>
-                    <p className="mb-6 text-muted-foreground">
-                      We sent a magic link to{" "}
-                      <span className="font-medium text-foreground">{magicLinkEmail}</span>
-                    </p>
-                    <p className="mb-6 text-sm text-muted-foreground">
-                      Click the link in your email to sign in. The link expires in 10 minutes.
-                    </p>
-                    <div className="space-y-3">
-                      <Button
-                        variant="outline"
-                        onClick={handleTryDifferentEmail}
-                        className="w-full"
-                      >
-                        Try a different email
-                      </Button>
-                    </div>
+                    <Alert variant="destructive" className="mb-6">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Account already exists.{" "}
+                        <Link
+                          href="/login"
+                          className="font-medium underline hover:no-underline"
+                        >
+                          Log in instead
+                        </Link>
+                      </AlertDescription>
+                    </Alert>
                   </motion.div>
-                ) : showMagicLink ? (
-                  /* Magic Link Form */
+                )}
+
+                {/* General error */}
+                {error && (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <div className="onboarding-form-header">
-                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                        <Mail className="h-6 w-6 text-primary" />
-                      </div>
-                      <h2 className="onboarding-form-title">Sign in with email</h2>
-                      <p className="onboarding-form-subtitle">
-                        We&apos;ll send you a magic link to sign in instantly
-                      </p>
-                    </div>
+                    <Alert variant="destructive" className="mb-6">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  </motion.div>
+                )}
 
-                    {/* Student email requirement notice */}
-                    {selectedRole === "student" && (
-                      <Alert className="mb-6 border-[#765341]/30 bg-[#765341]/10 dark:border-[#765341]/40 dark:bg-[#765341]/20">
-                        <AlertCircle className="h-4 w-4 text-[#765341]" />
-                        <AlertDescription className="text-[#5C4233] dark:text-[#A07A65]">
-                          <strong>Educational email required</strong>
-                          <br />
-                          Use your college email (.edu, .ac.in, .ac.uk, etc.)
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
-                      <div>
-                        <Input
-                          type="email"
-                          placeholder={
-                            selectedRole === "student"
-                              ? "yourname@college.edu"
-                              : "Enter your email address"
+                {!otpSent ? (
+                  /* ---- Email Input ---- */
+                  <div className="space-y-4">
+                    <div>
+                      <Input
+                        type="email"
+                        placeholder={
+                          selectedRole === "student"
+                            ? "yourname@college.edu"
+                            : "Enter your email address"
+                        }
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setError(null);
+                          setAccountExistsError(false);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleSendOTP();
                           }
-                          value={magicLinkEmail}
-                          onChange={(e) => {
-                            setMagicLinkEmail(e.target.value);
-                            setMagicLinkError(null);
-                          }}
-                          disabled={isLoading}
-                          aria-invalid={!!magicLinkError}
-                          className="h-12"
-                        />
-                        {magicLinkError && (
-                          <motion.p
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="mt-2 text-sm text-destructive"
-                          >
-                            {magicLinkError}
-                          </motion.p>
-                        )}
-                      </div>
-
-                      <Button
-                        type="submit"
-                        disabled={isLoading || !magicLinkEmail.trim()}
-                        className="h-12 w-full"
-                      >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          "Send Magic Link"
-                        )}
-                      </Button>
-                    </form>
-
-                    <p className="mt-4 text-center text-xs text-muted-foreground">
-                      We&apos;ll send you a secure link that expires in 10 minutes.
-                    </p>
-                  </motion.div>
-                ) : (
-                  /* Auth Options (Magic Link only) */
-                  <>
-                    <div className="onboarding-form-header">
-                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#765341]/10 text-[#765341] border border-[#765341]/30 dark:bg-[#765341]/20 dark:text-[#A07A65] dark:border-[#765341]/40">
-                        <selectedRoleData.icon className="h-8 w-8" />
-                      </div>
-                      <h2 className="onboarding-form-title">
-                        Sign up as {selectedRoleData.title}
-                      </h2>
-                      <p className="onboarding-form-subtitle">
-                        We&apos;ll send you a magic link to sign up instantly
-                      </p>
+                        }}
+                        disabled={isLoading}
+                        aria-invalid={!!error || accountExistsError}
+                        className="h-12"
+                        autoFocus
+                      />
                     </div>
 
-                    {/* Student email hint */}
-                    {selectedRole === "student" && (
-                      <Alert className="mb-6 border-[#765341]/30 bg-[#765341]/10 dark:border-[#765341]/40 dark:bg-[#765341]/20">
-                        <AlertCircle className="h-4 w-4 text-[#765341]" />
-                        <AlertDescription className="text-[#5C4233] dark:text-[#A07A65]">
-                          <strong>Student accounts require a valid college email</strong>
-                          <br />
-                          Please use your institutional email (e.g.,
-                          name@university.edu or name@college.ac.in)
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    {/* Error message */}
-                    {error && (
-                      <Alert variant="destructive" className="mb-6">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>{error}</AlertDescription>
-                      </Alert>
-                    )}
-
-                    {/* Magic Link Button */}
                     <Button
-                      onClick={() => setShowMagicLink(true)}
-                      disabled={isLoading}
-                      className="w-full h-14"
+                      onClick={handleSendOTP}
+                      disabled={isLoading || !email.trim()}
+                      className="h-12 w-full"
                     >
-                      <Mail className="mr-2 h-5 w-5" />
-                      Continue with Email
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send Code
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  /* ---- OTP Input ---- */
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
+                  >
+                    <OTPInput
+                      value={otp}
+                      onChange={(newOtp) => {
+                        setOtp(newOtp);
+                        setError(null);
+                      }}
+                      disabled={isLoading}
+                    />
+
+                    <Button
+                      onClick={handleVerifyOTP}
+                      disabled={isLoading || otp.replace(/\s/g, "").length !== 6}
+                      className="h-12 w-full"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Verifying...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Verify
+                        </>
+                      )}
                     </Button>
 
-                    {/* Security note */}
-                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-6">
-                      <Shield className="h-4 w-4" />
-                      Secure passwordless authentication
+                    {/* Resend */}
+                    <div className="text-center">
+                      {resendCooldown > 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          Resend code in{" "}
+                          <span className="font-medium text-[var(--onboarding-text)]">
+                            {resendCooldown}s
+                          </span>
+                        </p>
+                      ) : (
+                        <button
+                          onClick={handleResendOTP}
+                          disabled={isLoading}
+                          className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
+                        >
+                          Resend code
+                        </button>
+                      )}
                     </div>
-
-                    {/* Info */}
-                    <p className="text-center text-[13px] text-muted-foreground mt-4">
-                      No password needed. We&apos;ll send you a secure sign-up link.
-                    </p>
-
-                    {/* Terms */}
-                    <p className="text-center text-xs text-muted-foreground mt-4">
-                      By continuing, you agree to our{" "}
-                      <button
-                        onClick={() => router.push("/terms")}
-                        className="underline hover:text-foreground"
-                      >
-                        Terms of Service
-                      </button>{" "}
-                      and{" "}
-                      <button
-                        onClick={() => router.push("/privacy")}
-                        className="underline hover:text-foreground"
-                      >
-                        Privacy Policy
-                      </button>
-                    </p>
-
-                    <p className="text-center text-sm text-muted-foreground mt-8">
-                      Already have an account?{" "}
-                      <button
-                        onClick={() => router.push("/login")}
-                        className="text-primary font-medium hover:underline"
-                      >
-                        Sign in
-                      </button>
-                    </p>
-                  </>
+                  </motion.div>
                 )}
+
+                {/* Security note */}
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-6">
+                  <Shield className="h-4 w-4" />
+                  Secure passwordless authentication
+                </div>
+
+                {/* Terms */}
+                <p className="text-center text-xs text-muted-foreground mt-4">
+                  By continuing, you agree to our{" "}
+                  <Link
+                    href="/terms"
+                    className="underline hover:text-foreground"
+                  >
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/privacy"
+                    className="underline hover:text-foreground"
+                  >
+                    Privacy Policy
+                  </Link>
+                </p>
+
+                <p className="text-center text-sm text-muted-foreground mt-6">
+                  Already have an account?{" "}
+                  <Link
+                    href="/login"
+                    className="text-primary font-medium hover:underline"
+                  >
+                    Sign in
+                  </Link>
+                </p>
+              </motion.div>
+            )}
+
+            {/* ===== STEP 2: Redirect (success) ===== */}
+            {currentStep === 2 && (
+              <motion.div
+                key="step-redirect"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, ease: EASE }}
+                className="onboarding-form-content text-center"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
+                  className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30"
+                >
+                  <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
+                </motion.div>
+
+                <h2 className="onboarding-form-title">Verified!</h2>
+                <p className="onboarding-form-subtitle mb-6">
+                  Your email has been verified. Setting up your account...
+                </p>
+
+                <div className="flex items-center justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    Redirecting...
+                  </span>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -888,7 +961,7 @@ function SignupContent() {
 }
 
 /**
- * Signup page with premium split-screen design
+ * Signup page with 3-step stepper: Role Selection -> Email + OTP -> Redirect
  */
 export default function SignupPage() {
   return (

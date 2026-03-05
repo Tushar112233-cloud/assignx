@@ -234,29 +234,34 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
     }
   }
 
-  /// Sign in with magic link (passwordless email authentication).
-  Future<bool> signInWithMagicLink({
+  /// Check if account exists.
+  Future<bool> checkAccount(String email) async {
+    return await _authRepository.checkAccount(email);
+  }
+
+  /// Send OTP for login or signup.
+  Future<void> sendOTP({
     required String email,
-    UserType? userType,
+    required String purpose,
+    String? role,
   }) async {
     state = AsyncValue.data(state.valueOrNull?.copyWith(isLoading: true) ??
         const AuthStateData(isLoading: true));
 
     try {
-      if (userType != null) {
+      if (role != null) {
+        final userType = UserType.values.firstWhere(
+          (t) => t.toDbString() == role,
+          orElse: () => UserType.student,
+        );
         setPreSignInRole(userType);
       }
 
-      final success = await _authRepository.signInWithMagicLink(
-        email: email,
-        userType: userType,
-      );
+      await _authRepository.sendOTP(email: email, purpose: purpose, role: role);
 
       state = AsyncValue.data(
         state.valueOrNull?.copyWith(isLoading: false) ?? const AuthStateData(),
       );
-
-      return success;
     } catch (e) {
       state = AsyncValue.data(
         state.valueOrNull?.copyWith(isLoading: false, error: e.toString()) ??
@@ -266,10 +271,12 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
     }
   }
 
-  /// Verify OTP token from magic link.
+  /// Verify OTP token.
   Future<bool> verifyOtp({
     required String email,
     required String token,
+    required String purpose,
+    String? role,
   }) async {
     state = AsyncValue.data(state.valueOrNull?.copyWith(isLoading: true) ??
         const AuthStateData(isLoading: true));
@@ -278,6 +285,8 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
       final data = await _authRepository.verifyOtp(
         email: email,
         token: token,
+        purpose: purpose,
+        role: role,
       );
 
       if (data != null) {

@@ -162,14 +162,15 @@ function checkOnboardingComplete(
   if (!user) return false;
 
   // User must have a type selected
-  if (!user.user_type) return false;
+  const userType = user.primary_user_type || user.user_type;
+  if (!userType) return false;
 
   // Check for type-specific profile existence
-  if (user.user_type === "student") {
+  if (userType === "student") {
     return student !== null && !!student.university_id;
   }
 
-  if (user.user_type === "professional" || user.user_type === "business") {
+  if (userType === "professional" || userType === "business") {
     return professional !== null && !!professional.professional_type;
   }
 
@@ -191,14 +192,15 @@ function determineOnboardingStep(
   if (!user) return null;
 
   // Step 1: User type selection
-  if (!user.user_type) return "user_type";
+  const userType = user.primary_user_type || user.user_type;
+  if (!userType) return "user_type";
 
   // Step 2: Profile details
-  if (user.user_type === "student" && !student?.university_id) {
+  if (userType === "student" && !student?.university_id) {
     return "profile_details";
   }
   if (
-    (user.user_type === "professional" || user.user_type === "business") &&
+    (userType === "professional" || userType === "business") &&
     !professional?.professional_type
   ) {
     return "profile_details";

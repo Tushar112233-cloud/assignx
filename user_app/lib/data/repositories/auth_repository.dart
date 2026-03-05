@@ -7,7 +7,7 @@ import '../models/user_model.dart';
 
 /// Repository for authentication operations.
 ///
-/// Handles magic link authentication and profile management
+/// Handles OTP authentication and profile management
 /// via the Express API backend.
 class AuthRepository {
   AuthRepository();
@@ -15,37 +15,32 @@ class AuthRepository {
   /// Check if user is authenticated (has valid tokens).
   Future<bool> get isAuthenticated => TokenStorage.hasTokens();
 
-  /// Sign in with magic link (passwordless email authentication).
-  ///
-  /// Sends a magic link to the provided email address.
-  /// Returns true if the link was sent successfully.
-  Future<bool> signInWithMagicLink({
-    required String email,
-    UserType? userType,
-  }) async {
-    debugPrint('[AUTH] Sending magic link to: $email');
-
-    try {
-      await AuthApi.sendMagicLink(email);
-      debugPrint('[AUTH] Magic link sent successfully');
-      return true;
-    } catch (e) {
-      debugPrint('[AUTH] Failed to send magic link: $e');
-      rethrow;
-    }
+  /// Check if account exists.
+  Future<bool> checkAccount(String email) async {
+    debugPrint('[AUTH] Checking account for: $email');
+    return await AuthApi.checkAccount(email);
   }
 
-  /// Verify OTP token from magic link.
-  ///
-  /// Returns the user data map on success.
+  /// Send OTP to email.
+  Future<void> sendOTP({
+    required String email,
+    required String purpose,
+    String? role,
+  }) async {
+    debugPrint('[AUTH] Sending OTP to: $email (purpose: $purpose)');
+    await AuthApi.sendOTP(email, purpose, role: role);
+  }
+
+  /// Verify OTP.
   Future<Map<String, dynamic>?> verifyOtp({
     required String email,
     required String token,
+    required String purpose,
+    String? role,
   }) async {
     debugPrint('[AUTH] Verifying OTP for: $email');
-
     try {
-      final data = await AuthApi.verifyOTP(email, token);
+      final data = await AuthApi.verifyOTP(email, token, purpose, role: role);
       debugPrint('[AUTH] OTP verification successful');
       return data;
     } catch (e) {

@@ -1,13 +1,13 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
-import '../../../core/api/api_client.dart';
-import '../../../core/storage/token_storage.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
@@ -15,13 +15,11 @@ import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 
-/// Sign-in screen with Dashboard-inspired design.
+/// Sign-up screen with OTP-based account creation.
 ///
-/// Features:
-/// - Subtle gradient backgrounds (cool blue-ish tints, different from signup)
-/// - Glass morphism effects for cards/forms
-/// - Smooth animations consistent with Dashboard
-/// - Google Sign-in + Magic Link options
+/// Two-state flow:
+/// 1. Email entry -> sends OTP with purpose 'signup'
+/// 2. OTP verification -> navigates to role selection on success
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
@@ -31,18 +29,24 @@ class SignInScreen extends ConsumerStatefulWidget {
 
 class _SignInScreenState extends ConsumerState<SignInScreen>
     with TickerProviderStateMixin {
-  // UI state
-  bool _termsAccepted = false;
+  // Flow state
+  bool _showOtpEntry = false;
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Magic link state
-  bool _showMagicLink = false;
+  // Email state
   final _emailController = TextEditingController();
-  bool _magicLinkSent = false;
-  String? _magicLinkError;
 
-  // Animation controllers
+  // OTP state
+  final List<TextEditingController> _otpControllers =
+      List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
+
+  // Resend cooldown
+  Timer? _resendTimer;
+  int _resendCooldown = 0;
+
+  // Animation
   late AnimationController _floatController;
 
   @override
@@ -58,14 +62,55 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
   void dispose() {
     _floatController.dispose();
     _emailController.dispose();
+    for (final c in _otpControllers) {
+      c.dispose();
+    }
+    for (final f in _otpFocusNodes) {
+      f.dispose();
+    }
+    _resendTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _signInWithGoogle() async {
-    if (!_termsAccepted) {
+  String get _email => _emailController.text.trim().toLowerCase();
+
+  String get _otp => _otpControllers.map((c) => c.text).join();
+
+  bool get _isEmailValid {
+    final regex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    return regex.hasMatch(_email);
+  }
+
+  void _startResendCooldown() {
+    _resendTimer?.cancel();
+    setState(() => _resendCooldown = 60);
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       setState(() {
-        _errorMessage = 'Please accept the Terms & Conditions to continue';  // Translated at display
+        _resendCooldown--;
+        if (_resendCooldown <= 0) {
+          timer.cancel();
+        }
       });
+    });
+  }
+
+  void _clearOtp() {
+    for (final c in _otpControllers) {
+      c.clear();
+    }
+  }
+
+  Future<void> _submitEmail() async {
+    if (_email.isEmpty) {
+      setState(() => _errorMessage = 'Please enter your email address');
+      return;
+    }
+    if (!_isEmailValid) {
+      setState(() => _errorMessage = 'Please enter a valid email address');
       return;
     }
 
@@ -75,163 +120,162 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
     });
 
     try {
-      // Google sign-in is not yet implemented in the API-based auth system.
-      // For now, show a message directing users to use magic link instead.
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Google sign-in is not available yet. Please use email sign-in.';
-        });
-      }
-      return;
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Sign in failed. Please try again.';  // Translated at display
-        });
-      }
-    } finally {
+      await ref.read(authStateProvider.notifier).sendOTP(
+            email: _email,
+            purpose: 'signup',
+          );
+
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _showOtpEntry = true;
         });
+        _startResendCooldown();
+        // Focus on first OTP field after transition
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (mounted) _otpFocusNodes[0].requestFocus();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        final errorStr = e.toString().toLowerCase();
+        if (errorStr.contains('already exists')) {
+          setState(() => _isLoading = false);
+          _showAccountExistsSnackBar();
+        } else {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          });
+        }
       }
     }
   }
 
-  Future<void> _sendMagicLink() async {
-    final email = _emailController.text.trim().toLowerCase();
+  void _showAccountExistsSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Account already exists'),
+        action: SnackBarAction(
+          label: 'Log In',
+          onPressed: () => context.go(RouteNames.login),
+        ),
+        duration: const Duration(seconds: 5),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
 
-    if (email.isEmpty) {
-      setState(() {
-        _magicLinkError = 'Please enter your email address';  // Translated at display
-      });
-      return;
-    }
-
-    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-    if (!emailRegex.hasMatch(email)) {
-      setState(() {
-        _magicLinkError = 'Please enter a valid email address';  // Translated at display
-      });
-      return;
-    }
-
-    // Admin bypass: sign in with password instead of magic link
-    if (email == 'admin@gmail.com') {
-      setState(() {
-        _isLoading = true;
-        _magicLinkError = null;
-      });
-      try {
-        final response = await ApiClient.post('/auth/login', {
-          'email': 'admin@gmail.com',
-          'password': 'Admin@123',
-        });
-        if (response != null && response['accessToken'] != null) {
-          await TokenStorage.saveTokens(
-            response['accessToken'] as String,
-            response['refreshToken'] as String,
-          );
-          // Auth state listener handles navigation
-          return;
-        }
-      } catch (e) {
-        if (mounted) {
-          setState(() {
-            _magicLinkError = 'Login failed: ${e.toString()}';
-          });
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
-      }
+  Future<void> _verifyOtp() async {
+    final otp = _otp;
+    if (otp.length != 6) {
+      setState(() => _errorMessage = 'Please enter the complete 6-digit code');
       return;
     }
 
     setState(() {
       _isLoading = true;
-      _magicLinkError = null;
+      _errorMessage = null;
     });
 
     try {
-      await ref.read(authStateProvider.notifier).signInWithMagicLink(
-            email: email,
-            userType: null,
+      final success = await ref.read(authStateProvider.notifier).verifyOtp(
+            email: _email,
+            token: otp,
+            purpose: 'signup',
           );
 
       if (mounted) {
-        // Navigate to magic link confirmation screen
-        context.go('${RouteNames.magicLink}?email=${Uri.encodeComponent(email)}');
+        if (success) {
+          context.go(RouteNames.roleSelection);
+        } else {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'Invalid code. Please try again.';
+          });
+          _clearOtp();
+          _otpFocusNodes[0].requestFocus();
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _magicLinkError = 'Failed to send magic link. Please try again.';  // Translated at display
+          _isLoading = false;
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
+        _clearOtp();
+        _otpFocusNodes[0].requestFocus();
       }
-    } finally {
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    if (_resendCooldown > 0) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await ref.read(authStateProvider.notifier).sendOTP(
+            email: _email,
+            purpose: 'signup',
+          );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _startResendCooldown();
+        _clearOtp();
+        _otpFocusNodes[0].requestFocus();
+      }
+    } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
   }
 
-  void _tryDifferentEmail() {
+  void _goBackToEmail() {
     setState(() {
-      _magicLinkSent = false;
-      _emailController.clear();
-      _magicLinkError = null;
+      _showOtpEntry = false;
+      _errorMessage = null;
+      _clearOtp();
     });
-  }
-
-  void _goBack() {
-    if (_showMagicLink) {
-      setState(() {
-        _showMagicLink = false;
-        _emailController.clear();
-        _magicLinkError = null;
-        _magicLinkSent = false;
-      });
-    } else {
-      context.go(RouteNames.onboarding);
-    }
+    _resendTimer?.cancel();
   }
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-
-    // Calculate responsive Lottie size - smaller on small screens
     final lottieSize = (screenWidth * 0.35).clamp(140.0, 200.0);
-    // Header height (app name area)
     const headerHeight = 50.0;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: LoadingOverlay(
         isLoading: _isLoading,
-        message: _showMagicLink ? 'Sending magic link...'.tr(context) : 'Signing in...'.tr(context),
+        message: _showOtpEntry ? 'Verifying...' : 'Sending code...',
         child: Stack(
           children: [
-            // Mesh gradient background (cool blue-ish colors)
+            // Mesh gradient background
             _MeshGradientBackground(
               height: screenHeight,
               colors: const [
-                Color(0xFFE8F4FB), // Soft blue (creamy)
-                Color(0xFFE8F0FB), // Soft lavender-blue
-                Color(0xFFF0E8FB), // Soft purple-blue
+                Color(0xFFE8F4FB),
+                Color(0xFFE8F0FB),
+                Color(0xFFF0E8FB),
               ],
             ),
 
-            // Safe area content
             SafeArea(
               child: Column(
                 children: [
-                  // App name at top - fixed height
+                  // App name header
                   SizedBox(
                     height: headerHeight,
                     child: Center(
@@ -268,7 +312,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                     ),
                   ),
 
-                  // Lottie animation - flexible space
+                  // Lottie animation
                   Expanded(
                     flex: 2,
                     child: Center(
@@ -279,7 +323,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                     ),
                   ),
 
-                  // Bottom content section with glass morphism
+                  // Bottom content
                   Flexible(
                     flex: 3,
                     child: AnimatedSwitcher(
@@ -296,42 +340,34 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                           ),
                         );
                       },
-                      child: _magicLinkSent
-                          ? _MagicLinkSentView(
-                              key: const ValueKey('sent'),
-                              email: _emailController.text,
-                              onTryDifferent: _tryDifferentEmail,
-                              onBack: _goBack,
+                      child: _showOtpEntry
+                          ? _OtpEntrySection(
+                              key: const ValueKey('otp'),
+                              email: _email,
+                              otpControllers: _otpControllers,
+                              otpFocusNodes: _otpFocusNodes,
+                              errorMessage: _errorMessage,
+                              resendCooldown: _resendCooldown,
+                              onVerify: _verifyOtp,
+                              onResend: _resendOtp,
+                              onBack: _goBackToEmail,
+                              onErrorClear: () {
+                                if (_errorMessage != null) {
+                                  setState(() => _errorMessage = null);
+                                }
+                              },
                             )
-                          : _showMagicLink
-                              ? _MagicLinkForm(
-                                  key: const ValueKey('form'),
-                                  emailController: _emailController,
-                                  error: _magicLinkError,
-                                  onSend: _sendMagicLink,
-                                  onBack: _goBack,
-                                  onEmailChanged: () {
-                                    if (_magicLinkError != null) {
-                                      setState(() => _magicLinkError = null);
-                                    }
-                                  },
-                                )
-                              : _SignInOptionsSection(
-                                  key: const ValueKey('options'),
-                                  termsAccepted: _termsAccepted,
-                                  errorMessage: _errorMessage,
-                                  onTermsChanged: (value) {
-                                    setState(() {
-                                      _termsAccepted = value;
-                                      if (_termsAccepted) _errorMessage = null;
-                                    });
-                                  },
-                                  onGoogleSignIn: _signInWithGoogle,
-                                  onMagicLinkPressed: () {
-                                    setState(() => _showMagicLink = true);
-                                  },
-                                  onBack: _goBack,
-                                ),
+                          : _EmailEntrySection(
+                              key: const ValueKey('email'),
+                              emailController: _emailController,
+                              errorMessage: _errorMessage,
+                              onSubmit: _submitEmail,
+                              onErrorClear: () {
+                                if (_errorMessage != null) {
+                                  setState(() => _errorMessage = null);
+                                }
+                              },
+                            ),
                     ),
                   ),
                 ],
@@ -344,7 +380,578 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
   }
 }
 
-/// Mesh gradient background widget (Dashboard-style).
+// ---------------------------------------------------------------------------
+// Email Entry Section
+// ---------------------------------------------------------------------------
+
+class _EmailEntrySection extends StatelessWidget {
+  final TextEditingController emailController;
+  final String? errorMessage;
+  final VoidCallback onSubmit;
+  final VoidCallback onErrorClear;
+
+  const _EmailEntrySection({
+    super.key,
+    required this.emailController,
+    this.errorMessage,
+    required this.onSubmit,
+    required this.onErrorClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPadding + 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.85),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 30,
+                offset: const Offset(0, -10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle indicator
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Icon
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF42A5F5).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF42A5F5).withValues(alpha: 0.3),
+                    width: 2,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.person_add_rounded,
+                  color: Color(0xFF42A5F5),
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Title
+              Text(
+                'Create Account'.tr(context),
+                style: AppTextStyles.headingSmall.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                ),
+              ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
+
+              const SizedBox(height: 4),
+
+              Text(
+                'Enter your email to get started'.tr(context),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(delay: 150.ms, duration: 400.ms),
+
+              const SizedBox(height: 16),
+
+              // Error message
+              if (errorMessage != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.errorLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          errorMessage!,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // Email field
+              TextField(
+                controller: emailController,
+                onChanged: (_) => onErrorClear(),
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => onSubmit(),
+                style: AppTextStyles.bodySmall.copyWith(fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Enter your email address'.tr(context),
+                  hintStyle: AppTextStyles.bodySmall.copyWith(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                  prefixIcon: const Icon(Icons.email_outlined, size: 20),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                        color: Color(0xFF42A5F5), width: 2),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.error),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Create Account button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: onSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF42A5F5),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Create Account'.tr(context),
+                    style: AppTextStyles.labelMedium.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Already have an account? Log in
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Already have an account? '.tr(context),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => context.go(RouteNames.login),
+                    child: Text(
+                      'Log in'.tr(context),
+                      style: AppTextStyles.caption.copyWith(
+                        color: const Color(0xFF42A5F5),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              // Security note
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.lock_outline_rounded,
+                    size: 12,
+                    color: AppColors.textSecondary.withValues(alpha: 0.6),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Secure passwordless authentication'.tr(context),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary.withValues(alpha: 0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: 400.ms);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// OTP Entry Section
+// ---------------------------------------------------------------------------
+
+class _OtpEntrySection extends StatelessWidget {
+  final String email;
+  final List<TextEditingController> otpControllers;
+  final List<FocusNode> otpFocusNodes;
+  final String? errorMessage;
+  final int resendCooldown;
+  final VoidCallback onVerify;
+  final VoidCallback onResend;
+  final VoidCallback onBack;
+  final VoidCallback onErrorClear;
+
+  const _OtpEntrySection({
+    super.key,
+    required this.email,
+    required this.otpControllers,
+    required this.otpFocusNodes,
+    this.errorMessage,
+    required this.resendCooldown,
+    required this.onVerify,
+    required this.onResend,
+    required this.onBack,
+    required this.onErrorClear,
+  });
+
+  void _onOtpFieldChanged(String value, int index) {
+    onErrorClear();
+    if (value.isNotEmpty && index < 5) {
+      otpFocusNodes[index + 1].requestFocus();
+    }
+    // Auto-submit when all 6 digits entered
+    if (index == 5 && value.isNotEmpty) {
+      final otp = otpControllers.map((c) => c.text).join();
+      if (otp.length == 6) {
+        onVerify();
+      }
+    }
+  }
+
+  KeyEventResult _onOtpKeyEvent(int index, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.backspace &&
+        otpControllers[index].text.isEmpty &&
+        index > 0) {
+      otpControllers[index - 1].clear();
+      otpFocusNodes[index - 1].requestFocus();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPadding + 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.85),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 30,
+                offset: const Offset(0, -10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle indicator
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Back button
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: onBack,
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                  label: Text(
+                    'Back'.tr(context),
+                    style: AppTextStyles.labelMedium.copyWith(fontSize: 14),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Icon
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF42A5F5).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.pin_rounded,
+                  color: Color(0xFF42A5F5),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Title
+              Text(
+                'Verify your email'.tr(context),
+                style: AppTextStyles.headingSmall.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 4),
+
+              // Subtitle with email
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                  children: [
+                    TextSpan(text: '${'We sent a 6-digit code to'.tr(context)} '),
+                    TextSpan(
+                      text: email,
+                      style: AppTextStyles.caption.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Error message
+              if (errorMessage != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.errorLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          errorMessage!,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // OTP input fields
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(6, (index) {
+                  return Container(
+                    width: 44,
+                    height: 52,
+                    margin: EdgeInsets.only(
+                      left: index == 0 ? 0 : 6,
+                      right: index == 5 ? 0 : 6,
+                    ),
+                    child: KeyboardListener(
+                      focusNode: FocusNode(),
+                      onKeyEvent: (event) => _onOtpKeyEvent(index, event),
+                      child: TextField(
+                        controller: otpControllers[index],
+                        focusNode: otpFocusNodes[index],
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        maxLength: 1,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        onChanged: (value) =>
+                            _onOtpFieldChanged(value, index),
+                        style: AppTextStyles.headingSmall.copyWith(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                        decoration: InputDecoration(
+                          counterText: '',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Color(0xFF42A5F5), width: 2),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Verify button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: onVerify,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF42A5F5),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Verify'.tr(context),
+                    style: AppTextStyles.labelMedium.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Resend code
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Didn't receive the code? ".tr(context),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: resendCooldown > 0 ? null : onResend,
+                    child: Text(
+                      resendCooldown > 0
+                          ? 'Resend in ${resendCooldown}s'
+                          : 'Resend'.tr(context),
+                      style: AppTextStyles.caption.copyWith(
+                        color: resendCooldown > 0
+                            ? AppColors.textSecondary
+                            : const Color(0xFF42A5F5),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: 400.ms);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared Widgets
+// ---------------------------------------------------------------------------
+
+/// Mesh gradient background widget.
 class _MeshGradientBackground extends StatelessWidget {
   final double height;
   final List<Color> colors;
@@ -362,7 +969,6 @@ class _MeshGradientBackground extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Radial gradient layers
           ...List.generate(colors.length, (index) {
             final alignment = _getAlignment(index);
             final radius = _getRadius(index);
@@ -428,7 +1034,7 @@ class _MeshGradientBackground extends StatelessWidget {
   }
 }
 
-/// Lottie animation hero for sign-in screen (game animation).
+/// Lottie animation hero with floating effect.
 class _LottieHero extends StatelessWidget {
   final AnimationController floatAnimation;
   final double size;
@@ -460,7 +1066,6 @@ class _LottieHero extends StatelessWidget {
           animate: true,
           repeat: true,
           errorBuilder: (context, error, stackTrace) {
-            // Fallback if Lottie fails to load
             return Icon(
               Icons.games_rounded,
               size: size * 0.5,
@@ -479,714 +1084,5 @@ class _LottieHero extends StatelessWidget {
           duration: 500.ms,
           curve: Curves.easeOutBack,
         );
-  }
-}
-
-/// Sign-in options section with glass morphism.
-class _SignInOptionsSection extends StatelessWidget {
-  final bool termsAccepted;
-  final String? errorMessage;
-  final ValueChanged<bool> onTermsChanged;
-  final VoidCallback onGoogleSignIn;
-  final VoidCallback onMagicLinkPressed;
-  final VoidCallback onBack;
-
-  const _SignInOptionsSection({
-    super.key,
-    required this.termsAccepted,
-    this.errorMessage,
-    required this.onTermsChanged,
-    required this.onGoogleSignIn,
-    required this.onMagicLinkPressed,
-    required this.onBack,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPadding + 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.85),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.5),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 30,
-                offset: const Offset(0, -10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle indicator
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Welcome back icon
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF42A5F5).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFF42A5F5).withValues(alpha: 0.3),
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.waving_hand_rounded,
-                  color: Color(0xFF42A5F5),
-                  size: 28,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Title
-              Text(
-                'Welcome Back!'.tr(context),
-                style: AppTextStyles.headingSmall.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                ),
-              ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
-
-              const SizedBox(height: 4),
-
-              Text(
-                'Sign in to continue your journey'.tr(context),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ).animate().fadeIn(delay: 150.ms, duration: 400.ms),
-
-              const SizedBox(height: 16),
-
-              // Error message
-              if (errorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.errorLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: AppColors.error,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          errorMessage!,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.error,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              // Terms checkbox
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => onTermsChanged(!termsAccepted),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(
-                          color: termsAccepted
-                              ? const Color(0xFF42A5F5)
-                              : AppColors.textSecondary.withValues(alpha: 0.4),
-                          width: 2,
-                        ),
-                        color: termsAccepted
-                            ? const Color(0xFF42A5F5)
-                            : Colors.transparent,
-                      ),
-                      child: termsAccepted
-                          ? const Icon(
-                              Icons.check,
-                              size: 14,
-                              color: Colors.white,
-                            )
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => onTermsChanged(!termsAccepted),
-                      child: RichText(
-                        text: TextSpan(
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                          children: [
-                            TextSpan(text: 'I agree to the '.tr(context)),
-                            TextSpan(
-                              text: 'Terms'.tr(context),
-                              style: AppTextStyles.caption.copyWith(
-                                color: const Color(0xFF42A5F5),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            TextSpan(text: ' ${'and'.tr(context)} '),
-                            TextSpan(
-                              text: 'Privacy Policy'.tr(context),
-                              style: AppTextStyles.caption.copyWith(
-                                color: const Color(0xFF42A5F5),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Google Sign-in button
-              _GoogleSignInButton(
-                onPressed: termsAccepted ? onGoogleSignIn : null,
-                enabled: termsAccepted,
-              ),
-
-              const SizedBox(height: 12),
-
-              // Divider
-              Row(
-                children: [
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      'Or'.tr(context),
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Magic Link button
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton.icon(
-                  onPressed: termsAccepted ? onMagicLinkPressed : null,
-                  icon: const Icon(Icons.mail_outline_rounded, size: 20),
-                  label: Text(
-                    'Sign in with Email'.tr(context),
-                    style: AppTextStyles.labelMedium.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    side: BorderSide(
-                      color: termsAccepted
-                          ? const Color(0xFF42A5F5)
-                          : Colors.grey.shade300,
-                    ),
-                    foregroundColor: termsAccepted
-                        ? const Color(0xFF42A5F5)
-                        : AppColors.textSecondary,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Don't have account? Sign up
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Don't have an account? ".tr(context),
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => context.go(RouteNames.login),
-                    child: Text(
-                      'Sign up'.tr(context),
-                      style: AppTextStyles.caption.copyWith(
-                        color: const Color(0xFF42A5F5),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 8),
-
-              // Security note
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.lock_outline_rounded,
-                    size: 12,
-                    color: AppColors.textSecondary.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Secure passwordless authentication'.tr(context),
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary.withValues(alpha: 0.6),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    ).animate().fadeIn(duration: 400.ms);
-  }
-}
-
-/// Google sign-in button.
-class _GoogleSignInButton extends StatelessWidget {
-  final VoidCallback? onPressed;
-  final bool enabled;
-
-  const _GoogleSignInButton({
-    required this.onPressed,
-    required this.enabled,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: enabled ? 1.0 : 0.5,
-        child: Container(
-          width: double.infinity,
-          height: 48,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF1A1A2E),
-                Color(0xFF16213E),
-              ],
-            ),
-            boxShadow: enabled
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF1A1A2E).withValues(alpha: 0.25),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Center(
-                  child: Text(
-                    'G',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      foreground: Paint()
-                        ..shader = const LinearGradient(
-                          colors: [
-                            Color(0xFF4285F4),
-                            Color(0xFF34A853),
-                            Color(0xFFFBBC05),
-                            Color(0xFFEA4335),
-                          ],
-                        ).createShader(const Rect.fromLTWH(0, 0, 22, 22)),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'Continue with Google'.tr(context),
-                style: AppTextStyles.labelMedium.copyWith(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Magic link sent success view with glass morphism.
-class _MagicLinkSentView extends StatelessWidget {
-  final String email;
-  final VoidCallback onTryDifferent;
-  final VoidCallback onBack;
-
-  const _MagicLinkSentView({
-    super.key,
-    required this.email,
-    required this.onTryDifferent,
-    required this.onBack,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPadding + 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.85),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.5),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 30,
-                offset: const Offset(0, -10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_rounded,
-                  color: Color(0xFF10B981),
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Check your email'.tr(context),
-                style: AppTextStyles.headingSmall.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              const SizedBox(height: 8),
-              RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                  children: [
-                    TextSpan(text: '${'We sent a magic link to'.tr(context)}\n'),
-                    TextSpan(
-                      text: email,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${'Click the link in your email to sign in.'.tr(context)}\n${'The link expires in 10 minutes.'.tr(context)}',
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: onTryDifferent,
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                  ),
-                  child: Text(
-                    'Try a different email'.tr(context),
-                    style: AppTextStyles.labelMedium.copyWith(fontSize: 14),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ).animate().fadeIn(duration: 400.ms);
-  }
-}
-
-/// Magic link email form with glass morphism.
-class _MagicLinkForm extends StatelessWidget {
-  final TextEditingController emailController;
-  final String? error;
-  final VoidCallback onSend;
-  final VoidCallback onBack;
-  final VoidCallback onEmailChanged;
-
-  const _MagicLinkForm({
-    super.key,
-    required this.emailController,
-    this.error,
-    required this.onSend,
-    required this.onBack,
-    required this.onEmailChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPadding + 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.85),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.5),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 30,
-                offset: const Offset(0, -10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: onBack,
-                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                  label: Text(
-                    'Back to options'.tr(context),
-                    style: AppTextStyles.labelMedium.copyWith(fontSize: 14),
-                  ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF42A5F5).withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.mail_rounded,
-                  color: Color(0xFF42A5F5),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Sign in with email'.tr(context),
-                style: AppTextStyles.headingSmall.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "We'll send you a magic link to sign in instantly".tr(context),
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: emailController,
-                onChanged: (_) => onEmailChanged(),
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => onSend(),
-                style: AppTextStyles.bodySmall.copyWith(fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: 'Enter your email address'.tr(context),
-                  hintStyle: AppTextStyles.bodySmall.copyWith(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                  prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF42A5F5), width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.error),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                ),
-              ),
-              if (error != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  error!,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.error,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: onSend,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF42A5F5),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Send Magic Link'.tr(context),
-                    style: AppTextStyles.labelMedium.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'We\'ll send you a secure link that expires in 10 minutes.'.tr(context),
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: 11,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    ).animate().fadeIn(duration: 400.ms);
   }
 }

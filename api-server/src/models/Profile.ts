@@ -8,6 +8,8 @@ export interface IProfile extends Document {
   phoneVerified: boolean;
   avatarUrl: string;
   userType: 'user' | 'doer' | 'supervisor' | 'admin';
+  userTypes: string[];
+  primaryUserType: string;
   onboardingStep: number;
   onboardingCompleted: boolean;
   twoFactorEnabled: boolean;
@@ -26,7 +28,9 @@ const profileSchema = new Schema<IProfile>(
     phone: { type: String, default: '' },
     phoneVerified: { type: Boolean, default: false },
     avatarUrl: { type: String, default: '' },
-    userType: { type: String, enum: ['user', 'doer', 'supervisor', 'admin'], default: 'user' },
+    userType: { type: String, enum: ['user', 'student', 'professional', 'business', 'doer', 'supervisor', 'admin'], default: 'user' },
+    userTypes: { type: [String], default: [] },
+    primaryUserType: { type: String, default: '' },
     onboardingStep: { type: Number, default: 0 },
     onboardingCompleted: { type: Boolean, default: false },
     twoFactorEnabled: { type: Boolean, default: false },

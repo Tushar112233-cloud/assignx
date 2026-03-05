@@ -27,20 +27,24 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
     const wallet = await Wallet.findOne({ profileId: profile._id });
 
     // Build flat response that frontend expects
-    const profileObj = profile.toObject();
-    const roles = Array.isArray(profileObj.roles) && profileObj.roles.length > 0
-      ? profileObj.roles
-      : [profileObj.userType];
+    const profileObj = profile.toObject() as Record<string, any>;
+    const roles = Array.isArray(profileObj.userTypes) && profileObj.userTypes.length > 0
+      ? profileObj.userTypes
+      : Array.isArray(profileObj.roles) && profileObj.roles.length > 0
+        ? profileObj.roles
+        : [profileObj.userType];
     res.json({
       ...profileObj,
       id: profileObj._id,
       full_name: profileObj.fullName,
-      user_type: profileObj.userType,
+      user_type: profileObj.primaryUserType || profileObj.userType,
+      user_types: roles,
+      primary_user_type: profileObj.primaryUserType || profileObj.userType,
       avatar_url: profileObj.avatarUrl,
       is_active: true,
       user_roles: roles,
       wallet: wallet ? { id: wallet._id, profile_id: wallet.profileId, balance: wallet.balance, currency: wallet.currency } : null,
-      students: roleData && profile.userType === 'user' ? roleData : null,
+      students: roleData && (profile.userType === 'user' || (profile.userType as string) === 'student') ? roleData : null,
       roleData,
       profile: profileObj,
     });
@@ -52,7 +56,7 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
 // PUT /profiles/me
 router.put('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const allowedFields = ['fullName', 'phone', 'onboardingStep', 'onboardingCompleted', 'twoFactorEnabled', 'userType'];
+    const allowedFields = ['fullName', 'phone', 'onboardingStep', 'onboardingCompleted', 'twoFactorEnabled', 'userType', 'userTypes', 'primaryUserType'];
     const updates: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -88,6 +92,13 @@ router.post('/student', authenticate, async (req: Request, res: Response, next: 
       // Mark onboarding complete and set userType on Profile
       const profileUpdates: Record<string, unknown> = { onboardingCompleted: true, userType: 'student' };
       if (req.body.fullName) profileUpdates.fullName = req.body.fullName;
+      const existingProfile = await Profile.findById(req.user!.id);
+      if (existingProfile) {
+        const types = Array.isArray(existingProfile.userTypes) ? [...existingProfile.userTypes] : [];
+        if (!types.includes('student')) types.push('student');
+        profileUpdates.userTypes = types;
+        if (!existingProfile.primaryUserType) profileUpdates.primaryUserType = 'student';
+      }
       await Profile.findByIdAndUpdate(req.user!.id, profileUpdates);
       return res.json({ student: updated });
     }
@@ -95,6 +106,13 @@ router.post('/student', authenticate, async (req: Request, res: Response, next: 
     // Mark onboarding complete and set userType on Profile
     const profileUpdates: Record<string, unknown> = { onboardingCompleted: true, userType: 'student' };
     if (req.body.fullName) profileUpdates.fullName = req.body.fullName;
+    const existingProfile = await Profile.findById(req.user!.id);
+    if (existingProfile) {
+      const types = Array.isArray(existingProfile.userTypes) ? [...existingProfile.userTypes] : [];
+      if (!types.includes('student')) types.push('student');
+      profileUpdates.userTypes = types;
+      if (!existingProfile.primaryUserType) profileUpdates.primaryUserType = 'student';
+    }
     await Profile.findByIdAndUpdate(req.user!.id, profileUpdates);
     res.status(201).json({ student });
   } catch (err) {
@@ -139,6 +157,13 @@ router.post('/professional', authenticate, async (req: Request, res: Response, n
       // Mark onboarding complete and set userType on Profile
       const profileUpdates: Record<string, unknown> = { onboardingCompleted: true, userType: 'professional' };
       if (req.body.fullName) profileUpdates.fullName = req.body.fullName;
+      const existingProfile = await Profile.findById(req.user!.id);
+      if (existingProfile) {
+        const types = Array.isArray(existingProfile.userTypes) ? [...existingProfile.userTypes] : [];
+        if (!types.includes('professional')) types.push('professional');
+        profileUpdates.userTypes = types;
+        if (!existingProfile.primaryUserType) profileUpdates.primaryUserType = 'professional';
+      }
       await Profile.findByIdAndUpdate(req.user!.id, profileUpdates);
       return res.json({ professional: updated });
     }
@@ -146,6 +171,13 @@ router.post('/professional', authenticate, async (req: Request, res: Response, n
     // Mark onboarding complete and set userType on Profile
     const profileUpdates: Record<string, unknown> = { onboardingCompleted: true, userType: 'professional' };
     if (req.body.fullName) profileUpdates.fullName = req.body.fullName;
+    const existingProfile = await Profile.findById(req.user!.id);
+    if (existingProfile) {
+      const types = Array.isArray(existingProfile.userTypes) ? [...existingProfile.userTypes] : [];
+      if (!types.includes('professional')) types.push('professional');
+      profileUpdates.userTypes = types;
+      if (!existingProfile.primaryUserType) profileUpdates.primaryUserType = 'professional';
+    }
     await Profile.findByIdAndUpdate(req.user!.id, profileUpdates);
     res.status(201).json({ professional });
   } catch (err) {
@@ -195,17 +227,16 @@ router.post('/roles', authenticate, async (req: Request, res: Response, next: Ne
     const profile = await Profile.findById(req.user!.id);
     if (!profile) throw new AppError('Profile not found', 404);
 
-    // Ensure roles array includes primary userType
-    if (!profile.roles || profile.roles.length === 0) {
-      profile.roles = [profile.userType];
+    if (!profile.userTypes || profile.userTypes.length === 0) {
+      profile.userTypes = [profile.userType];
     }
 
-    if (!profile.roles.includes(role)) {
-      profile.roles.push(role);
+    if (!profile.userTypes.includes(role)) {
+      profile.userTypes.push(role);
       await profile.save();
     }
 
-    res.json({ roles: profile.roles });
+    res.json({ roles: profile.userTypes });
   } catch (err) {
     next(err);
   }
@@ -220,20 +251,18 @@ router.delete('/roles', authenticate, async (req: Request, res: Response, next: 
     const profile = await Profile.findById(req.user!.id);
     if (!profile) throw new AppError('Profile not found', 404);
 
-    // Cannot remove primary role
-    if (role === profile.userType) {
+    if (role === profile.primaryUserType || role === profile.userType) {
       throw new AppError('Cannot remove your primary role', 400);
     }
 
-    // Ensure roles array includes primary userType
-    if (!profile.roles || profile.roles.length === 0) {
-      profile.roles = [profile.userType];
+    if (!profile.userTypes || profile.userTypes.length === 0) {
+      profile.userTypes = [profile.userType];
     }
 
-    profile.roles = profile.roles.filter((r: string) => r !== role);
+    profile.userTypes = profile.userTypes.filter((r: string) => r !== role);
     await profile.save();
 
-    res.json({ roles: profile.roles });
+    res.json({ roles: profile.userTypes });
   } catch (err) {
     next(err);
   }

@@ -1,23 +1,39 @@
 import 'api_client.dart';
 import '../storage/token_storage.dart';
 
-/// API wrapper for authentication endpoints.
 class AuthApi {
-  /// Send a magic link to the given email.
-  static Future<void> sendMagicLink(String email) async {
-    await ApiClient.post('/auth/magic-link', {'email': email});
+  /// Check if an account exists for the given email.
+  static Future<bool> checkAccount(String email) async {
+    final response = await ApiClient.post('/auth/check-account', {'email': email});
+    final data = response as Map<String, dynamic>;
+    return data['exists'] == true;
   }
 
-  /// Verify the OTP code sent via magic link.
+  /// Send OTP to the given email.
+  static Future<void> sendOTP(String email, String purpose, {String? role}) async {
+    await ApiClient.post('/auth/send-otp', {
+      'email': email,
+      'purpose': purpose,
+      if (role != null) 'role': role,
+    });
+  }
+
+  /// Verify the OTP code.
   /// Saves tokens on success and returns the user data.
-  static Future<Map<String, dynamic>> verifyOTP(String email, String otp) async {
+  static Future<Map<String, dynamic>> verifyOTP(
+    String email,
+    String otp,
+    String purpose, {
+    String? role,
+  }) async {
     final response = await ApiClient.post('/auth/verify', {
       'email': email,
       'otp': otp,
+      'purpose': purpose,
+      if (role != null) 'role': role,
     });
     final data = response as Map<String, dynamic>;
 
-    // Save JWT tokens
     if (data['accessToken'] != null && data['refreshToken'] != null) {
       await TokenStorage.saveTokens(
         data['accessToken'] as String,
@@ -32,9 +48,7 @@ class AuthApi {
   static Future<void> logout() async {
     try {
       await ApiClient.post('/auth/logout');
-    } catch (_) {
-      // Ignore errors on logout - clear tokens regardless
-    }
+    } catch (_) {}
     await TokenStorage.clearTokens();
   }
 
