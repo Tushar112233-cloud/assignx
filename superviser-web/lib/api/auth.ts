@@ -1,6 +1,6 @@
 /**
  * @fileoverview Auth helpers for Express API authentication.
- * Handles magic link, OTP verification, token storage, and current user retrieval.
+ * Handles OTP verification, token storage, and current user retrieval.
  * @module lib/api/auth
  */
 
@@ -56,7 +56,7 @@ export function clearStoredUser(): void {
 
 // ── Auth actions ──
 
-/** Emails that bypass magic link and login directly */
+/** Emails that bypass OTP and login directly in dev mode */
 const DEV_BYPASS_EMAILS = ['admin@gmail.com', 'testsupervisor@gmail.com']
 
 export function isDevBypassEmail(email: string): boolean {
@@ -80,46 +80,7 @@ export async function devLogin(email: string): Promise<AuthTokens> {
 }
 
 /**
- * Send a magic link email for passwordless sign-in.
- * Returns sessionId used to poll for verification status.
- */
-export async function sendMagicLink(email: string): Promise<{ success: boolean; sessionId: string }> {
-  const callbackUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/auth/verify`
-    : `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/verify`
-  return apiFetch("/api/auth/magic-link", {
-    method: "POST",
-    body: JSON.stringify({ email, role: "supervisor", callbackUrl }),
-  })
-}
-
-/**
- * Poll for magic link verification status.
- * Returns JWT tokens once the user clicks the email link.
- */
-export async function checkMagicLinkStatus(
-  email: string,
-  sessionId: string
-): Promise<{ status: 'pending' | 'verified'; accessToken?: string; refreshToken?: string; user?: AuthUser; profile?: AuthUser }> {
-  const data = await apiFetch<{ status: 'pending' | 'verified'; accessToken?: string; refreshToken?: string; user?: AuthUser; profile?: AuthUser }>(
-    "/api/auth/magic-link/check",
-    {
-      method: "POST",
-      body: JSON.stringify({ email, sessionId }),
-    }
-  )
-
-  if (data.status === 'verified' && data.accessToken && data.refreshToken) {
-    setTokens(data.accessToken, data.refreshToken)
-    const user = data.user || data.profile
-    if (user) storeUser(user)
-  }
-
-  return data
-}
-
-/**
- * Verify an OTP code (from magic link email).
+ * Verify an OTP code.
  * Stores tokens and user on success.
  */
 export async function verifyOTP(
@@ -139,45 +100,6 @@ export async function verifyOTP(
   if (user) storeUser(user)
 
   return { accessToken: data.accessToken, refreshToken: data.refreshToken, user: user! }
-}
-
-/**
- * Sign in with email and password.
- * Stores tokens and user on success.
- */
-export async function signInWithPassword(
-  email: string,
-  password: string
-): Promise<AuthTokens> {
-  const data = await apiFetch<AuthTokens>("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  })
-
-  setTokens(data.accessToken, data.refreshToken)
-  storeUser(data.user)
-
-  return data
-}
-
-/**
- * Sign up with email, password, and metadata.
- */
-export async function signUp(
-  email: string,
-  password: string,
-  fullName: string,
-  phone: string
-): Promise<AuthTokens> {
-  const data = await apiFetch<AuthTokens>("/api/auth/register", {
-    method: "POST",
-    body: JSON.stringify({ email, password, fullName, phone, role: "supervisor" }),
-  })
-
-  setTokens(data.accessToken, data.refreshToken)
-  storeUser(data.user)
-
-  return data
 }
 
 /**
@@ -215,23 +137,6 @@ export async function logout(): Promise<void> {
  */
 export function hasSession(): boolean {
   return !!getAccessToken()
-}
-
-/**
- * Check email access request status (for login form feedback).
- */
-export async function checkAccessRequest(
-  email: string,
-  role: string = "supervisor"
-): Promise<{ status: string } | null> {
-  try {
-    const data = await apiFetch<{ status: string }>(
-      `/api/auth/access-request?email=${encodeURIComponent(email)}&role=${role}`
-    )
-    return data
-  } catch {
-    return null
-  }
 }
 
 /**

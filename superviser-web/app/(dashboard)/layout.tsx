@@ -12,6 +12,7 @@ import { AppSidebarV2 } from "@/components/layout/app-sidebar-v2"
 import { HeaderV2 } from "@/components/layout/header-v2"
 import { useAuth } from "@/hooks/use-auth"
 import { apiFetch } from "@/lib/api/client"
+import { ActivationGuard } from "@/components/auth/activation-guard"
 
 export default function DashboardLayout({
   children,
@@ -79,7 +80,9 @@ export default function DashboardLayout({
           initialAvailability={supervisorAvailability}
         />
         <main className="flex-1 overflow-auto">
-          {children}
+          <ActivationGuard>
+            {children}
+          </ActivationGuard>
         </main>
       </SidebarInset>
     </SidebarProvider>

@@ -85,18 +85,13 @@ export default function TrainingPage() {
 
         setUserId(user.id)
 
-        // Check if supervisor record exists; if not, auto-create via server API
+        // Check if supervisor record exists (created on admin approval)
         try {
           await apiFetch("/api/supervisors/me")
         } catch {
-          // Call server API to create supervisor from approved access request metadata
-          const res = await fetch("/api/auth/setup-supervisor", { method: "POST" })
-          const result = await res.json()
-
-          if (!res.ok && result.error === "No approved access request found") {
-            router.replace("/register")
-            return
-          }
+          // Supervisor record not found -- not yet approved
+          router.replace("/pending-approval")
+          return
         }
 
         await loadData(user.id)

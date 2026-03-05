@@ -4,7 +4,7 @@
  * @module hooks/use-auth
  *
  * Auth flow:
- * 1. signIn/signUp -> stores JWT tokens + user in localStorage
+ * 1. OTP verify -> stores JWT tokens + user in localStorage
  * 2. initAuth on mount -> reads user from localStorage, fetches profile from API
  * 3. signOut -> clears tokens, navigates to login
  */
@@ -12,7 +12,6 @@
 "use client"
 
 import { useEffect, useCallback, useRef } from "react"
-import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/store/auth-store"
 import { ROUTES } from "@/lib/constants"
 import { clearAppStorage } from "@/lib/utils"
@@ -20,12 +19,8 @@ import { apiFetch } from "@/lib/api/client"
 import { clearTokens, getAccessToken } from "@/lib/api/client"
 import {
   getStoredUser,
-  storeUser,
   clearStoredUser,
-  signUp as apiSignUp,
-  signInWithPassword as apiSignIn,
   logout as apiLogout,
-  sendMagicLink,
   verifyOTP as apiVerifyOTP,
 } from "@/lib/api/auth"
 import { disconnectSocket } from "@/lib/socket/client"
@@ -40,8 +35,6 @@ let _authInitStarted = false
  * Custom hook for authentication management
  */
 export function useAuth() {
-  const router = useRouter()
-
   const {
     user,
     supervisor,
@@ -219,22 +212,6 @@ export function useAuth() {
   }, [])
 
   /**
-   * Sign up with email and password
-   */
-  const signUp = async (email: string, password: string, fullName: string, phone: string) => {
-    const data = await apiSignUp(email, password, fullName, phone)
-    return data
-  }
-
-  /**
-   * Sign in with email and password
-   */
-  const signIn = async (email: string, password: string) => {
-    const data = await apiSignIn(email, password)
-    return data
-  }
-
-  /**
    * Sign out
    */
   const signOut = async () => {
@@ -281,8 +258,6 @@ export function useAuth() {
     isLoading,
     isAuthenticated,
     isOnboarded,
-    signUp,
-    signIn,
     signOut,
     sendPhoneOtp,
     verifyPhoneOtp,
