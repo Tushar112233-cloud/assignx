@@ -61,7 +61,13 @@ interface RazorpayOrder {
   id: string
   amount: number
   currency: string
-  receipt: string
+}
+
+interface RazorpayOrderApiResponse {
+  orderId: string
+  amount: number
+  currency: string
+  keyId: string
 }
 
 /**
@@ -126,19 +132,18 @@ export const walletService = {
     const shortTime = Date.now().toString().slice(-10)
     const receipt = `tu_${shortId}_${shortTime}`
 
-    const result = await apiClient<RazorpayOrder>('/api/payments/create-order', {
+    const result = await apiClient<RazorpayOrderApiResponse>('/api/payments/create-order', {
       method: 'POST',
       body: JSON.stringify({
         amount,
         currency: 'INR',
-        receipt,
         notes: {
           type: 'wallet_topup',
           user_id: userId,
         },
       }),
     })
-    return result
+    return { id: result.orderId, amount: result.amount, currency: result.currency }
   },
 
   /**
@@ -174,19 +179,18 @@ export const walletService = {
     const shortTime = Date.now().toString().slice(-10)
     const receipt = `pj_${shortId}_${shortTime}`
 
-    const result = await apiClient<RazorpayOrder>('/api/payments/create-order', {
+    const result = await apiClient<RazorpayOrderApiResponse>('/api/payments/create-order', {
       method: 'POST',
       body: JSON.stringify({
         amount,
         currency: 'INR',
-        receipt,
         notes: {
           type: 'project_payment',
           project_id: projectId,
         },
       }),
     })
-    return result
+    return { id: result.orderId, amount: result.amount, currency: result.currency }
   },
 
   /**
@@ -219,19 +223,18 @@ export const walletService = {
     const shortTime = Date.now().toString().slice(-10)
     const receipt = `pp_${shortId}_${shortTime}`
 
-    const result = await apiClient<RazorpayOrder>('/api/payments/create-order', {
+    const result = await apiClient<RazorpayOrderApiResponse>('/api/payments/create-order', {
       method: 'POST',
       body: JSON.stringify({
         amount: razorpayAmount,
         currency: 'INR',
-        receipt,
         notes: {
           type: 'partial_payment',
           project_id: projectId,
         },
       }),
     })
-    return result
+    return { id: result.orderId, amount: result.amount, currency: result.currency }
   },
 
   /**

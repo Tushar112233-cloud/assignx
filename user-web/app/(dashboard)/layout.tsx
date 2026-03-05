@@ -8,9 +8,7 @@ import Link from "next/link";
 import { DashboardClientShell } from "@/components/dashboard/dashboard-client-shell";
 import { WalletPill } from "@/components/dashboard/wallet-pill";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { DockNav } from "@/components/dock";
-import { LanguageSelector } from "@/components/language-selector";
 
 /**
  * Page title configuration for each route
@@ -22,19 +20,9 @@ const pageTitles: Record<string, string> = {
   "/settings": "Settings",
   "/campus-connect": "Campus Connect",
   "/campus-connect/create": "Create Post",
-  "/pro-network": "Pro Network",
-  "/pro-network/create": "Create Post",
-  "/pro-network/saved": "Saved Posts",
-  "/business-hub": "Business Hub",
-  "/business-hub/create": "Create Post",
-  "/business-hub/saved": "Saved Posts",
-  "/connect": "Connect",
-  "/connect/create": "Create Listing",
   "/support": "Help & Support",
   "/payment-methods": "Payment Methods",
   "/wallet": "Wallet",
-  "/marketplace": "Marketplace",
-  "/marketplace/create": "Create Listing",
   "/experts": "Expert Consultations",
   "/experts/booking": "Book Expert",
 };
@@ -83,35 +71,38 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const pageTitle = pageTitles[pathname] || "Dashboard";
 
+  // Hide header and dock on project detail / chat pages
+  const isProjectPage = pathname.startsWith("/project/");
+
   return (
     <div className="h-screen flex flex-col bg-background">
-        {/* Header */}
-        <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between gap-2 dashboard-header-glass border-b border-border/30 transition-all duration-200 px-4 md:px-6">
-          {/* Left: Logo + Page Title */}
-          <div className="flex items-center gap-3">
-            <Link
-              href="/home"
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            >
-              <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <Sparkles className="size-4" />
-              </div>
-              <span className="font-semibold text-sm hidden sm:inline">AssignX</span>
-            </Link>
-            <div className="h-5 w-px bg-border/40 hidden sm:block" />
-            <h1 className="text-sm font-medium text-foreground/80 tracking-tight hidden sm:block">
-              {pageTitle}
-            </h1>
-          </div>
+        {/* Header - hidden on project/chat pages */}
+        {!isProjectPage && (
+          <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between gap-2 dashboard-header-glass border-b border-border/30 transition-all duration-200 px-4 md:px-6">
+            {/* Left: Logo + Page Title */}
+            <div className="flex items-center gap-3">
+              <Link
+                href="/home"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
+                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <Sparkles className="size-4" />
+                </div>
+                <span className="font-semibold text-sm hidden sm:inline">AssignX</span>
+              </Link>
+              <div className="h-5 w-px bg-border/40 hidden sm:block" />
+              <h1 className="text-sm font-medium text-foreground/80 tracking-tight hidden sm:block">
+                {pageTitle}
+              </h1>
+            </div>
 
-          {/* Right: Action Icons */}
-          <div className="flex items-center gap-3">
-            <LanguageSelector />
-            <WalletPill />
-            <AnimatedThemeToggler />
-            <NotificationBell />
-          </div>
-        </header>
+            {/* Right: Action Icons */}
+            <div className="flex items-center gap-3">
+              <WalletPill />
+              <NotificationBell />
+            </div>
+          </header>
+        )}
 
         {/* Main Content with Page Transitions */}
         <main className={pathname === "/home" ? "flex-1 overflow-hidden" : "flex-1 overflow-y-auto"}>
@@ -123,7 +114,7 @@ export default function DashboardLayout({
                 animate="animate"
                 exit="exit"
                 variants={pageVariants}
-                className={pathname === "/home" ? "h-full" : "min-h-full pb-32"}
+                className={pathname === "/home" ? "h-full" : isProjectPage ? "h-full" : "min-h-full pb-32"}
               >
                 {children}
               </motion.div>
@@ -131,8 +122,8 @@ export default function DashboardLayout({
           </DashboardClientShell>
         </main>
 
-        {/* Dock Navigation */}
-        <DockNav />
+        {/* Dock Navigation - hidden on project/chat pages */}
+        {!isProjectPage && <DockNav />}
       </div>
   );
 }

@@ -34,16 +34,41 @@ router.post('/create-order', authenticate, paymentLimiter, async (req: Request, 
     const { amount, projectId, notes } = req.body;
     if (!amount || amount <= 0) throw new AppError('Invalid amount', 400);
 
-    // In production, create Razorpay order via their API
-    // For now, return a mock order for the test key
-    const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const amountInPaise = Math.round(amount * 100);
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!keyId || !keySecret) throw new AppError('Payment gateway not configured', 500);
+
+    // Create real Razorpay order via REST API
+    const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+    const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${auth}`,
+      },
+      body: JSON.stringify({
+        amount: amountInPaise,
+        currency: 'INR',
+        notes: { projectId, userId: req.user!.id, ...notes },
+      }),
+    });
+
+    if (!rzpRes.ok) {
+      const errBody = await rzpRes.text();
+      console.error('Razorpay order creation failed:', errBody);
+      throw new AppError('Failed to create payment order', 500);
+    }
+
+    const order = await rzpRes.json();
 
     res.json({
-      orderId,
-      amount: amount * 100, // Razorpay uses paise
-      currency: 'INR',
-      keyId: process.env.RAZORPAY_KEY_ID,
-      notes: { projectId, userId: req.user!.id, ...notes },
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId,
+      notes: order.notes,
     });
   } catch (err) {
     next(err);
@@ -53,16 +78,41 @@ router.post('/create-order', authenticate, paymentLimiter, async (req: Request, 
 // POST /payments/verify
 router.post('/verify', authenticate, paymentLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, project_id } = req.body;
 
-    // Verify signature
+    // Verify Razorpay signature
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '')
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
     if (expectedSignature !== razorpay_signature) {
       throw new AppError('Payment verification failed', 400);
+    }
+
+    // If this is a project payment, update project status to paid
+    if (project_id) {
+      const project = await Project.findById(project_id);
+      if (project) {
+        project.payment = {
+          ...project.payment,
+          isPaid: true,
+          paidAt: new Date(),
+          paymentId: razorpay_payment_id,
+        };
+        if (['quoted', 'payment_pending'].includes(project.status)) {
+          project.status = 'paid';
+          project.statusUpdatedAt = new Date();
+          project.statusHistory = project.statusHistory || [];
+          project.statusHistory.push({
+            fromStatus: 'quoted',
+            toStatus: 'paid',
+            notes: 'Payment completed via Razorpay',
+            createdAt: new Date(),
+          });
+        }
+        await project.save();
+      }
     }
 
     res.json({ success: true, paymentId: razorpay_payment_id });
