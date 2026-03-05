@@ -1,7 +1,7 @@
 /**
- * @fileoverview Supervisor login form -- email-only magic link authentication.
- * No password required. API sends a verification link to the user's email.
- * The page polls for verification and shows a Login button once verified.
+ * @fileoverview Supervisor login form -- email + OTP authentication.
+ * Phase 1: Email input -> check supervisor status -> route based on result.
+ * Phase 2: OTP input (6 digits) -> verify -> redirect based on isActivated.
  * @module components/auth/login-form
  */
 
@@ -10,27 +10,27 @@
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Loader2, Mail, ArrowRight, Inbox, CheckCircle2 } from "lucide-react"
+import { Loader2, Mail, ArrowRight, KeyRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { sendMagicLink, checkMagicLinkStatus, checkAccessRequest, devLogin, isDevBypassEmail } from "@/lib/api/auth"
+import { checkSupervisorStatus, sendSupervisorOTP, verifySupervisorOTP, devLogin, isDevBypassEmail } from "@/lib/api/auth"
 
 export function LoginForm() {
   const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
+  const [otp, setOtp] = useState("")
+  const [phase, setPhase] = useState<"email" | "otp">("email")
   const [isLoading, setIsLoading] = useState(false)
-  const [sent, setSent] = useState(false)
-  const [sessionId, setSessionId] = useState("")
-  const [verified, setVerified] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [statusMessage, setStatusMessage] = useState<{ type: "pending" | "rejected"; text: string } | null>(null)
   const [resendCooldown, setResendCooldown] = useState(0)
+  const [isActivated, setIsActivated] = useState(false)
 
-  // Show error when callback redirects back with ?error=auth (expired/invalid link)
   useEffect(() => {
     if (searchParams.get("error") === "auth") {
-      setError("The sign-in link was invalid or has expired. Please request a new one.")
+      setError("Your session has expired. Please sign in again.")
     }
-  }, [])
+  }, [searchParams])
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -38,101 +38,62 @@ export function LoginForm() {
     return () => clearTimeout(timer)
   }, [resendCooldown])
 
-  // Poll for magic link verification
-  useEffect(() => {
-    if (!sent || !sessionId || verified) return
-
-    const interval = setInterval(async () => {
-      try {
-        const result = await checkMagicLinkStatus(email.trim().toLowerCase(), sessionId)
-        if (result.status === 'verified') {
-          setVerified(true)
-          clearInterval(interval)
-          window.location.href = '/dashboard'
-        }
-      } catch {
-        // Token expired or not found — stop polling
-        clearInterval(interval)
-      }
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [sent, sessionId, email, verified])
-
   const handleResend = useCallback(async () => {
     if (resendCooldown > 0) return
     try {
-      const result = await sendMagicLink(email.trim().toLowerCase())
-      setSessionId(result.sessionId)
-      setVerified(false)
-      setResendCooldown(30)
+      await sendSupervisorOTP(email.trim().toLowerCase(), "login")
+      setResendCooldown(60)
+      setError(null)
     } catch {
-      setError("Failed to resend. Please try again.")
+      setError("Failed to resend code. Please try again.")
     }
   }, [email, resendCooldown])
 
-  const handleLogin = useCallback(async () => {
-    // If already verified by polling, just redirect
-    if (verified) {
-      window.location.href = '/dashboard'
-      return
-    }
-    try {
-      setIsLoading(true)
-      setError(null)
-      const result = await checkMagicLinkStatus(email.trim().toLowerCase(), sessionId)
-      if (result.status === 'verified') {
-        setVerified(true)
-        window.location.href = '/dashboard'
-      } else {
-        setError("Please click the link in your email first.")
-      }
-    } catch {
-      setError("Please click the link in your email first, then try again.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [email, sessionId, verified])
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = email.trim().toLowerCase()
     if (!trimmed) return
 
     setIsLoading(true)
     setError(null)
+    setStatusMessage(null)
 
     try {
-      // Dev bypass: direct login without OTP
+      // Dev bypass
       if (isDevBypassEmail(trimmed)) {
         await devLogin(trimmed)
-        window.location.href = '/dashboard'
+        window.location.href = "/dashboard"
         return
       }
 
-      // Check email_access_requests to give specific feedback
-      const request = await checkAccessRequest(trimmed, "supervisor")
+      const result = await checkSupervisorStatus(trimmed)
 
-      if (!request) {
-        setError("No account found for this email. You need to create an account first.")
+      if (result.status === "not_found") {
+        setError("No account found for this email. Please create an account first.")
         return
       }
 
-      const status = request.status
-      if (status === "pending") {
-        setError("Your access request is still pending admin verification. Please wait for approval.")
-        return
-      }
-      if (status === "rejected") {
-        setError("Your access request was not approved. Please contact support.")
+      if (result.status === "pending") {
+        setStatusMessage({
+          type: "pending",
+          text: "Your application is under review. You'll receive an email once approved.",
+        })
         return
       }
 
-      // Status is approved -- send magic link via API
-      const result = await sendMagicLink(trimmed)
-      setSessionId(result.sessionId)
+      if (result.status === "rejected") {
+        setStatusMessage({
+          type: "rejected",
+          text: "Your application was not approved.",
+        })
+        return
+      }
 
-      setSent(true)
+      // Approved -- send OTP
+      setIsActivated(result.isActivated ?? false)
+      await sendSupervisorOTP(trimmed, "login")
+      setPhase("otp")
+      setResendCooldown(60)
     } catch {
       setError("Something went wrong. Please try again.")
     } finally {
@@ -140,124 +101,109 @@ export function LoginForm() {
     }
   }
 
-  if (sent) {
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (otp.length !== 6) return
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      await verifySupervisorOTP(email.trim().toLowerCase(), otp)
+      window.location.href = isActivated ? "/dashboard" : "/modules"
+    } catch {
+      setError("Invalid or expired code. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (phase === "otp") {
     return (
-      <div className="space-y-5">
-        {/* Status banner */}
-        <div className="flex items-center gap-4 p-4 rounded-xl bg-orange-50 border border-orange-200">
-          <div className="relative shrink-0">
-            <div className="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center">
-              {verified ? (
-                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-              ) : (
-                <Inbox className="h-5 w-5 text-orange-600" />
-              )}
-            </div>
-            {!verified && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-40" />
-                <span className="relative inline-flex rounded-full h-5 w-5 bg-orange-100 items-center justify-center">
-                  <Loader2 className="h-3 w-3 text-orange-600 animate-spin" />
-                </span>
-              </span>
-            )}
-            {verified && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5">
-                <span className="relative inline-flex rounded-full h-5 w-5 bg-emerald-400 items-center justify-center">
-                  <CheckCircle2 className="h-3 w-3 text-white" />
-                </span>
-              </span>
-            )}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-orange-50 border border-orange-200">
+          <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+            <KeyRound className="h-5 w-5 text-orange-600" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-[#1C1C1C]">
-              {verified ? "Email verified!" : "Verification link sent!"}
-            </p>
+            <p className="text-sm font-semibold text-[#1C1C1C]">Enter verification code</p>
             <p className="text-xs text-gray-500 truncate">
-              {verified
-                ? "Click Login to continue"
-                : <>Check <span className="font-medium text-[#1C1C1C]">{email}</span></>
-              }
+              Sent to <span className="font-medium text-[#1C1C1C]">{email}</span>
             </p>
           </div>
         </div>
 
-        {!verified && (
-          <div className="space-y-2.5">
-            {[
-              "Open the email from AssignX",
-              "Click the verification link",
-              "Come back here and click Login",
-            ].map((step, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center shrink-0 text-[11px] font-bold text-orange-600">
-                  {i + 1}
-                </div>
-                <p className="text-sm text-gray-600">{step}</p>
-              </div>
-            ))}
+        <form onSubmit={handleOtpSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label htmlFor="otp" className="text-sm font-semibold text-[#1C1C1C]">
+              6-digit code
+            </label>
+            <Input
+              id="otp"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              placeholder="000000"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              disabled={isLoading}
+              autoFocus
+              className="h-12 text-center text-2xl font-mono tracking-[0.5em] bg-gray-50 border-gray-200 rounded-xl text-[#1C1C1C] placeholder:text-gray-300 focus-visible:border-[#F97316] focus-visible:ring-4 focus-visible:ring-orange-500/10 transition-all"
+            />
           </div>
-        )}
 
-        {!verified && (
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-orange-50/60 border border-orange-100">
-            <Loader2 className="h-3.5 w-3.5 text-orange-500 animate-spin shrink-0" />
-            <p className="text-xs text-gray-500">Waiting for email verification...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
-          </div>
-        )}
-
-        <Button
-          type="button"
-          size="lg"
-          disabled={isLoading}
-          onClick={handleLogin}
-          className="w-full h-11 text-sm font-semibold rounded-xl bg-[#1C1C1C] hover:bg-[#2D2D2D] text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Logging in...
-            </>
-          ) : (
-            <>
-              Login
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </>
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {error}
+            </div>
           )}
-        </Button>
 
-        <div className="flex flex-col items-center gap-2">
           <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={resendCooldown > 0}
-            onClick={handleResend}
-            className="rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold"
+            type="submit"
+            size="lg"
+            disabled={isLoading || otp.length !== 6}
+            className="w-full h-11 text-sm font-semibold rounded-xl bg-[#1C1C1C] hover:bg-[#2D2D2D] text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {resendCooldown > 0
-              ? `Resend in ${resendCooldown}s`
-              : "Resend email"}
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Verifying...
+              </>
+            ) : (
+              <>
+                Verify & Sign In
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </>
+            )}
           </Button>
-          <button
-            onClick={() => { setSent(false); setEmail(""); setSessionId(""); setVerified(false) }}
-            className="text-xs text-gray-400 hover:text-orange-600 transition-colors underline underline-offset-4"
-          >
-            Wrong email? Try again
-          </button>
-        </div>
+
+          <div className="flex flex-col items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={resendCooldown > 0}
+              onClick={handleResend}
+              className="rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold"
+            >
+              {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
+            </Button>
+            <button
+              type="button"
+              onClick={() => { setPhase("email"); setOtp(""); setError(null) }}
+              className="text-xs text-gray-400 hover:text-orange-600 transition-colors underline underline-offset-4"
+            >
+              Wrong email? Go back
+            </button>
+          </div>
+        </form>
       </div>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleEmailSubmit} className="space-y-4">
       <div className="space-y-1.5">
         <label htmlFor="login-email" className="text-sm font-semibold text-[#1C1C1C]">
           Email address
@@ -285,15 +231,25 @@ export function LoginForm() {
               href="/register"
               className="block mt-1.5 font-semibold text-orange-600 hover:underline underline-offset-4"
             >
-              Create an account →
+              Create an account &rarr;
             </Link>
           )}
-          {error.includes("pending") && (
+        </div>
+      )}
+
+      {statusMessage && (
+        <div className={`rounded-xl border px-4 py-3 text-sm ${
+          statusMessage.type === "pending"
+            ? "border-amber-200 bg-amber-50 text-amber-700"
+            : "border-red-200 bg-red-50 text-red-600"
+        }`}>
+          {statusMessage.text}
+          {statusMessage.type === "rejected" && (
             <Link
-              href={`/pending?email=${encodeURIComponent(email.trim().toLowerCase())}`}
+              href="/register"
               className="block mt-1.5 font-semibold text-orange-600 hover:underline underline-offset-4"
             >
-              View request status →
+              Re-apply &rarr;
             </Link>
           )}
         </div>
@@ -308,18 +264,18 @@ export function LoginForm() {
         {isLoading ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            Sending link...
+            Checking...
           </>
         ) : (
           <>
-            Send sign-in link
+            Continue
             <ArrowRight className="h-4 w-4 ml-2" />
           </>
         )}
       </Button>
 
       <p className="text-center text-xs text-gray-400">
-        We'll send a secure verification link to your email. No password needed.
+        We'll send a 6-digit verification code to your email.
       </p>
     </form>
   )

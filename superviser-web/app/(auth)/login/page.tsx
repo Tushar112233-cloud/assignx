@@ -33,7 +33,7 @@ export default function LoginPage() {
           Welcome back
         </h1>
         <p className="mt-2 text-sm text-gray-400 leading-relaxed">
-          Sign in with your email — no password needed.
+          Sign in with your email — we'll send a verification code.
         </p>
       </div>
 
@@ -48,7 +48,7 @@ export default function LoginPage() {
       <div className="mt-5 grid grid-cols-3 gap-2.5">
         {[
           { icon: ShieldCheck, label: "Encrypted", sub: "End-to-end" },
-          { icon: Fingerprint, label: "Passwordless", sub: "Magic link" },
+          { icon: Fingerprint, label: "OTP Verified", sub: "6-digit code" },
           { icon: Zap, label: "Instant", sub: "No wait time" },
         ].map((item) => (
           <div

@@ -233,3 +233,59 @@ export async function checkAccessRequest(
     return null
   }
 }
+
+/**
+ * Check supervisor status by email.
+ */
+export async function checkSupervisorStatus(
+  email: string
+): Promise<{ status: 'not_found' | 'pending' | 'rejected' | 'approved'; isActivated?: boolean }> {
+  return apiFetch(`/api/auth/supervisor-status?email=${encodeURIComponent(email)}`)
+}
+
+/**
+ * Send OTP to email for supervisor login or signup.
+ */
+export async function sendSupervisorOTP(
+  email: string,
+  purpose: 'login' | 'signup' = 'login'
+): Promise<{ success: boolean; message: string }> {
+  return apiFetch('/api/auth/send-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email, role: 'supervisor', purpose }),
+  })
+}
+
+/**
+ * Verify OTP and get tokens (for login).
+ */
+export async function verifySupervisorOTP(
+  email: string,
+  otp: string
+): Promise<{ accessToken: string; refreshToken: string; user: AuthUser; profile: AuthUser }> {
+  const data = await apiFetch<{ accessToken: string; refreshToken: string; user?: AuthUser; profile?: AuthUser }>('/api/auth/verify', {
+    method: 'POST',
+    body: JSON.stringify({ email, otp }),
+  })
+
+  setTokens(data.accessToken, data.refreshToken)
+  const user = data.user || data.profile
+  if (user) storeUser(user)
+
+  return { ...data, user: user!, profile: user! }
+}
+
+/**
+ * Supervisor signup: verify OTP + create access request.
+ */
+export async function supervisorSignup(
+  email: string,
+  otp: string,
+  fullName: string,
+  metadata: Record<string, unknown>
+): Promise<{ success: boolean; message: string }> {
+  return apiFetch('/api/auth/supervisor-signup', {
+    method: 'POST',
+    body: JSON.stringify({ email, otp, fullName, metadata }),
+  })
+}

@@ -6,7 +6,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -41,6 +41,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { apiFetch } from "@/lib/api/client"
+import { sendSupervisorOTP, supervisorSignup } from "@/lib/api/auth"
 import { professionalProfileSchema, bankingSchema } from "@/lib/validations/auth"
 import { QUALIFICATIONS, EXPERTISE_AREAS, INDIAN_BANKS } from "@/lib/constants"
 
@@ -142,6 +143,15 @@ export function RegisterForm() {
     ifscCode: "",
     upiId: "",
   })
+  const [otpSent, setOtpSent] = useState(false)
+  const [otp, setOtp] = useState("")
+  const [resendCooldown, setResendCooldown] = useState(0)
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [resendCooldown])
 
   // Step 1 form
   const emailForm = useForm<EmailStepData>({
@@ -208,12 +218,26 @@ export function RegisterForm() {
     setStep(4)
   }
 
+  const handleSendOtp = async () => {
+    setError(null)
+    setIsLoading(true)
+    try {
+      await sendSupervisorOTP(emailData.email.trim().toLowerCase(), 'signup')
+      setOtpSent(true)
+      setResendCooldown(60)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to send verification code.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSubmit = async () => {
+    if (otp.length !== 6) return
     setError(null)
     setIsLoading(true)
     try {
       const trimmed = emailData.email.trim().toLowerCase()
-
       const metadata = {
         qualification: profileData.qualification,
         yearsOfExperience: profileData.yearsOfExperience,
@@ -224,28 +248,7 @@ export function RegisterForm() {
         ifscCode: bankingData.ifscCode,
         upiId: bankingData.upiId || "",
       }
-
-      await apiFetch("/api/access-requests", {
-        method: "POST",
-        body: JSON.stringify({
-          email: trimmed,
-          role: "supervisor",
-          full_name: emailData.fullName,
-          metadata,
-        }),
-      })
-
-      // Fire-and-forget confirmation email
-      fetch("/api/email/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          template: "access-request-confirmed",
-          to: trimmed,
-          data: { email: trimmed, fullName: emailData.fullName },
-        }),
-      }).catch((err) => console.error("Failed to send confirmation email:", err))
-
+      await supervisorSignup(trimmed, otp, emailData.fullName, metadata)
       router.push(`/pending?email=${encodeURIComponent(trimmed)}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.")
@@ -671,35 +674,92 @@ export function RegisterForm() {
             </div>
           </div>
 
+          {/* OTP verification */}
+          {otpSent && (
+            <div className="rounded-xl border border-orange-200/60 bg-orange-50/50 p-4 space-y-3">
+              <p className="text-xs font-semibold text-[#F97316] uppercase tracking-wider">
+                Verify Email
+              </p>
+              <p className="text-sm text-gray-600">
+                Enter the 6-digit code sent to <span className="font-medium text-[#1C1C1C]">{emailData.email}</span>
+              </p>
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                placeholder="000000"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                disabled={isLoading}
+                autoFocus
+                className="h-12 text-center text-2xl font-mono tracking-[0.5em] bg-white border-gray-200 rounded-xl text-[#1C1C1C] placeholder:text-gray-300 focus-visible:border-[#F97316] focus-visible:ring-4 focus-visible:ring-orange-500/10 transition-all"
+              />
+              <div className="flex justify-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={resendCooldown > 0}
+                  onClick={handleSendOtp}
+                  className="text-xs text-gray-500 hover:text-orange-600"
+                >
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setStep(3)}
+              onClick={() => { setStep(3); setOtpSent(false); setOtp("") }}
               disabled={isLoading}
               className="flex-1 h-11 rounded-xl border-gray-200 text-gray-600 hover:bg-gray-50"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="flex-1 h-11 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  Submit Application
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </>
-              )}
-            </Button>
+            {!otpSent ? (
+              <Button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={isLoading}
+                className="flex-1 h-11 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    Send Verification Code
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isLoading || otp.length !== 6}
+                className="flex-1 h-11 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    Verify & Submit
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            )}
           </div>
 
           <p className="text-center text-xs text-gray-400">
