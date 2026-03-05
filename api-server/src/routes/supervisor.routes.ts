@@ -1,10 +1,26 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
-import { Supervisor, SupervisorActivation, User, Project, Doer, UserDoerReview, SupervisorDoerReview, SupervisorWallet, WalletTransaction, SupportTicket, Subject, Notification, TrainingModule } from '../models';
+import { Supervisor, SupervisorActivation, User, Project, Doer, UserDoerReview, SupervisorDoerReview, SupervisorWallet, WalletTransaction, SupportTicket, Subject, Notification, TrainingModule, ChatRoom } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
+
+/** Auto-add a user to the project's chat room (upsert + join) */
+async function autoJoinProjectChat(projectId: string, userId: string, role: string) {
+  const chatRoom = await ChatRoom.findOneAndUpdate(
+    { projectId, roomType: 'project_all' },
+    { $setOnInsert: { projectId, roomType: 'project_all', name: 'Project Chat', participants: [] } },
+    { upsert: true, new: true }
+  );
+  const isInRoom = chatRoom.participants.some((p: any) => p.id.toString() === userId);
+  if (!isInRoom) {
+    await ChatRoom.updateOne(
+      { _id: chatRoom._id },
+      { $push: { participants: { id: userId, role, joinedAt: new Date(), isActive: true } } }
+    );
+  }
+}
 
 // GET /supervisors/me - Get current supervisor's data
 router.get('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
@@ -666,6 +682,9 @@ router.post('/projects/:id/assign-doer', authenticate, async (req: Request, res:
       });
       if (io) io.to(`user:${project.userId}`).emit('notification:new', ownerNotification);
     }
+
+    // Auto-add doer to project chat room
+    if (doer_id) await autoJoinProjectChat(req.params.id, doer_id, 'doer');
 
     res.json({ success: true, project });
   } catch (err) {

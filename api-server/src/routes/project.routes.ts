@@ -2,10 +2,26 @@ import { Router, Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
-import { Project, Notification, Supervisor } from '../models';
+import { Project, Notification, Supervisor, ChatRoom } from '../models';
 import { uploadBufferToCloudinary } from '../services/upload.service';
 import { AppError } from '../middleware/errorHandler';
 import multer from 'multer';
+
+/** Auto-add a user to the project's chat room (upsert + join) */
+async function autoJoinProjectChat(projectId: string, userId: string, role: string) {
+  const chatRoom = await ChatRoom.findOneAndUpdate(
+    { projectId, roomType: 'project_all' },
+    { $setOnInsert: { projectId, roomType: 'project_all', name: 'Project Chat', participants: [] } },
+    { upsert: true, new: true }
+  );
+  const isInRoom = chatRoom.participants.some((p: any) => p.id.toString() === userId);
+  if (!isInRoom) {
+    await ChatRoom.updateOne(
+      { _id: chatRoom._id },
+      { $push: { participants: { id: userId, role, joinedAt: new Date(), isActive: true } } }
+    );
+  }
+}
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
@@ -290,6 +306,27 @@ router.put('/:id', authenticate, async (req: Request, res: Response, next: NextF
     const io = req.app.get('io');
     if (io && updated?.userId) {
       io.to(`user:${updated.userId}`).emit('project:updated', { projectId: updated._id });
+    }
+
+    // Notify participants when live doc URL is updated
+    if (updates.liveDocumentUrl !== undefined && updated) {
+      const recipients = [updated.userId, updated.supervisorId, updated.doerId]
+        .filter(id => id && id.toString() !== uid);
+      for (const recipientId of recipients) {
+        const recipientRole = recipientId!.toString() === updated.userId?.toString() ? 'user'
+          : recipientId!.toString() === updated.supervisorId?.toString() ? 'supervisor' : 'doer';
+        const notification = await Notification.create({
+          recipientId,
+          recipientRole,
+          type: 'live_doc_updated',
+          title: 'Live Document Updated',
+          message: updates.liveDocumentUrl
+            ? `A live document link has been added to "${updated.title}"`
+            : `Live document link removed from "${updated.title}"`,
+          data: { projectId: updated._id },
+        });
+        if (io) io.to(`user:${recipientId}`).emit('notification:new', notification);
+      }
     }
 
     res.json({ project: updated });
@@ -654,6 +691,9 @@ router.put('/:id/assign-doer', authenticate, requireRole('supervisor', 'admin'),
       if (io) io.to(`user:${project.userId}`).emit('notification:new', ownerNotification);
     }
 
+    // Auto-add doer to project chat room
+    await autoJoinProjectChat(req.params.id, doerId, 'doer');
+
     res.json({ project });
   } catch (err) {
     next(err);
@@ -955,6 +995,9 @@ router.post('/:id/claim', authenticate, async (req: Request, res: Response, next
       const io = req.app.get('io');
       if (io) io.to(`user:${project.userId}`).emit('notification:new', notification);
     }
+
+    // Auto-add supervisor to project chat room
+    await autoJoinProjectChat(req.params.id, req.user!.id, 'supervisor');
 
     res.json({ success: true, project });
   } catch (err) {

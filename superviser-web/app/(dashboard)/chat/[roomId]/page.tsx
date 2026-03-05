@@ -241,33 +241,37 @@ export default function ChatRoomPage() {
   // Transform rooms to ChatWindow format
   // The API may return field names like room_type, participant_role
   // which differ from the database type definitions, so we cast to any during mapping.
-  const chatRooms: ChatRoom[] = rooms.map((room: any) => ({
-    id: room.id,
-    project_id: room.project_id || undefined,
-    project_number: room.projects?.project_number || "Unknown",
-    type: (room.room_type || room.type) as ChatRoom["type"],
-    name: (room.room_type || room.type) === "project_user_supervisor"
-      ? "Client Chat"
-      : (room.room_type || room.type) === "project_supervisor_doer"
-        ? "Expert Chat"
-        : "Group Chat",
-    participants: (room.chat_participants || []).map((p: any) => ({
-      id: p.id,
-      user_id: p.user_id || p.id,
-      name: p.full_name || "Unknown",
-      role: (p.participant_role || p.role) as "user" | "supervisor" | "doer",
-      avatar_url: p.avatar_url || undefined,
-      is_online: false, // Would need presence tracking
-      joined_at: p.joined_at || new Date().toISOString(),
-    })),
-    is_suspended: room.is_suspended || false,
-    suspension_reason: room.suspension_reason || undefined,
-    messages: messagesMap[room.id] || [],
-    last_message: messagesMap[room.id]?.[messagesMap[room.id].length - 1],
-    unread_count: 0,
-    created_at: room.created_at || new Date().toISOString(),
-    updated_at: room.updated_at || room.created_at || new Date().toISOString(),
-  }))
+  const chatRooms: ChatRoom[] = rooms.map((room: any) => {
+    const roomType = room.room_type || room.roomType || room.type || "project_all"
+    const projectId = room.project_id || room.projectId
+    return {
+      id: room.id,
+      project_id: projectId || undefined,
+      project_number: room.projects?.project_number || room.projectNumber || "Project",
+      type: roomType as ChatRoom["type"],
+      name: roomType === "project_user_supervisor"
+        ? "Client Chat"
+        : roomType === "project_supervisor_doer"
+          ? "Expert Chat"
+          : room.name || "Group Chat",
+      participants: (room.participants || room.chat_participants || []).map((p: any) => ({
+        id: p.id?._id || p.id || p._id,
+        user_id: p.user_id || p.id?._id || p.id || p._id,
+        name: p.full_name || p.fullName || "Participant",
+        role: (p.participant_role || p.role) as "user" | "supervisor" | "doer",
+        avatar_url: p.avatar_url || p.avatarUrl || undefined,
+        is_online: false,
+        joined_at: p.joined_at || p.joinedAt || new Date().toISOString(),
+      })),
+      is_suspended: room.is_suspended || room.isSuspended || false,
+      suspension_reason: room.suspension_reason || room.suspensionReason || undefined,
+      messages: messagesMap[room.id] || [],
+      last_message: messagesMap[room.id]?.[messagesMap[room.id].length - 1],
+      unread_count: 0,
+      created_at: room.created_at || room.createdAt || new Date().toISOString(),
+      updated_at: room.updated_at || room.updatedAt || room.created_at || room.createdAt || new Date().toISOString(),
+    }
+  })
 
   return (
     <div className="h-[calc(100vh-8rem)]">

@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { Bell, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -14,85 +13,47 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Logo } from '@/components/shared/Logo'
-import { LanguageSelector } from '@/components/language-selector'
+import { useNotifications } from '@/hooks/useNotifications'
 import { cn } from '@/lib/utils'
 
 interface HeaderProps {
-  /** Toggle sidebar open/closed */
   onMenuClick: () => void
-  /** Whether sidebar is open */
   isSidebarOpen?: boolean
-  /** Number of unread notifications */
-  notificationCount?: number
 }
 
-/**
- * Main application header
- * Contains logo, notification bell, and menu trigger
- */
-export function Header({
-  onMenuClick,
-  isSidebarOpen = false,
-  notificationCount = 0,
-}: HeaderProps) {
-  const [notifications] = useState([
-    {
-      id: '1',
-      title: 'New task assigned',
-      message: 'You have been assigned a new project',
-      time: '5 min ago',
-      read: false,
-    },
-    {
-      id: '2',
-      title: 'Payment received',
-      message: 'Your payout of Rs. 2,500 has been processed',
-      time: '1 hour ago',
-      read: false,
-    },
-    {
-      id: '3',
-      title: 'Revision requested',
-      message: 'Please review the feedback on Project #123',
-      time: '2 hours ago',
-      read: true,
-    },
-  ])
+export function Header({ onMenuClick, isSidebarOpen = false }: HeaderProps) {
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const formatTime = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return 'Just now'
+    if (mins < 60) return `${mins}m ago`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours}h ago`
+    return `${Math.floor(hours / 24)}d ago`
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
-        {/* Menu button */}
         <Button
           variant="ghost"
           size="icon"
           className="mr-2 md:hidden"
           onClick={onMenuClick}
         >
-          {isSidebarOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
-          )}
+          {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           <span className="sr-only">Toggle menu</span>
         </Button>
 
-        {/* Logo */}
         <Link href="/dashboard" className="flex items-center">
           <Logo size="sm" />
         </Link>
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Right side actions */}
         <div className="flex items-center gap-2">
-          {/* Language Selector */}
-          <LanguageSelector />
-
-          {/* Notifications */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
@@ -108,13 +69,16 @@ export function Header({
                 <span className="sr-only">Notifications</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
               <DropdownMenuLabel className="flex items-center justify-between">
                 <span>Notifications</span>
                 {unreadCount > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    {unreadCount} new
-                  </Badge>
+                  <button
+                    onClick={() => markAllAsRead()}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Mark all read
+                  </button>
                 )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -123,19 +87,18 @@ export function Header({
                   No notifications
                 </div>
               ) : (
-                notifications.map((notification) => (
+                notifications.slice(0, 10).map((notification) => (
                   <DropdownMenuItem
                     key={notification.id}
                     className={cn(
                       'flex flex-col items-start gap-1 p-3 cursor-pointer',
-                      !notification.read && 'bg-muted/50'
+                      !notification.isRead && 'bg-muted/50'
                     )}
+                    onClick={() => !notification.isRead && markAsRead(notification.id)}
                   >
                     <div className="flex items-center gap-2 w-full">
-                      <span className="font-medium text-sm">
-                        {notification.title}
-                      </span>
-                      {!notification.read && (
+                      <span className="font-medium text-sm">{notification.title}</span>
+                      {!notification.isRead && (
                         <div className="h-2 w-2 rounded-full bg-primary ml-auto" />
                       )}
                     </div>
@@ -143,19 +106,14 @@ export function Header({
                       {notification.message}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {notification.time}
+                      {formatTime(notification.createdAt)}
                     </span>
                   </DropdownMenuItem>
                 ))
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="justify-center text-primary">
-                View all notifications
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Desktop menu button */}
           <Button
             variant="ghost"
             size="icon"

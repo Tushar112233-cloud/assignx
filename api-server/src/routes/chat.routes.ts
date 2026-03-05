@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
-import { ChatRoom, ChatMessage, Project, User, Supervisor, Doer } from '../models';
+import { ChatRoom, ChatMessage, Project, User, Supervisor, Doer, Notification } from '../models';
 import { uploadBufferToCloudinary } from '../services/upload.service';
 import { AppError } from '../middleware/errorHandler';
 import multer from 'multer';
@@ -67,17 +67,30 @@ router.put('/read-all', authenticate, async (req: Request, res: Response, next: 
 // GET /chat/rooms
 router.get('/rooms', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const rooms = await ChatRoom.find({
+    const filter: Record<string, any> = {
       'participants.id': req.user!.id,
       'participants.isActive': true,
-    })
+    };
+    if (req.query.projectId) filter.projectId = req.query.projectId;
+    if (req.query.roomType) filter.roomType = req.query.roomType;
+
+    const rooms = await ChatRoom.find(filter)
       .sort({ lastMessageAt: -1 });
+
+    // Populate project titles for room display
+    const projectIds = [...new Set(rooms.map(r => r.projectId?.toString()).filter(Boolean))];
+    const projects = await Project.find({ _id: { $in: projectIds } }).select('title projectNumber').lean();
+    const projectMap = new Map(projects.map(p => [p._id.toString(), p]));
 
     const normalizedRooms = rooms.map(room => {
       const obj = room.toObject();
+      const project = obj.projectId ? projectMap.get(obj.projectId.toString()) : null;
       return {
         ...obj,
         id: obj._id.toString(),
+        project_id: obj.projectId?.toString(),
+        project_title: (project as any)?.title || null,
+        project_number: (project as any)?.projectNumber || null,
         room_type: obj.roomType,
         last_message_at: obj.lastMessageAt,
         created_at: obj.createdAt,
@@ -315,6 +328,43 @@ router.post('/rooms/:id/messages', authenticate, async (req: Request, res: Respo
       io.to(`chat:${req.params.id}`).emit('chat:message', enrichedMessage);
     }
 
+    // Create notifications for chat participants
+    const room = await ChatRoom.findById(req.params.id).select('projectId participants');
+    if (room?.projectId) {
+      const project = await Project.findById(room.projectId).select('title supervisorId userId doerId');
+      if (project) {
+        if (approvalStatus === 'pending' && project.supervisorId) {
+          // Doer message pending — notify supervisor
+          const notification = await Notification.create({
+            recipientId: project.supervisorId,
+            recipientRole: 'supervisor',
+            type: 'message_pending_approval',
+            title: 'Message Needs Approval',
+            message: `A doer message in "${project.title}" needs your approval`,
+            data: { projectId: project._id, chatRoomId: req.params.id, messageId: message._id },
+          });
+          if (io) io.to(`user:${project.supervisorId}`).emit('notification:new', notification);
+        } else if (approvalStatus === 'approved') {
+          // Auto-approved message (user/supervisor) — notify other participants
+          const recipients = [project.userId, project.supervisorId, project.doerId]
+            .filter(id => id && id.toString() !== req.user!.id);
+          for (const recipientId of recipients) {
+            const recipientRole = recipientId!.toString() === project.userId?.toString() ? 'user'
+              : recipientId!.toString() === project.supervisorId?.toString() ? 'supervisor' : 'doer';
+            const notification = await Notification.create({
+              recipientId,
+              recipientRole,
+              type: 'new_message',
+              title: 'New Message',
+              message: `New message in "${project.title}" project chat`,
+              data: { projectId: project._id, chatRoomId: req.params.id },
+            });
+            if (io) io.to(`user:${recipientId}`).emit('notification:new', notification);
+          }
+        }
+      }
+    }
+
     res.status(201).json({ message: enrichedMessage });
   } catch (err) {
     next(err);
@@ -450,6 +500,23 @@ router.put('/messages/:id/approve', authenticate, async (req: Request, res: Resp
       });
     }
 
+    // Notify user that a new approved message is available
+    const room = await ChatRoom.findById(message.chatRoomId).select('projectId');
+    if (room?.projectId) {
+      const project = await Project.findById(room.projectId).select('title userId');
+      if (project?.userId) {
+        const notification = await Notification.create({
+          recipientId: project.userId,
+          recipientRole: 'user',
+          type: 'new_message',
+          title: 'New Message',
+          message: `New message in "${project.title}" project chat`,
+          data: { projectId: project._id, chatRoomId: message.chatRoomId },
+        });
+        if (io) io.to(`user:${project.userId}`).emit('notification:new', notification);
+      }
+    }
+
     res.json({ success: true, message });
   } catch (err) {
     next(err);
@@ -502,6 +569,30 @@ router.delete('/messages/:id', authenticate, async (req: Request, res: Response,
     const io = req.app.get('io');
     if (io) {
       io.to(`chat:${message.chatRoomId}`).emit('chat:messageDeleted', { messageId: req.params.id });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /chat/rooms/:id/resume - Alias for unsuspend (supervisor-web uses this name)
+router.put('/rooms/:id/resume', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!['supervisor', 'admin'].includes(req.user!.role)) {
+      throw new AppError('Only supervisors can unsuspend chat rooms', 403);
+    }
+    const room = await ChatRoom.findByIdAndUpdate(
+      req.params.id,
+      { isSuspended: false, suspendedBy: null, suspendedAt: null, suspensionReason: '' },
+      { new: true }
+    );
+    if (!room) throw new AppError('Chat room not found', 404);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`chat:${req.params.id}`).emit('chat:unsuspended', { roomId: req.params.id });
     }
 
     res.json({ success: true });

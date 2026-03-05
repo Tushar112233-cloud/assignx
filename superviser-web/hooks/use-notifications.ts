@@ -133,12 +133,12 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
         })
       }
 
-      socket.on(`notification:${user.id}`, handleNew)
-      socket.on(`notification:update:${user.id}`, handleUpdate)
+      socket.on('notification:new', handleNew)
+      socket.on('notification:update', handleUpdate)
 
       return () => {
-        socket.off(`notification:${user.id}`, handleNew)
-        socket.off(`notification:update:${user.id}`, handleUpdate)
+        socket.off('notification:new', handleNew)
+        socket.off('notification:update', handleUpdate)
       }
     } catch {
       return undefined

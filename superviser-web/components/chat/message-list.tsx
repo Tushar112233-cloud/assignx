@@ -54,6 +54,7 @@ function MessageBubble({
   message,
   participant,
   isOwn,
+  showAvatar = true,
   onDownloadFile,
   onApproveMessage,
   onRejectMessage,

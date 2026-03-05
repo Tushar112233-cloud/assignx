@@ -47,11 +47,11 @@ export function NotificationBell() {
     if (!user?.id) return;
 
     const socket = getSocket();
-    const eventName = `notification:${user.id}`;
 
     const handler = (notification: any) => {
       // Only handle notifications for the user platform
-      if (notification.target_role && notification.target_role !== "user") return;
+      const role = notification.recipientRole || notification.recipient_role || notification.target_role;
+      if (role && !['user', 'student', 'professional'].includes(role)) return;
 
       // Refresh the notification store to pick up the new notification
       fetchNotifications(20);
@@ -64,10 +64,10 @@ export function NotificationBell() {
       }
     };
 
-    socket.on(eventName, handler);
+    socket.on('notification:new', handler);
 
     return () => {
-      socket.off(eventName, handler);
+      socket.off('notification:new', handler);
     };
   }, [fetchNotifications]);
 
