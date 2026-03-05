@@ -1,54 +1,6 @@
-/// {@template register_screen}
-/// Registration screen for new supervisor accounts.
-///
-/// This screen provides the entry point for new users to create an account
-/// in the Superviser App, collecting essential information before the
-/// full onboarding flow.
-///
-/// ## Overview
-/// The registration screen collects:
-/// - Full name
-/// - Email address
-/// - Password (with confirmation)
-/// - Terms of service agreement
-///
-/// ## Features
-/// - Real-time form validation
-/// - Password confirmation matching
-/// - Terms of service agreement checkbox
-/// - Loading states during submission
-/// - Error handling with snackbar notifications
-///
-/// ## Registration Flow
-/// 1. User fills in all required fields
-/// 2. User agrees to Terms of Service and Privacy Policy
-/// 3. Form validates all inputs
-/// 4. Account is created via Supabase Auth
-/// 5. Email verification link is sent
-/// 6. User is redirected to login screen
-///
-/// ## Post-Registration
-/// After successful registration:
-/// - User receives email verification link
-/// - Must verify email before signing in (depending on settings)
-/// - After email login, supervisor activation is required
-///
-/// ## Usage
-/// Typically registered as a route in GoRouter:
-/// ```dart
-/// GoRoute(
-///   path: '/register',
-///   builder: (context, state) => const RegisterScreen(),
-/// ),
-/// ```
-///
-/// ## See Also
-/// - [LoginScreen] for returning user authentication
-/// - [AuthProvider] for registration state management
-/// - [AuthRepository] for account creation operations
-/// {@endtemplate}
 library;
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -61,236 +13,568 @@ import '../../../../shared/widgets/buttons/primary_button.dart';
 import '../../../../shared/widgets/inputs/app_text_field.dart';
 import '../providers/auth_provider.dart';
 
-/// {@macro register_screen}
 class RegisterScreen extends ConsumerStatefulWidget {
-  /// Creates a [RegisterScreen].
   const RegisterScreen({super.key});
 
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-/// State for [RegisterScreen] managing form controllers and checkbox state.
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
-  /// Form key for coordinating field validation.
   final _formKey = GlobalKey<FormState>();
+  final _pageController = PageController();
+  int _currentStep = 0;
 
-  /// Controller for the full name input field.
+  // Step 1: Email & Name
   final _nameController = TextEditingController();
-
-  /// Controller for the email input field.
   final _emailController = TextEditingController();
 
-  /// Controller for the password input field.
-  final _passwordController = TextEditingController();
+  // Step 2: Professional Profile
+  final _yearsController = TextEditingController();
+  final _expertiseController = TextEditingController();
+  final _bioController = TextEditingController();
+  String _qualification = 'Masters';
 
-  /// Controller for the password confirmation input field.
-  final _confirmPasswordController = TextEditingController();
+  // Step 3: Bank Details
+  final _bankNameController = TextEditingController();
+  final _accountNumberController = TextEditingController();
+  final _ifscController = TextEditingController();
+  final _upiController = TextEditingController();
 
-  /// Focus node for the name field (first in tab order).
-  final _nameFocusNode = FocusNode();
+  // Step 4: OTP Verification
+  final _otpController = TextEditingController();
+  bool _otpSent = false;
+  int _resendCooldown = 0;
+  Timer? _cooldownTimer;
 
-  /// Focus node for the email field.
-  final _emailFocusNode = FocusNode();
-
-  /// Focus node for the password field.
-  final _passwordFocusNode = FocusNode();
-
-  /// Focus node for the confirm password field (last in tab order).
-  final _confirmPasswordFocusNode = FocusNode();
-
-  /// Tracks whether the user has agreed to terms of service.
   bool _agreedToTerms = false;
+
+  static const _qualifications = ['PhD', 'Masters', 'Bachelors', 'Diploma', 'Other'];
 
   @override
   void dispose() {
+    _pageController.dispose();
     _nameController.dispose();
     _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _nameFocusNode.dispose();
-    _emailFocusNode.dispose();
-    _passwordFocusNode.dispose();
-    _confirmPasswordFocusNode.dispose();
+    _yearsController.dispose();
+    _expertiseController.dispose();
+    _bioController.dispose();
+    _bankNameController.dispose();
+    _accountNumberController.dispose();
+    _ifscController.dispose();
+    _upiController.dispose();
+    _otpController.dispose();
+    _cooldownTimer?.cancel();
     super.dispose();
   }
 
-  /// Handles the registration form submission.
-  ///
-  /// Validates all form fields and terms agreement, then attempts
-  /// to create the account via [AuthNotifier.signUp]. On success,
-  /// shows a confirmation message and navigates to login.
-  ///
-  /// ## Validation Steps
-  /// 1. Form field validation (name, email, password, confirmation)
-  /// 2. Terms of service agreement check
-  /// 3. Server-side validation during account creation
-  Future<void> _handleRegister() async {
-    // Validate form
-    if (!_formKey.currentState!.validate()) return;
+  void _startCooldown() {
+    setState(() => _resendCooldown = 60);
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_resendCooldown <= 1) {
+        timer.cancel();
+        if (mounted) setState(() => _resendCooldown = 0);
+      } else {
+        if (mounted) setState(() => _resendCooldown--);
+      }
+    });
+  }
 
-    // Check terms agreement
-    if (!_agreedToTerms) {
+  void _goToStep(int step) {
+    setState(() => _currentStep = step);
+    _pageController.animateToPage(step, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  }
+
+  bool _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0:
+        if (_nameController.text.trim().isEmpty) {
+          context.showErrorSnackBar('Please enter your full name'.tr(context));
+          return false;
+        }
+        if (Validators.email(_emailController.text.trim()) != null) {
+          context.showErrorSnackBar('Please enter a valid email'.tr(context));
+          return false;
+        }
+        return true;
+      case 1:
+        if (_yearsController.text.trim().isEmpty) {
+          context.showErrorSnackBar('Please enter years of experience'.tr(context));
+          return false;
+        }
+        if (_expertiseController.text.trim().isEmpty) {
+          context.showErrorSnackBar('Please enter your expertise areas'.tr(context));
+          return false;
+        }
+        return true;
+      case 2:
+        if (_bankNameController.text.trim().isEmpty) {
+          context.showErrorSnackBar('Please enter bank name'.tr(context));
+          return false;
+        }
+        if (_accountNumberController.text.trim().isEmpty) {
+          context.showErrorSnackBar('Please enter account number'.tr(context));
+          return false;
+        }
+        if (_ifscController.text.trim().isEmpty) {
+          context.showErrorSnackBar('Please enter IFSC code'.tr(context));
+          return false;
+        }
+        return true;
+      default:
+        return true;
+    }
+  }
+
+  void _handleNext() {
+    context.unfocus();
+    if (!_validateCurrentStep()) return;
+
+    if (_currentStep == 2 && !_agreedToTerms) {
       context.showErrorSnackBar('Please agree to the Terms of Service'.tr(context));
       return;
     }
 
-    // Clear errors
+    _goToStep(_currentStep + 1);
+  }
+
+  Future<void> _handleSendOTP() async {
+    ref.read(authProvider.notifier).clearError();
+    try {
+      await ref.read(authProvider.notifier).sendOTP(
+        email: _emailController.text.trim(),
+        purpose: 'signup',
+      );
+      if (!mounted) return;
+      setState(() => _otpSent = true);
+      _startCooldown();
+      context.showSuccessSnackBar('Verification code sent to ${_emailController.text.trim()}'.tr(context));
+    } catch (e) {
+      if (!mounted) return;
+      final error = ref.read(authProvider).error;
+      if (error != null) context.showErrorSnackBar(error);
+    }
+  }
+
+  Future<void> _handleResendOTP() async {
+    if (_resendCooldown > 0) return;
+    ref.read(authProvider.notifier).clearError();
+    try {
+      await ref.read(authProvider.notifier).sendOTP(
+        email: _emailController.text.trim(),
+        purpose: 'signup',
+      );
+      if (!mounted) return;
+      _startCooldown();
+      context.showSuccessSnackBar('Verification code resent'.tr(context));
+    } catch (e) {
+      if (!mounted) return;
+      final error = ref.read(authProvider).error;
+      if (error != null) context.showErrorSnackBar(error);
+    }
+  }
+
+  Future<void> _handleVerifyAndSubmit() async {
+    final otp = _otpController.text.trim();
+    if (otp.length != 6) {
+      context.showErrorSnackBar('Please enter a 6-digit code'.tr(context));
+      return;
+    }
+    context.unfocus();
     ref.read(authProvider.notifier).clearError();
 
-    // Unfocus keyboard
-    context.unfocus();
+    final expertiseList = _expertiseController.text.trim()
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
 
-    // Attempt registration
-    final success = await ref.read(authProvider.notifier).signUp(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-          fullName: _nameController.text.trim(),
-        );
+    final metadata = <String, dynamic>{
+      'qualification': _qualification,
+      'yearsOfExperience': int.tryParse(_yearsController.text.trim()) ?? 0,
+      'expertiseAreas': expertiseList,
+      'bio': _bioController.text.trim(),
+      'bankName': _bankNameController.text.trim(),
+      'accountNumber': _accountNumberController.text.trim(),
+      'ifscCode': _ifscController.text.trim(),
+      'upiId': _upiController.text.trim(),
+    };
+
+    final success = await ref.read(authProvider.notifier).supervisorSignup(
+      email: _emailController.text.trim(),
+      otp: otp,
+      fullName: _nameController.text.trim(),
+      metadata: metadata,
+    );
 
     if (!mounted) return;
 
     if (success) {
-      // Show success and navigate
-      context.showSuccessSnackBar(
-        'Account created! Please check your email to verify.'.tr(context),
-      );
-      context.go('/login');
+      context.showSuccessSnackBar('Registration submitted successfully!'.tr(context));
+      context.go('/registration/pending');
     } else {
-      // Show error
       final error = ref.read(authProvider).error;
-      if (error != null) {
-        context.showErrorSnackBar(error);
-      }
+      if (error != null) context.showErrorSnackBar(error);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
-    final isLoading = authState.isLoading;
+    final isLoading = ref.watch(authProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Create Account'.tr(context)),
+        leading: _currentStep > 0
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => _goToStep(_currentStep - 1),
+              )
+            : null,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Column(
+          children: [
+            // Step indicator
+            _buildStepIndicator(),
+
+            // Pages
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _buildStep1(),
+                  _buildStep2(),
+                  _buildStep3(),
+                  _buildStep4(isLoading),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepIndicator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Row(
+        children: List.generate(4, (index) {
+          final isActive = index <= _currentStep;
+          return Expanded(
+            child: Container(
+              margin: EdgeInsets.only(right: index < 3 ? 8 : 0),
+              height: 4,
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.primary : AppColors.textSecondaryLight.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildStep1() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Personal Information'.tr(context),
+            style: AppTypography.headlineMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Enter your name and email to get started'.tr(context),
+            style: AppTypography.bodyLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 32),
+          AppTextField(
+            controller: _nameController,
+            label: 'Full Name'.tr(context),
+            hint: 'Enter your full name'.tr(context),
+            prefixIcon: Icons.person_outlined,
+            validator: Validators.name,
+            textInputAction: TextInputAction.next,
+            textCapitalization: TextCapitalization.words,
+          ),
+          const SizedBox(height: 16),
+          EmailTextField(
+            controller: _emailController,
+            validator: Validators.email,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _handleNext(),
+          ),
+          const SizedBox(height: 32),
+          PrimaryButton(
+            text: 'Next'.tr(context),
+            onPressed: _handleNext,
+          ),
+          const SizedBox(height: 24),
+          _buildLoginLink(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep2() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Professional Profile'.tr(context),
+            style: AppTypography.headlineMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tell us about your qualifications and expertise'.tr(context),
+            style: AppTypography.bodyLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Qualification dropdown
+          DropdownButtonFormField<String>(
+            value: _qualification,
+            decoration: InputDecoration(
+              labelText: 'Qualification'.tr(context),
+              prefixIcon: const Icon(Icons.school_outlined),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            items: _qualifications.map((q) => DropdownMenuItem(value: q, child: Text(q))).toList(),
+            onChanged: (v) => setState(() => _qualification = v ?? 'Masters'),
+          ),
+          const SizedBox(height: 16),
+
+          AppTextField(
+            controller: _yearsController,
+            label: 'Years of Experience'.tr(context),
+            hint: 'e.g. 5'.tr(context),
+            prefixIcon: Icons.work_outline,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+
+          AppTextField(
+            controller: _expertiseController,
+            label: 'Expertise Areas'.tr(context),
+            hint: 'e.g. Machine Learning, NLP, Computer Vision'.tr(context),
+            prefixIcon: Icons.category_outlined,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+
+          AppTextField(
+            controller: _bioController,
+            label: '${'Bio'.tr(context)} (${'optional'.tr(context)})',
+            hint: 'Brief professional summary'.tr(context),
+            prefixIcon: Icons.description_outlined,
+            maxLines: 3,
+            textInputAction: TextInputAction.done,
+          ),
+          const SizedBox(height: 32),
+
+          PrimaryButton(
+            text: 'Next'.tr(context),
+            onPressed: _handleNext,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep3() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Bank Details'.tr(context),
+            style: AppTypography.headlineMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Required for payment processing'.tr(context),
+            style: AppTypography.bodyLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          AppTextField(
+            controller: _bankNameController,
+            label: 'Bank Name'.tr(context),
+            hint: 'Enter your bank name'.tr(context),
+            prefixIcon: Icons.account_balance_outlined,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+
+          AppTextField(
+            controller: _accountNumberController,
+            label: 'Account Number'.tr(context),
+            hint: 'Enter your account number'.tr(context),
+            prefixIcon: Icons.numbers_outlined,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+
+          AppTextField(
+            controller: _ifscController,
+            label: 'IFSC Code'.tr(context),
+            hint: 'e.g. SBIN0001234'.tr(context),
+            prefixIcon: Icons.code_outlined,
+            textCapitalization: TextCapitalization.characters,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+
+          AppTextField(
+            controller: _upiController,
+            label: '${'UPI ID'.tr(context)} (${'optional'.tr(context)})',
+            hint: 'e.g. name@upi'.tr(context),
+            prefixIcon: Icons.payment_outlined,
+            textInputAction: TextInputAction.done,
+          ),
+          const SizedBox(height: 24),
+
+          _buildTermsCheckbox(),
+          const SizedBox(height: 24),
+
+          PrimaryButton(
+            text: 'Next'.tr(context),
+            onPressed: _handleNext,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep4(bool isLoading) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Verify Email'.tr(context),
+            style: AppTypography.headlineMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'We need to verify your email before submitting'.tr(context),
+            style: AppTypography.bodyLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Email display
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+            ),
+            child: Row(
               children: [
-                // Header
-                _buildHeader(),
-
-                const SizedBox(height: 32),
-
-                // Full Name
-                AppTextField(
-                  controller: _nameController,
-                  focusNode: _nameFocusNode,
-                  label: 'Full Name'.tr(context),
-                  hint: 'Enter your full name'.tr(context),
-                  prefixIcon: Icons.person_outlined,
-                  validator: Validators.name,
-                  textInputAction: TextInputAction.next,
-                  textCapitalization: TextCapitalization.words,
-                  onSubmitted: (_) => _emailFocusNode.requestFocus(),
+                Icon(Icons.email_outlined, color: AppColors.primary, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  _emailController.text.trim(),
+                  style: AppTypography.bodyMedium.copyWith(color: AppColors.primary),
                 ),
-
-                const SizedBox(height: 16),
-
-                // Email
-                EmailTextField(
-                  controller: _emailController,
-                  focusNode: _emailFocusNode,
-                  validator: Validators.email,
-                  textInputAction: TextInputAction.next,
-                  onSubmitted: (_) => _passwordFocusNode.requestFocus(),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Password
-                PasswordTextField(
-                  controller: _passwordController,
-                  focusNode: _passwordFocusNode,
-                  validator: Validators.password,
-                  textInputAction: TextInputAction.next,
-                  onSubmitted: (_) => _confirmPasswordFocusNode.requestFocus(),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Confirm Password
-                PasswordTextField(
-                  controller: _confirmPasswordController,
-                  focusNode: _confirmPasswordFocusNode,
-                  label: 'Confirm Password'.tr(context),
-                  hint: 'Re-enter your password'.tr(context),
-                  validator: (value) => Validators.confirmPassword(_passwordController.text)(value),
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _handleRegister(),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Terms checkbox
-                _buildTermsCheckbox(),
-
-                const SizedBox(height: 24),
-
-                // Register button
-                PrimaryButton(
-                  text: 'Create Account'.tr(context),
-                  onPressed: _handleRegister,
-                  isLoading: isLoading,
-                ),
-
-                const SizedBox(height: 24),
-
-                // Login link
-                _buildLoginLink(),
               ],
             ),
           ),
-        ),
+          const SizedBox(height: 24),
+
+          if (!_otpSent) ...[
+            PrimaryButton(
+              text: 'Send Verification Code'.tr(context),
+              onPressed: _handleSendOTP,
+              isLoading: isLoading,
+            ),
+          ] else ...[
+            Text(
+              'Enter the 6-digit code sent to your email'.tr(context),
+              style: AppTypography.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            AppTextField(
+              controller: _otpController,
+              label: 'Verification Code'.tr(context),
+              hint: '000000',
+              prefixIcon: Icons.lock_outline,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _handleVerifyAndSubmit(),
+            ),
+            const SizedBox(height: 16),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Didn't receive the code? ".tr(context),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                if (_resendCooldown > 0)
+                  Text(
+                    'Resend in ${_resendCooldown}s',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textSecondaryLight,
+                    ),
+                  )
+                else
+                  TertiaryButton(
+                    text: 'Resend'.tr(context),
+                    onPressed: _handleResendOTP,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            PrimaryButton(
+              text: 'Verify & Submit'.tr(context),
+              onPressed: _handleVerifyAndSubmit,
+              isLoading: isLoading,
+            ),
+          ],
+        ],
       ),
     );
   }
 
-  /// Builds the header section with title and subtitle.
-  ///
-  /// Provides context about what the registration screen does
-  /// and what the user can expect after creating an account.
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Join AdminX'.tr(context),
-          style: AppTypography.headlineMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Create your supervisor account to start managing projects'.tr(context),
-          style: AppTypography.bodyLarge.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Builds the terms of service agreement checkbox.
-  ///
-  /// Contains a checkbox and tappable text that includes links to
-  /// the Terms of Service and Privacy Policy. The text itself
-  /// toggles the checkbox when tapped for better usability.
   Widget _buildTermsCheckbox() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,10 +624,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 
-  /// Builds the login link row for existing users.
-  ///
-  /// Provides navigation to the login screen for users who
-  /// already have an account.
   Widget _buildLoginLink() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

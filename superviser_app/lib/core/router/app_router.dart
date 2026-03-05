@@ -214,12 +214,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: RouteNames.register,
         builder: (context, state) => const RegisterScreen(),
       ),
-      GoRoute(
-        path: RoutePaths.forgotPassword,
-        name: RouteNames.forgotPassword,
-        builder: (context, state) => const ForgotPasswordScreen(),
-      ),
-
       // Onboarding Route
       GoRoute(
         path: RoutePaths.onboarding,
