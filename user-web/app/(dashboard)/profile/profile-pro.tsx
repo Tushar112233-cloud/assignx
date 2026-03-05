@@ -15,7 +15,6 @@ import {
   Check,
   Mail,
   Calendar,
-  CheckCircle2,
   Camera,
   Shield,
   CreditCard,
@@ -173,8 +172,9 @@ export function ProfilePro({
     fetchStats();
   }, []);
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "U";
+  const getInitials = (fullName: string) => {
+    const parts = fullName.trim().split(/\s+/);
+    return `${parts[0]?.[0] || ""}${parts[1]?.[0] || ""}`.toUpperCase() || "U";
   };
 
   const formatDate = (dateString: string | undefined | null) => {
@@ -232,9 +232,9 @@ export function ProfilePro({
           {/* Avatar */}
           <div className="relative">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={profile.avatar} alt={profile.firstName} />
+              <AvatarImage src={profile.avatar_url || undefined} alt={profile.full_name} />
               <AvatarFallback className="text-xl bg-muted text-muted-foreground">
-                {getInitials(profile.firstName, profile.lastName)}
+                {getInitials(profile.full_name)}
               </AvatarFallback>
             </Avatar>
             <button
@@ -249,7 +249,7 @@ export function ProfilePro({
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 mb-2">
               <h1 className="text-xl font-semibold text-foreground">
-                {profile.firstName} {profile.lastName}
+                {profile.full_name}
               </h1>
               <span className={cn(
                 "px-2 py-0.5 rounded text-xs font-medium capitalize",
@@ -266,9 +266,6 @@ export function ProfilePro({
               <div className="flex items-center gap-1.5">
                 <Mail className="h-3.5 w-3.5" />
                 <span>{profile.email}</span>
-                {profile.emailVerified && (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                )}
               </div>
               <span className="hidden sm:inline">·</span>
               <div className="flex items-center gap-1.5">
@@ -500,7 +497,7 @@ export function ProfilePro({
           open={uploadDialogOpen}
           onOpenChange={setUploadDialogOpen}
           onUpload={handleAvatarUpload}
-          currentAvatar={profile.avatar}
+          currentAvatar={profile.avatar_url || undefined}
         />
       </main>
     </div>

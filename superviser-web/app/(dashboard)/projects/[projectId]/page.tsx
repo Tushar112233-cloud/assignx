@@ -873,8 +873,7 @@ function ProjectChatPanel({ projectId }: { projectId: string }) {
               {/* Messages in this group */}
               {group.messages.map((msg, idx) => {
                 const isOwn = msg.sender_role === "supervisor"
-                const senderProfile = (msg as any).profiles
-                const senderName = senderProfile?.full_name || "Unknown"
+                const senderName = (msg as any).sender_name || (msg as any).sender?.full_name || "Unknown"
                 const senderInitial = senderName.charAt(0).toUpperCase()
                 const prevMsg = group.messages[idx - 1]
                 const showSender = !prevMsg || prevMsg.sender_id !== msg.sender_id

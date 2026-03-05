@@ -11,7 +11,7 @@ export interface IDoerReview extends Document {
 
 const doerReviewSchema = new Schema<IDoerReview>({
   doerId: { type: Schema.Types.ObjectId, ref: 'Doer', required: true },
-  reviewerId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
+  reviewerId: { type: Schema.Types.ObjectId, required: true },
   projectId: { type: Schema.Types.ObjectId, ref: 'Project' },
   rating: { type: Number, required: true, min: 1, max: 5 },
   review: { type: String },

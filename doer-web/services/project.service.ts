@@ -26,10 +26,8 @@ export interface ProjectSort {
 export interface ProjectWithSupervisor extends Project {
   supervisor?: {
     id: string
-    profile: {
-      full_name: string
-      avatar_url?: string
-    }
+    full_name: string
+    avatar_url?: string
   }
 }
 

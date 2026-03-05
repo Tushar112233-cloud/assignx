@@ -162,7 +162,7 @@ function checkOnboardingComplete(
   if (!user) return false;
 
   // User must have a type selected
-  const userType = user.primary_user_type || user.user_type;
+  const userType = user.user_type;
   if (!userType) return false;
 
   // Check for type-specific profile existence
@@ -192,7 +192,7 @@ function determineOnboardingStep(
   if (!user) return null;
 
   // Step 1: User type selection
-  const userType = user.primary_user_type || user.user_type;
+  const userType = user.user_type;
   if (!userType) return "user_type";
 
   // Step 2: Profile details

@@ -75,7 +75,7 @@ function transformProject(dbProject: ProjectWithSupervisor): Project {
     price: Number(dbProject.doer_payout) || 0,
     deadline: new Date(dbProject.deadline),
     status: dbProject.status as Project['status'],
-    supervisorName: dbProject.supervisor?.profile?.full_name,
+    supervisorName: dbProject.supervisor?.full_name,
     isUrgent: isDeadlineUrgent(dbProject.deadline),
   }
 }

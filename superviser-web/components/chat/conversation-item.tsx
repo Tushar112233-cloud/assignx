@@ -87,9 +87,7 @@ function getParticipantInfo(room: ChatRoomWithParticipants) {
 
   // Get the first participant (usually the other person in the conversation)
   const participant = participants[0]
-  const profile = participant?.profiles
-
-  const name = profile?.full_name || profile?.email?.split("@")[0] || "Unknown"
+  const name = participant?.full_name || participant?.email?.split("@")[0] || "Unknown"
   const initials = name
     .split(" ")
     .map((n) => n[0])
@@ -97,7 +95,7 @@ function getParticipantInfo(room: ChatRoomWithParticipants) {
     .toUpperCase()
     .slice(0, 2)
 
-  return { name, initials, profile }
+  return { name, initials, participant }
 }
 
 export function ConversationItem({
@@ -105,7 +103,7 @@ export function ConversationItem({
   unreadCount = 0,
   onClick,
 }: ConversationItemProps) {
-  const { name, initials, profile } = getParticipantInfo(room)
+  const { name, initials, participant } = getParticipantInfo(room)
   const RoomIcon = getRoomTypeIcon(room.room_type || room.type || "direct")
   const roomLabel = getRoomTypeLabel(room.room_type || room.type || "direct")
   const project = room.projects
@@ -137,7 +135,7 @@ export function ConversationItem({
       {/* Avatar Section (left) */}
       <div className="relative shrink-0">
         <Avatar className="h-12 w-12 border border-gray-100">
-          <AvatarImage src={profile?.avatar_url || undefined} alt={name} />
+          <AvatarImage src={participant?.avatar_url || undefined} alt={name} />
           <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-sm font-semibold text-white">
             {initials}
           </AvatarFallback>

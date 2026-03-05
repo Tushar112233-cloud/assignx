@@ -72,11 +72,10 @@ router.get('/', authenticate, requireRole('admin', 'supervisor'), async (req: Re
   }
 });
 
-// GET /doers/by-profile/:profileId
-// Backward-compatible: JWT sub is now the doer _id directly, so look up by _id
-router.get('/by-profile/:profileId', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+// GET /doers/by-id/:doerId
+router.get('/by-id/:doerId', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const doer = await Doer.findById(req.params.profileId);
+    const doer = await Doer.findById(req.params.doerId);
     if (!doer) throw new AppError('Doer not found', 404);
     res.json(normalizeDoer(doer.toObject()));
   } catch (err) {
@@ -84,10 +83,10 @@ router.get('/by-profile/:profileId', authenticate, async (req: Request, res: Res
   }
 });
 
-// GET /doers/by-profile/:profileId/full - Full profile with stats for profile page
-router.get('/by-profile/:profileId/full', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+// GET /doers/by-id/:doerId/full - Full profile with stats for profile page
+router.get('/by-id/:doerId/full', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const doerId = req.params.profileId; // Now actually the doer _id
+    const doerId = req.params.doerId;
     const [doer, wallet, activeCount] = await Promise.all([
       Doer.findById(doerId),
       DoerWallet.findOne({ doerId }),

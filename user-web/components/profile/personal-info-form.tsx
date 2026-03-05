@@ -12,14 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 import { toast } from "sonner";
 import type { UserProfile, FormErrors } from "@/types/profile";
 
@@ -33,11 +26,9 @@ interface PersonalInfoFormProps {
  */
 export function PersonalInfoForm({ profile, onSave }: PersonalInfoFormProps) {
   const [formData, setFormData] = useState({
-    firstName: profile.firstName,
-    lastName: profile.lastName,
+    full_name: profile.full_name,
     email: profile.email,
     phone: profile.phone || "",
-    dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth) : undefined,
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -46,11 +37,8 @@ export function PersonalInfoForm({ profile, onSave }: PersonalInfoFormProps) {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required";
-    }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required";
+    if (!formData.full_name.trim()) {
+      newErrors.full_name = "Full name is required";
     }
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
@@ -82,11 +70,9 @@ export function PersonalInfoForm({ profile, onSave }: PersonalInfoFormProps) {
     setIsSaving(true);
     try {
       await onSave({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        full_name: formData.full_name,
         email: formData.email,
         phone: formData.phone || undefined,
-        dateOfBirth: formData.dateOfBirth?.toISOString().split("T")[0],
       });
       toast.success("Personal information updated");
       setHasChanges(false);
@@ -109,32 +95,18 @@ export function PersonalInfoForm({ profile, onSave }: PersonalInfoFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name fields */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) => handleChange("firstName", e.target.value)}
-                className={cn(errors.firstName && "border-destructive")}
-              />
-              {errors.firstName && (
-                <p className="text-sm text-destructive">{errors.firstName}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) => handleChange("lastName", e.target.value)}
-                className={cn(errors.lastName && "border-destructive")}
-              />
-              {errors.lastName && (
-                <p className="text-sm text-destructive">{errors.lastName}</p>
-              )}
-            </div>
+          {/* Full Name */}
+          <div className="space-y-2">
+            <Label htmlFor="full_name">Full Name</Label>
+            <Input
+              id="full_name"
+              value={formData.full_name}
+              onChange={(e) => handleChange("full_name", e.target.value)}
+              className={cn(errors.full_name && "border-destructive")}
+            />
+            {errors.full_name && (
+              <p className="text-sm text-destructive">{errors.full_name}</p>
+            )}
           </div>
 
           {/* Email */}
@@ -151,7 +123,7 @@ export function PersonalInfoForm({ profile, onSave }: PersonalInfoFormProps) {
                   errors.email && "border-destructive"
                 )}
               />
-              {profile.emailVerified && !emailChanged && (
+              {!emailChanged && (
                 <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
               )}
             </div>
@@ -182,42 +154,6 @@ export function PersonalInfoForm({ profile, onSave }: PersonalInfoFormProps) {
             {errors.phone && (
               <p className="text-sm text-destructive">{errors.phone}</p>
             )}
-          </div>
-
-          {/* Date of Birth */}
-          <div className="space-y-2">
-            <Label>
-              Date of Birth <span className="text-muted-foreground">(optional)</span>
-            </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !formData.dateOfBirth && "text-muted-foreground"
-                  )}
-                >
-                  {formData.dateOfBirth
-                    ? format(formData.dateOfBirth, "MMMM d, yyyy")
-                    : "Select date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={formData.dateOfBirth}
-                  onSelect={(date) => handleChange("dateOfBirth", date)}
-                  disabled={(date) =>
-                    date > new Date() || date < new Date("1900-01-01")
-                  }
-                  initialFocus
-                  captionLayout="dropdown"
-                  startMonth={new Date(1950, 0)}
-                  endMonth={new Date()}
-                />
-              </PopoverContent>
-            </Popover>
           </div>
 
           {/* Submit button */}

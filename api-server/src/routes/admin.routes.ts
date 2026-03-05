@@ -147,11 +147,11 @@ router.get('/financial-summary', async (_req: Request, res: Response, next: Next
   }
 });
 
-// GET /admin/transactions/:profileId
-router.get('/transactions/:profileId', async (req: Request, res: Response, next: NextFunction) => {
+// GET /admin/transactions/:userId
+router.get('/transactions/:userId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page = '1', limit = '50' } = req.query;
-    const result = await findAnyWallet(req.params.profileId);
+    const result = await findAnyWallet(req.params.userId);
     if (!result) return res.json({ transactions: [], total: 0 });
 
     const { wallet } = result;
@@ -172,20 +172,20 @@ router.post('/refund', async (req: Request, res: Response, next: NextFunction) =
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const { profileId, amount, reason, projectId, role } = req.body;
-    if (!profileId || !amount) throw new AppError('profileId and amount required', 400);
+    const { userId, amount, reason, projectId, role } = req.body;
+    if (!userId || !amount) throw new AppError('userId and amount required', 400);
 
-    let result = await findAnyWallet(profileId, session);
+    let result = await findAnyWallet(userId, session);
     if (!result) {
       // Create a wallet for this user. Use role hint from request body if provided.
       if (role === 'doer') {
-        const created = await DoerWallet.create([{ doerId: profileId }], { session });
+        const created = await DoerWallet.create([{ doerId: userId }], { session });
         result = { wallet: created[0], walletType: 'doer' };
       } else if (role === 'supervisor') {
-        const created = await SupervisorWallet.create([{ supervisorId: profileId }], { session });
+        const created = await SupervisorWallet.create([{ supervisorId: userId }], { session });
         result = { wallet: created[0], walletType: 'supervisor' };
       } else {
-        const created = await UserWallet.create([{ userId: profileId }], { session });
+        const created = await UserWallet.create([{ userId: userId }], { session });
         result = { wallet: created[0], walletType: 'user' };
       }
     }

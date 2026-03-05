@@ -14,14 +14,11 @@ export type AccountType = "student" | "professional" | "business_owner";
 export interface UserProfile {
   id: string;
   email: string;
-  emailVerified: boolean;
-  avatar?: string;
-  firstName: string;
-  lastName: string;
+  full_name: string;
+  avatar_url: string | null;
   phone?: string;
-  phoneVerified: boolean;
-  dateOfBirth?: string;
-  accountType?: AccountType;
+  user_type?: AccountType;
+  onboarding_completed?: boolean;
   createdAt: string;
   updatedAt: string;
 }

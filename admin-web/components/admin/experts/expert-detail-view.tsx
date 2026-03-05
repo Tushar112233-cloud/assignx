@@ -45,8 +45,6 @@ interface ExpertProfile {
   phone: string | null;
   city: string | null;
   bio: string | null;
-  profile_bio: string | null;
-  profile_created_at: string | null;
   created_at: string | null;
   review_count: number;
   session_count: number;
@@ -174,11 +172,11 @@ export function ExpertDetailView({ expert }: { expert: ExpertProfile }) {
                 </div>
                 <div className="sm:col-span-2">
                   <p className="text-sm font-medium text-muted-foreground">Bio</p>
-                  <p>{expert.bio || expert.profile_bio || "-"}</p>
+                  <p>{expert.bio || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Joined</p>
-                  <p>{formatDate(expert.profile_created_at || expert.created_at)}</p>
+                  <p>{formatDate(expert.created_at)}</p>
                 </div>
               </div>
             </CardContent>

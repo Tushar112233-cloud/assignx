@@ -81,7 +81,7 @@ export const walletService = {
   /**
    * Gets the user's wallet information.
    */
-  async getWallet(_profileId: string): Promise<Wallet | null> {
+  async getWallet(_userId: string): Promise<Wallet | null> {
     try {
       const result = await apiClient<{ wallet: Wallet }>('/api/wallets/me')
       return result.wallet || null
@@ -93,8 +93,8 @@ export const walletService = {
   /**
    * Gets the user's wallet balance.
    */
-  async getBalance(profileId: string): Promise<number> {
-    const wallet = await this.getWallet(profileId)
+  async getBalance(userId: string): Promise<number> {
+    const wallet = await this.getWallet(userId)
     return wallet?.balance ?? 0
   },
 
@@ -102,10 +102,10 @@ export const walletService = {
    * Gets wallet transaction history.
    */
   async getTransactions(
-    profileId: string,
+    userId: string,
     filters?: TransactionFilters
   ): Promise<WalletTransaction[]> {
-    const params = new URLSearchParams({ userId: profileId, walletType: 'user' })
+    const params = new URLSearchParams({ userId: userId, walletType: 'user' })
     if (filters?.type) params.set('type', filters.type)
     if (filters?.fromDate) params.set('fromDate', filters.fromDate)
     if (filters?.toDate) params.set('toDate', filters.toDate)
@@ -121,8 +121,8 @@ export const walletService = {
   /**
    * Creates a Razorpay order for wallet top-up.
    */
-  async createTopUpOrder(profileId: string, amount: number): Promise<RazorpayOrder> {
-    const shortId = profileId.substring(0, 8)
+  async createTopUpOrder(userId: string, amount: number): Promise<RazorpayOrder> {
+    const shortId = userId.substring(0, 8)
     const shortTime = Date.now().toString().slice(-10)
     const receipt = `tu_${shortId}_${shortTime}`
 
@@ -134,7 +134,7 @@ export const walletService = {
         receipt,
         notes: {
           type: 'wallet_topup',
-          user_id: profileId,
+          user_id: userId,
         },
       }),
     })
@@ -145,7 +145,7 @@ export const walletService = {
    * Verifies payment and credits wallet.
    */
   async verifyAndCreditWallet(
-    profileId: string,
+    userId: string,
     paymentData: PaymentVerification,
     amount: number,
     projectId?: string
@@ -154,7 +154,7 @@ export const walletService = {
       method: 'POST',
       body: JSON.stringify({
         ...paymentData,
-        user_id: profileId,
+        user_id: userId,
         amount,
         project_id: projectId,
       }),
@@ -193,14 +193,14 @@ export const walletService = {
    * Pays for a project using wallet balance.
    */
   async payFromWallet(
-    profileId: string,
+    userId: string,
     projectId: string,
     amount: number
   ): Promise<WalletTransaction> {
     const result = await apiClient<WalletTransaction>('/api/payments/wallet-pay', {
       method: 'POST',
       body: JSON.stringify({
-        user_id: profileId,
+        user_id: userId,
         project_id: projectId,
         amount,
       }),
@@ -238,7 +238,7 @@ export const walletService = {
    * Processes partial payment (wallet + Razorpay).
    */
   async processPartialPayment(
-    profileId: string,
+    userId: string,
     projectId: string,
     paymentData: PaymentVerification,
     totalAmount: number,
@@ -249,7 +249,7 @@ export const walletService = {
       method: 'POST',
       body: JSON.stringify({
         ...paymentData,
-        user_id: profileId,
+        user_id: userId,
         project_id: projectId,
         total_amount: totalAmount,
         wallet_amount: walletAmount,
@@ -262,9 +262,9 @@ export const walletService = {
   /**
    * Gets user's saved payment methods.
    */
-  async getPaymentMethods(profileId: string): Promise<PaymentMethod[]> {
+  async getPaymentMethods(userId: string): Promise<PaymentMethod[]> {
     const result = await apiClient<{ paymentMethods: PaymentMethod[] }>(
-      `/api/wallets/payment-methods?userId=${profileId}&roleContext=user`
+      `/api/wallets/payment-methods?userId=${userId}&roleContext=user`
     )
     return result.paymentMethods || result as any
   },
@@ -294,12 +294,12 @@ export const walletService = {
    * Sets a payment method as default.
    */
   async setDefaultPaymentMethod(
-    profileId: string,
+    userId: string,
     paymentMethodId: string
   ): Promise<void> {
     await apiClient(`/api/wallets/payment-methods/${paymentMethodId}/default`, {
       method: 'PATCH',
-      body: JSON.stringify({ userId: profileId, roleContext: 'user' }),
+      body: JSON.stringify({ userId: userId, roleContext: 'user' }),
     })
   },
 
@@ -307,13 +307,13 @@ export const walletService = {
    * Gets transaction summary for a period.
    */
   async getTransactionSummary(
-    profileId: string,
+    userId: string,
     fromDate: string,
     toDate: string
   ): Promise<{ credits: number; debits: number }> {
     try {
       const result = await apiClient<{ credits: number; debits: number }>(
-        `/api/wallets/transaction-summary?userId=${profileId}&walletType=user&fromDate=${fromDate}&toDate=${toDate}`
+        `/api/wallets/transaction-summary?userId=${userId}&walletType=user&fromDate=${fromDate}&toDate=${toDate}`
       )
       return result
     } catch {

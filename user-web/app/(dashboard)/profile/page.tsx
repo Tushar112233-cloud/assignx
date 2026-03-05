@@ -43,20 +43,14 @@ import type {
 function transformToUserProfile(user: User | null): UserProfile | null {
   if (!user) return null;
 
-  const nameParts = (user.full_name || "").split(" ");
-  const firstName = nameParts[0] || "";
-  const lastName = nameParts.slice(1).join(" ") || "";
-
   return {
     id: user.id,
     email: user.email,
-    emailVerified: true,
-    avatar: user.avatar_url || undefined,
-    firstName,
-    lastName,
+    full_name: user.full_name || "",
+    avatar_url: user.avatar_url || null,
     phone: user.phone || undefined,
-    phoneVerified: !!user.phone,
-    dateOfBirth: user.students?.date_of_birth || undefined,
+    user_type: user.user_type as UserProfile["user_type"],
+    onboarding_completed: user.onboarding_completed,
     createdAt: user.created_at,
     updatedAt: user.updated_at,
   };
@@ -212,7 +206,7 @@ export default function ProfilePage() {
   const handleProfileSave = async (data: Partial<UserProfile>) => {
     setIsSaving(true);
     try {
-      const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim();
+      const fullName = data.full_name || "";
       const result = await updateProfile({
         fullName,
         phone: data.phone,

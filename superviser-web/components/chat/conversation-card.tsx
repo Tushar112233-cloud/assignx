@@ -69,9 +69,7 @@ function getParticipantInfo(room: ChatRoomWithParticipants) {
 
   // Get the first participant (usually the other person in the conversation)
   const participant = participants[0]
-  const profile = participant?.profiles
-
-  const name = profile?.full_name || profile?.email?.split("@")[0] || "Unknown"
+  const name = participant?.full_name || participant?.email?.split("@")[0] || "Unknown"
   const initials = name
     .split(" ")
     .map((n) => n[0])
@@ -79,7 +77,7 @@ function getParticipantInfo(room: ChatRoomWithParticipants) {
     .toUpperCase()
     .slice(0, 2)
 
-  return { name, initials, profile }
+  return { name, initials }
 }
 
 export function ConversationCard({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Camera, Mail, Calendar, CheckCircle2 } from "lucide-react";
+import { Camera, Mail, Calendar } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { AccountBadge, type AccountType } from "./account-badge";
 import type { UserProfile, UserSubscription } from "@/types/profile";
 
 interface ProfileHeaderProps {
-  profile: UserProfile & { accountType?: AccountType };
+  profile: UserProfile;
   subscription: UserSubscription;
   onAvatarChange: (file: File) => void;
 }
@@ -25,8 +25,9 @@ export function ProfileHeader({
 }: ProfileHeaderProps) {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  const getInitials = (fullName: string) => {
+    const parts = fullName.trim().split(/\s+/);
+    return `${parts[0]?.[0] || ""}${parts[1]?.[0] || ""}`.toUpperCase() || "U";
   };
 
   const formatDate = (dateString: string) => {
@@ -58,9 +59,9 @@ export function ProfileHeader({
         {/* Avatar with upload button */}
         <div className="relative">
           <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-            <AvatarImage src={profile.avatar} alt={profile.firstName} />
+            <AvatarImage src={profile.avatar_url || undefined} alt={profile.full_name} />
             <AvatarFallback className="text-2xl">
-              {getInitials(profile.firstName, profile.lastName)}
+              {getInitials(profile.full_name)}
             </AvatarFallback>
           </Avatar>
           <Button
@@ -78,13 +79,13 @@ export function ProfileHeader({
         <div className="flex-1 text-center sm:text-left">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 mb-2">
             <h1 className="text-2xl font-bold">
-              {profile.firstName} {profile.lastName}
+              {profile.full_name}
             </h1>
             <div className="flex items-center gap-2">
-              {profile.accountType && (
+              {profile.user_type && (
                 <AccountBadge
-                  accountType={profile.accountType}
-                  isVerified={profile.emailVerified}
+                  accountType={profile.user_type}
+                  isVerified={true}
                   size="md"
                 />
               )}
@@ -98,9 +99,6 @@ export function ProfileHeader({
             <div className="flex items-center gap-1.5">
               <Mail className="h-4 w-4" />
               <span>{profile.email}</span>
-              {profile.emailVerified && (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-              )}
             </div>
             <span className="hidden sm:inline">•</span>
             <div className="flex items-center gap-1.5">
@@ -115,7 +113,7 @@ export function ProfileHeader({
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         onUpload={handleAvatarUpload}
-        currentAvatar={profile.avatar}
+        currentAvatar={profile.avatar_url || undefined}
       />
     </>
   );

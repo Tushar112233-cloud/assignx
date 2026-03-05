@@ -22,16 +22,12 @@ import {
 import { assignTicket } from "@/lib/admin/actions/support";
 import { toast } from "sonner";
 
-interface AdminProfile {
-  full_name: string | null;
-  email: string | null;
-  avatar_url?: string | null;
-}
-
 interface AssignDialogAdmin {
   id: string;
   role: string | null;
-  profiles: AdminProfile | AdminProfile[] | null;
+  full_name: string | null;
+  email: string | null;
+  avatar_url?: string | null;
 }
 
 export function TicketAssignDialog({
@@ -91,17 +87,12 @@ export function TicketAssignDialog({
                 <SelectValue placeholder="Select an admin" />
               </SelectTrigger>
               <SelectContent>
-                {admins.map((admin) => {
-                  const profile = Array.isArray(admin.profiles)
-                    ? admin.profiles[0]
-                    : admin.profiles;
-                  return (
+                {admins.map((admin) => (
                     <SelectItem key={admin.id} value={admin.id}>
-                      {profile?.full_name || profile?.email || admin.id}
+                      {admin.full_name || admin.email || admin.id}
                       {admin.role && ` (${admin.role})`}
                     </SelectItem>
-                  );
-                })}
+                ))}
               </SelectContent>
             </Select>
           </div>

@@ -82,7 +82,7 @@ export const API_ROUTES = {
     logout: '/api/auth/logout',
   },
   doer: {
-    profile: '/api/doer/profile',
+    profile: '/api/doers/me',
     skills: '/api/doer/skills',
     activation: '/api/doer/activation',
   },

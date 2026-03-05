@@ -121,14 +121,17 @@ function normalizeMessage(raw: Record<string, unknown>): ChatMessageWithSender {
     ? String(senderObj._id || senderObj.id || "")
     : String(raw.senderId || raw.sender_id || "")
 
-  const profiles = senderObj
+  const sender = senderObj
     ? {
+        id: senderId,
         full_name: (senderObj.fullName as string) || null,
         avatar_url: (senderObj.avatarUrl as string) || null,
       }
-    : raw.profiles
-      ? raw.profiles
-      : null
+    : raw.sender && typeof raw.sender === "object"
+      ? raw.sender
+      : raw.sender_name
+        ? { id: senderId, full_name: raw.sender_name as string, avatar_url: null }
+        : null
 
   const fileObj = raw.file as Record<string, unknown> | null | undefined
 
@@ -150,7 +153,7 @@ function normalizeMessage(raw: Record<string, unknown>): ChatMessageWithSender {
     approval_status: ((raw.approvalStatus || raw.approval_status || "approved") as 'pending' | 'approved' | 'rejected'),
     created_at: String(raw.createdAt || raw.created_at || ""),
     updated_at: (raw.updatedAt || raw.updated_at || null) as string | null,
-    profiles: profiles as ChatMessageWithSender["profiles"],
+    sender: sender as ChatMessageWithSender["sender"],
   } as ChatMessageWithSender
 }
 

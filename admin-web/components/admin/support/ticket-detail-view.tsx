@@ -162,7 +162,7 @@ interface TicketDetail {
   satisfaction_rating: number | null;
   resolution_notes: string | null;
   assigned_to: string | null;
-  assigned_admin: { profiles: TicketProfile | null } | null;
+  assigned_admin: TicketProfile | null;
   requester: TicketProfile | null;
   project: TicketProject | null;
 }
@@ -170,7 +170,9 @@ interface TicketDetail {
 interface AdminListItem {
   id: string;
   role: string | null;
-  profiles: TicketProfile | TicketProfile[] | null;
+  full_name: string | null;
+  email: string | null;
+  avatar_url?: string | null;
 }
 
 export function TicketDetailView({
@@ -187,7 +189,7 @@ export function TicketDetailView({
   const [resolutionNotes, setResolutionNotes] = React.useState("");
   const [showResolve, setShowResolve] = React.useState(false);
 
-  const assignedProfile = ticket.assigned_admin?.profiles;
+  const assignedProfile = ticket.assigned_admin;
   const requester = ticket.requester;
   const isResolved = ticket.status === "resolved" || ticket.status === "closed";
 
