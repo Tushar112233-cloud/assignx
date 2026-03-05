@@ -1,30 +1,41 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { MainShell } from '@/components/layouts/main-shell'
 
 /**
  * Main application layout (Client Component)
- * Redirects to login if not authenticated (like supervisor dashboard layout).
- * Uses client-side auth store for user data (cached in localStorage, populated by useAuth).
+ * Redirects to login if not authenticated.
+ * Redirects to /training if training not completed.
  */
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { user, isLoading } = useAuth()
+  const pathname = usePathname()
+  const { user, doer, isLoading } = useAuth()
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (isLoading) return
+    if (!user) {
       router.push('/login')
+      return
     }
-  }, [user, isLoading, router])
+    // If doer exists and training not completed, redirect to training page
+    if (doer && !doer.training_completed && pathname !== '/training') {
+      router.push('/training')
+    }
+  }, [user, doer, isLoading, router, pathname])
 
   if (isLoading || !user) {
     return null
   }
 
-  // Build user data from auth store (cached in localStorage, populated by useAuth)
+  // If training not completed, don't render main shell — redirect will happen
+  if (doer && !doer.training_completed) {
+    return null
+  }
+
   const userData = {
     name: user?.full_name || user?.email?.split('@')[0] || 'Doer',
     email: user?.email || '',

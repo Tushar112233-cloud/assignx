@@ -157,7 +157,8 @@ export function useActivation() {
 
       const progress: TrainingProgress = {
         id: `progress-${moduleId}`,
-        profile_id: doerId,
+        user_id: doerId,
+        user_role: 'doer',
         module_id: moduleId,
         started_at: new Date().toISOString(),
         completed_at: new Date().toISOString(),
@@ -232,7 +233,8 @@ export function useActivation() {
 
         const attempt: QuizAttempt = {
           id: `attempt-${Date.now()}`,
-          profile_id: store.activation.doer_id,
+          user_id: store.activation.doer_id,
+          user_role: 'doer',
           target_role: 'doer',
           attempt_number: attemptNumber,
           started_at: new Date().toISOString(),
@@ -316,19 +318,10 @@ export function useActivation() {
         const token = getAccessToken()
         if (!token || isCancelled) return
 
-        // Decode JWT to get user ID
-        let userId: string
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]))
-          userId = payload.userId || payload.sub || payload.id
-        } catch {
-          return
-        }
-
-        // Get the doer record for this user
+        // Get the doer record for the authenticated user
         let doer: { id: string } | null = null
         try {
-          doer = await apiClient<{ id: string }>(`/api/doers/by-profile/${userId}`)
+          doer = await apiClient<{ id: string }>(`/api/doers/me`)
         } catch {
           return
         }

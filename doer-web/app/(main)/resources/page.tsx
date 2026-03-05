@@ -240,7 +240,8 @@ export default function ResourcesPage() {
         ...prev,
         {
           id: `new-${Date.now()}`,
-          profile_id: doer?.profile_id || '',
+          user_id: doer?.id || '',
+          user_role: 'doer',
           module_id: moduleId,
           started_at: new Date().toISOString(),
           completed_at: new Date().toISOString(),

@@ -10,7 +10,8 @@ import {
  */
 export interface Notification {
   id: string;
-  profile_id: string;
+  recipient_id: string;
+  recipient_role: string;
   notification_type: string;
   title: string;
   body: string;

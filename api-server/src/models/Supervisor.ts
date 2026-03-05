@@ -1,7 +1,15 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISupervisor extends Document {
-  profileId: Types.ObjectId;
+  email: string;
+  fullName: string;
+  phone: string;
+  phoneVerified: boolean;
+  avatarUrl: string;
+  onboardingCompleted: boolean;
+  onboardingStep: number;
+  refreshTokens: Array<{ token: string; expiresAt: Date }>;
+  lastLoginAt: Date;
   qualification: string;
   yearsOfExperience: number;
   bio: string;
@@ -35,7 +43,18 @@ export interface ISupervisor extends Document {
 
 const supervisorSchema = new Schema<ISupervisor>(
   {
-    profileId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true, unique: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    fullName: { type: String, default: '' },
+    phone: { type: String, default: '' },
+    phoneVerified: { type: Boolean, default: false },
+    avatarUrl: { type: String, default: '' },
+    onboardingCompleted: { type: Boolean, default: false },
+    onboardingStep: { type: Number, default: 0 },
+    refreshTokens: {
+      type: [{ token: { type: String, required: true }, expiresAt: { type: Date, required: true } }],
+      default: [],
+    },
+    lastLoginAt: { type: Date },
     qualification: { type: String },
     yearsOfExperience: { type: Number, default: 0 },
     bio: { type: String, default: '' },

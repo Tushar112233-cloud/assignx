@@ -74,7 +74,6 @@ type ChatMessageInsert = Partial<ChatMessage>
 interface ChatParticipant {
   id: string
   chat_room_id: string
-  profile_id: string
   participant_role: string | null
   is_active: boolean | null
   [key: string]: any

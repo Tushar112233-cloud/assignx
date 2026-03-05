@@ -88,8 +88,8 @@ export function SupportClient({ userEmail }: SupportClientProps) {
     if (!user?.id) return
     const loadProjects = async () => {
       try {
-        // First get the doer's ID (doers.id, not profile_id)
-        const doerData = await apiClient<{ id: string }>(`/api/doers/by-profile/${user.id}`)
+        // Get the doer's ID
+        const doerData = await apiClient<{ id: string }>(`/api/doers/me`)
         if (!doerData) return
         const data = await apiClient<Array<{ id: string; project_number: string; title: string }>>(
           `/api/projects?doer_id=${doerData.id}&fields=id,project_number,title&sort=-created_at`

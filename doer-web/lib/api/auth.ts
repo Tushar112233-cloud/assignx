@@ -17,7 +17,7 @@ interface AuthUser {
 
 const AUTH_USER_KEY = 'doer_auth_user'
 
-// ── User cache (localStorage) ──
+// -- User cache (localStorage) --
 
 export function getStoredUser(): AuthUser | null {
   if (typeof window === 'undefined') return null
@@ -48,7 +48,7 @@ export function clearStoredUser(): void {
   }
 }
 
-/** Emails that bypass magic link and login directly */
+/** Emails that bypass OTP and login directly */
 const DEV_BYPASS_EMAILS = ['admin@gmail.com', 'testdoer@gmail.com']
 
 export function isDevBypassEmail(email: string): boolean {
@@ -73,48 +73,24 @@ export async function devLogin(email: string): Promise<AuthResponse> {
   return data
 }
 
-export async function sendMagicLink(email: string, role: string = 'doer'): Promise<{ message: string; sessionId: string }> {
-  const callbackUrl = `${window.location.origin}/auth/verify`
-  return apiClient<{ message: string; sessionId: string }>('/api/auth/magic-link', {
+/** Send 6-digit OTP to email */
+export async function sendOTP(
+  email: string,
+  purpose: 'login' | 'signup' = 'login',
+  role: string = 'doer'
+): Promise<{ success: boolean; message: string }> {
+  return apiClient<{ success: boolean; message: string }>('/api/auth/send-otp', {
     method: 'POST',
-    body: JSON.stringify({ email, role, callbackUrl }),
+    body: JSON.stringify({ email, purpose, role }),
     skipAuth: true,
   })
 }
 
-export async function checkMagicLinkStatus(email: string, sessionId: string): Promise<{
-  status: 'pending' | 'verified'
-  accessToken?: string
-  refreshToken?: string
-  user?: AuthUser
-  profile?: AuthUser
-}> {
-  const data = await apiClient<{
-    status: 'pending' | 'verified'
-    accessToken?: string
-    refreshToken?: string
-    user?: AuthUser
-    profile?: AuthUser
-  }>('/api/auth/magic-link/check', {
-    method: 'POST',
-    body: JSON.stringify({ email, sessionId }),
-    skipAuth: true,
-  })
-
-  if (data.status === 'verified' && data.accessToken && data.refreshToken) {
-    localStorage.setItem('access_token', data.accessToken)
-    localStorage.setItem('refresh_token', data.refreshToken)
-    const user = data.user || data.profile
-    if (user) storeUser(user)
-  }
-
-  return data
-}
-
+/** Verify OTP for login — returns JWT tokens */
 export async function verifyOTP(email: string, otp: string): Promise<AuthResponse> {
   const data = await apiClient<AuthResponse>('/api/auth/verify', {
     method: 'POST',
-    body: JSON.stringify({ email, otp }),
+    body: JSON.stringify({ email, otp, purpose: 'login', role: 'doer' }),
     skipAuth: true,
   })
 
@@ -123,7 +99,35 @@ export async function verifyOTP(email: string, otp: string): Promise<AuthRespons
     localStorage.setItem('refresh_token', data.refreshToken)
   }
 
+  const user = data.user || data.profile
+  if (user) storeUser(user)
+
   return data
+}
+
+/** Verify OTP + create doer profile (signup) */
+export async function doerSignup(
+  email: string,
+  otp: string,
+  fullName: string,
+  metadata: Record<string, unknown>
+): Promise<{ success: boolean; message: string }> {
+  return apiClient<{ success: boolean; message: string }>('/api/auth/doer-signup', {
+    method: 'POST',
+    body: JSON.stringify({ email, otp, fullName, metadata }),
+    skipAuth: true,
+  })
+}
+
+/** Check access status for an email */
+export async function checkAccessStatus(
+  email: string,
+  role: string = 'doer'
+): Promise<{ status: string; isActivated?: boolean; needsOnboarding?: boolean }> {
+  return apiClient<{ status: string; isActivated?: boolean; needsOnboarding?: boolean }>(
+    `/api/auth/access-status?email=${encodeURIComponent(email)}&role=${role}`,
+    { skipAuth: true }
+  )
 }
 
 export async function logout(): Promise<void> {

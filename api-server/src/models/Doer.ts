@@ -1,7 +1,15 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IDoer extends Document {
-  profileId: Types.ObjectId;
+  email: string;
+  fullName: string;
+  phone: string;
+  phoneVerified: boolean;
+  avatarUrl: string;
+  onboardingCompleted: boolean;
+  onboardingStep: number;
+  refreshTokens: { token: string; expiresAt: Date }[];
+  lastLoginAt: Date;
   qualification: 'high_school' | 'undergraduate' | 'postgraduate' | 'phd';
   universityName: string;
   experienceLevel: 'beginner' | 'intermediate' | 'pro';
@@ -27,6 +35,8 @@ export interface IDoer extends Document {
   };
   skills: { skillId: Types.ObjectId; proficiencyLevel: string; isVerified: boolean }[];
   subjects: { subjectId: Types.ObjectId; isPrimary: boolean }[];
+  trainingCompleted: boolean;
+  trainingCompletedAt: Date;
   isFlagged: boolean;
   flagReason: string;
   isAccessGranted: boolean;
@@ -36,7 +46,20 @@ export interface IDoer extends Document {
 
 const doerSchema = new Schema<IDoer>(
   {
-    profileId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true, unique: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    fullName: { type: String, default: '' },
+    phone: { type: String, default: '' },
+    phoneVerified: { type: Boolean, default: false },
+    avatarUrl: { type: String, default: '' },
+    onboardingCompleted: { type: Boolean, default: false },
+    onboardingStep: { type: Number, default: 0 },
+    refreshTokens: [
+      {
+        token: { type: String, required: true },
+        expiresAt: { type: Date, required: true },
+      },
+    ],
+    lastLoginAt: { type: Date },
     qualification: { type: String, enum: ['high_school', 'undergraduate', 'postgraduate', 'phd'] },
     universityName: { type: String },
     experienceLevel: { type: String, enum: ['beginner', 'intermediate', 'pro'], default: 'beginner' },
@@ -73,6 +96,8 @@ const doerSchema = new Schema<IDoer>(
         isPrimary: { type: Boolean, default: false },
       },
     ],
+    trainingCompleted: { type: Boolean, default: false },
+    trainingCompletedAt: { type: Date },
     isFlagged: { type: Boolean, default: false },
     flagReason: { type: String, default: '' },
     isAccessGranted: { type: Boolean, default: false },

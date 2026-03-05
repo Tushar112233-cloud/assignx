@@ -5,8 +5,8 @@ export interface IChatRoom extends Document {
   roomType: 'project_user_supervisor' | 'project_supervisor_doer' | 'project_all' | 'support' | 'direct';
   name: string;
   participants: {
-    profileId: Types.ObjectId;
-    role: string;
+    id: Types.ObjectId;
+    role: 'user' | 'doer' | 'supervisor' | 'admin';
     joinedAt: Date;
     lastSeenAt: Date;
     lastReadMessageId: Types.ObjectId;
@@ -28,8 +28,8 @@ const chatRoomSchema = new Schema<IChatRoom>(
     name: { type: String },
     participants: [
       {
-        profileId: { type: Schema.Types.ObjectId, ref: 'Profile' },
-        role: String,
+        id: { type: Schema.Types.ObjectId, required: true },
+        role: { type: String, enum: ['user', 'doer', 'supervisor', 'admin'], required: true },
         joinedAt: { type: Date, default: Date.now },
         lastSeenAt: { type: Date },
         lastReadMessageId: { type: Schema.Types.ObjectId },
@@ -43,7 +43,7 @@ const chatRoomSchema = new Schema<IChatRoom>(
 );
 
 chatRoomSchema.index({ projectId: 1 });
-chatRoomSchema.index({ 'participants.profileId': 1 });
+chatRoomSchema.index({ 'participants.id': 1 });
 chatRoomSchema.index({ projectId: 1, roomType: 1 }, { unique: true, sparse: true });
 
 export const ChatRoom = mongoose.model<IChatRoom>('ChatRoom', chatRoomSchema, 'chat_rooms');

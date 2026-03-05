@@ -1,18 +1,19 @@
 /**
- * Profile and user-related types
+ * Doer and related types (profile-less architecture)
+ * Each role owns its own identity fields directly.
  * @module types/profile
  */
 
-import type { UserRole, Qualification, ExperienceLevel } from './common.types'
+import type { Qualification, ExperienceLevel } from './common.types'
 
 /**
- * User profile interface
- * Core identity information for all users
+ * Doer interface
+ * Doer document with embedded identity/auth fields (no separate profile)
  */
-export interface Profile {
-  /** Unique identifier */
+export interface Doer {
+  /** Unique doer identifier (also used as JWT sub) */
   id: string
-  /** User email address */
+  /** Doer email address */
   email: string
   /** Full display name */
   full_name: string
@@ -20,25 +21,8 @@ export interface Profile {
   phone: string | null
   /** Whether phone is verified */
   phone_verified: boolean
-  /** Profile picture URL */
+  /** Avatar/profile picture URL */
   avatar_url: string | null
-  /** User type in the system */
-  user_type: UserRole
-  /** Account creation timestamp */
-  created_at: string
-  /** Last update timestamp */
-  updated_at: string
-}
-
-/**
- * Doer profile interface
- * Extended profile for workers/doers
- */
-export interface Doer {
-  /** Unique doer identifier */
-  id: string
-  /** Reference to profile */
-  profile_id: string
   /** Educational qualification */
   qualification: Qualification | null
   /** University name */
@@ -83,6 +67,10 @@ export interface Doer {
   upi_id: string | null
   /** Bank verification status */
   bank_verified: boolean
+  /** Training completion status */
+  training_completed: boolean
+  /** Training completion timestamp */
+  training_completed_at: string | null
   /** Flag status */
   is_flagged: boolean
   /** Flag reason */
@@ -221,7 +209,7 @@ export interface SkillWithVerification extends Skill {
 }
 
 /**
- * Doer review from supervisor
+ * Doer review from user or supervisor
  * Rating and feedback for completed work
  */
 export interface DoerReview {
@@ -229,8 +217,10 @@ export interface DoerReview {
   id: string
   /** Doer being reviewed */
   doer_id: string
-  /** Supervisor who gave review */
+  /** Reviewer's role-collection ID */
   reviewer_id: string
+  /** Reviewer type */
+  reviewer_type: 'user' | 'supervisor'
   /** Reviewer display name */
   reviewer_name: string | null
   /** Related project */

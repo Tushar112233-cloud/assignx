@@ -5,7 +5,7 @@ import { apiClient } from '@/lib/api/client'
  */
 interface Wallet {
   id: string
-  profile_id: string
+  user_id: string
   wallet_type: string | null
   balance: number
   created_at: string | null
@@ -30,7 +30,7 @@ interface WalletTransaction {
  */
 interface PaymentMethod {
   id: string
-  profile_id: string
+  user_id: string
   method_type: string | null
   is_default: boolean | null
   is_active: boolean | null
@@ -105,7 +105,7 @@ export const walletService = {
     profileId: string,
     filters?: TransactionFilters
   ): Promise<WalletTransaction[]> {
-    const params = new URLSearchParams({ profileId, walletType: 'user' })
+    const params = new URLSearchParams({ userId: profileId, walletType: 'user' })
     if (filters?.type) params.set('type', filters.type)
     if (filters?.fromDate) params.set('fromDate', filters.fromDate)
     if (filters?.toDate) params.set('toDate', filters.toDate)
@@ -134,7 +134,7 @@ export const walletService = {
         receipt,
         notes: {
           type: 'wallet_topup',
-          profile_id: profileId,
+          user_id: profileId,
         },
       }),
     })
@@ -154,7 +154,7 @@ export const walletService = {
       method: 'POST',
       body: JSON.stringify({
         ...paymentData,
-        profile_id: profileId,
+        user_id: profileId,
         amount,
         project_id: projectId,
       }),
@@ -200,7 +200,7 @@ export const walletService = {
     const result = await apiClient<WalletTransaction>('/api/payments/wallet-pay', {
       method: 'POST',
       body: JSON.stringify({
-        profile_id: profileId,
+        user_id: profileId,
         project_id: projectId,
         amount,
       }),
@@ -249,7 +249,7 @@ export const walletService = {
       method: 'POST',
       body: JSON.stringify({
         ...paymentData,
-        profile_id: profileId,
+        user_id: profileId,
         project_id: projectId,
         total_amount: totalAmount,
         wallet_amount: walletAmount,
@@ -264,7 +264,7 @@ export const walletService = {
    */
   async getPaymentMethods(profileId: string): Promise<PaymentMethod[]> {
     const result = await apiClient<{ paymentMethods: PaymentMethod[] }>(
-      `/api/wallets/payment-methods?profileId=${profileId}&roleContext=user`
+      `/api/wallets/payment-methods?userId=${profileId}&roleContext=user`
     )
     return result.paymentMethods || result as any
   },
@@ -299,7 +299,7 @@ export const walletService = {
   ): Promise<void> {
     await apiClient(`/api/wallets/payment-methods/${paymentMethodId}/default`, {
       method: 'PATCH',
-      body: JSON.stringify({ profileId, roleContext: 'user' }),
+      body: JSON.stringify({ userId: profileId, roleContext: 'user' }),
     })
   },
 
@@ -313,7 +313,7 @@ export const walletService = {
   ): Promise<{ credits: number; debits: number }> {
     try {
       const result = await apiClient<{ credits: number; debits: number }>(
-        `/api/wallets/transaction-summary?profileId=${profileId}&walletType=user&fromDate=${fromDate}&toDate=${toDate}`
+        `/api/wallets/transaction-summary?userId=${profileId}&walletType=user&fromDate=${fromDate}&toDate=${toDate}`
       )
       return result
     } catch {

@@ -3,8 +3,28 @@ import mongoose from 'mongoose';
 import crypto from 'crypto';
 import { authenticate } from '../middleware/auth';
 import { paymentLimiter } from '../middleware/rateLimiter';
-import { Project, Wallet, WalletTransaction } from '../models';
+import { Project, UserWallet, DoerWallet, SupervisorWallet, WalletTransaction } from '../models';
 import { AppError } from '../middleware/errorHandler';
+
+function getWalletModel(role: string) {
+  switch (role) {
+    case 'user': case 'student': case 'professional': case 'business':
+      return { model: UserWallet, field: 'userId' };
+    case 'doer':
+      return { model: DoerWallet, field: 'doerId' };
+    case 'supervisor':
+      return { model: SupervisorWallet, field: 'supervisorId' };
+    default:
+      throw new AppError(`No wallet for role: ${role}`, 400);
+  }
+}
+
+function getWalletType(role: string): 'user' | 'doer' | 'supervisor' {
+  if (['user', 'student', 'professional', 'business'].includes(role)) return 'user';
+  if (role === 'doer') return 'doer';
+  if (role === 'supervisor') return 'supervisor';
+  throw new AppError(`Invalid role: ${role}`, 400);
+}
 
 const router = Router();
 
@@ -59,7 +79,8 @@ router.post('/wallet-pay', authenticate, paymentLimiter, async (req: Request, re
     const { projectId, amount } = req.body;
     if (!projectId || !amount) throw new AppError('projectId and amount required', 400);
 
-    const wallet = await Wallet.findOne({ profileId: req.user!.id }).session(session);
+    const { model: WM, field } = getWalletModel(req.user!.role);
+    const wallet = await WM.findOne({ [field]: req.user!.id }).session(session);
     if (!wallet || wallet.balance < amount) throw new AppError('Insufficient balance', 400);
 
     const project = await Project.findById(projectId).session(session);
@@ -74,6 +95,7 @@ router.post('/wallet-pay', authenticate, paymentLimiter, async (req: Request, re
     // Record transaction
     await WalletTransaction.create([{
       walletId: wallet._id,
+      walletType: getWalletType(req.user!.role),
       transactionType: 'project_payment',
       amount: -amount,
       status: 'completed',
@@ -123,7 +145,8 @@ router.post('/partial-pay', authenticate, paymentLimiter, async (req: Request, r
 
     // Debit wallet portion if any
     if (walletAmount > 0) {
-      const wallet = await Wallet.findOne({ profileId: req.user!.id }).session(session);
+      const { model: WM, field } = getWalletModel(req.user!.role);
+      const wallet = await WM.findOne({ [field]: req.user!.id }).session(session);
       if (!wallet || wallet.balance < walletAmount) throw new AppError('Insufficient wallet balance', 400);
 
       const balanceBefore = wallet.balance;
@@ -133,6 +156,7 @@ router.post('/partial-pay', authenticate, paymentLimiter, async (req: Request, r
 
       await WalletTransaction.create([{
         walletId: wallet._id,
+        walletType: getWalletType(req.user!.role),
         transactionType: 'project_payment',
         amount: -walletAmount,
         status: 'completed',

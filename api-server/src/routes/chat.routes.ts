@@ -17,7 +17,7 @@ const JWT_ROLE_MAP: Record<string, 'user' | 'supervisor' | 'doer'> = {
 router.get('/unread', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const rooms = await ChatRoom.find({
-      'participants.profileId': req.user!.id,
+      'participants.id': req.user!.id,
       'participants.isActive': true,
     });
 
@@ -28,7 +28,7 @@ router.get('/unread', authenticate, async (req: Request, res: Response, next: Ne
       const unread = await ChatMessage.countDocuments({
         chatRoomId: room._id,
         senderId: { $ne: req.user!.id },
-        readBy: { $ne: req.user!.id },
+        'readBy.id': { $ne: req.user!.id },
         isDeleted: false,
       });
       if (unread > 0) {
@@ -47,14 +47,14 @@ router.get('/unread', authenticate, async (req: Request, res: Response, next: Ne
 router.put('/read-all', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const rooms = await ChatRoom.find({
-      'participants.profileId': req.user!.id,
+      'participants.id': req.user!.id,
       'participants.isActive': true,
     });
 
     for (const room of rooms) {
       await ChatMessage.updateMany(
-        { chatRoomId: room._id, readBy: { $ne: req.user!.id } },
-        { $addToSet: { readBy: req.user!.id } }
+        { chatRoomId: room._id, 'readBy.id': { $ne: req.user!.id } },
+        { $addToSet: { readBy: { id: req.user!.id, role: req.user!.role } } }
       );
     }
 
@@ -68,10 +68,9 @@ router.put('/read-all', authenticate, async (req: Request, res: Response, next: 
 router.get('/rooms', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const rooms = await ChatRoom.find({
-      'participants.profileId': req.user!.id,
+      'participants.id': req.user!.id,
       'participants.isActive': true,
     })
-      .populate('participants.profileId', 'fullName avatarUrl')
       .sort({ lastMessageAt: -1 });
 
     const normalizedRooms = rooms.map(room => {
@@ -82,16 +81,12 @@ router.get('/rooms', authenticate, async (req: Request, res: Response, next: Nex
         room_type: obj.roomType,
         last_message_at: obj.lastMessageAt,
         created_at: obj.createdAt,
-        participants: (obj.participants || []).map((p: any) => {
-          const profile = p.profileId && typeof p.profileId === 'object' ? p.profileId : null;
-          return {
-            ...p,
-            profiles: profile ? {
-              full_name: profile.fullName || null,
-              avatar_url: profile.avatarUrl || null,
-            } : null,
-          };
-        }),
+        participants: (obj.participants || []).map((p: any) => ({
+          id: p.id,
+          role: p.role,
+          joinedAt: p.joinedAt,
+          isActive: p.isActive,
+        })),
       };
     });
 
@@ -106,8 +101,8 @@ router.post('/rooms', authenticate, async (req: Request, res: Response, next: Ne
   try {
     const { projectId, roomType, name, participantIds } = req.body;
 
-    const participants = participantIds.map((p: { profileId: string; role: string }) => ({
-      profileId: p.profileId,
+    const participants = participantIds.map((p: { id: string; role: string }) => ({
+      id: p.id,
       role: p.role,
       joinedAt: new Date(),
       isActive: true,
@@ -160,12 +155,12 @@ router.post('/rooms/project/:projectId', authenticate, async (req: Request, res:
 
     // Add caller as participant if not already present
     const isParticipant = room.participants.some(
-      (p: any) => p.profileId.toString() === requesterId
+      (p: any) => p.id.toString() === requesterId
     );
     if (!isParticipant) {
       await ChatRoom.updateOne(
         { _id: room._id },
-        { $push: { participants: { profileId: requesterId, role: 'member', joinedAt: new Date(), isActive: true } } }
+        { $push: { participants: { id: requesterId, role: req.user!.role, joinedAt: new Date(), isActive: true } } }
       );
       const updated = await ChatRoom.findById(room._id);
       const obj = updated!.toObject();
@@ -200,12 +195,12 @@ router.post('/rooms/:id/join', authenticate, async (req: Request, res: Response,
     }
 
     const isAlreadyParticipant = room.participants.some(
-      (p: any) => p.profileId.toString() === req.user!.id
+      (p: any) => p.id.toString() === req.user!.id
     );
     if (!isAlreadyParticipant) {
       await ChatRoom.updateOne(
         { _id: room._id },
-        { $push: { participants: { profileId: req.user!.id, role: req.body.role || 'member', joinedAt: new Date(), isActive: true } } }
+        { $push: { participants: { id: req.user!.id, role: req.user!.role, joinedAt: new Date(), isActive: true } } }
       );
     }
     res.json({ success: true });
@@ -217,8 +212,7 @@ router.post('/rooms/:id/join', authenticate, async (req: Request, res: Response,
 // GET /chat/rooms/:id
 router.get('/rooms/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const room = await ChatRoom.findById(req.params.id)
-      .populate('participants.profileId', 'fullName avatarUrl email');
+    const room = await ChatRoom.findById(req.params.id);
     if (!room) throw new AppError('Chat room not found', 404);
     res.json({ room });
   } catch (err) {
@@ -247,7 +241,6 @@ router.get('/rooms/:id/messages', authenticate, async (req: Request, res: Respon
 
     const [messages, total] = await Promise.all([
       ChatMessage.find(baseFilter)
-        .populate('senderId', 'fullName avatarUrl')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit)),
@@ -283,15 +276,13 @@ router.post('/rooms/:id/messages', authenticate, async (req: Request, res: Respo
     // Update room lastMessageAt
     await ChatRoom.findByIdAndUpdate(req.params.id, { lastMessageAt: new Date() });
 
-    const populated = await message.populate('senderId', 'fullName avatarUrl');
-
     // Emit to room via socket
     const io = req.app.get('io');
     if (io) {
-      io.to(`chat:${req.params.id}`).emit('chat:message', populated);
+      io.to(`chat:${req.params.id}`).emit('chat:message', message);
     }
 
-    res.status(201).json({ message: populated });
+    res.status(201).json({ message });
   } catch (err) {
     next(err);
   }
@@ -302,13 +293,13 @@ router.put('/rooms/:id/read', authenticate, async (req: Request, res: Response, 
   try {
     // Mark all messages in room as read by current user
     await ChatMessage.updateMany(
-      { chatRoomId: req.params.id, readBy: { $ne: req.user!.id } },
-      { $addToSet: { readBy: req.user!.id } }
+      { chatRoomId: req.params.id, 'readBy.id': { $ne: req.user!.id } },
+      { $addToSet: { readBy: { id: req.user!.id, role: req.user!.role } } }
     );
 
     // Update participant lastSeenAt
     await ChatRoom.updateOne(
-      { _id: req.params.id, 'participants.profileId': req.user!.id },
+      { _id: req.params.id, 'participants.id': req.user!.id },
       { $set: { 'participants.$.lastSeenAt': new Date() } }
     );
 
@@ -346,14 +337,12 @@ router.post('/rooms/:id/files', authenticate, upload.single('file'), async (req:
 
     await ChatRoom.findByIdAndUpdate(req.params.id, { lastMessageAt: new Date() });
 
-    const populated = await message.populate('senderId', 'fullName avatarUrl');
-
     const io = req.app.get('io');
     if (io) {
-      io.to(`chat:${req.params.id}`).emit('chat:message', populated);
+      io.to(`chat:${req.params.id}`).emit('chat:message', message);
     }
 
-    res.status(201).json({ message: populated });
+    res.status(201).json({ message });
   } catch (err) {
     next(err);
   }
@@ -417,7 +406,7 @@ router.put('/messages/:id/approve', authenticate, async (req: Request, res: Resp
       req.params.id,
       { approvalStatus: 'approved', approvedBy: req.user!.id, approvedAt: new Date() },
       { new: true }
-    ).populate('senderId', 'fullName avatarUrl');
+    );
     if (!message) throw new AppError('Message not found', 404);
 
     const io = req.app.get('io');

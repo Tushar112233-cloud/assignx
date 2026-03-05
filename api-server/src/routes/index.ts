@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { apiLimiter } from '../middleware/rateLimiter';
 import authRoutes from './auth.routes';
 import uploadRoutes from './upload.routes';
-import profileRoutes from './profile.routes';
+import userRoutes from './user.routes';
 import doerRoutes from './doer.routes';
 import supervisorRoutes from './supervisor.routes';
 import projectRoutes from './project.routes';
@@ -27,10 +27,11 @@ router.use(apiLimiter);
 
 router.use('/auth', authRoutes);
 router.use('/upload', uploadRoutes);
-router.use('/profiles', profileRoutes);
+router.use('/users', userRoutes);
+router.use('/profiles', userRoutes); // backward compat alias
 router.use('/doers', doerRoutes);
 router.use('/supervisors', supervisorRoutes);
-router.use('/supervisor', supervisorRoutes); // alias for mobile app compatibility
+router.use('/supervisor', supervisorRoutes);
 router.use('/projects', projectRoutes);
 router.use('/chat', chatRoutes);
 router.use('/wallets', walletRoutes);

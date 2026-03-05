@@ -38,7 +38,7 @@ export function SubjectsSection() {
       try {
         const [subjectsRes, userSubjectsRes] = await Promise.all([
           apiClient<{ subjects: ApiSubject[] }>("/api/subjects"),
-          apiClient<{ subjects: SavedSubject[] }>("/api/profiles/me/subjects"),
+          apiClient<{ subjects: SavedSubject[] }>("/api/users/me/subjects"),
         ]);
         setAllSubjects(subjectsRes.subjects || []);
         const savedIds = (userSubjectsRes.subjects || []).map((s) => s.id);
@@ -68,7 +68,7 @@ export function SubjectsSection() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await apiClient("/api/profiles/me/subjects", {
+      await apiClient("/api/users/me/subjects", {
         method: "PUT",
         body: JSON.stringify({ subjects: Array.from(selectedIds) }),
       });

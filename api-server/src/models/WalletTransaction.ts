@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IWalletTransaction extends Document {
   walletId: Types.ObjectId;
+  walletType: 'user' | 'doer' | 'supervisor';
   transactionType: string;
   amount: number;
   status: 'pending' | 'completed' | 'failed' | 'reversed';
@@ -15,6 +16,7 @@ export interface IWalletTransaction extends Document {
 
 const walletTransactionSchema = new Schema<IWalletTransaction>({
   walletId: { type: Schema.Types.ObjectId, ref: 'Wallet', required: true },
+  walletType: { type: String, enum: ['user', 'doer', 'supervisor'], required: true },
   transactionType: { type: String, required: true },
   amount: { type: Number, required: true },
   status: { type: String, enum: ['pending', 'completed', 'failed', 'reversed'], default: 'pending' },

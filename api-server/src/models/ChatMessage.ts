@@ -18,16 +18,17 @@ export interface IChatMessage extends Document {
   isFlagged: boolean;
   flaggedReason: string;
   containsContactInfo: boolean;
-  readBy: Types.ObjectId[];
+  readBy: Array<{ id: Types.ObjectId; role: string }>;
   approvalStatus: 'pending' | 'approved' | 'rejected';
   approvedBy?: Types.ObjectId;
+  approvedByRole?: string;
   approvedAt?: Date;
   createdAt: Date;
 }
 
 const chatMessageSchema = new Schema<IChatMessage>({
   chatRoomId: { type: Schema.Types.ObjectId, ref: 'ChatRoom', required: true },
-  senderId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
+  senderId: { type: Schema.Types.ObjectId, required: true },
   senderRole: { type: String, enum: ['user', 'supervisor', 'doer', 'system'], default: 'user' },
   messageType: { type: String, enum: ['text', 'file', 'image', 'system', 'revision', 'action'], default: 'text' },
   content: { type: String, default: '' },
@@ -43,9 +44,10 @@ const chatMessageSchema = new Schema<IChatMessage>({
   isFlagged: { type: Boolean, default: false },
   flaggedReason: { type: String },
   containsContactInfo: { type: Boolean, default: false },
-  readBy: [{ type: Schema.Types.ObjectId, ref: 'Profile' }],
+  readBy: [{ id: { type: Schema.Types.ObjectId }, role: String }],
   approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },
-  approvedBy: { type: Schema.Types.ObjectId, ref: 'Profile' },
+  approvedBy: { type: Schema.Types.ObjectId },
+  approvedByRole: { type: String },
   approvedAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });

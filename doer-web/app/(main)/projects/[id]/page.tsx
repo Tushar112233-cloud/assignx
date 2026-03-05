@@ -105,7 +105,7 @@ export default function ProjectWorkspacePage() {
         const room = await getOrCreateProjectChatRoom(projectId)
         setChatRoomId(room.id)
 
-        // Join chat room if user is available (use profile_id, not doer.id)
+        // Join chat room if user is available
         if (user?.id) {
           await joinChatRoom(room.id, user.id, 'doer')
         }

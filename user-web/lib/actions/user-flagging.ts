@@ -27,7 +27,7 @@ export async function flagUserForViolation(
   if (!token) return { success: false, error: "Not authenticated" };
 
   try {
-    const result = await serverApiClient("/api/profiles/flag", {
+    const result = await serverApiClient("/api/users/flag", {
       method: "POST",
       body: JSON.stringify({ userId, reason }),
     }, token);
@@ -46,7 +46,7 @@ export async function isUserFlagged(userId: string): Promise<boolean> {
   if (!token) return false;
 
   try {
-    const result = await serverApiClient(`/api/profiles/${userId}/flag-status`, {}, token);
+    const result = await serverApiClient(`/api/users/${userId}/flag-status`, {}, token);
     return result.isFlagged || result.isBlocked || false;
   } catch {
     return false;

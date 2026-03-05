@@ -48,7 +48,7 @@ export async function getInvoiceData(projectId: string): Promise<InvoiceData | n
     if (!invoiceableStatuses.includes(p.status)) return null;
     if (!p.is_paid && !p.isPaid) return null;
 
-    const profile = await serverApiClient("/api/profiles/me", {}, token);
+    const profile = await serverApiClient("/api/users/me", {}, token);
 
     const acceptedQuote = p.quotes?.find((q: any) => q.status === "accepted");
     const baseAmount = acceptedQuote?.user_amount || p.user_quote || p.userQuote || 0;

@@ -57,11 +57,7 @@ export async function verifyProjectAccess(_projectId: string): Promise<void> {
   // Authorization handled server-side
 }
 
-export async function verifyProfileOwnership(_profileId: string): Promise<void> {
-  // Authorization handled server-side
-}
-
 export async function getAuthenticatedDoer() {
   const user = await getAuthenticatedUser()
-  return { id: user.id, profile_id: user.id }
+  return { id: user.id }
 }

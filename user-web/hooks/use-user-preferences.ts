@@ -69,7 +69,7 @@ export function useUserPreferences() {
 
     const loadPreferences = async () => {
       try {
-        const data = await apiClient(`/api/profiles/${user.id}/preferences`);
+        const data = await apiClient(`/api/users/${user.id}/preferences`);
 
         if (data) {
           const notificationPrefs = data.notification_preferences as Partial<NotificationPreferences> | null;
@@ -98,7 +98,7 @@ export function useUserPreferences() {
     setIsSaving(true);
 
     try {
-      await apiClient(`/api/profiles/${user.id}/preferences`, {
+      await apiClient(`/api/users/${user.id}/preferences`, {
         method: "PUT",
         body: JSON.stringify({
           notification_preferences: newPreferences.notifications,

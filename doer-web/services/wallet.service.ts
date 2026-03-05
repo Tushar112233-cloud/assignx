@@ -16,7 +16,7 @@ interface TransactionFilter {
   limit?: number
 }
 
-export async function getWallet(profileId: string): Promise<Wallet | null> {
+export async function getWallet(): Promise<Wallet | null> {
   try {
     return await apiClient<Wallet>('/api/wallets/me')
   } catch (err) {
@@ -48,7 +48,6 @@ export async function getWalletTransactions(
 }
 
 export async function getEarningsData(
-  profileId: string,
   period: 'week' | 'month' | 'year' = 'month'
 ): Promise<EarningsData[]> {
   try {
@@ -62,7 +61,7 @@ export async function getEarningsData(
   }
 }
 
-export async function getEarningsSummary(profileId: string): Promise<{
+export async function getEarningsSummary(): Promise<{
   totalEarnings: number
   pendingPayout: number
   completedPayouts: number

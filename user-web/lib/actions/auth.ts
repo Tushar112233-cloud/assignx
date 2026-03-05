@@ -74,8 +74,8 @@ export async function createProfile(data: {
 
   try {
     const endpoint = data.userType === "student"
-      ? "/api/profiles/student"
-      : "/api/profiles/professional";
+      ? "/api/users/me"
+      : "/api/users/me";
 
     await serverApiClient(endpoint, {
       method: "POST",
@@ -110,7 +110,7 @@ export async function createStudentProfile(data: {
   if (!token) return { error: "Not authenticated" };
 
   try {
-    await serverApiClient("/api/profiles/student", {
+    await serverApiClient("/api/users/me", {
       method: "POST",
       body: JSON.stringify(data),
     }, token);
@@ -134,7 +134,7 @@ export async function createProfessionalProfile(data: {
   if (!token) return { error: "Not authenticated" };
 
   try {
-    await serverApiClient("/api/profiles/professional", {
+    await serverApiClient("/api/users/me", {
       method: "POST",
       body: JSON.stringify(data),
     }, token);

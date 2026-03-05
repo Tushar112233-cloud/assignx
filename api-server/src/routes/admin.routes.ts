@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
 import {
-  Profile, Project, Doer, Supervisor, Wallet, WalletTransaction,
+  User, Project, Doer, Supervisor, UserWallet, DoerWallet, SupervisorWallet, WalletTransaction,
   SupportTicket, Notification, Banner, FAQ, LearningResource,
   TrainingModule, College, AppSetting, AuditLog, CommunityPost,
   AccessRequest,
@@ -12,6 +12,18 @@ import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 
+// Helper: find wallet across all three wallet collections
+async function findAnyWallet(id: string, session?: mongoose.ClientSession) {
+  const opts = session ? { session } : {};
+  const uw = await UserWallet.findOne({ userId: id }, null, opts);
+  if (uw) return { wallet: uw, walletType: 'user' as const };
+  const dw = await DoerWallet.findOne({ doerId: id }, null, opts);
+  if (dw) return { wallet: dw, walletType: 'doer' as const };
+  const sw = await SupervisorWallet.findOne({ supervisorId: id }, null, opts);
+  if (sw) return { wallet: sw, walletType: 'supervisor' as const };
+  return null;
+}
+
 // All admin routes require admin role
 router.use(authenticate, requireRole('admin'));
 
@@ -19,7 +31,7 @@ router.use(authenticate, requireRole('admin'));
 router.get('/dashboard', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const [totalUsers, totalProjects, totalDoers, totalSupervisors, activeProjects, openTickets] = await Promise.all([
-      Profile.countDocuments(),
+      User.countDocuments(),
       Project.countDocuments(),
       Doer.countDocuments(),
       Supervisor.countDocuments(),
@@ -64,8 +76,8 @@ router.get('/users', async (req: Request, res: Response, next: NextFunction) => 
 
     const skip = (Number(page) - 1) * Number(limit);
     const [users, total] = await Promise.all([
-      Profile.find(filter).select('-refreshTokens').sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
-      Profile.countDocuments(filter),
+      User.find(filter).select('-refreshTokens').sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+      User.countDocuments(filter),
     ]);
 
     res.json({ users, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) });
@@ -139,9 +151,10 @@ router.get('/financial-summary', async (_req: Request, res: Response, next: Next
 router.get('/transactions/:profileId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page = '1', limit = '50' } = req.query;
-    const wallet = await Wallet.findOne({ profileId: req.params.profileId });
-    if (!wallet) return res.json({ transactions: [], total: 0 });
+    const result = await findAnyWallet(req.params.profileId);
+    if (!result) return res.json({ transactions: [], total: 0 });
 
+    const { wallet } = result;
     const skip = (Number(page) - 1) * Number(limit);
     const [transactions, total] = await Promise.all([
       WalletTransaction.find({ walletId: wallet._id }).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
@@ -159,22 +172,33 @@ router.post('/refund', async (req: Request, res: Response, next: NextFunction) =
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const { profileId, amount, reason, projectId } = req.body;
+    const { profileId, amount, reason, projectId, role } = req.body;
     if (!profileId || !amount) throw new AppError('profileId and amount required', 400);
 
-    let wallet = await Wallet.findOne({ profileId }).session(session);
-    if (!wallet) {
-      const created = await Wallet.create([{ profileId }], { session });
-      wallet = created[0];
+    let result = await findAnyWallet(profileId, session);
+    if (!result) {
+      // Create a wallet for this user. Use role hint from request body if provided.
+      if (role === 'doer') {
+        const created = await DoerWallet.create([{ doerId: profileId }], { session });
+        result = { wallet: created[0], walletType: 'doer' };
+      } else if (role === 'supervisor') {
+        const created = await SupervisorWallet.create([{ supervisorId: profileId }], { session });
+        result = { wallet: created[0], walletType: 'supervisor' };
+      } else {
+        const created = await UserWallet.create([{ userId: profileId }], { session });
+        result = { wallet: created[0], walletType: 'user' };
+      }
     }
 
-    const balanceBefore = wallet!.balance;
-    wallet!.balance += amount;
-    wallet!.totalCredited += amount;
-    await wallet!.save({ session });
+    const { wallet, walletType } = result;
+    const balanceBefore = wallet.balance;
+    wallet.balance += amount;
+    wallet.totalCredited += amount;
+    await wallet.save({ session });
 
     await WalletTransaction.create([{
-      walletId: wallet!._id,
+      walletId: wallet._id,
+      walletType,
       transactionType: 'refund',
       amount,
       status: 'completed',
@@ -182,11 +206,11 @@ router.post('/refund', async (req: Request, res: Response, next: NextFunction) =
       referenceId: projectId,
       referenceType: 'project',
       balanceBefore,
-      balanceAfter: wallet!.balance,
+      balanceAfter: wallet.balance,
     }], { session });
 
     await session.commitTransaction();
-    res.json({ success: true, balance: wallet!.balance });
+    res.json({ success: true, balance: wallet.balance });
   } catch (err) {
     await session.abortTransaction();
     next(err);
@@ -217,7 +241,7 @@ router.get('/analytics/user-growth', async (req: Request, res: Response, next: N
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - Number(months));
 
-    const growth = await Profile.aggregate([
+    const growth = await User.aggregate([
       { $match: { createdAt: { $gte: startDate } } },
       {
         $group: {
@@ -279,7 +303,8 @@ router.post('/doers/:id/approve', async (req: Request, res: Response, next: Next
     if (!doer) throw new AppError('Doer not found', 404);
 
     await Notification.create({
-      userId: doer.profileId,
+      recipientId: doer._id,
+      recipientRole: 'doer',
       type: 'access_approved',
       title: 'Access Approved',
       message: 'Your doer application has been approved!',
@@ -313,7 +338,8 @@ router.post('/supervisors/:id/approve', async (req: Request, res: Response, next
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
     await Notification.create({
-      userId: supervisor.profileId,
+      recipientId: supervisor._id,
+      recipientRole: 'supervisor',
       type: 'access_approved',
       title: 'Access Approved',
       message: 'Your supervisor application has been approved!',
@@ -527,14 +553,17 @@ router.delete('/settings/:id', async (req: Request, res: Response, next: NextFun
 // POST /admin/moderation/flag-user
 router.post('/moderation/flag-user', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { profileId, reason } = req.body;
-    const profile = await Profile.findById(profileId);
-    if (!profile) throw new AppError('User not found', 404);
+    const { id, role, reason } = req.body;
+    if (!id || !role) throw new AppError('id and role are required', 400);
 
-    if (profile.userType === 'doer') {
-      await Doer.findOneAndUpdate({ profileId }, { isFlagged: true, flagReason: reason });
-    } else if (profile.userType === 'supervisor') {
-      await Supervisor.findOneAndUpdate({ profileId }, { isFlagged: true, flagReason: reason });
+    if (role === 'doer') {
+      const doer = await Doer.findByIdAndUpdate(id, { isFlagged: true, flagReason: reason });
+      if (!doer) throw new AppError('Doer not found', 404);
+    } else if (role === 'supervisor') {
+      const supervisor = await Supervisor.findByIdAndUpdate(id, { isFlagged: true, flagReason: reason });
+      if (!supervisor) throw new AppError('Supervisor not found', 404);
+    } else {
+      throw new AppError('Invalid role for flagging', 400);
     }
 
     res.json({ success: true });
@@ -546,14 +575,17 @@ router.post('/moderation/flag-user', async (req: Request, res: Response, next: N
 // POST /admin/moderation/unflag-user
 router.post('/moderation/unflag-user', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { profileId } = req.body;
-    const profile = await Profile.findById(profileId);
-    if (!profile) throw new AppError('User not found', 404);
+    const { id, role } = req.body;
+    if (!id || !role) throw new AppError('id and role are required', 400);
 
-    if (profile.userType === 'doer') {
-      await Doer.findOneAndUpdate({ profileId }, { isFlagged: false, flagReason: '' });
-    } else if (profile.userType === 'supervisor') {
-      await Supervisor.findOneAndUpdate({ profileId }, { isFlagged: false, flagReason: '' });
+    if (role === 'doer') {
+      const doer = await Doer.findByIdAndUpdate(id, { isFlagged: false, flagReason: '' });
+      if (!doer) throw new AppError('Doer not found', 404);
+    } else if (role === 'supervisor') {
+      const supervisor = await Supervisor.findByIdAndUpdate(id, { isFlagged: false, flagReason: '' });
+      if (!supervisor) throw new AppError('Supervisor not found', 404);
+    } else {
+      throw new AppError('Invalid role for unflagging', 400);
     }
 
     res.json({ success: true });
@@ -566,8 +598,8 @@ router.post('/moderation/unflag-user', async (req: Request, res: Response, next:
 router.get('/analytics/overview', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const [totalUsers, newUsers, totalProjects, completedProjects, activeProjects, openTickets, inProgressTickets, totalDoers, pendingDoerApprovals] = await Promise.all([
-      Profile.countDocuments(),
-      Profile.countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+      User.countDocuments(),
+      User.countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
       Project.countDocuments(),
       Project.countDocuments({ status: 'completed' }),
       Project.countDocuments({ status: { $nin: ['completed', 'cancelled', 'draft'] } }),
@@ -582,7 +614,7 @@ router.get('/analytics/overview', async (_req: Request, res: Response, next: Nex
       { $group: { _id: null, total: { $sum: '$amount' } } },
     ]);
 
-    const userTypeDist = await Profile.aggregate([
+    const userTypeDist = await User.aggregate([
       { $group: { _id: '$userType', count: { $sum: 1 } } },
     ]);
     const userTypeDistribution: Record<string, number> = {};
@@ -629,8 +661,8 @@ router.get('/analytics/overview', async (_req: Request, res: Response, next: Nex
 router.get('/crm/dashboard', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const [totalCustomers, newThisMonth] = await Promise.all([
-      Profile.countDocuments({ userType: 'user' }),
-      Profile.countDocuments({ userType: 'user', createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+      User.countDocuments(),
+      User.countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
     ]);
 
     const activeThisMonth = await Project.distinct('userId', {
@@ -646,8 +678,7 @@ router.get('/crm/dashboard', async (_req: Request, res: Response, next: NextFunc
       pipeline[status] = { count: agg[0]?.count || 0, value: agg[0]?.value || 0 };
     }
 
-    const segmentAgg = await Profile.aggregate([
-      { $match: { userType: 'user' } },
+    const segmentAgg = await User.aggregate([
       { $group: { _id: '$userSubType', count: { $sum: 1 } } },
     ]);
     const segments: Record<string, number> = {};
@@ -659,9 +690,9 @@ router.get('/crm/dashboard', async (_req: Request, res: Response, next: NextFunc
       { $group: { _id: '$userId', projectCount: { $sum: 1 }, totalSpend: { $sum: '$budget' } } },
       { $sort: { totalSpend: -1 } },
       { $limit: 10 },
-      { $lookup: { from: 'profiles', localField: '_id', foreignField: '_id', as: 'profile' } },
-      { $unwind: { path: '$profile', preserveNullAndEmptyArrays: true } },
-      { $project: { _id: 1, projectCount: 1, totalSpend: 1, fullName: '$profile.fullName', email: '$profile.email' } },
+      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+      { $project: { _id: 1, projectCount: 1, totalSpend: 1, fullName: '$user.fullName', email: '$user.email' } },
     ]);
 
     res.json({
@@ -720,13 +751,14 @@ router.get('/crm/content-overview', async (_req: Request, res: Response, next: N
 // GET /admin/crm/customers/:id
 router.get('/crm/customers/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const profile = await Profile.findById(req.params.id);
-    if (!profile) throw new AppError('Customer not found', 404);
+    const user = await User.findById(req.params.id);
+    if (!user) throw new AppError('Customer not found', 404);
 
     const projects = await Project.find({ userId: req.params.id }).sort({ createdAt: -1 }).limit(20);
-    const wallet = await Wallet.findOne({ profileId: req.params.id });
+    const result = await findAnyWallet(req.params.id);
+    const wallet = result?.wallet || null;
 
-    res.json({ profile, projects, wallet, notes: [] });
+    res.json({ profile: user, projects, wallet, notes: [] });
   } catch (err) { next(err); }
 });
 
@@ -748,19 +780,51 @@ router.get('/crm/customers/:id/notes', async (_req: Request, res: Response, next
 router.post('/crm/announcements', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { title, body, targetSegment, targetRole } = req.body;
-    const filter: Record<string, unknown> = {};
-    if (targetRole) filter.userType = targetRole;
+    let sentCount = 0;
 
-    const profiles = await Profile.find(filter).select('_id');
-    for (const p of profiles) {
-      await Notification.create({
-        userId: p._id,
-        type: 'announcement',
-        title,
-        message: body,
-      });
+    if (!targetRole || targetRole === 'user' || targetRole === 'all') {
+      const users = await User.find().select('_id');
+      for (const u of users) {
+        await Notification.create({
+          recipientId: u._id,
+          recipientRole: 'user',
+          type: 'announcement',
+          title,
+          message: body,
+        });
+      }
+      sentCount += users.length;
     }
-    res.json({ success: true, sent: profiles.length });
+
+    if (targetRole === 'doer' || targetRole === 'all') {
+      const doers = await Doer.find().select('_id');
+      for (const d of doers) {
+        await Notification.create({
+          recipientId: d._id,
+          recipientRole: 'doer',
+          type: 'announcement',
+          title,
+          message: body,
+        });
+      }
+      sentCount += doers.length;
+    }
+
+    if (targetRole === 'supervisor' || targetRole === 'all') {
+      const supervisors = await Supervisor.find().select('_id');
+      for (const s of supervisors) {
+        await Notification.create({
+          recipientId: s._id,
+          recipientRole: 'supervisor',
+          type: 'announcement',
+          title,
+          message: body,
+        });
+      }
+      sentCount += supervisors.length;
+    }
+
+    res.json({ success: true, sent: sentCount });
   } catch (err) { next(err); }
 });
 
@@ -825,64 +889,71 @@ router.post('/access-requests/:id/approve', async (req: Request, res: Response, 
     );
     if (!request) throw new AppError('Access request not found', 404);
 
-    // Create profile + role record so they can log in
-    let profile = await Profile.findOne({ email: request.email });
-    if (!profile) {
-      profile = await Profile.create({
-        email: request.email,
-        fullName: request.fullName,
-        userType: request.role,
-        onboardingCompleted: false,
-      });
+    // Create Doer or Supervisor directly (they own auth fields now, no separate Profile)
+    if (request.role === 'doer') {
+      const existingDoer = await Doer.findOne({ email: request.email });
+      if (!existingDoer) {
+        const meta = request.metadata || {};
+        const doer = await Doer.create({
+          email: request.email,
+          fullName: request.fullName,
+          isAccessGranted: true,
+          isActivated: true,
+          activatedAt: new Date(),
+          qualification: meta.qualification,
+          experienceLevel: meta.experienceLevel,
+          bio: meta.bio || '',
+          bankDetails: {
+            bankName: meta.bankName || '',
+            accountNumber: meta.accountNumber || '',
+            ifscCode: meta.ifscCode || '',
+            upiId: meta.upiId || '',
+          },
+        });
+
+        await Notification.create({
+          recipientId: doer._id,
+          recipientRole: 'doer',
+          type: 'access_approved',
+          title: 'Application Approved',
+          message: `Your doer application has been approved!`,
+        });
+      }
     }
 
-    if (request.role === 'doer' && !(await Doer.findOne({ profileId: profile._id }))) {
-      const meta = request.metadata || {};
-      await Doer.create({
-        profileId: profile._id,
-        isAccessGranted: true,
-        isActivated: true,
-        activatedAt: new Date(),
-        qualification: meta.qualification,
-        experienceLevel: meta.experienceLevel,
-        bio: meta.bio || '',
-        bankDetails: {
-          bankName: meta.bankName || '',
-          accountNumber: meta.accountNumber || '',
-          ifscCode: meta.ifscCode || '',
-          upiId: meta.upiId || '',
-        },
-      });
-    }
+    if (request.role === 'supervisor') {
+      const existingSupervisor = await Supervisor.findOne({ email: request.email });
+      if (!existingSupervisor) {
+        const meta = request.metadata || {};
+        const supervisor = await Supervisor.create({
+          email: request.email,
+          fullName: request.fullName,
+          isAccessGranted: true,
+          isApproved: true,
+          isActivated: false,
+          qualification: meta.qualification || '',
+          yearsOfExperience: meta.yearsOfExperience || 0,
+          bio: meta.bio || '',
+          expertise: meta.expertiseAreas || [],
+          bankDetails: {
+            accountName: request.fullName,
+            accountNumber: meta.accountNumber || '',
+            ifscCode: meta.ifscCode || '',
+            bankName: meta.bankName || '',
+            upiId: meta.upiId || '',
+            verified: false,
+          },
+        });
 
-    if (request.role === 'supervisor' && !(await Supervisor.findOne({ profileId: profile._id }))) {
-      const meta = request.metadata || {};
-      await Supervisor.create({
-        profileId: profile._id,
-        isAccessGranted: true,
-        isApproved: true,
-        isActivated: false,
-        qualification: meta.qualification || '',
-        yearsOfExperience: meta.yearsOfExperience || 0,
-        bio: meta.bio || '',
-        expertise: meta.expertiseAreas || [],
-        bankDetails: {
-          accountName: request.fullName,
-          accountNumber: meta.accountNumber || '',
-          ifscCode: meta.ifscCode || '',
-          bankName: meta.bankName || '',
-          upiId: meta.upiId || '',
-          verified: false,
-        },
-      });
+        await Notification.create({
+          recipientId: supervisor._id,
+          recipientRole: 'supervisor',
+          type: 'access_approved',
+          title: 'Application Approved',
+          message: `Your supervisor application has been approved!`,
+        });
+      }
     }
-
-    await Notification.create({
-      userId: profile._id,
-      type: 'access_approved',
-      title: 'Application Approved',
-      message: `Your ${request.role} application has been approved!`,
-    });
 
     res.json({ request });
   } catch (err) {
@@ -912,7 +983,7 @@ router.get('/audit-logs', async (req: Request, res: Response, next: NextFunction
     const skip = (Number(page) - 1) * Number(limit);
 
     const [logs, total] = await Promise.all([
-      AuditLog.find().populate('userId', 'fullName email').sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+      AuditLog.find().sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
       AuditLog.countDocuments(),
     ]);
 

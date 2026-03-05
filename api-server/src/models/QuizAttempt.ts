@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IQuizAttempt extends Document {
   userId: Types.ObjectId;
+  userRole: 'doer' | 'supervisor';
   moduleId: Types.ObjectId;
   answers: { questionId: Types.ObjectId; selectedAnswer: number; isCorrect: boolean }[];
   score: number;
@@ -11,7 +12,8 @@ export interface IQuizAttempt extends Document {
 }
 
 const quizAttemptSchema = new Schema<IQuizAttempt>({
-  userId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
+  userId: { type: Schema.Types.ObjectId, required: true },
+  userRole: { type: String, enum: ['doer', 'supervisor'], required: true },
   moduleId: { type: Schema.Types.ObjectId, ref: 'TrainingModule', required: true },
   answers: [
     {
@@ -26,6 +28,6 @@ const quizAttemptSchema = new Schema<IQuizAttempt>({
   createdAt: { type: Date, default: Date.now },
 });
 
-quizAttemptSchema.index({ userId: 1, moduleId: 1 });
+quizAttemptSchema.index({ userId: 1, userRole: 1, moduleId: 1 });
 
 export const QuizAttempt = mongoose.model<IQuizAttempt>('QuizAttempt', quizAttemptSchema, 'quiz_attempts');

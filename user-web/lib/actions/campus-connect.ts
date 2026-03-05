@@ -239,7 +239,7 @@ export async function checkCollegeVerification(): Promise<{
   if (!token) return { isVerified: false, error: "Not authenticated" };
 
   try {
-    const result = await serverApiClient("/api/profiles/me", {}, token);
+    const result = await serverApiClient("/api/users/me", {}, token);
     return { isVerified: result.is_college_verified || result.isCollegeVerified || false, error: null };
   } catch (error: any) {
     return { isVerified: false, error: error.message };

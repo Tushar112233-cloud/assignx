@@ -20,7 +20,7 @@ export interface IExpertBooking extends Document {
 const expertBookingSchema = new Schema<IExpertBooking>(
   {
     expertId: { type: Schema.Types.ObjectId, ref: 'Expert', required: true },
-    userId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     date: { type: Date, required: true },
     timeSlot: { type: String },
     duration: { type: Number, default: 60 },

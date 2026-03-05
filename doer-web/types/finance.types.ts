@@ -33,8 +33,8 @@ export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed' | '
 export interface Wallet {
   /** Unique identifier */
   id: string
-  /** Owner profile ID */
-  profile_id: string
+  /** Owner doer ID */
+  doer_id: string
   /** Available balance */
   balance: number
   /** Currency code (INR) */

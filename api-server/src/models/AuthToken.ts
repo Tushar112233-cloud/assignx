@@ -18,7 +18,7 @@ const authTokenSchema = new Schema<IAuthToken>({
   email: { type: String, required: true },
   otp: { type: String, required: true },
   type: { type: String, default: 'otp' },
-  role: { type: String, default: '' },
+  role: { type: String, required: true },
   sessionId: { type: String, default: '' },
   verified: { type: Boolean, default: false },
   purpose: { type: String, enum: ['login', 'signup'], default: 'login' },
@@ -28,6 +28,6 @@ const authTokenSchema = new Schema<IAuthToken>({
   createdAt: { type: Date, default: Date.now },
 });
 
-authTokenSchema.index({ email: 1, purpose: 1 });
+authTokenSchema.index({ email: 1, role: 1, purpose: 1 });
 
 export const AuthToken = mongoose.model<IAuthToken>('AuthToken', authTokenSchema, 'auth_tokens');

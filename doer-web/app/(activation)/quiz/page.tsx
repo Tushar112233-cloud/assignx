@@ -74,7 +74,7 @@ export default function QuizPage() {
 
         // Get doer record
         try {
-          const doer = await apiClient<{ id: string }>(`/api/doers/by-profile/${currentUser.id}`)
+          const doer = await apiClient<{ id: string }>(`/api/doers/me`)
           if (doer && isMountedRef.current) {
             // Fetch activation status to get attempt count
             const activation = await activationService.getActivationStatus(doer.id)
@@ -117,7 +117,7 @@ export default function QuizPage() {
       // Get doer record
       let doer: { id: string } | null = null
       try {
-        doer = await apiClient<{ id: string }>(`/api/doers/by-profile/${user.id}`)
+        doer = await apiClient<{ id: string }>(`/api/doers/me`)
       } catch {
         // No doer record
       }
@@ -180,7 +180,7 @@ export default function QuizPage() {
       }
 
       // Get doer record
-      const doer = await apiClient<{ id: string }>(`/api/doers/by-profile/${user.id}`).catch(() => null)
+      const doer = await apiClient<{ id: string }>(`/api/doers/me`).catch(() => null)
 
       if (!isMountedRef.current) return
 

@@ -28,7 +28,7 @@ export interface ICommunityPost extends Document {
 
 const communityPostSchema = new Schema<ICommunityPost>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     postType: { type: String, enum: ['campus', 'pro_network', 'business_hub'], required: true },
     title: { type: String, default: '' },
     content: { type: String, default: '' },
@@ -43,7 +43,7 @@ const communityPostSchema = new Schema<ICommunityPost>(
     isActive: { type: Boolean, default: true },
     comments: [
       {
-        userId: { type: Schema.Types.ObjectId, ref: 'Profile' },
+        userId: { type: Schema.Types.ObjectId, ref: 'User' },
         content: String,
         parentId: { type: Schema.Types.ObjectId },
         likeCount: { type: Number, default: 0 },

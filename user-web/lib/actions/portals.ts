@@ -20,7 +20,7 @@ export async function getUserRoles(): Promise<PortalRole[]> {
   if (!token) return [];
 
   try {
-    const profile = await serverApiClient("/api/profiles/me", {}, token);
+    const profile = await serverApiClient("/api/users/me", {}, token);
     if (!profile) return [];
 
     // Check for extended roles from preferences
@@ -47,7 +47,7 @@ export async function addUserRole(role: PortalRole): Promise<{ success?: boolean
   if (!token) return { error: "Not authenticated" };
 
   try {
-    await serverApiClient("/api/profiles/roles", {
+    await serverApiClient("/api/users/me", {
       method: "POST",
       body: JSON.stringify({ role }),
     }, token);
@@ -68,7 +68,7 @@ export async function removeUserRole(role: PortalRole): Promise<{ success?: bool
   if (!token) return { error: "Not authenticated" };
 
   try {
-    await serverApiClient("/api/profiles/roles", {
+    await serverApiClient("/api/users/me", {
       method: "DELETE",
       body: JSON.stringify({ role }),
     }, token);

@@ -173,7 +173,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const participant = await joinChatRoom(roomId, userId, role)
 
       set((state) => {
-        if (state.participants.some((p) => p.profile_id === userId)) {
+        if (state.participants.some((p) => p.id === userId)) {
           return state
         }
         return {

@@ -101,8 +101,8 @@ export default function StatisticsPage() {
         // Convert 'all' period to 'year' for API compatibility
         const earningsPeriod = period === 'all' ? 'year' : period
         const [profileData, earnings] = await Promise.all([
-          getDoerProfile(user.id),
-          getEarningsData(user.id, earningsPeriod),
+          getDoerProfile(),
+          getEarningsData(earningsPeriod),
         ])
 
         if (stale) return

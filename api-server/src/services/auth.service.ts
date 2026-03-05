@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { AuthToken, Profile, Doer, Supervisor } from '../models';
+import { AuthToken, User, Doer, Supervisor, Admin } from '../models';
 import { AccessRequest } from '../models/AccessRequest';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from './jwt.service';
 import { sendOTPEmail } from './email.service';
@@ -14,63 +14,85 @@ function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-export const checkAccount = async (email: string) => {
-  const profile = await Profile.findOne({ email: email.toLowerCase().trim() });
-  return { exists: !!profile };
+/**
+ * Get the Mongoose model for a given role.
+ */
+function getModelByRole(role: string) {
+  switch (role) {
+    case 'user': return User;
+    case 'student': return User;
+    case 'professional': return User;
+    case 'business': return User;
+    case 'doer': return Doer;
+    case 'supervisor': return Supervisor;
+    case 'admin': return Admin;
+    default: throw new AppError(`Invalid role: ${role}`, 400);
+  }
+}
+
+export const checkAccount = async (email: string, role?: string) => {
+  const normalizedEmail = email.toLowerCase().trim();
+  if (role) {
+    const Model = getModelByRole(role);
+    const doc = await Model.findOne({ email: normalizedEmail });
+    return { exists: !!doc };
+  }
+  // Check all collections
+  const [user, doer, supervisor, admin] = await Promise.all([
+    User.findOne({ email: normalizedEmail }),
+    Doer.findOne({ email: normalizedEmail }),
+    Supervisor.findOne({ email: normalizedEmail }),
+    Admin.findOne({ email: normalizedEmail }),
+  ]);
+  return { exists: !!(user || doer || supervisor || admin) };
 };
 
-export const sendOTP = async (email: string, purpose: 'login' | 'signup', role?: string) => {
+export const sendOTP = async (email: string, purpose: 'login' | 'signup', role: string) => {
   const normalizedEmail = email.toLowerCase().trim();
+  const Model = getModelByRole(role);
+  const effectiveRole = ['student', 'professional', 'business'].includes(role) ? 'user' : role;
 
-  const profile = await Profile.findOne({ email: normalizedEmail });
+  const account = await Model.findOne({ email: normalizedEmail });
 
-  if (purpose === 'login' && !profile) {
+  if (purpose === 'login' && !account) {
     throw new AppError('No account found for this email. Please sign up first.', 404);
   }
 
   // For doer login, check activation status
-  if (purpose === 'login' && role === 'doer' && profile) {
-    const doer = await Doer.findOne({ profileId: profile._id });
-    if (doer && !doer.isActivated) {
+  if (purpose === 'login' && effectiveRole === 'doer' && account) {
+    if (!(account as any).isActivated) {
       throw new AppError('Your profile is under review. Please wait for approval.', 403);
     }
   }
 
-  // Supervisor login: profile must exist, supervisor record must exist
-  if (purpose === 'login' && role === 'supervisor' && profile) {
-    const supervisor = await Supervisor.findOne({ profileId: profile._id });
-    if (!supervisor) {
-      throw new AppError('Your supervisor account is not set up yet. Please wait for approval.', 403);
+  // Supervisor login: must be activated
+  if (purpose === 'login' && effectiveRole === 'supervisor' && account) {
+    if (!(account as any).isActivated) {
+      throw new AppError('Your supervisor account is not activated yet. Please wait for approval.', 403);
     }
   }
 
   if (purpose === 'signup') {
-    if (role === 'doer') {
-      const existingProfile = await Profile.findOne({ email: normalizedEmail });
-      if (existingProfile && existingProfile.userType === 'doer') {
-        const doer = await Doer.findOne({ profileId: existingProfile._id });
-        if (doer) {
-          throw new AppError('An account with this email already exists. Please login instead.', 409);
-        }
+    if (effectiveRole === 'doer') {
+      if (account) {
+        throw new AppError('An account with this email already exists. Please login instead.', 409);
       }
     }
-    if (role === 'supervisor') {
+    if (effectiveRole === 'supervisor') {
       const existingRequest = await AccessRequest.findOne({ email: normalizedEmail, role: 'supervisor', status: 'pending' });
       if (existingRequest) {
         throw new AppError('You already have a pending application. Please wait for approval.', 409);
       }
-      const existingProfile = await Profile.findOne({ email: normalizedEmail, userType: 'supervisor' });
-      if (existingProfile) {
-        const supervisor = await Supervisor.findOne({ profileId: existingProfile._id });
-        if (supervisor) {
-          throw new AppError('An account with this email already exists. Please login instead.', 409);
-        }
+      if (account) {
+        throw new AppError('An account with this email already exists. Please login instead.', 409);
       }
     }
   }
 
+  // Check cooldown
   const recentToken = await AuthToken.findOne({
     email: normalizedEmail,
+    role: effectiveRole,
     purpose,
   }).sort({ createdAt: -1 });
 
@@ -82,7 +104,7 @@ export const sendOTP = async (email: string, purpose: 'login' | 'signup', role?:
     }
   }
 
-  await AuthToken.deleteMany({ email: normalizedEmail, purpose });
+  await AuthToken.deleteMany({ email: normalizedEmail, role: effectiveRole, purpose });
 
   const otp = generateOTP();
   const hashedOTP = await bcrypt.hash(otp, 10);
@@ -91,7 +113,7 @@ export const sendOTP = async (email: string, purpose: 'login' | 'signup', role?:
     email: normalizedEmail,
     otp: hashedOTP,
     type: 'otp',
-    role: role || '',
+    role: effectiveRole,
     purpose,
     attempts: 0,
     lockedUntil: null,
@@ -107,10 +129,11 @@ export const sendOTP = async (email: string, purpose: 'login' | 'signup', role?:
   };
 };
 
-export const verifyOTP = async (email: string, otp: string, purpose: 'login' | 'signup', role?: string) => {
+export const verifyOTP = async (email: string, otp: string, purpose: 'login' | 'signup', role: string) => {
   const normalizedEmail = email.toLowerCase().trim();
+  const effectiveRole = ['student', 'professional', 'business'].includes(role) ? 'user' : role;
 
-  const authToken = await AuthToken.findOne({ email: normalizedEmail, purpose });
+  const authToken = await AuthToken.findOne({ email: normalizedEmail, role: effectiveRole, purpose });
   if (!authToken) {
     throw new AppError('No verification code found. Please request a new one.', 400);
   }
@@ -128,13 +151,11 @@ export const verifyOTP = async (email: string, otp: string, purpose: 'login' | '
   const isValid = await bcrypt.compare(otp, authToken.otp);
   if (!isValid) {
     authToken.attempts += 1;
-
     if (authToken.attempts >= OTP_MAX_ATTEMPTS) {
       authToken.lockedUntil = new Date(Date.now() + OTP_LOCKOUT_MINUTES * 60 * 1000);
       await authToken.save();
       throw new AppError(`Too many failed attempts. Try again in ${OTP_LOCKOUT_MINUTES} minutes.`, 429);
     }
-
     await authToken.save();
     const remaining = OTP_MAX_ATTEMPTS - authToken.attempts;
     throw new AppError(`Invalid verification code. ${remaining} attempts remaining.`, 400);
@@ -142,34 +163,35 @@ export const verifyOTP = async (email: string, otp: string, purpose: 'login' | '
 
   await AuthToken.deleteOne({ _id: authToken._id });
 
-  let profile = await Profile.findOne({ email: normalizedEmail });
+  const Model = getModelByRole(role);
+  let account = await Model.findOne({ email: normalizedEmail });
 
   if (purpose === 'signup') {
-    if (profile) {
+    if (account) {
       throw new AppError('Account already exists. Please log in.', 409);
     }
-    const userType = role || 'user';
-    profile = await Profile.create({
-      email: normalizedEmail,
-      userType,
-    });
+    // For user signup, create account directly
+    if (effectiveRole === 'user') {
+      account = await User.create({
+        email: normalizedEmail,
+        userType: role as 'student' | 'professional' | 'business',
+      });
+    } else {
+      throw new AppError('Use the dedicated signup endpoint for this role.', 400);
+    }
   } else {
-    if (!profile) {
+    if (!account) {
       throw new AppError('No account found. Please sign up first.', 404);
     }
     // For doer login, verify activation
-    if (role === 'doer') {
-      const doer = await Doer.findOne({ profileId: profile._id });
-      if (doer && !doer.isActivated) {
-        throw new AppError('Your profile is under review. Please wait for approval.', 403);
-      }
+    if (effectiveRole === 'doer' && !(account as any).isActivated) {
+      throw new AppError('Your profile is under review. Please wait for approval.', 403);
     }
   }
 
-  const effectiveRole = role || profile.userType;
   const tokenPayload = {
-    sub: profile._id.toString(),
-    email: profile.email,
+    sub: account._id.toString(),
+    email: (account as any).email,
     role: effectiveRole,
   };
 
@@ -177,32 +199,33 @@ export const verifyOTP = async (email: string, otp: string, purpose: 'login' | '
   const refreshToken = generateRefreshToken(tokenPayload);
 
   const refreshHash = await bcrypt.hash(refreshToken, 10);
-  profile.refreshTokens.push({
+  (account as any).refreshTokens.push({
     token: refreshHash,
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
-  profile.lastLoginAt = new Date();
-  await profile.save();
+  (account as any).lastLoginAt = new Date();
+  await account.save();
 
-  const profileData = {
-    id: profile._id,
-    email: profile.email,
-    fullName: profile.fullName,
-    avatarUrl: profile.avatarUrl,
+  const userData = {
+    id: account._id,
+    email: (account as any).email,
+    fullName: (account as any).fullName,
+    avatarUrl: (account as any).avatarUrl,
+    role: effectiveRole,
     userType: effectiveRole,
-    onboardingCompleted: profile.onboardingCompleted,
+    onboardingCompleted: (account as any).onboardingCompleted ?? true,
   };
 
   return {
     accessToken,
     refreshToken,
-    user: profileData,
-    profile: profileData,
+    user: userData,
+    profile: userData,
   };
 };
 
 /**
- * Doer signup: verify OTP + create Profile + Doer + AccessRequest.
+ * Doer signup: verify OTP + create Doer doc + AccessRequest.
  * Does NOT issue JWT tokens — doer must be approved by admin first.
  */
 export const doerSignup = async (
@@ -222,8 +245,8 @@ export const doerSignup = async (
 ) => {
   const normalizedEmail = email.toLowerCase().trim();
 
-  // Verify OTP (signup purpose)
-  const authToken = await AuthToken.findOne({ email: normalizedEmail, purpose: 'signup' });
+  // Verify OTP
+  const authToken = await AuthToken.findOne({ email: normalizedEmail, role: 'doer', purpose: 'signup' });
   if (!authToken) {
     throw new AppError('No verification code found. Please request a new one.', 400);
   }
@@ -251,32 +274,18 @@ export const doerSignup = async (
     throw new AppError(`Invalid verification code. ${remaining} attempts remaining.`, 400);
   }
 
-  // OTP is valid — clean up
   await AuthToken.deleteOne({ _id: authToken._id });
 
-  // Create or find profile
-  let profile = await Profile.findOne({ email: normalizedEmail });
-  if (profile) {
-    const existingDoer = await Doer.findOne({ profileId: profile._id });
-    if (existingDoer) {
-      throw new AppError('An account with this email already exists.', 409);
-    }
-    // Update existing profile to doer type
-    profile.userType = 'doer';
-    profile.fullName = fullName;
-    await profile.save();
-  } else {
-    profile = await Profile.create({
-      email: normalizedEmail,
-      fullName,
-      userType: 'doer',
-      onboardingCompleted: false,
-    });
+  // Check if doer already exists
+  const existingDoer = await Doer.findOne({ email: normalizedEmail });
+  if (existingDoer) {
+    throw new AppError('An account with this email already exists.', 409);
   }
 
-  // Create doer record (not activated — needs admin approval)
+  // Create doer record directly (not activated — needs admin approval)
   await Doer.create({
-    profileId: profile._id,
+    email: normalizedEmail,
+    fullName,
     qualification: metadata.qualification,
     experienceLevel: metadata.experienceLevel,
     bio: metadata.bio || '',
@@ -321,8 +330,8 @@ export const doerSignup = async (
 };
 
 /**
- * Verify OTP for supervisor signup — creates AccessRequest (pending).
- * Does NOT issue JWT tokens or create Profile (admin must approve first).
+ * Supervisor signup: verify OTP + create AccessRequest (pending).
+ * Does NOT issue JWT tokens or create Supervisor doc (admin must approve first).
  */
 export const supervisorSignup = async (
   email: string,
@@ -339,30 +348,22 @@ export const supervisorSignup = async (
     upiId?: string | null;
   }
 ) => {
-  // Find and verify OTP
-  const authTokens = await AuthToken.find({ email, type: 'otp_signup' });
-  if (authTokens.length === 0) {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const authToken = await AuthToken.findOne({ email: normalizedEmail, role: 'supervisor', purpose: 'signup' });
+  if (!authToken) {
     throw new AppError('No verification code found. Please request a new one.', 400);
   }
 
-  let matchedToken = null;
-  for (const at of authTokens) {
-    const isValid = await bcrypt.compare(otp, at.otp);
-    if (isValid) {
-      matchedToken = at;
-      break;
-    }
-  }
-
-  if (!matchedToken) {
+  const isValid = await bcrypt.compare(otp, authToken.otp);
+  if (!isValid) {
     throw new AppError('Invalid or expired verification code.', 400);
   }
 
-  // Clean up used token
-  await AuthToken.deleteOne({ _id: matchedToken._id });
+  await AuthToken.deleteOne({ _id: authToken._id });
 
   // Check for existing pending request
-  const existing = await AccessRequest.findOne({ email, role: 'supervisor', status: 'pending' });
+  const existing = await AccessRequest.findOne({ email: normalizedEmail, role: 'supervisor', status: 'pending' });
   if (existing) {
     return {
       success: true,
@@ -372,7 +373,7 @@ export const supervisorSignup = async (
 
   // Create access request
   await AccessRequest.create({
-    email,
+    email: normalizedEmail,
     role: 'supervisor',
     fullName,
     status: 'pending',
@@ -394,23 +395,25 @@ export const supervisorSignup = async (
   };
 };
 
-export const refreshTokens = async (refreshToken: string) => {
+export const refreshTokens = async (token: string) => {
   let decoded;
   try {
-    decoded = verifyRefreshToken(refreshToken);
+    decoded = verifyRefreshToken(token);
   } catch {
     throw new AppError('Invalid refresh token', 401);
   }
 
-  const profile = await Profile.findById(decoded.sub);
-  if (!profile) {
+  const Model = getModelByRole(decoded.role);
+  const account = await Model.findById(decoded.sub);
+  if (!account) {
     throw new AppError('User not found', 404);
   }
 
+  const accountAny = account as any;
   let tokenFound = false;
   let tokenIndex = -1;
-  for (let i = 0; i < profile.refreshTokens.length; i++) {
-    const match = await bcrypt.compare(refreshToken, profile.refreshTokens[i].token);
+  for (let i = 0; i < accountAny.refreshTokens.length; i++) {
+    const match = await bcrypt.compare(token, accountAny.refreshTokens[i].token);
     if (match) {
       tokenFound = true;
       tokenIndex = i;
@@ -422,36 +425,38 @@ export const refreshTokens = async (refreshToken: string) => {
     throw new AppError('Refresh token revoked', 401);
   }
 
-  profile.refreshTokens.splice(tokenIndex, 1);
+  accountAny.refreshTokens.splice(tokenIndex, 1);
 
   const tokenPayload = {
-    sub: profile._id.toString(),
-    email: profile.email,
-    role: profile.userType,
+    sub: account._id.toString(),
+    email: accountAny.email,
+    role: decoded.role,
   };
 
   const newAccessToken = generateAccessToken(tokenPayload);
   const newRefreshToken = generateRefreshToken(tokenPayload);
 
   const refreshHash = await bcrypt.hash(newRefreshToken, 10);
-  profile.refreshTokens.push({
+  accountAny.refreshTokens.push({
     token: refreshHash,
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
-  await profile.save();
+  await account.save();
 
   return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 };
 
-export const logout = async (profileId: string, refreshToken: string) => {
-  const profile = await Profile.findById(profileId);
-  if (!profile) return;
+export const logout = async (userId: string, role: string, refreshToken: string) => {
+  const Model = getModelByRole(role);
+  const account = await Model.findById(userId);
+  if (!account) return;
 
-  for (let i = 0; i < profile.refreshTokens.length; i++) {
-    const match = await bcrypt.compare(refreshToken, profile.refreshTokens[i].token);
+  const accountAny = account as any;
+  for (let i = 0; i < accountAny.refreshTokens.length; i++) {
+    const match = await bcrypt.compare(refreshToken, accountAny.refreshTokens[i].token);
     if (match) {
-      profile.refreshTokens.splice(i, 1);
-      await profile.save();
+      accountAny.refreshTokens.splice(i, 1);
+      await account.save();
       break;
     }
   }

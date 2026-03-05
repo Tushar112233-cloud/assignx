@@ -1,7 +1,6 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IExpert extends Document {
-  profileId: Types.ObjectId;
   name: string;
   title: string;
   specialization: string;
@@ -18,7 +17,6 @@ export interface IExpert extends Document {
 
 const expertSchema = new Schema<IExpert>(
   {
-    profileId: { type: Schema.Types.ObjectId, ref: 'Profile' },
     name: { type: String, required: true },
     title: { type: String },
     specialization: { type: String },

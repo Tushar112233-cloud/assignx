@@ -1,14 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Profile, Doer } from '@/types/database'
+import type { Doer } from '@/types/database'
 
 /**
  * Auth state interface
+ * JWT sub = doer collection _id directly; no separate profile needed.
  */
 interface AuthState {
-  /** Current user profile */
-  user: Profile | null
-  /** Current doer data */
+  /** Current doer (the primary identity) */
   doer: Doer | null
   /** Loading state */
   isLoading: boolean
@@ -16,8 +15,6 @@ interface AuthState {
   isAuthenticated: boolean
   /** Whether onboarding is complete */
   isOnboarded: boolean
-  /** Set user profile */
-  setUser: (user: Profile | null) => void
   /** Set doer data */
   setDoer: (doer: Doer | null) => void
   /** Set loading state */
@@ -34,17 +31,14 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: null,
       doer: null,
       isLoading: true,
       isAuthenticated: false,
       isOnboarded: false,
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
-      setDoer: (doer) => set({ doer }),
+      setDoer: (doer) => set({ doer, isAuthenticated: !!doer }),
       setLoading: (isLoading) => set({ isLoading }),
       setOnboarded: (isOnboarded) => set({ isOnboarded }),
       clearAuth: () => set({
-        user: null,
         doer: null,
         isLoading: true,
         isAuthenticated: false,
@@ -54,17 +48,16 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        isOnboarded: state.isOnboarded,
-        user: state.user,
         doer: state.doer,
+        isOnboarded: state.isOnboarded,
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state, error) => {
         if (error) return
-        // If we have cached user/doer from localStorage, clear loading immediately.
+        // If we have cached doer from localStorage, clear loading immediately.
         // Pages can render with cached data while useAuth refreshes in background.
         // If no cached data, keep loading=true so skeleton shows until useAuth completes.
-        if (state && (state.user || state.doer)) {
+        if (state && state.doer) {
           state.setLoading(false)
         }
       },

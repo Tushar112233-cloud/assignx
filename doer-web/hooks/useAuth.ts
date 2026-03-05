@@ -8,7 +8,7 @@ import { ROUTES } from '@/lib/constants'
 import { clearAppStorage } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import { getStoredUser, clearStoredUser } from '@/lib/api/auth'
-import type { Profile, Doer } from '@/types/database'
+import type { Doer } from '@/types/database'
 
 let _authInitStarted = false
 let _authInitComplete = false
@@ -17,44 +17,29 @@ export function useAuth() {
   const router = useRouter()
 
   const {
-    user,
     doer,
     isLoading,
     isAuthenticated,
     isOnboarded,
-    setUser,
     setDoer,
     setLoading,
     setOnboarded,
     clearAuth,
   } = useAuthStore()
 
-  const fetchProfile = useCallback(async (_userId: string) => {
+  const fetchDoer = useCallback(async () => {
     try {
-      const data = await apiClient<Profile>('/api/profiles/me')
+      const data = await apiClient<Doer>('/api/doers/me')
       return data
     } catch {
       return null
     }
   }, [])
 
-  const fetchDoer = useCallback(async (profileId: string) => {
-    try {
-      const data = await apiClient<Doer>(`/api/doers/by-profile/${profileId}`)
-      return data
-    } catch {
-      return null
-    }
-  }, [])
-
-  const fetchProfileRef = useRef(fetchProfile)
-  fetchProfileRef.current = fetchProfile
   const fetchDoerRef = useRef(fetchDoer)
   fetchDoerRef.current = fetchDoer
   const routerRef = useRef(router)
   routerRef.current = router
-  const setUserRef = useRef(setUser)
-  setUserRef.current = setUser
   const setDoerRef = useRef(setDoer)
   setDoerRef.current = setDoer
   const setLoadingRef = useRef(setLoading)
@@ -95,7 +80,7 @@ export function useAuth() {
           logger.debug('Auth', 'No token found')
           clearAuthRef.current()
 
-          // Redirect to login if on a protected route (like supervisor)
+          // Redirect to login if on a protected route
           const pathname = window.location.pathname
           const isProtectedRoute = pathname.startsWith('/dashboard') ||
                                    pathname.startsWith('/projects') ||
@@ -112,41 +97,30 @@ export function useAuth() {
           return
         }
 
-        // Decode JWT to get user ID
+        // Decode JWT to get doer ID (sub = doer collection _id)
         let userId: string
         try {
           const payload = JSON.parse(atob(token.split('.')[1]))
-          userId = payload.userId || payload.sub || payload.id
+          userId = payload.sub || payload.userId || payload.id
         } catch {
           logger.debug('Auth', 'Invalid token')
           clearAuthRef.current()
           return
         }
 
-        // If we have a stored user, set it immediately for fast render
-        if (storedUser && !useAuthStore.getState().user) {
-          setUserRef.current(storedUser as unknown as Profile)
+        // If we have a stored doer, set it immediately for fast render
+        if (storedUser && !useAuthStore.getState().doer) {
+          setDoerRef.current(storedUser as unknown as Doer)
         }
 
         if (!isMounted) return
 
-        logger.debug('Auth', 'Token found, fetching profile')
-        const profile = await fetchProfileRef.current(userId)
-        if (!isMounted) return
-
-        if (!profile) {
-          // Profile fetch failed (network error, API down) — don't redirect to login.
-          // The token is valid; retry will happen on next page load.
-          logger.debug('Auth', 'Profile fetch failed, keeping token')
-          return
-        }
-
-        setUserRef.current(profile)
-
-        const doerData = await fetchDoerRef.current(profile.id)
+        logger.debug('Auth', 'Token found, fetching doer', { userId })
+        const doerData = await fetchDoerRef.current()
         if (!isMounted) return
 
         if (!doerData) {
+          // 404 = new signup, needs profile setup
           const pathname = window.location.pathname
           if (pathname !== '/profile-setup') {
             logger.debug('Auth', 'No doer found, redirecting to profile-setup')
@@ -207,8 +181,8 @@ export function useAuth() {
   }
 
   const signIn = async (email: string, _password: string) => {
-    const { sendMagicLink } = await import('@/lib/api/auth')
-    return sendMagicLink(email, 'doer')
+    const { sendOTP } = await import('@/lib/api/auth')
+    return sendOTP(email, 'login', 'doer')
   }
 
   const signOut = async () => {
@@ -238,7 +212,7 @@ export function useAuth() {
   }
 
   return {
-    user,
+    user: doer,
     doer,
     isLoading,
     isAuthenticated,
@@ -248,7 +222,6 @@ export function useAuth() {
     signOut,
     sendPhoneOtp,
     verifyPhoneOtp,
-    fetchProfile,
     fetchDoer,
   }
 }

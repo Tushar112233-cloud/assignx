@@ -40,7 +40,7 @@ export default function ProfileSetupPage() {
       // Check if doer record already exists
       let doerRecord: { id: string } | null = null
       try {
-        doerRecord = await apiClient<{ id: string }>(`/api/doers/by-profile/${user.id}`)
+        doerRecord = await apiClient<{ id: string }>(`/api/doers/me`)
       } catch {
         // No doer record yet
       }
@@ -50,7 +50,6 @@ export default function ProfileSetupPage() {
         const newDoer = await apiClient<{ id: string }>('/api/doers', {
           method: 'POST',
           body: JSON.stringify({
-            profile_id: user.id,
             qualification: data.qualification as Qualification,
             experience_level: data.experienceLevel as ExperienceLevel,
             university_name: data.universityName || null,

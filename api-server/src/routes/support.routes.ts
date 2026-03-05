@@ -13,7 +13,8 @@ router.get('/tickets', authenticate, async (req: Request, res: Response, next: N
     const filter: Record<string, unknown> = {};
 
     if (req.user!.role !== 'admin') {
-      filter.userId = req.user!.id;
+      filter.raisedById = req.user!.id;
+      filter.raisedByRole = req.user!.role;
     }
     if (status) filter.status = status;
 
@@ -33,7 +34,8 @@ router.get('/tickets', authenticate, async (req: Request, res: Response, next: N
 router.post('/tickets', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const ticket = await SupportTicket.create({
-      userId: req.user!.id,
+      raisedById: req.user!.id,
+      raisedByRole: req.user!.role,
       userName: req.body.userName || '',
       subject: req.body.subject,
       description: req.body.description,
@@ -106,7 +108,8 @@ router.post('/tickets/:id/messages', authenticate, async (req: Request, res: Res
 router.post('/feedback', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const ticket = await SupportTicket.create({
-      userId: req.user!.id,
+      raisedById: req.user!.id,
+      raisedByRole: req.user!.role,
       userName: req.body.userName || '',
       subject: req.body.subject || 'User Feedback',
       description: req.body.feedback || req.body.description || '',
@@ -230,7 +233,7 @@ router.post('/tickets/:id/attachments', authenticate, async (req: Request, res: 
 router.get('/tickets/count', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { status } = req.query;
-    const filter: Record<string, unknown> = { userId: req.user!.id };
+    const filter: Record<string, unknown> = { raisedById: req.user!.id, raisedByRole: req.user!.role };
     if (status) filter.status = status;
     const count = await SupportTicket.countDocuments(filter);
     res.json({ count });

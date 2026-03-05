@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api/client'
-import { sendMagicLink, verifyOTP, logout as apiLogout, getCurrentUser } from '@/lib/api/auth'
+import { sendOTP, verifyOTP, logout as apiLogout, getCurrentUser } from '@/lib/api/auth'
 import type { Doer, Qualification, ExperienceLevel } from '@/types/database'
 
 /**
@@ -27,11 +27,11 @@ export const authService = {
   },
 
   async signIn(email: string, _password: string) {
-    return sendMagicLink(email, 'doer')
+    return sendOTP(email, 'login', 'doer')
   },
 
   async signInWithGoogle() {
-    throw new Error('Google OAuth not supported with API. Use magic link.')
+    throw new Error('Google OAuth not supported with API. Use OTP.')
   },
 
   async signOut() {
@@ -39,11 +39,11 @@ export const authService = {
   },
 
   async resetPassword(_email: string) {
-    throw new Error('Password reset not supported. Use magic link.')
+    throw new Error('Password reset not supported. Use OTP.')
   },
 
   async updatePassword(_newPassword: string) {
-    throw new Error('Password update not supported. Use magic link.')
+    throw new Error('Password update not supported. Use OTP.')
   },
 }
 
@@ -51,9 +51,9 @@ export const authService = {
  * Doer service for managing doer-specific operations
  */
 export const doerService = {
-  async getDoerByProfileId(profileId: string): Promise<Doer | null> {
+  async getDoer(): Promise<Doer | null> {
     try {
-      const data = await apiClient<Doer>(`/api/doers/by-profile/${profileId}`)
+      const data = await apiClient<Doer>('/api/doers/me')
       return data
     } catch {
       return null
@@ -61,7 +61,6 @@ export const doerService = {
   },
 
   async createDoer(
-    profileId: string,
     data: {
       qualification: Qualification
       experience_level: ExperienceLevel
@@ -72,7 +71,6 @@ export const doerService = {
     return apiClient<Doer>('/api/doers', {
       method: 'POST',
       body: JSON.stringify({
-        profile_id: profileId,
         qualification: data.qualification,
         experience_level: data.experience_level,
         university_name: data.university_name || null,

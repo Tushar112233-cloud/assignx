@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface ISupportTicket extends Document {
-  userId: Types.ObjectId;
+  raisedById: Types.ObjectId;
+  raisedByRole: 'user' | 'doer' | 'supervisor';
   userName: string;
   subject: string;
   description: string;
@@ -24,17 +25,18 @@ export interface ISupportTicket extends Document {
 
 const supportTicketSchema = new Schema<ISupportTicket>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
+    raisedById: { type: Schema.Types.ObjectId, required: true },
+    raisedByRole: { type: String, enum: ['user', 'doer', 'supervisor'], required: true },
     userName: { type: String, default: '' },
     subject: { type: String, required: true },
     description: { type: String, default: '' },
     category: { type: String, default: 'general' },
     priority: { type: String, default: 'medium' },
     status: { type: String, enum: ['open', 'in_progress', 'resolved', 'closed'], default: 'open' },
-    assignedTo: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    assignedTo: { type: Schema.Types.ObjectId, ref: 'Admin' },
     messages: [
       {
-        senderId: { type: Schema.Types.ObjectId, ref: 'Profile' },
+        senderId: { type: Schema.Types.ObjectId },
         senderName: String,
         senderRole: String,
         message: String,
@@ -47,6 +49,6 @@ const supportTicketSchema = new Schema<ISupportTicket>(
   { timestamps: true }
 );
 
-supportTicketSchema.index({ userId: 1, status: 1 });
+supportTicketSchema.index({ raisedById: 1, raisedByRole: 1, status: 1 });
 
 export const SupportTicket = mongoose.model<ISupportTicket>('SupportTicket', supportTicketSchema, 'support_tickets');

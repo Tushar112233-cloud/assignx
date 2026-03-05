@@ -5,21 +5,13 @@ import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 
-const roleFilter = (role: string) => ({
-  $or: [
-    { targetRole: role },
-    { targetRole: { $exists: false } },
-    { targetRole: null },
-  ],
-});
-
 // GET /notifications
 router.get('/', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page = '1', limit = '20', unreadOnly } = req.query;
     const filter: Record<string, unknown> = {
-      userId: req.user!.id,
-      $or: [{ targetRole: req.user!.role }, { targetRole: { $exists: false } }, { targetRole: null }],
+      recipientId: req.user!.id,
+      recipientRole: req.user!.role,
     };
     if (unreadOnly === 'true') filter.isRead = false;
 
@@ -27,7 +19,7 @@ router.get('/', authenticate, async (req: Request, res: Response, next: NextFunc
     const [notifications, total, unreadCount] = await Promise.all([
       Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
       Notification.countDocuments(filter),
-      Notification.countDocuments({ userId: req.user!.id, isRead: false, ...roleFilter(req.user!.role) }),
+      Notification.countDocuments({ recipientId: req.user!.id, recipientRole: req.user!.role, isRead: false }),
     ]);
 
     res.json({ notifications, total, unreadCount, page: Number(page) });
@@ -40,7 +32,7 @@ router.get('/', authenticate, async (req: Request, res: Response, next: NextFunc
 router.put('/:id/read', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const notification = await Notification.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user!.id },
+      { _id: req.params.id, recipientId: req.user!.id, recipientRole: req.user!.role },
       { isRead: true, readAt: new Date() },
       { new: true }
     );
@@ -55,7 +47,7 @@ router.put('/:id/read', authenticate, async (req: Request, res: Response, next: 
 router.put('/read-all', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     await Notification.updateMany(
-      { userId: req.user!.id, isRead: false, ...roleFilter(req.user!.role) },
+      { recipientId: req.user!.id, recipientRole: req.user!.role, isRead: false },
       { isRead: true, readAt: new Date() }
     );
     res.json({ success: true });
@@ -67,7 +59,7 @@ router.put('/read-all', authenticate, async (req: Request, res: Response, next: 
 // GET /notifications/unread-count
 router.get('/unread-count', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const count = await Notification.countDocuments({ userId: req.user!.id, isRead: false, ...roleFilter(req.user!.role) });
+    const count = await Notification.countDocuments({ recipientId: req.user!.id, recipientRole: req.user!.role, isRead: false });
     res.json({ count });
   } catch (err) {
     next(err);
@@ -78,7 +70,7 @@ router.get('/unread-count', authenticate, async (req: Request, res: Response, ne
 router.put('/mark-all-read', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     await Notification.updateMany(
-      { userId: req.user!.id, isRead: false, ...roleFilter(req.user!.role) },
+      { recipientId: req.user!.id, recipientRole: req.user!.role, isRead: false },
       { isRead: true, readAt: new Date() }
     );
     res.json({ success: true });
@@ -90,7 +82,7 @@ router.put('/mark-all-read', authenticate, async (req: Request, res: Response, n
 // DELETE /notifications/all
 router.delete('/all', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await Notification.deleteMany({ userId: req.user!.id, ...roleFilter(req.user!.role) });
+    await Notification.deleteMany({ recipientId: req.user!.id, recipientRole: req.user!.role });
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -100,7 +92,7 @@ router.delete('/all', authenticate, async (req: Request, res: Response, next: Ne
 // DELETE /notifications/:id
 router.delete('/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await Notification.findOneAndDelete({ _id: req.params.id, userId: req.user!.id });
+    const result = await Notification.findOneAndDelete({ _id: req.params.id, recipientId: req.user!.id, recipientRole: req.user!.role });
     if (!result) throw new AppError('Notification not found', 404);
     res.json({ success: true });
   } catch (err) {

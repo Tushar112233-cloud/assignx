@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface INotification extends Document {
-  userId: Types.ObjectId;
+  recipientId: Types.ObjectId;
+  recipientRole: 'user' | 'doer' | 'supervisor' | 'admin';
   type: string;
   title: string;
   message: string;
@@ -12,7 +13,8 @@ export interface INotification extends Document {
 }
 
 const notificationSchema = new Schema<INotification>({
-  userId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
+  recipientId: { type: Schema.Types.ObjectId, required: true },
+  recipientRole: { type: String, enum: ['user', 'doer', 'supervisor', 'admin'], required: true },
   type: { type: String, required: true },
   title: { type: String, required: true },
   message: { type: String, default: '' },
@@ -22,6 +24,6 @@ const notificationSchema = new Schema<INotification>({
   readAt: { type: Date },
 });
 
-notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
+notificationSchema.index({ recipientId: 1, recipientRole: 1, isRead: 1, createdAt: -1 });
 
 export const Notification = mongoose.model<INotification>('Notification', notificationSchema, 'notifications');

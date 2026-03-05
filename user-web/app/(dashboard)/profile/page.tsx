@@ -367,7 +367,7 @@ export default function ProfilePage() {
     if (!user) return;
     setIsSaving(true);
     try {
-      await apiClient("/api/profiles/me/delete", {
+      await apiClient("/api/users/me/delete", {
         method: "POST",
       });
 

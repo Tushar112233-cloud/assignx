@@ -20,7 +20,7 @@ export async function getProfile() {
   if (!token) return null;
 
   try {
-    return await serverApiClient("/api/profiles/me", {}, token);
+    return await serverApiClient("/api/users/me", {}, token);
   } catch {
     return null;
   }
@@ -31,7 +31,7 @@ export async function getProfile() {
  */
 export async function getProfileByEmail(email: string) {
   try {
-    return await serverApiClient(`/api/profiles/by-email?email=${encodeURIComponent(email)}`);
+    return await serverApiClient(`/api/users/search?email=${encodeURIComponent(email)}`);
   } catch {
     return null;
   }
@@ -160,7 +160,7 @@ export async function searchUserByEmail(email: string): Promise<{
 
   try {
     const result = await serverApiClient(
-      `/api/profiles/search?email=${encodeURIComponent(trimmedEmail)}`,
+      `/api/users/search?email=${encodeURIComponent(trimmedEmail)}`,
       {},
       token
     );
@@ -340,7 +340,7 @@ export async function updateProfile(data: {
   if (!token) return { error: "Not authenticated" };
 
   try {
-    await serverApiClient("/api/profiles/me", {
+    await serverApiClient("/api/users/me", {
       method: "PUT",
       body: JSON.stringify(data),
     }, token);
@@ -368,7 +368,7 @@ export async function updateStudentProfile(data: {
   if (!token) return { error: "Not authenticated" };
 
   try {
-    await serverApiClient("/api/profiles/student", {
+    await serverApiClient("/api/users/me", {
       method: "PUT",
       body: JSON.stringify(data),
     }, token);
@@ -393,7 +393,7 @@ export async function updateProfessionalProfile(data: {
   if (!token) return { error: "Not authenticated" };
 
   try {
-    await serverApiClient("/api/profiles/professional", {
+    await serverApiClient("/api/users/me", {
       method: "PUT",
       body: JSON.stringify(data),
     }, token);
@@ -552,7 +552,7 @@ export async function uploadAvatar(base64Data: string, fileName: string) {
     }, token);
 
     // Update profile with new avatar URL
-    await serverApiClient("/api/profiles/me", {
+    await serverApiClient("/api/users/me", {
       method: "PUT",
       body: JSON.stringify({ avatarUrl: result.url }),
     }, token);
@@ -641,7 +641,7 @@ export async function exportUserData() {
   if (!token) return { error: "Not authenticated" };
 
   try {
-    const result = await serverApiClient("/api/profiles/me/export", {}, token);
+    const result = await serverApiClient("/api/users/me/export", {}, token);
     return { success: true, data: result };
   } catch (error: any) {
     return { error: error.message };
@@ -656,7 +656,7 @@ export async function getUserPreferences() {
   if (!token) return { theme: "system", language: "en", notifications: {} };
 
   try {
-    const result = await serverApiClient("/api/profiles/preferences", {}, token);
+    const result = await serverApiClient("/api/users/preferences", {}, token);
     return result || { theme: "system", language: "en", notifications: {} };
   } catch {
     return { theme: "system", language: "en", notifications: {} };
@@ -698,7 +698,7 @@ export async function updateUserPreferences(data: Record<string, any>) {
   if (!token) return { error: "Not authenticated" };
 
   try {
-    await serverApiClient("/api/profiles/preferences", {
+    await serverApiClient("/api/users/preferences", {
       method: "PUT",
       body: JSON.stringify(data),
     }, token);

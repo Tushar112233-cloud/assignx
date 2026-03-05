@@ -5,16 +5,15 @@ export async function getTrainingModules(role: string) {
   return data.modules || []
 }
 
-export async function getTrainingProgress(profileId: string) {
-  const data = await apiClient<{ progress: any[] }>(`/api/training/progress?profile_id=${profileId}`)
+export async function getTrainingProgress() {
+  const data = await apiClient<{ progress: any[] }>('/api/training/progress')
   return data.progress || []
 }
 
-export async function markModuleComplete(profileId: string, moduleId: string) {
+export async function markModuleComplete(moduleId: string) {
   await apiClient(`/api/training/progress/${moduleId}`, {
     method: 'PUT',
     body: JSON.stringify({
-      profile_id: profileId,
       status: 'completed',
       progress_percentage: 100,
       completed_at: new Date().toISOString(),
@@ -22,9 +21,9 @@ export async function markModuleComplete(profileId: string, moduleId: string) {
   })
 }
 
-export async function isTrainingComplete(profileId: string, role: string) {
+export async function isTrainingComplete(role: string) {
   try {
-    const data = await apiClient<{ complete: boolean }>(`/api/training/status?profile_id=${profileId}&role=${role}`)
+    const data = await apiClient<{ complete: boolean }>(`/api/training/status?role=${role}`)
     return data.complete ?? false
   } catch {
     return false

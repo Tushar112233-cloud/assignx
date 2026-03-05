@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
-import { Supervisor, SupervisorActivation, Profile, Project, Doer, DoerReview, Wallet, WalletTransaction, SupportTicket, Subject, Notification, TrainingModule } from '../models';
+import { Supervisor, SupervisorActivation, User, Project, Doer, UserDoerReview, SupervisorDoerReview, SupervisorWallet, WalletTransaction, SupportTicket, Subject, Notification, TrainingModule } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
@@ -9,7 +9,7 @@ const router = Router();
 // GET /supervisors/me - Get current supervisor's data
 router.get('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id })
+    const supervisor = await Supervisor.findById(req.user!.id)
       .populate('subjects.subjectId', 'name category');
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
@@ -17,7 +17,6 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
     res.json({
       ...obj,
       id: obj._id,
-      profile_id: obj.profileId,
       // Flat snake_case bank fields expected by frontend types
       bank_name: obj.bankDetails?.bankName || null,
       bank_account_number: obj.bankDetails?.accountNumber || null,
@@ -42,7 +41,7 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
 // GET /supervisors/me/activation - Get current supervisor's activation status
 router.get('/me/activation', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) {
       return res.json({ activation: null });
     }
@@ -57,7 +56,7 @@ router.get('/me/activation', authenticate, async (req: Request, res: Response, n
 // PUT /supervisors/me/activation - Update activation fields (e.g. mark training complete)
 router.put('/me/activation', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
     const allowedFields = ['trainingCompleted', 'quizPassed'];
@@ -83,7 +82,7 @@ router.put('/me/activation', authenticate, async (req: Request, res: Response, n
 // GET /supervisors/me/stats - Stats for supervisor dashboard hooks
 router.get('/me/stats', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
     const [totalProjects, activeProjects, completedProjects, pendingQuotes, wallet, doerCount] = await Promise.all([
@@ -91,7 +90,7 @@ router.get('/me/stats', authenticate, async (req: Request, res: Response, next: 
       Project.countDocuments({ supervisorId: req.user!.id, status: { $in: ['assigned', 'in_progress', 'under_review'] } }),
       Project.countDocuments({ supervisorId: req.user!.id, status: 'completed' }),
       Project.countDocuments({ supervisorId: req.user!.id, status: { $in: ['submitted', 'analyzing'] } }),
-      Wallet.findOne({ profileId: req.user!.id }),
+      SupervisorWallet.findOne({ supervisorId: req.user!.id }),
       Doer.countDocuments({ isActivated: true }),
     ]);
 
@@ -113,7 +112,7 @@ router.get('/me/stats', authenticate, async (req: Request, res: Response, next: 
 // GET /supervisors/me/dashboard - Dashboard stats for supervisor
 router.get('/me/dashboard', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
     const [activeProjects, totalProjects, doerCount] = await Promise.all([
@@ -155,9 +154,9 @@ router.get('/me/users', authenticate, async (req: Request, res: Response, next: 
     }
 
     const userIds = Array.from(userIdMap.keys());
-    const profiles = await Profile.find({ _id: { $in: userIds } }).select('fullName email avatarUrl phone createdAt');
+    const users_docs = await User.find({ _id: { $in: userIds } }).select('fullName email avatarUrl phone createdAt');
 
-    const users = profiles.map(p => {
+    const users = users_docs.map(p => {
       const stats = userIdMap.get(p._id.toString()) || { projectCount: 0, totalSpent: 0, lastProjectAt: null };
       return {
         id: p._id,
@@ -181,7 +180,7 @@ router.get('/me/users', authenticate, async (req: Request, res: Response, next: 
 // GET /supervisors/me/blacklist - Get supervisor's blacklisted doers
 router.get('/me/blacklist', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
     // Return blacklisted doer IDs from supervisor document (or empty array)
     const blacklist = (supervisor as any).blacklistedDoers || [];
@@ -196,7 +195,7 @@ router.post('/me/blacklist', authenticate, async (req: Request, res: Response, n
   try {
     const { doerId, reason } = req.body;
     if (!doerId) throw new AppError('Doer ID is required', 400);
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
     // Add to blacklist array (create if doesn't exist)
     const blacklist = (supervisor as any).blacklistedDoers || [];
@@ -214,7 +213,7 @@ router.post('/me/blacklist', authenticate, async (req: Request, res: Response, n
 // DELETE /supervisors/me/blacklist/:doerId - Remove doer from blacklist
 router.delete('/me/blacklist/:doerId', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
     const blacklist = (supervisor as any).blacklistedDoers || [];
     (supervisor as any).blacklistedDoers = blacklist.filter((d: any) => d.id !== req.params.doerId);
@@ -228,7 +227,7 @@ router.delete('/me/blacklist/:doerId', authenticate, async (req: Request, res: R
 // GET /supervisors/me/expertise - Get supervisor expertise/subjects
 router.get('/me/expertise', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id })
+    const supervisor = await Supervisor.findById(req.user!.id)
       .populate('subjects.subjectId', 'name category');
     if (!supervisor) return res.json({ expertise: [], subjects: [] });
 
@@ -261,7 +260,7 @@ router.put('/me/subjects', authenticate, async (req: Request, res: Response, nex
       throw new AppError('One or more subject IDs are invalid', 400);
     }
 
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
     supervisor.subjects = subjects.map(s => ({
@@ -292,8 +291,8 @@ router.put('/me/subjects', authenticate, async (req: Request, res: Response, nex
 // GET /supervisors/:userId/activation-status - Check if a supervisor is activated
 router.get('/:userId/activation-status', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // userId here is the profile/user ID, not the supervisor document ID
-    const supervisor = await Supervisor.findOne({ profileId: req.params.userId });
+    // userId IS the supervisor _id now
+    const supervisor = await Supervisor.findById(req.params.userId);
     if (!supervisor) {
       return res.json({ isActivated: false, is_activated: false });
     }
@@ -310,7 +309,7 @@ router.get('/', authenticate, requireRole('admin'), async (req: Request, res: Re
     const { page = '1', limit = '20' } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
     const [supervisors, total] = await Promise.all([
-      Supervisor.find().populate('profileId', 'fullName email avatarUrl').skip(skip).limit(Number(limit)).sort({ createdAt: -1 }),
+      Supervisor.find().skip(skip).limit(Number(limit)).sort({ createdAt: -1 }),
       Supervisor.countDocuments(),
     ]);
     res.json({ supervisors, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) });
@@ -331,22 +330,21 @@ router.get('/', authenticate, requireRole('admin'), async (req: Request, res: Re
 // GET /supervisor/profile - Get supervisor profile
 router.get('/profile', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id }).populate('profileId', 'fullName email avatarUrl phone');
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
     const obj = supervisor.toObject();
-    const profile = obj.profileId && typeof obj.profileId === 'object' ? obj.profileId as any : null;
 
     res.json({
       ...obj,
       id: obj._id,
       userId: req.user!.id,
-      fullName: profile?.fullName || null,
-      full_name: profile?.fullName || null,
-      email: profile?.email || null,
-      avatarUrl: profile?.avatarUrl || null,
-      avatar_url: profile?.avatarUrl || null,
-      phone: profile?.phone || null,
+      fullName: obj.fullName || null,
+      full_name: obj.fullName || null,
+      email: obj.email || null,
+      avatarUrl: obj.avatarUrl || null,
+      avatar_url: obj.avatarUrl || null,
+      phone: obj.phone || null,
     });
   } catch (err) {
     next(err);
@@ -356,24 +354,23 @@ router.get('/profile', authenticate, async (req: Request, res: Response, next: N
 // PUT /supervisor/profile - Update supervisor profile
 router.put('/profile', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOneAndUpdate(
-      { profileId: req.user!.id },
+    const supervisor = await Supervisor.findByIdAndUpdate(
+      req.user!.id,
       req.body,
       { new: true }
-    ).populate('profileId', 'fullName email avatarUrl phone');
+    );
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
     const obj = supervisor.toObject();
-    const profile = obj.profileId && typeof obj.profileId === 'object' ? obj.profileId as any : null;
 
     res.json({
       ...obj,
       id: obj._id,
       userId: req.user!.id,
-      fullName: profile?.fullName || null,
-      email: profile?.email || null,
-      avatarUrl: profile?.avatarUrl || null,
-      phone: profile?.phone || null,
+      fullName: obj.fullName || null,
+      email: obj.email || null,
+      avatarUrl: obj.avatarUrl || null,
+      phone: obj.phone || null,
     });
   } catch (err) {
     next(err);
@@ -383,8 +380,8 @@ router.put('/profile', authenticate, async (req: Request, res: Response, next: N
 // PUT /supervisor/profile/availability
 router.put('/profile/availability', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOneAndUpdate(
-      { profileId: req.user!.id },
+    const supervisor = await Supervisor.findByIdAndUpdate(
+      req.user!.id,
       { isAvailable: req.body.is_available ?? req.body.isAvailable },
       { new: true }
     );
@@ -398,7 +395,7 @@ router.put('/profile/availability', authenticate, async (req: Request, res: Resp
 // GET /supervisor/profile/availability
 router.get('/profile/availability', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     res.json({ isAvailable: supervisor?.isAvailable ?? true, is_available: supervisor?.isAvailable ?? true });
   } catch (err) {
     next(err);
@@ -416,14 +413,14 @@ router.get('/projects', authenticate, async (req: Request, res: Response, next: 
     // Build base filter based on view mode
     if (view === 'pool') {
       // Unassigned projects matching supervisor's subjects
-      const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+      const supervisor = await Supervisor.findById(req.user!.id);
       const subjectIds = (supervisor?.subjects || []).map(s => s.subjectId);
       filter.supervisorId = null;
       filter.subjectId = { $in: subjectIds };
       filter.status = { $in: ['submitted', 'analyzing', 'quoted', 'paid'] };
     } else if (view === 'all') {
       // Both assigned + matching pool
-      const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+      const supervisor = await Supervisor.findById(req.user!.id);
       const subjectIds = (supervisor?.subjects || []).map(s => s.subjectId);
       filter.$or = [
         { supervisorId: req.user!.id },
@@ -621,12 +618,12 @@ router.post('/projects/:id/quote', authenticate, async (req: Request, res: Respo
     const quoteAmount = user_amount || base_price;
     if (project.userId) {
       const notification = await Notification.create({
-        userId: project.userId,
+        recipientId: project.userId,
+        recipientRole: 'user',
         type: 'project_quoted',
         title: 'Quote Ready',
         message: `Your project "${project.title}" has been quoted at R${quoteAmount}`,
         data: { projectId: project._id },
-        targetRole: 'user',
       });
       const io = req.app.get('io');
       if (io) io.to(`user:${project.userId}`).emit('notification:new', notification);
@@ -654,12 +651,12 @@ router.post('/projects/:id/assign-doer', authenticate, async (req: Request, res:
     // Notify the doer they've been assigned
     if (doer_id) {
       const doerNotification = await Notification.create({
-        userId: doer_id,
+        recipientId: doer_id,
+        recipientRole: 'doer',
         type: 'project_assigned',
         title: 'New Project Assigned',
         message: `You have been assigned to project "${project.title}"`,
         data: { projectId: project._id },
-        targetRole: 'doer',
       });
       if (io) io.to(`user:${doer_id}`).emit('notification:new', doerNotification);
     }
@@ -667,12 +664,12 @@ router.post('/projects/:id/assign-doer', authenticate, async (req: Request, res:
     // Notify the project owner
     if (project.userId) {
       const ownerNotification = await Notification.create({
-        userId: project.userId,
+        recipientId: project.userId,
+        recipientRole: 'user',
         type: 'doer_assigned',
         title: 'Writer Assigned',
         message: `A writer has been assigned to your project "${project.title}"`,
         data: { projectId: project._id },
-        targetRole: 'user',
       });
       if (io) io.to(`user:${project.userId}`).emit('notification:new', ownerNotification);
     }
@@ -708,12 +705,12 @@ router.post('/projects/:id/revisions', authenticate, async (req: Request, res: R
     // Notify the doer about revision request
     if (project.doerId) {
       const notification = await Notification.create({
-        userId: project.doerId,
+        recipientId: project.doerId,
+        recipientRole: 'doer',
         type: 'revision_requested',
         title: 'Revision Requested',
         message: `A revision has been requested for project "${project.title}"`,
         data: { projectId: project._id },
-        targetRole: 'doer',
       });
       const io = req.app.get('io');
       if (io) io.to(`user:${project.doerId}`).emit('notification:new', notification);
@@ -835,25 +832,23 @@ router.get('/doers', authenticate, async (req: Request, res: Response, next: Nex
     const lim = Number(limit);
     let sortObj: Record<string, 1 | -1> = { createdAt: -1 };
     if (sortBy === 'rating') sortObj = { averageRating: ascending === 'true' ? 1 : -1 };
-    else if (sortBy === 'name') sortObj = { 'profileId.fullName': ascending === 'true' ? 1 : -1 };
+    else if (sortBy === 'name') sortObj = { fullName: ascending === 'true' ? 1 : -1 };
 
     const doers = await Doer.find(filter)
-      .populate('profileId', 'fullName email avatarUrl')
       .skip(skip)
       .limit(lim)
       .sort(sortObj);
 
     let normalizedDoers = doers.map(d => {
       const obj = d.toObject();
-      const profile = obj.profileId && typeof obj.profileId === 'object' ? obj.profileId as any : null;
       return {
         ...obj,
         id: obj._id,
-        fullName: profile?.fullName || null,
-        full_name: profile?.fullName || null,
-        email: profile?.email || null,
-        avatarUrl: profile?.avatarUrl || null,
-        avatar_url: profile?.avatarUrl || null,
+        fullName: obj.fullName || null,
+        full_name: obj.fullName || null,
+        email: obj.email || null,
+        avatarUrl: obj.avatarUrl || null,
+        avatar_url: obj.avatarUrl || null,
         averageRating: obj.averageRating || 0,
         totalReviews: obj.totalReviews || 0,
         totalProjectsCompleted: obj.totalProjectsCompleted || 0,
@@ -863,7 +858,7 @@ router.get('/doers', authenticate, async (req: Request, res: Response, next: Nex
       };
     });
 
-    // Client-side search filter (search in populated name/email)
+    // Client-side search filter (search in name/email)
     if (search) {
       const q = (search as string).toLowerCase();
       normalizedDoers = normalizedDoers.filter(d =>
@@ -893,19 +888,17 @@ router.get('/doers/available', authenticate, async (req: Request, res: Response,
     const filter: Record<string, unknown> = { isActivated: true, isAvailable: true };
 
     const doers = await Doer.find(filter)
-      .populate('profileId', 'fullName email avatarUrl')
       .sort({ averageRating: -1 })
       .limit(50);
 
     let normalizedDoers = doers.map(d => {
       const obj = d.toObject();
-      const profile = obj.profileId && typeof obj.profileId === 'object' ? obj.profileId as any : null;
       return {
         ...obj,
         id: obj._id,
-        fullName: profile?.fullName || null,
-        email: profile?.email || null,
-        avatarUrl: profile?.avatarUrl || null,
+        fullName: obj.fullName || null,
+        email: obj.email || null,
+        avatarUrl: obj.avatarUrl || null,
         averageRating: obj.averageRating || 0,
         skills: (obj.skills || []).map((s: any) => typeof s === 'string' ? s : s.name || 'Unknown'),
         subjects: (obj.subjects || []).map((s: any) => typeof s === 'string' ? s : s.name || 'Unknown'),
@@ -943,19 +936,18 @@ router.get('/doers/count', authenticate, async (req: Request, res: Response, nex
 // GET /supervisor/doers/:id
 router.get('/doers/:doerId', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const doer = await Doer.findById(req.params.doerId).populate('profileId', 'fullName email avatarUrl phone');
+    const doer = await Doer.findById(req.params.doerId);
     if (!doer) throw new AppError('Doer not found', 404);
 
     const obj = doer.toObject();
-    const profile = obj.profileId && typeof obj.profileId === 'object' ? obj.profileId as any : null;
 
     res.json({
       ...obj,
       id: obj._id,
-      fullName: profile?.fullName || null,
-      email: profile?.email || null,
-      avatarUrl: profile?.avatarUrl || null,
-      phone: profile?.phone || null,
+      fullName: obj.fullName || null,
+      email: obj.email || null,
+      avatarUrl: obj.avatarUrl || null,
+      phone: obj.phone || null,
       averageRating: obj.averageRating || 0,
       totalReviews: obj.totalReviews || 0,
       skills: (obj.skills || []).map((s: any) => typeof s === 'string' ? s : s.name || 'Unknown'),
@@ -970,24 +962,49 @@ router.get('/doers/:doerId', authenticate, async (req: Request, res: Response, n
 router.get('/doers/:doerId/reviews', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { limit = '20', offset = '0' } = req.query;
-    const reviews = await DoerReview.find({ doerId: req.params.doerId })
-      .populate('reviewerId', 'fullName avatarUrl')
-      .sort({ createdAt: -1 })
-      .skip(Number(offset))
-      .limit(Number(limit));
+    const skip = Number(offset);
+    const lim = Number(limit);
 
-    const normalizedReviews = reviews.map(r => {
+    // Query both review collections and combine results
+    const [userReviews, supervisorReviews] = await Promise.all([
+      UserDoerReview.find({ doerId: req.params.doerId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(lim),
+      SupervisorDoerReview.find({ doerId: req.params.doerId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(lim),
+    ]);
+
+    const normalizedUserReviews = userReviews.map(r => {
       const obj = r.toObject();
-      const reviewer = obj.reviewerId && typeof obj.reviewerId === 'object' ? obj.reviewerId as any : null;
       return {
         ...obj,
         id: obj._id,
-        reviewerName: reviewer?.fullName || null,
-        reviewerAvatar: reviewer?.avatarUrl || null,
+        reviewerName: (obj as any).reviewerName || null,
+        reviewerAvatar: (obj as any).reviewerAvatar || null,
+        source: 'user',
       };
     });
 
-    res.json({ reviews: normalizedReviews });
+    const normalizedSupervisorReviews = supervisorReviews.map(r => {
+      const obj = r.toObject();
+      return {
+        ...obj,
+        id: obj._id,
+        reviewerName: (obj as any).reviewerName || null,
+        reviewerAvatar: (obj as any).reviewerAvatar || null,
+        source: 'supervisor',
+      };
+    });
+
+    // Combine and sort by createdAt descending
+    const allReviews = [...normalizedUserReviews, ...normalizedSupervisorReviews]
+      .sort((a, b) => new Date((b as any).createdAt).getTime() - new Date((a as any).createdAt).getTime())
+      .slice(0, lim);
+
+    res.json({ reviews: allReviews });
   } catch (err) {
     next(err);
   }
@@ -1027,8 +1044,8 @@ router.get('/doers/:doerId/projects', authenticate, async (req: Request, res: Re
 // GET /supervisor/earnings/summary
 router.get('/earnings/summary', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
-    const wallet = await Wallet.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
+    const wallet = await SupervisorWallet.findOne({ supervisorId: req.user!.id });
 
     const now = new Date();
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -1063,7 +1080,7 @@ router.get('/earnings/summary', authenticate, async (req: Request, res: Response
 router.get('/earnings/chart', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { limit = '12' } = req.query;
-    const wallet = await Wallet.findOne({ profileId: req.user!.id });
+    const wallet = await SupervisorWallet.findOne({ supervisorId: req.user!.id });
     if (!wallet) return res.json({ data: [] });
 
     const earnings = await WalletTransaction.aggregate([
@@ -1122,7 +1139,7 @@ router.get('/earnings/commissions', authenticate, async (req: Request, res: Resp
 // GET /supervisor/earnings/performance
 router.get('/earnings/performance', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     const [totalProjects, completedProjects, activeProjects] = await Promise.all([
       Project.countDocuments({ supervisorId: req.user!.id }),
       Project.countDocuments({ supervisorId: req.user!.id, status: 'completed' }),
@@ -1150,11 +1167,10 @@ router.get('/earnings/performance', authenticate, async (req: Request, res: Resp
 router.get('/reviews', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { limit = '20', offset = '0', minRating, maxRating } = req.query;
-    // Find supervisor, then find reviews where revieweeId matches
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) return res.json({ reviews: [] });
 
-    // Reviews could be DoerReviews where reviewerId is the supervisor
+    // Reviews could be SupervisorDoerReviews where the supervisor is the reviewer
     // or some other review model. Return empty for now as stub.
     res.json({ reviews: [], total: 0 });
   } catch (err) {
@@ -1165,7 +1181,7 @@ router.get('/reviews', authenticate, async (req: Request, res: Response, next: N
 // GET /supervisor/reviews/summary
 router.get('/reviews/summary', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     res.json({
       averageRating: supervisor?.averageRating || 0,
       totalReviews: supervisor?.totalReviews || 0,
@@ -1181,7 +1197,7 @@ router.get('/reviews/summary', authenticate, async (req: Request, res: Response,
 // GET /supervisor/blacklist
 router.get('/blacklist', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
     const blacklist = (supervisor as any).blacklistedDoers || [];
     res.json({ doers: blacklist });
@@ -1195,7 +1211,7 @@ router.post('/blacklist', authenticate, async (req: Request, res: Response, next
   try {
     const { doer_id, reason } = req.body;
     if (!doer_id) throw new AppError('Doer ID is required', 400);
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
     const blacklist = (supervisor as any).blacklistedDoers || [];
     if (!blacklist.some((d: any) => d.id === doer_id)) {
@@ -1212,7 +1228,7 @@ router.post('/blacklist', authenticate, async (req: Request, res: Response, next
 // DELETE /supervisor/blacklist/:doerId
 router.delete('/blacklist/:doerId', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
     const blacklist = (supervisor as any).blacklistedDoers || [];
     (supervisor as any).blacklistedDoers = blacklist.filter((d: any) => d.id !== req.params.doerId);
@@ -1244,14 +1260,14 @@ router.get('/clients', authenticate, async (req: Request, res: Response, next: N
     }
 
     const userIds = Array.from(userIdMap.keys());
-    let profiles = await Profile.find({ _id: { $in: userIds } }).select('fullName email avatarUrl phone createdAt');
+    let users_docs = await User.find({ _id: { $in: userIds } }).select('fullName email avatarUrl phone createdAt');
 
     if (search) {
       const q = (search as string).toLowerCase();
-      profiles = profiles.filter(p => (p.fullName || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q));
+      users_docs = users_docs.filter(p => (p.fullName || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q));
     }
 
-    const clients = profiles.map(p => {
+    const clients = users_docs.map(p => {
       const stats = userIdMap.get(p._id.toString()) || { projectCount: 0, totalSpent: 0, lastProjectAt: null };
       return {
         id: p._id,
@@ -1294,8 +1310,8 @@ router.get('/clients/count', authenticate, async (req: Request, res: Response, n
 // GET /supervisor/clients/:id
 router.get('/clients/:clientId', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const profile = await Profile.findById(req.params.clientId).select('fullName email avatarUrl phone createdAt');
-    if (!profile) throw new AppError('Client not found', 404);
+    const client = await User.findById(req.params.clientId).select('fullName email avatarUrl phone createdAt');
+    if (!client) throw new AppError('Client not found', 404);
 
     const projects = await Project.find({ userId: req.params.clientId, supervisorId: req.user!.id })
       .select('pricing status createdAt');
@@ -1303,14 +1319,14 @@ router.get('/clients/:clientId', authenticate, async (req: Request, res: Respons
     const totalSpent = projects.reduce((sum, p) => sum + ((p as any).pricing?.userQuote || 0), 0);
 
     res.json({
-      id: profile._id,
-      fullName: profile.fullName,
-      full_name: profile.fullName,
-      email: profile.email,
-      avatarUrl: profile.avatarUrl,
-      avatar_url: profile.avatarUrl,
-      phone: profile.phone,
-      createdAt: profile.createdAt,
+      id: client._id,
+      fullName: client.fullName,
+      full_name: client.fullName,
+      email: client.email,
+      avatarUrl: client.avatarUrl,
+      avatar_url: client.avatarUrl,
+      phone: client.phone,
+      createdAt: client.createdAt,
       projectCount,
       totalSpent,
     });
@@ -1439,8 +1455,8 @@ router.get('/activation/quiz/:quizId/attempts', authenticate, async (req: Reques
 // POST /supervisor/activation/activate
 router.post('/activation/activate', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOneAndUpdate(
-      { profileId: req.user!.id },
+    const supervisor = await Supervisor.findByIdAndUpdate(
+      req.user!.id,
       { isActivated: true, activatedAt: new Date() },
       { new: true }
     );
@@ -1463,13 +1479,13 @@ router.post('/activation/activate', authenticate, async (req: Request, res: Resp
 // POST /supervisor/registration
 router.post('/registration', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const existing = await Supervisor.findOne({ profileId: req.user!.id });
+    const existing = await Supervisor.findById(req.user!.id);
     if (existing) {
       const updated = await Supervisor.findByIdAndUpdate(existing._id, req.body, { new: true });
       return res.json({ supervisor: updated, status: 'updated' });
     }
 
-    const supervisor = await Supervisor.create({ ...req.body, profileId: req.user!.id });
+    const supervisor = await Supervisor.create({ ...req.body, _id: req.user!.id });
     await SupervisorActivation.create({ supervisorId: supervisor._id });
     res.status(201).json({ supervisor, status: 'created' });
   } catch (err) {
@@ -1480,7 +1496,7 @@ router.post('/registration', authenticate, async (req: Request, res: Response, n
 // GET /supervisor/registration/status
 router.get('/registration/status', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findOne({ profileId: req.user!.id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) return res.json({ status: 'not_registered' });
 
     const activation = await SupervisorActivation.findOne({ supervisorId: supervisor._id });
@@ -1505,7 +1521,7 @@ router.get('/registration/status', authenticate, async (req: Request, res: Respo
 // GET /supervisors/:id
 router.get('/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supervisor = await Supervisor.findById(req.params.id).populate('profileId', 'fullName email avatarUrl phone');
+    const supervisor = await Supervisor.findById(req.params.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
     res.json({ supervisor });
   } catch (err) {
@@ -1524,13 +1540,10 @@ router.put('/:id', authenticate, async (req: Request, res: Response, next: NextF
   }
 });
 
-// GET /supervisors/me/modules — Get training modules with completion status
+// GET /supervisors/me/modules -- Get training modules with completion status
 router.get('/me/modules', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const profile = await Profile.findById(req.user!.id);
-    if (!profile) throw new AppError('Profile not found', 404);
-
-    const supervisor = await Supervisor.findOne({ profileId: profile._id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
     // Get all active training modules for supervisors
@@ -1571,13 +1584,10 @@ router.get('/me/modules', authenticate, async (req: Request, res: Response, next
   }
 });
 
-// PUT /supervisors/me/modules/:moduleId/complete — Mark a module as completed
+// PUT /supervisors/me/modules/:moduleId/complete -- Mark a module as completed
 router.put('/me/modules/:moduleId/complete', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const profile = await Profile.findById(req.user!.id);
-    if (!profile) throw new AppError('Profile not found', 404);
-
-    const supervisor = await Supervisor.findOne({ profileId: profile._id });
+    const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
     const moduleId = req.params.moduleId as string;

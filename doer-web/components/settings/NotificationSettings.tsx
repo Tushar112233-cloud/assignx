@@ -47,7 +47,7 @@ export function NotificationSettings({ userId }: NotificationSettingsProps) {
     }
 
     try {
-      const data = await apiClient<NotificationPrefs>('/api/profiles/me/preferences')
+      const data = await apiClient<NotificationPrefs>('/api/doers/me/preferences')
       if (data) {
         const loaded: NotificationPrefs = {
           push_notifications: data.push_notifications ?? true,
@@ -93,7 +93,7 @@ export function NotificationSettings({ userId }: NotificationSettingsProps) {
 
     setIsSaving(true)
     try {
-      await apiClient('/api/profiles/me/preferences', {
+      await apiClient('/api/doers/me/preferences', {
         method: 'PUT',
         body: JSON.stringify({
           push_notifications: prefs.push_notifications,

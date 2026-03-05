@@ -20,7 +20,7 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { getDoerProfile } from '@/services/profile.service'
 import { toast } from 'sonner'
-import type { Profile, Doer, DoerStats } from '@/types/database'
+import type { Doer, DoerStats } from '@/types/database'
 
 /**
  * Profile Page - Redesigned with Premium Blue Theme
@@ -40,7 +40,6 @@ export default function ProfilePage() {
   const { user, doer: authDoer, isLoading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<ProfileTabType>('overview')
-  const [profile, setProfile] = useState<Profile | null>(null)
   const [doer, setDoer] = useState<Doer | null>(null)
   const [stats, setStats] = useState<DoerStats | null>(null)
 
@@ -65,13 +64,12 @@ export default function ProfilePage() {
    * Seed local state from auth store cache for instant render.
    */
   useEffect(() => {
-    if (user && !profile) setProfile(user)
     if (authDoer && !doer) {
       setDoer(authDoer)
       setStats(buildBasicStats(authDoer))
       setIsLoading(false)
     }
-  }, [user, authDoer, profile, doer, buildBasicStats])
+  }, [user, authDoer, doer, buildBasicStats])
 
   /**
    * Fetch detailed profile data (reviews, wallet, active count) in background.
@@ -83,17 +81,16 @@ export default function ProfilePage() {
     }
 
     // Don't show loading skeleton if we already have cached data
-    if (!profile || !doer) setIsLoading(true)
+    if (!doer) setIsLoading(true)
 
     try {
-      const data = await getDoerProfile(user.id)
-      if (data.profile) setProfile(data.profile)
+      const data = await getDoerProfile()
       if (data.doer) setDoer(data.doer)
       if (data.stats) setStats(data.stats)
     } catch (error) {
       console.error('Error loading profile:', error)
       // Only show toast if we have no fallback data
-      if (!profile || !doer) {
+      if (!doer) {
         toast.error('Failed to load profile')
       }
     } finally {
@@ -111,12 +108,12 @@ export default function ProfilePage() {
   }, [user?.id, authLoading, loadProfile])
 
   /** Calculate profile completion percentage */
-  const getProfileCompletion = (profile: Profile, doer: Doer): number => {
+  const getProfileCompletion = (doer: Doer): number => {
     const completionFields = [
-      Boolean(profile.full_name),
-      Boolean(profile.email),
-      Boolean(profile.phone),
-      Boolean(profile.avatar_url),
+      Boolean(doer.full_name),
+      Boolean(doer.email),
+      Boolean(doer.phone),
+      Boolean(doer.avatar_url),
       Boolean(doer.qualification),
       Boolean(doer.experience_level),
       Boolean(doer.bio),
@@ -148,7 +145,7 @@ export default function ProfilePage() {
   }, [])
 
   // Skeleton gate removed — show page content or loading message
-  if (!profile || !doer || !stats) {
+  if (!doer || !stats) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <p className="text-slate-600 mb-4">{isLoading ? 'Loading profile...' : 'Failed to load profile'}</p>
@@ -157,7 +154,7 @@ export default function ProfilePage() {
     )
   }
 
-  const profileCompletion = getProfileCompletion(profile, doer)
+  const profileCompletion = getProfileCompletion(doer)
 
   return (
     <div className="relative min-h-screen">
@@ -173,7 +170,7 @@ export default function ProfilePage() {
       >
         {/* Hero Section */}
         <ProfileHero
-          profile={profile}
+          profile={doer}
           doer={doer}
           stats={stats}
           profileCompletion={profileCompletion}
@@ -222,7 +219,7 @@ export default function ProfilePage() {
                   className="w-full max-w-full overflow-hidden"
                 >
                   <EditProfile
-                    profile={profile}
+                    profile={doer}
                     doer={doer}
                     onCancel={() => setActiveTab('overview')}
                   />

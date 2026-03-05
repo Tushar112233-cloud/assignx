@@ -103,7 +103,7 @@ export const ticketCategories = [
  */
 export const mockWallet: Wallet = {
   id: 'w1',
-  profile_id: 'd1',
+  doer_id: 'd1',
   balance: 15800,
   locked_amount: 1800,
   total_credited: 125000,

@@ -67,6 +67,7 @@ export interface IProject extends Document {
     fileSizeBytes: number;
     fileCategory: string;
     uploadedBy: Types.ObjectId;
+    uploadedByRole?: string;
     createdAt: Date;
   }[];
   deliverables: {
@@ -79,7 +80,9 @@ export interface IProject extends Document {
     qcNotes: string;
     qcAt: Date;
     qcBy: Types.ObjectId;
+    qcByRole?: string;
     uploadedBy: Types.ObjectId;
+    uploadedByRole?: string;
     createdAt: Date;
   }[];
   revisions: {
@@ -97,6 +100,7 @@ export interface IProject extends Document {
     fromStatus: string;
     toStatus: string;
     changedBy: Types.ObjectId;
+    changedByRole?: string;
     notes: string;
     createdAt: Date;
   }[];
@@ -111,7 +115,7 @@ export interface IProject extends Document {
 const projectSchema = new Schema<IProject>(
   {
     projectNumber: { type: String },
-    userId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     serviceType: { type: String },
     title: { type: String, required: true },
     subjectId: { type: Schema.Types.Mixed },
@@ -127,8 +131,8 @@ const projectSchema = new Schema<IProject>(
     deadlineExtended: { type: Boolean, default: false },
     status: { type: String, default: 'draft' },
     statusUpdatedAt: { type: Date },
-    supervisorId: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    doerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    supervisorId: { type: Schema.Types.ObjectId, ref: 'Supervisor' },
+    doerId: { type: Schema.Types.ObjectId, ref: 'Doer' },
     pricing: {
       userQuote: { type: Number, default: 0 },
       finalQuote: { type: Number, default: 0 },
@@ -176,7 +180,8 @@ const projectSchema = new Schema<IProject>(
         fileType: String,
         fileSizeBytes: Number,
         fileCategory: String,
-        uploadedBy: { type: Schema.Types.ObjectId, ref: 'Profile' },
+        uploadedBy: { type: Schema.Types.ObjectId },
+        uploadedByRole: { type: String },
         createdAt: { type: Date, default: Date.now },
       },
     ],
@@ -190,14 +195,16 @@ const projectSchema = new Schema<IProject>(
         qcStatus: { type: String, enum: ['pending', 'in_review', 'approved', 'rejected'], default: 'pending' },
         qcNotes: String,
         qcAt: Date,
-        qcBy: { type: Schema.Types.ObjectId, ref: 'Profile' },
-        uploadedBy: { type: Schema.Types.ObjectId, ref: 'Profile' },
+        qcBy: { type: Schema.Types.ObjectId },
+        qcByRole: { type: String },
+        uploadedBy: { type: Schema.Types.ObjectId },
+        uploadedByRole: { type: String },
         createdAt: { type: Date, default: Date.now },
       },
     ],
     revisions: [
       {
-        requestedBy: { type: Schema.Types.ObjectId, ref: 'Profile' },
+        requestedBy: { type: Schema.Types.ObjectId },
         requestedByType: String,
         revisionNumber: Number,
         feedback: String,
@@ -212,7 +219,8 @@ const projectSchema = new Schema<IProject>(
       {
         fromStatus: String,
         toStatus: String,
-        changedBy: { type: Schema.Types.ObjectId, ref: 'Profile' },
+        changedBy: { type: Schema.Types.ObjectId },
+        changedByRole: { type: String },
         notes: String,
         createdAt: { type: Date, default: Date.now },
       },

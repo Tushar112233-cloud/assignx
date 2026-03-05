@@ -58,14 +58,16 @@ export interface TrainingModule {
 /**
  * Training progress interface
  * Tracks user progress through training.
- * DB columns: id, profile_id, module_id, started_at, completed_at,
+ * DB columns: id, user_id, user_role, module_id, started_at, completed_at,
  * progress_percentage, status
  */
 export interface TrainingProgress {
   /** Unique identifier */
   id: string
-  /** Profile reference */
-  profile_id: string
+  /** User's role-collection ID */
+  user_id: string
+  /** User's role (e.g. 'doer', 'supervisor') */
+  user_role: string
   /** Module reference */
   module_id: string
   /** Start timestamp */
@@ -124,8 +126,10 @@ export interface QuizQuestion {
 export interface QuizAttempt {
   /** Unique identifier */
   id: string
-  /** Profile who attempted */
-  profile_id: string
+  /** User's role-collection ID */
+  user_id: string
+  /** User's role (e.g. 'doer', 'supervisor') */
+  user_role: string
   /** Target role for this attempt */
   target_role: TargetRole
   /** Attempt number (1, 2, 3, etc.) */

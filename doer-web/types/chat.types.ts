@@ -112,8 +112,8 @@ export interface ChatMessage {
   flagged_reason: string | null
   /** Whether message contains contact info */
   contains_contact_info: boolean
-  /** Read by users - JSONB array of profile IDs */
-  read_by: string[]
+  /** Read by users - array of {id, role} objects */
+  read_by: Array<{ id: string; role: string }>
   /** Delivery timestamp */
   delivered_at: string | null
   /** Send timestamp */
@@ -133,13 +133,11 @@ export interface ChatMessage {
  * User in a chat room - matches database schema
  */
 export interface ChatParticipant {
-  /** Unique identifier */
+  /** Unique identifier (role-collection ID of the participant) */
   id: string
   /** Parent room - uses chat_room_id in database */
   chat_room_id: string
-  /** User profile ID */
-  profile_id: string
-  /** User role in chat */
+  /** Participant role in chat */
   role: 'user' | 'supervisor' | 'doer' | 'admin'
   /** Join timestamp */
   joined_at: string
@@ -164,8 +162,10 @@ export interface ChatParticipant {
 export interface Notification {
   /** Unique identifier */
   id: string
-  /** Target user */
-  user_id: string
+  /** Target recipient's role-collection ID */
+  recipient_id: string
+  /** Target recipient's role */
+  recipient_role: string
   /** Notification type */
   type: NotificationType
   /** Notification title */

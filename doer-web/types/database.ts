@@ -13,9 +13,8 @@ export type {
   ActivationStatus,
 } from './common.types'
 
-// Profile types
+// Doer and related types
 export type {
-  Profile,
   Doer,
   Skill,
   DoerSkill,
@@ -90,7 +89,7 @@ export type {
 } from './resources.types'
 
 // Import types for Database schema
-import type { Profile, Doer, Skill, DoerSkill, Subject, DoerSubject, University } from './profile.types'
+import type { Doer, Skill, DoerSkill, Subject, DoerSubject, University } from './profile.types'
 import type { TrainingModule, TrainingProgress, QuizQuestion, QuizAttempt, DoerActivation } from './activation.types'
 import type { Project, ProjectFile, ProjectDeliverable, ProjectRevision } from './project.types'
 import type { ChatRoom, ChatMessage, ChatParticipant, Notification } from './chat.types'
@@ -106,11 +105,6 @@ import type { ChatRoomType, MessageType, NotificationType } from './chat.types'
 export interface Database {
   public: {
     Tables: {
-      profiles: {
-        Row: Profile
-        Insert: Omit<Profile, 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Omit<Profile, 'id'>>
-      }
       doers: {
         Row: Doer
         Insert: Omit<Doer, 'id' | 'created_at' | 'updated_at'>

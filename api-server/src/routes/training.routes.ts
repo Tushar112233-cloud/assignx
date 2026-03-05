@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
-import { TrainingModule, TrainingProgress, QuizQuestion, QuizAttempt } from '../models';
+import { TrainingModule, TrainingProgress, QuizQuestion, QuizAttempt, Doer } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
@@ -24,7 +24,7 @@ router.get('/modules', authenticate, async (req: Request, res: Response, next: N
 // GET /training/progress
 router.get('/progress', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const progress = await TrainingProgress.find({ userId: req.user!.id })
+    const progress = await TrainingProgress.find({ userId: req.user!.id, userRole: req.user!.role })
       .populate('moduleId');
     res.json({ progress });
   } catch (err) {
@@ -38,6 +38,7 @@ router.put('/progress/:moduleId', authenticate, async (req: Request, res: Respon
     const updates: Record<string, unknown> = {
       progress: req.body.progress,
       lastAccessedAt: new Date(),
+      userRole: req.user!.role,
     };
     if (req.body.progress >= 100) {
       updates.completed = true;
@@ -45,7 +46,7 @@ router.put('/progress/:moduleId', authenticate, async (req: Request, res: Respon
     }
 
     const progress = await TrainingProgress.findOneAndUpdate(
-      { userId: req.user!.id, moduleId: req.params.moduleId },
+      { userId: req.user!.id, userRole: req.user!.role, moduleId: req.params.moduleId },
       updates,
       { new: true, upsert: true }
     );
@@ -98,6 +99,7 @@ router.post('/quiz/attempt', authenticate, async (req: Request, res: Response, n
 
     const attempt = await QuizAttempt.create({
       userId: req.user!.id,
+      userRole: req.user!.role,
       moduleId,
       answers: gradedAnswers,
       score,
@@ -115,11 +117,106 @@ router.post('/quiz/attempt', authenticate, async (req: Request, res: Response, n
 router.get('/quiz/attempts', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { moduleId } = req.query;
-    const filter: Record<string, unknown> = { userId: req.user!.id };
+    const filter: Record<string, unknown> = { userId: req.user!.id, userRole: req.user!.role };
     if (moduleId) filter.moduleId = moduleId;
 
     const attempts = await QuizAttempt.find(filter).sort({ createdAt: -1 });
     res.json({ attempts });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /training/complete - Mark all mandatory training as complete for the doer
+router.post('/complete', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // JWT sub IS the doer _id now
+    const doerId = req.user!.id;
+
+    // Get all mandatory modules for doers
+    const mandatoryModules = await TrainingModule.find({
+      isActive: true,
+      $or: [{ targetRole: 'doer' }, { targetRole: 'all' }],
+    });
+
+    // If there are mandatory modules, verify all are completed
+    if (mandatoryModules.length > 0) {
+      const completedProgress = await TrainingProgress.find({
+        userId: doerId,
+        userRole: req.user!.role,
+        completed: true,
+        moduleId: { $in: mandatoryModules.map(m => m._id) },
+      });
+
+      if (completedProgress.length < mandatoryModules.length) {
+        throw new AppError(
+          `You must complete all ${mandatoryModules.length} training modules. ${completedProgress.length} completed so far.`,
+          400
+        );
+      }
+    }
+
+    // Update doer record — JWT sub IS the doer _id
+    const doer = await Doer.findById(doerId);
+    if (!doer) {
+      throw new AppError('Doer profile not found.', 404);
+    }
+
+    doer.trainingCompleted = true;
+    doer.trainingCompletedAt = new Date();
+    await doer.save();
+
+    res.json({ success: true, message: 'Training completed successfully!' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /training/status - Get training completion status for the current doer
+router.get('/status', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // JWT sub IS the doer _id
+    const doerId = req.user!.id;
+
+    const doer = await Doer.findById(doerId);
+    if (!doer) {
+      throw new AppError('Doer profile not found.', 404);
+    }
+
+    // Get all mandatory modules
+    const mandatoryModules = await TrainingModule.find({
+      isActive: true,
+      $or: [{ targetRole: 'doer' }, { targetRole: 'all' }],
+    }).sort({ order: 1 });
+
+    // Get progress for all modules
+    const progress = await TrainingProgress.find({
+      userId: doerId,
+      userRole: req.user!.role,
+      moduleId: { $in: mandatoryModules.map(m => m._id) },
+    });
+
+    const progressMap = new Map(progress.map(p => [p.moduleId.toString(), p]));
+
+    const modules = mandatoryModules.map(m => ({
+      id: m._id,
+      title: m.title,
+      description: m.description,
+      videoUrl: m.videoUrl,
+      thumbnailUrl: m.thumbnailUrl,
+      duration: m.duration,
+      category: m.category,
+      order: m.order,
+      completed: progressMap.get(m._id.toString())?.completed || false,
+      progress: progressMap.get(m._id.toString())?.progress || 0,
+    }));
+
+    res.json({
+      trainingCompleted: doer.trainingCompleted,
+      totalModules: mandatoryModules.length,
+      completedModules: progress.filter(p => p.completed).length,
+      modules,
+    });
   } catch (err) {
     next(err);
   }

@@ -31,11 +31,11 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
-import type { Profile, Doer, Skill, Qualification, ExperienceLevel } from '@/types/database'
+import type { Doer, Skill, Qualification, ExperienceLevel } from '@/types/database'
 
 interface EditProfileProps {
-  /** User profile */
-  profile: Profile
+  /** User profile (doer with auth fields) */
+  profile: Doer
   /** Doer data */
   doer: Doer
   /** Available skills */

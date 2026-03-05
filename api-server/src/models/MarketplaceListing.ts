@@ -20,7 +20,7 @@ export interface IMarketplaceListing extends Document {
 
 const marketplaceListingSchema = new Schema<IMarketplaceListing>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     categoryId: { type: Schema.Types.ObjectId, ref: 'MarketplaceCategory' },
     title: { type: String, required: true },
     description: { type: String },

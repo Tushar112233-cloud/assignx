@@ -2,17 +2,38 @@ import { Router, Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { authenticate } from '../middleware/auth';
 import { paymentLimiter } from '../middleware/rateLimiter';
-import { Wallet, WalletTransaction, PayoutRequest } from '../models';
+import { UserWallet, DoerWallet, SupervisorWallet, WalletTransaction, PayoutRequest } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 
+function getWalletModel(role: string) {
+  switch (role) {
+    case 'user': case 'student': case 'professional': case 'business':
+      return { model: UserWallet, field: 'userId' };
+    case 'doer':
+      return { model: DoerWallet, field: 'doerId' };
+    case 'supervisor':
+      return { model: SupervisorWallet, field: 'supervisorId' };
+    default:
+      throw new AppError(`No wallet for role: ${role}`, 400);
+  }
+}
+
+function getWalletType(role: string): 'user' | 'doer' | 'supervisor' {
+  if (['user', 'student', 'professional', 'business'].includes(role)) return 'user';
+  if (role === 'doer') return 'doer';
+  if (role === 'supervisor') return 'supervisor';
+  throw new AppError(`Invalid role: ${role}`, 400);
+}
+
 // GET /wallets/me
 router.get('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    let wallet = await Wallet.findOne({ profileId: req.user!.id });
+    const { model: WalletModel, field } = getWalletModel(req.user!.role);
+    let wallet = await WalletModel.findOne({ [field]: req.user!.id });
     if (!wallet) {
-      wallet = await Wallet.create({ profileId: req.user!.id });
+      wallet = await WalletModel.create({ [field]: req.user!.id });
     }
     res.json({ wallet });
   } catch (err) {
@@ -24,7 +45,8 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
 router.get('/transactions', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page = '1', limit = '20', type } = req.query;
-    const wallet = await Wallet.findOne({ profileId: req.user!.id });
+    const { model: WalletModel, field } = getWalletModel(req.user!.role);
+    const wallet = await WalletModel.findOne({ [field]: req.user!.id });
     if (!wallet) return res.json({ transactions: [], total: 0 });
 
     const filter: Record<string, unknown> = { walletId: wallet._id };
@@ -46,7 +68,8 @@ router.get('/transactions', authenticate, async (req: Request, res: Response, ne
 router.get('/me/transactions', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page = '1', limit = '20', type } = req.query;
-    const wallet = await Wallet.findOne({ profileId: req.user!.id });
+    const { model: WalletModel, field } = getWalletModel(req.user!.role);
+    const wallet = await WalletModel.findOne({ [field]: req.user!.id });
     if (!wallet) return res.json({ transactions: [], total: 0 });
 
     const filter: Record<string, unknown> = { walletId: wallet._id };
@@ -69,16 +92,18 @@ router.post('/transfer', authenticate, paymentLimiter, async (req: Request, res:
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const { toProfileId, amount, description } = req.body;
-    if (!toProfileId || !amount || amount <= 0) throw new AppError('Invalid transfer parameters', 400);
+    const { toRole, toId, amount, description } = req.body;
+    if (!toRole || !toId || !amount || amount <= 0) throw new AppError('Invalid transfer parameters', 400);
 
-    const fromWallet = await Wallet.findOne({ profileId: req.user!.id }).session(session);
+    const { model: FromWalletModel, field: fromField } = getWalletModel(req.user!.role);
+    const fromWallet = await FromWalletModel.findOne({ [fromField]: req.user!.id }).session(session);
     if (!fromWallet) throw new AppError('Source wallet not found', 404);
     if (fromWallet.balance < amount) throw new AppError('Insufficient balance', 400);
 
-    let toWallet = await Wallet.findOne({ profileId: toProfileId }).session(session);
+    const { model: ToWalletModel, field: toField } = getWalletModel(toRole);
+    let toWallet = await ToWalletModel.findOne({ [toField]: toId }).session(session);
     if (!toWallet) {
-      const created = await Wallet.create([{ profileId: toProfileId }], { session });
+      const created = await ToWalletModel.create([{ [toField]: toId }], { session });
       toWallet = created[0];
     }
 
@@ -92,10 +117,14 @@ router.post('/transfer', authenticate, paymentLimiter, async (req: Request, res:
     toWallet!.totalCredited += amount;
     await toWallet!.save({ session });
 
+    const fromWalletType = getWalletType(req.user!.role);
+    const toWalletType = getWalletType(toRole);
+
     // Create transactions
     await WalletTransaction.create([
       {
         walletId: fromWallet._id,
+        walletType: fromWalletType,
         transactionType: 'transfer_out',
         amount: -amount,
         status: 'completed',
@@ -105,6 +134,7 @@ router.post('/transfer', authenticate, paymentLimiter, async (req: Request, res:
       },
       {
         walletId: toWallet!._id,
+        walletType: toWalletType,
         transactionType: 'transfer_in',
         amount,
         status: 'completed',
@@ -119,7 +149,7 @@ router.post('/transfer', authenticate, paymentLimiter, async (req: Request, res:
     const io = req.app.get('io');
     if (io) {
       io.to(`user:${req.user!.id}`).emit('wallet:updated', { balance: fromWallet.balance });
-      io.to(`user:${toProfileId}`).emit('wallet:updated', { balance: toWallet!.balance });
+      io.to(`user:${toId}`).emit('wallet:updated', { balance: toWallet!.balance });
     }
 
     res.json({ success: true, balance: fromWallet.balance });
@@ -139,9 +169,10 @@ router.post('/topup', authenticate, paymentLimiter, async (req: Request, res: Re
     const { amount, paymentId } = req.body;
     if (!amount || amount <= 0) throw new AppError('Invalid amount', 400);
 
-    let wallet = await Wallet.findOne({ profileId: req.user!.id }).session(session);
+    const { model: WalletModel, field } = getWalletModel(req.user!.role);
+    let wallet = await WalletModel.findOne({ [field]: req.user!.id }).session(session);
     if (!wallet) {
-      const created = await Wallet.create([{ profileId: req.user!.id }], { session });
+      const created = await WalletModel.create([{ [field]: req.user!.id }], { session });
       wallet = created[0];
     }
 
@@ -152,6 +183,7 @@ router.post('/topup', authenticate, paymentLimiter, async (req: Request, res: Re
 
     await WalletTransaction.create([{
       walletId: wallet!._id,
+      walletType: getWalletType(req.user!.role),
       transactionType: 'topup',
       amount,
       status: 'completed',
@@ -182,11 +214,13 @@ router.post('/payout-request', authenticate, paymentLimiter, async (req: Request
     const { amount, payoutMethod } = req.body;
     if (!amount || amount <= 0) throw new AppError('Invalid amount', 400);
 
-    const wallet = await Wallet.findOne({ profileId: req.user!.id });
+    const { model: WalletModel, field } = getWalletModel(req.user!.role);
+    const wallet = await WalletModel.findOne({ [field]: req.user!.id });
     if (!wallet || wallet.balance < amount) throw new AppError('Insufficient balance', 400);
 
     const payout = await PayoutRequest.create({
       recipientId: req.user!.id,
+      recipientRole: getWalletType(req.user!.role),
       amount,
       payoutMethod: payoutMethod || 'bank_transfer',
     });
@@ -200,7 +234,8 @@ router.post('/payout-request', authenticate, paymentLimiter, async (req: Request
 // GET /wallets/earnings/monthly
 router.get('/earnings/monthly', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const wallet = await Wallet.findOne({ profileId: req.user!.id });
+    const { model: WalletModel, field } = getWalletModel(req.user!.role);
+    const wallet = await WalletModel.findOne({ [field]: req.user!.id });
     if (!wallet) return res.json({ earnings: [] });
 
     const earnings = await WalletTransaction.aggregate([
@@ -225,7 +260,8 @@ router.get('/earnings/monthly', authenticate, async (req: Request, res: Response
 // GET /wallets/earnings/summary
 router.get('/earnings/summary', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const wallet = await Wallet.findOne({ profileId: req.user!.id });
+    const { model: WalletModel, field } = getWalletModel(req.user!.role);
+    const wallet = await WalletModel.findOne({ [field]: req.user!.id });
     if (!wallet) return res.json({ summary: { balance: 0, totalEarned: 0, totalWithdrawn: 0 } });
 
     const now = new Date();
@@ -268,11 +304,13 @@ router.post('/me/withdraw', authenticate, paymentLimiter, async (req: Request, r
     const { amount, paymentMethod } = req.body;
     if (!amount || amount <= 0) throw new AppError('Invalid amount', 400);
 
-    const wallet = await Wallet.findOne({ profileId: req.user!.id });
+    const { model: WalletModel, field } = getWalletModel(req.user!.role);
+    const wallet = await WalletModel.findOne({ [field]: req.user!.id });
     if (!wallet || wallet.balance < amount) throw new AppError('Insufficient balance', 400);
 
     const payout = await PayoutRequest.create({
       recipientId: req.user!.id,
+      recipientRole: getWalletType(req.user!.role),
       amount,
       payoutMethod: paymentMethod || 'bank_transfer',
     });
@@ -280,6 +318,7 @@ router.post('/me/withdraw', authenticate, paymentLimiter, async (req: Request, r
     // Create a pending transaction
     const transaction = await WalletTransaction.create({
       walletId: wallet._id,
+      walletType: getWalletType(req.user!.role),
       transactionType: 'withdrawal',
       amount: -amount,
       status: 'pending',

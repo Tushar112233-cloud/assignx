@@ -10,7 +10,7 @@ import type { Payout } from '@/types/database'
 
 interface PayoutRequestRecord {
   id: string
-  profile_id: string
+  doer_id: string
   requester_type: string
   requested_amount: number
   approved_amount: number | null
@@ -31,7 +31,7 @@ interface BankDetailsUpdate {
   upi_id?: string
 }
 
-export async function getPayoutHistory(profileId: string): Promise<Payout[]> {
+export async function getPayoutHistory(): Promise<Payout[]> {
   try {
     const data = await apiClient<{ payouts: Payout[] }>('/api/wallets/payouts')
     return data.payouts || []
@@ -42,7 +42,6 @@ export async function getPayoutHistory(profileId: string): Promise<Payout[]> {
 }
 
 export async function requestPayout(
-  profileId: string,
   amount: number,
   _paymentMethod: 'bank_transfer' | 'upi'
 ): Promise<{ success: boolean; error?: string; payout?: PayoutRequestRecord }> {
@@ -66,7 +65,6 @@ export async function requestPayout(
 }
 
 export async function updateBankDetails(
-  profileId: string,
   bankDetails: BankDetailsUpdate
 ): Promise<{ success: boolean; error?: string }> {
   try {

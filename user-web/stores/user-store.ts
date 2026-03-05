@@ -31,7 +31,7 @@ export interface User {
 
 export interface StudentProfile {
   id: string;
-  profile_id: string;
+  user_id: string;
   university_id: string;
   course_id: string;
   semester: number | null;
@@ -58,7 +58,7 @@ export interface StudentProfile {
 
 export interface ProfessionalProfile {
   id: string;
-  profile_id: string;
+  user_id: string;
   industry_id: string;
   professional_type: string | null;
   company_name: string | null;
@@ -72,7 +72,7 @@ export interface ProfessionalProfile {
 
 export interface WalletProfile {
   id: string;
-  profile_id: string;
+  user_id: string;
   balance: number;
   currency: string;
 }

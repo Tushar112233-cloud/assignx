@@ -169,7 +169,7 @@ export function SendMoneySheet({ open, onOpenChange }: SendMoneySheetProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          profile_id: userId,
+          user_id: userId,
           recipient_email: recipient.email,
           amount: effectiveAmount,
           note: note.trim() || undefined,

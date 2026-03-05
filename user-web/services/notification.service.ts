@@ -7,7 +7,8 @@ import type { Socket } from 'socket.io-client'
  */
 interface Notification {
   id: string
-  profile_id: string
+  recipient_id: string
+  recipient_role: string | null
   type: string | null
   title: string | null
   message: string | null
@@ -235,7 +236,7 @@ export const notificationService = {
       const response = await apiClient('/api/notifications/subscribe', {
         method: 'POST',
         body: JSON.stringify({
-          profile_id: userId,
+          user_id: userId,
           subscription: subscription.toJSON(),
         }),
       })

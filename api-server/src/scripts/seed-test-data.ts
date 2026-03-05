@@ -10,12 +10,13 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // Import all models
-import { Profile } from '../models/Profile';
-import { Student } from '../models/Student';
+// TODO: Rewrite seed script for new schema (profiles collection removed)
+// import { Profile } from '../models/Profile'; // DELETED
+// import { Student } from '../models/Student'; // DELETED
 import { Doer } from '../models/Doer';
 import { Supervisor } from '../models/Supervisor';
 import { Admin } from '../models/Admin';
-import { Wallet } from '../models/Wallet';
+// import { Wallet } from '../models/Wallet'; // DELETED - use UserWallet/DoerWallet/SupervisorWallet
 import { WalletTransaction } from '../models/WalletTransaction';
 import { Project } from '../models/Project';
 import { ChatRoom } from '../models/ChatRoom';

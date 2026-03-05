@@ -140,7 +140,6 @@ jest.mock('@/components/projects', () => ({
 // Test data
 const mockDoer = {
   id: 'doer-123',
-  profile_id: 'profile-123',
   university_name: 'Test University',
   total_earnings: 5000,
   average_rating: 4.5,

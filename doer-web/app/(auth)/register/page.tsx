@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Loader2, Mail, ArrowRight, ArrowLeft, User, Briefcase, Building2,
-  CheckCircle2, X, Sparkles,
+  CheckCircle2, X, Sparkles, KeyRound, Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,11 +14,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { apiClient } from '@/lib/api/client'
+import { sendOTP, doerSignup } from '@/lib/api/auth'
 import { QUALIFICATION_OPTIONS, EXPERIENCE_LEVELS } from '@/lib/constants'
 import {
   doerEmailNameSchema, doerProfileSchema, doerBankingSchema,
   INDIAN_BANKS, SKILL_AREAS,
-  type DoerEmailNameData, type DoerProfileData, type DoerBankingData,
 } from '@/lib/validations/auth'
 
 const STEPS = [
@@ -26,6 +26,7 @@ const STEPS = [
   { label: 'Profile', icon: Briefcase },
   { label: 'Banking', icon: Building2 },
   { label: 'Review', icon: CheckCircle2 },
+  { label: 'Verify', icon: KeyRound },
 ] as const
 
 export default function RegisterPage() {
@@ -50,12 +51,62 @@ export default function RegisterPage() {
   const [ifscCode, setIfscCode] = useState('')
   const [upiId, setUpiId] = useState('')
 
+  // Step 5 OTP data
+  const [otp, setOtp] = useState(['', '', '', '', '', ''])
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [resendCooldown])
+
+  // Auto-submit OTP when all digits entered
+  useEffect(() => {
+    const code = otp.join('')
+    if (code.length === 6 && step === 5) {
+      handleOtpSubmit(code)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otp])
+
   const toggleSkill = (value: string) => {
     setSkills(prev =>
       prev.includes(value)
         ? prev.filter(s => s !== value)
         : [...prev, value]
     )
+  }
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return
+    const newOtp = [...otp]
+    newOtp[index] = value.slice(-1)
+    setOtp(newOtp)
+    setError(null)
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus()
+    }
+  }
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus()
+    }
+  }
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (pasted.length === 0) return
+    const newOtp = [...otp]
+    for (let i = 0; i < 6; i++) {
+      newOtp[i] = pasted[i] || ''
+    }
+    setOtp(newOtp)
+    const focusIndex = Math.min(pasted.length, 5)
+    inputRefs.current[focusIndex]?.focus()
   }
 
   const validateStep = () => {
@@ -127,16 +178,54 @@ export default function RegisterPage() {
 
   const handleBack = () => {
     setError(null)
+    if (step === 5) {
+      setOtp(['', '', '', '', '', ''])
+    }
     setStep(prev => prev - 1)
   }
 
-  const handleSubmit = async () => {
+  /** Step 4 → 5: Send OTP and move to verification */
+  const handleSendOtp = async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      await sendOTP(email.trim().toLowerCase(), 'signup', 'doer')
+      setStep(5)
+      setResendCooldown(30)
+      setTimeout(() => inputRefs.current[0]?.focus(), 100)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to send verification code.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return
+    try {
+      setError(null)
+      await sendOTP(email.trim().toLowerCase(), 'signup', 'doer')
+      setOtp(['', '', '', '', '', ''])
+      setResendCooldown(30)
+    } catch {
+      setError('Failed to resend. Please try again.')
+    }
+  }
+
+  /** Step 5: Verify OTP + create account */
+  const handleOtpSubmit = async (code?: string) => {
+    const otpCode = code || otp.join('')
+    if (otpCode.length !== 6) {
+      setError('Please enter the 6-digit code.')
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
     try {
       const trimmedEmail = email.trim().toLowerCase()
-
       const metadata = {
         qualification,
         experienceLevel,
@@ -148,20 +237,12 @@ export default function RegisterPage() {
         upiId: upiId || null,
       }
 
-      await apiClient('/api/access-requests', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: trimmedEmail,
-          role: 'doer',
-          full_name: fullName.trim(),
-          metadata,
-        }),
-        skipAuth: true,
-      })
-
+      await doerSignup(trimmedEmail, otpCode, fullName.trim(), metadata)
       router.push(`/pending?email=${encodeURIComponent(trimmedEmail)}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      setOtp(['', '', '', '', '', ''])
+      inputRefs.current[0]?.focus()
     } finally {
       setIsLoading(false)
     }
@@ -200,7 +281,6 @@ export default function RegisterPage() {
           const stepNum = i + 1
           const isActive = stepNum === step
           const isCompleted = stepNum < step
-          const isUpcoming = stepNum > step
           return (
             <div key={s.label} className="flex items-center gap-1.5 flex-1">
               <div className="flex flex-col items-center gap-1 flex-shrink-0">
@@ -496,6 +576,55 @@ export default function RegisterPage() {
           </div>
         )}
 
+        {/* Step 5: OTP Verification */}
+        {step === 5 && (
+          <div className="space-y-5">
+            <div className="text-center space-y-2">
+              <div className="inline-flex w-16 h-16 rounded-full bg-gradient-to-br from-[#5A7CFF]/15 to-teal-500/15 items-center justify-center mx-auto">
+                <KeyRound className="h-7 w-7 text-[#5A7CFF]" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900">Verify your email</h3>
+              <p className="text-sm text-slate-500">
+                Enter the 6-digit code sent to <span className="font-semibold text-slate-700">{email}</span>
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-3" onPaste={handleOtpPaste}>
+              {otp.map((digit, i) => (
+                <input
+                  key={i}
+                  ref={(el) => { inputRefs.current[i] = el }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(i, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                  disabled={isLoading}
+                  className="w-12 h-14 text-center text-xl font-bold rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#5A7CFF] focus:ring-4 focus:ring-[#5A7CFF]/10 focus:outline-none transition-all disabled:opacity-50"
+                />
+              ))}
+            </div>
+
+            <div className="flex justify-center items-center gap-2">
+              {resendCooldown > 0 && (
+                <div className="flex items-center gap-1 text-xs text-slate-400">
+                  <Clock className="h-3.5 w-3.5" />
+                  {resendCooldown}s
+                </div>
+              )}
+              <button
+                type="button"
+                disabled={resendCooldown > 0}
+                onClick={handleResendOtp}
+                className="text-xs font-semibold text-[#5A7CFF] hover:underline underline-offset-4 disabled:text-slate-300 disabled:no-underline"
+              >
+                Resend code
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Error */}
         {error && (
           <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 animate-fade-in">
@@ -536,11 +665,30 @@ export default function RegisterPage() {
                 </>
               )}
             </Button>
+          ) : step === 4 ? (
+            <Button
+              type="button"
+              onClick={handleSendOtp}
+              disabled={isLoading}
+              className="flex-1 h-11 text-sm font-semibold rounded-xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white border-0 shadow-[0_8px_24px_rgba(90,124,255,0.30)] hover:shadow-[0_12px_32px_rgba(90,124,255,0.40)] hover:opacity-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Sending code...
+                </>
+              ) : (
+                <>
+                  Send Profile for Review
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </>
+              )}
+            </Button>
           ) : (
             <Button
               type="button"
-              onClick={handleSubmit}
-              disabled={isLoading}
+              onClick={() => handleOtpSubmit()}
+              disabled={isLoading || otp.join('').length !== 6}
               className="flex-1 h-11 text-sm font-semibold rounded-xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white border-0 shadow-[0_8px_24px_rgba(90,124,255,0.30)] hover:shadow-[0_12px_32px_rgba(90,124,255,0.40)] hover:opacity-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
@@ -550,7 +698,7 @@ export default function RegisterPage() {
                 </>
               ) : (
                 <>
-                  Submit Application
+                  Verify & Submit
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </>
               )}

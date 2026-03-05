@@ -24,7 +24,7 @@ const accessRequestSchema = new Schema<IAccessRequest>(
     },
     metadata: { type: Schema.Types.Mixed, default: {} },
     reviewedAt: Date,
-    reviewedBy: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    reviewedBy: { type: Schema.Types.ObjectId, ref: 'Admin' },
   },
   { timestamps: true }
 );

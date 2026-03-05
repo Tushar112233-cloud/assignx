@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
-export interface IWallet extends Document {
-  profileId: Types.ObjectId;
+export interface IDoerWallet extends Document {
+  doerId: Types.ObjectId;
   balance: number;
   currency: string;
   totalCredited: number;
@@ -12,9 +12,9 @@ export interface IWallet extends Document {
   updatedAt: Date;
 }
 
-const walletSchema = new Schema<IWallet>(
+const doerWalletSchema = new Schema<IDoerWallet>(
   {
-    profileId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true, unique: true },
+    doerId: { type: Schema.Types.ObjectId, ref: 'Doer', required: true, unique: true },
     balance: { type: Number, default: 0 },
     currency: { type: String, default: 'INR' },
     totalCredited: { type: Number, default: 0 },
@@ -25,4 +25,4 @@ const walletSchema = new Schema<IWallet>(
   { timestamps: true }
 );
 
-export const Wallet = mongoose.model<IWallet>('Wallet', walletSchema, 'wallets');
+export const DoerWallet = mongoose.model<IDoerWallet>('DoerWallet', doerWalletSchema, 'doer_wallets');

@@ -43,7 +43,7 @@ export function PrivacySettings({ userId }: PrivacySettingsProps) {
     }
 
     try {
-      const data = await apiClient<PrivacyPrefs>('/api/profiles/me/preferences')
+      const data = await apiClient<PrivacyPrefs>('/api/doers/me/preferences')
       if (data) {
         const loaded: PrivacyPrefs = {
           show_online_status: data.show_online_status ?? true,
@@ -87,7 +87,7 @@ export function PrivacySettings({ userId }: PrivacySettingsProps) {
 
     setIsSaving(true)
     try {
-      await apiClient('/api/profiles/me/preferences', {
+      await apiClient('/api/doers/me/preferences', {
         method: 'PUT',
         body: JSON.stringify({
           show_online_status: prefs.show_online_status,

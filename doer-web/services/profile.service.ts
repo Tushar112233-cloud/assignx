@@ -6,7 +6,6 @@
 
 import { apiClient, apiUpload } from '@/lib/api/client'
 import type {
-  Profile,
   Doer,
   DoerStats,
   Qualification,
@@ -20,7 +19,7 @@ export * from './payouts.service'
 export * from './reviews.service'
 export * from './support.service'
 
-interface ProfileUpdatePayload {
+interface DoerUpdatePayload {
   full_name?: string
   phone?: string
   avatar_url?: string
@@ -30,29 +29,27 @@ interface ProfileUpdatePayload {
   bio?: string
 }
 
-export async function getDoerProfile(profileId: string): Promise<{
-  profile: Profile | null
+export async function getDoerProfile(): Promise<{
   doer: Doer | null
   stats: DoerStats | null
 }> {
   try {
     const data = await apiClient<{
-      profile: Profile | null
       doer: Doer | null
       stats: DoerStats | null
-    }>(`/api/doers/by-profile/${profileId}/full`)
+    }>('/api/doers/me/full')
     return data
   } catch {
-    return { profile: null, doer: null, stats: null }
+    return { doer: null, stats: null }
   }
 }
 
 export async function updateDoerProfile(
   doerId: string,
-  updates: ProfileUpdatePayload
+  updates: DoerUpdatePayload
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await apiClient(`/api/profiles/me`, {
+    await apiClient('/api/doers/me', {
       method: 'PUT',
       body: JSON.stringify(updates),
     })
@@ -70,7 +67,7 @@ export async function uploadAvatar(
     const data = await apiUpload<{ url: string }>('/api/upload', file, 'avatars')
 
     // Update profile with new avatar URL
-    await apiClient('/api/profiles/me', {
+    await apiClient('/api/doers/me', {
       method: 'PUT',
       body: JSON.stringify({ avatar_url: data.url }),
     })

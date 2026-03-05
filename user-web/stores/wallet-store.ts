@@ -7,7 +7,7 @@ import { getCurrencySymbol } from "@/lib/utils";
  */
 export interface Wallet {
   id: string;
-  profile_id: string;
+  user_id: string;
   balance: number;
   currency: string;
   total_credited: number;

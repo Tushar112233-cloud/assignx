@@ -33,7 +33,7 @@ router.get('/', authenticate, async (req: Request, res: Response, next: NextFunc
       if (unassigned === 'true') {
         // Supervisor requesting unassigned projects (global pool to claim)
         filter.supervisorId = { $exists: false };
-        const supervisorDoc = await Supervisor.findOne({ profileId: req.user!.id }).select('subjects');
+        const supervisorDoc = await Supervisor.findById(req.user!.id).select('subjects');
         if (supervisorDoc?.subjects?.length) {
           filter.subjectId = { $in: supervisorDoc.subjects.map(s => s.subjectId) };
         } else {
@@ -337,11 +337,12 @@ router.put('/:id/status', authenticate, async (req: Request, res: Response, next
     }
 
     // Create persistent notifications for key status transitions
-    const statusNotifications: { userId: any; type: string; title: string; message: string; targetRole?: string }[] = [];
+    const statusNotifications: { recipientId: any; recipientRole: string; type: string; title: string; message: string }[] = [];
     if (status === 'delivered') {
       if (project.userId) {
         statusNotifications.push({
-          userId: project.userId,
+          recipientId: project.userId,
+          recipientRole: 'user',
           type: 'project_delivered',
           title: 'Project Delivered',
           message: `Your project "${project.title}" has been delivered and is ready for review`,
@@ -349,17 +350,18 @@ router.put('/:id/status', authenticate, async (req: Request, res: Response, next
       }
       if (project.supervisorId) {
         statusNotifications.push({
-          userId: project.supervisorId,
+          recipientId: project.supervisorId,
+          recipientRole: 'supervisor',
           type: 'project_delivered',
           title: 'Project Delivered',
           message: `Project "${project.title}" has been delivered by the doer`,
-          targetRole: 'supervisor',
         });
       }
     } else if (status === 'in_progress') {
       if (project.userId) {
         statusNotifications.push({
-          userId: project.userId,
+          recipientId: project.userId,
+          recipientRole: 'user',
           type: 'project_started',
           title: 'Work Started',
           message: `Work has started on your project "${project.title}"`,
@@ -368,25 +370,25 @@ router.put('/:id/status', authenticate, async (req: Request, res: Response, next
     } else if (status === 'revision_requested') {
       if (project.doerId) {
         statusNotifications.push({
-          userId: project.doerId,
+          recipientId: project.doerId,
+          recipientRole: 'doer',
           type: 'revision_requested',
           title: 'Revision Requested',
           message: `A revision has been requested for project "${project.title}"`,
-          targetRole: 'doer',
         });
       }
     }
 
     for (const n of statusNotifications) {
       const notification = await Notification.create({
-        userId: n.userId,
+        recipientId: n.recipientId,
+        recipientRole: n.recipientRole,
         type: n.type,
         title: n.title,
         message: n.message,
         data: { projectId: project._id },
-        ...(n.targetRole ? { targetRole: n.targetRole } : {}),
       });
-      if (io) io.to(`user:${n.userId}`).emit('notification:new', notification);
+      if (io) io.to(`user:${n.recipientId}`).emit('notification:new', notification);
     }
 
     res.json({ project });
@@ -605,12 +607,12 @@ router.put('/:id/assign-doer', authenticate, requireRole('supervisor', 'admin'),
 
     // Notify doer
     const doerNotification = await Notification.create({
-      userId: doerId,
+      recipientId: doerId,
+      recipientRole: 'doer',
       type: 'project_assigned',
       title: 'New Project Assigned',
       message: `You have been assigned to project "${project.title}"`,
       data: { projectId: project._id },
-      targetRole: 'doer',
     });
 
     const io = req.app.get('io');
@@ -621,12 +623,12 @@ router.put('/:id/assign-doer', authenticate, requireRole('supervisor', 'admin'),
     // Notify project owner
     if (project.userId) {
       const ownerNotification = await Notification.create({
-        userId: project.userId,
+        recipientId: project.userId,
+        recipientRole: 'user',
         type: 'doer_assigned',
         title: 'Writer Assigned',
         message: `A writer has been assigned to your project "${project.title}"`,
         data: { projectId: project._id },
-        targetRole: 'user',
       });
       if (io) io.to(`user:${project.userId}`).emit('notification:new', ownerNotification);
     }
@@ -677,20 +679,20 @@ router.put('/:id/approve', authenticate, async (req: Request, res: Response, nex
     // Notify supervisor and doer that project is completed
     const io = req.app.get('io');
     const completionTargets = [
-      { userId: project.supervisorId, targetRole: 'supervisor' },
-      { userId: project.doerId, targetRole: 'doer' },
-    ].filter(t => t.userId);
+      { recipientId: project.supervisorId, recipientRole: 'supervisor' },
+      { recipientId: project.doerId, recipientRole: 'doer' },
+    ].filter(t => t.recipientId);
 
     for (const target of completionTargets) {
       const notification = await Notification.create({
-        userId: target.userId,
+        recipientId: target.recipientId,
+        recipientRole: target.recipientRole,
         type: 'project_completed',
         title: 'Project Completed',
         message: `Project "${project.title}" has been approved and completed`,
         data: { projectId: project._id },
-        targetRole: target.targetRole,
       });
-      if (io) io.to(`user:${target.userId}`).emit('notification:new', notification);
+      if (io) io.to(`user:${target.recipientId}`).emit('notification:new', notification);
     }
 
     res.json({ project });
@@ -788,12 +790,12 @@ router.post('/:id/quote', authenticate, requireRole('supervisor', 'admin'), asyn
     }
 
     await Notification.create({
-      userId: project.userId,
+      recipientId: project.userId,
+      recipientRole: 'user',
       type: 'project_quoted',
       title: 'Quote Ready',
       message: `Your project "${project.title}" has been quoted at ₹${userQuote}. Please complete payment to begin work.`,
       data: { projectId: project._id },
-      targetRole: 'user',
     });
 
     res.json({ success: true, project });
@@ -832,12 +834,12 @@ router.post('/:id/claim-from-pool', authenticate, async (req: Request, res: Resp
     // Notify supervisor
     if (project.supervisorId) {
       const notification = await Notification.create({
-        userId: project.supervisorId,
+        recipientId: project.supervisorId,
+        recipientRole: 'supervisor',
         type: 'pool_claimed',
         title: 'Pool Project Claimed',
         message: `A doer has claimed "${project.title}" from the open pool`,
         data: { projectId: project._id },
-        targetRole: 'supervisor',
       });
       if (io) io.to(`user:${project.supervisorId}`).emit('notification:new', notification);
     }
@@ -845,12 +847,12 @@ router.post('/:id/claim-from-pool', authenticate, async (req: Request, res: Resp
     // Notify project owner
     if (project.userId) {
       const ownerNotification = await Notification.create({
-        userId: project.userId,
+        recipientId: project.userId,
+        recipientRole: 'user',
         type: 'doer_assigned',
         title: 'Writer Assigned',
         message: `A writer has been assigned to your project "${project.title}"`,
         data: { projectId: project._id },
-        targetRole: 'user',
       });
       if (io) io.to(`user:${project.userId}`).emit('notification:new', ownerNotification);
     }
@@ -898,7 +900,7 @@ router.post('/:id/claim', authenticate, async (req: Request, res: Response, next
     if (project.supervisorId) throw new AppError('Project already claimed', 400);
 
     // Verify subject expertise match
-    const supervisorDoc = await Supervisor.findOne({ profileId: req.user!.id }).select('subjects');
+    const supervisorDoc = await Supervisor.findById(req.user!.id).select('subjects');
     if (!supervisorDoc) throw new AppError('Supervisor profile not found', 404);
 
     const supervisorSubjectIds = (supervisorDoc.subjects || []).map(s => s.subjectId.toString());
@@ -919,12 +921,12 @@ router.post('/:id/claim', authenticate, async (req: Request, res: Response, next
     // Notify project owner that a supervisor has been assigned
     if (project.userId) {
       const notification = await Notification.create({
-        userId: project.userId,
+        recipientId: project.userId,
+        recipientRole: 'user',
         type: 'project_claimed',
         title: 'Supervisor Assigned',
         message: `A supervisor has been assigned to "${project.title}"`,
         data: { projectId: project._id },
-        targetRole: 'user',
       });
       const io = req.app.get('io');
       if (io) io.to(`user:${project.userId}`).emit('notification:new', notification);

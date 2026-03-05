@@ -41,7 +41,7 @@ export function AccountSettings({ profile, userId }: AccountSettingsProps) {
     setIsLoading(true)
 
     try {
-      await apiClient('/api/profiles/me', {
+      await apiClient('/api/doers/me', {
         method: 'PUT',
         body: JSON.stringify({
           full_name: formData.fullName || null,

@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
-import { Doer, DoerActivation, DoerReview, Profile, Project, Wallet } from '../models';
+import { Doer, DoerActivation, DoerWallet, UserDoerReview, SupervisorDoerReview, Project } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
@@ -11,7 +11,10 @@ function normalizeDoer(obj: Record<string, any>) {
   return {
     ...obj,
     id: obj._id,
-    profile_id: obj.profileId,
+    full_name: obj.fullName,
+    email: obj.email,
+    avatar_url: obj.avatarUrl,
+    phone: obj.phone,
     is_activated: obj.isActivated,
     is_available: obj.isAvailable,
     qualification: obj.qualification,
@@ -50,19 +53,14 @@ router.get('/', authenticate, requireRole('admin', 'supervisor'), async (req: Re
 
     const skip = (Number(page) - 1) * Number(limit);
     const [doers, total] = await Promise.all([
-      Doer.find(filter).populate('profileId', 'fullName email avatarUrl').skip(skip).limit(Number(limit)).sort({ createdAt: -1 }),
+      Doer.find(filter).skip(skip).limit(Number(limit)).sort({ createdAt: -1 }),
       Doer.countDocuments(filter),
     ]);
 
     const normalizedDoers = doers.map(d => {
       const obj = d.toObject();
-      const profile = obj.profileId && typeof obj.profileId === 'object' ? obj.profileId as any : null;
       return {
         ...normalizeDoer(obj),
-        // Flatten populated profile
-        full_name: profile?.fullName || null,
-        email: profile?.email || null,
-        avatar_url: profile?.avatarUrl || null,
         // Flatten skills and subjects to string arrays
         skills: (obj.skills || []).map((s: any) => typeof s === 'string' ? s : s.skillId || s.name || 'Unknown'),
         subjects: (obj.subjects || []).map((s: any) => typeof s === 'string' ? s : s.name || s.subjectId || 'Unknown'),
@@ -75,9 +73,10 @@ router.get('/', authenticate, requireRole('admin', 'supervisor'), async (req: Re
 });
 
 // GET /doers/by-profile/:profileId
+// Backward-compatible: JWT sub is now the doer _id directly, so look up by _id
 router.get('/by-profile/:profileId', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const doer = await Doer.findOne({ profileId: req.params.profileId }).populate('profileId', 'fullName email avatarUrl phone');
+    const doer = await Doer.findById(req.params.profileId);
     if (!doer) throw new AppError('Doer not found', 404);
     res.json(normalizeDoer(doer.toObject()));
   } catch (err) {
@@ -88,48 +87,33 @@ router.get('/by-profile/:profileId', authenticate, async (req: Request, res: Res
 // GET /doers/by-profile/:profileId/full - Full profile with stats for profile page
 router.get('/by-profile/:profileId/full', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const profileId = req.params.profileId;
-    const [profile, doer, wallet, activeCount] = await Promise.all([
-      Profile.findById(profileId).select('-refreshTokens'),
-      Doer.findOne({ profileId }),
-      Wallet.findOne({ profileId }),
-      Project.countDocuments({ doerId: profileId, status: { $in: ['assigned', 'in_progress', 'revision_requested'] } }),
+    const doerId = req.params.profileId; // Now actually the doer _id
+    const [doer, wallet, activeCount] = await Promise.all([
+      Doer.findById(doerId),
+      DoerWallet.findOne({ doerId }),
+      Project.countDocuments({ doerId, status: { $in: ['assigned', 'in_progress', 'revision_requested'] } }),
     ]);
 
-    if (!profile) throw new AppError('Profile not found', 404);
+    if (!doer) throw new AppError('Doer not found', 404);
 
-    const profileObj = profile.toObject();
-    const normalizedProfile = {
-      ...profileObj,
-      id: profileObj._id,
-      full_name: profileObj.fullName,
-      user_type: profileObj.userType,
-      avatar_url: profileObj.avatarUrl,
-      created_at: profileObj.createdAt,
-      updated_at: profileObj.updatedAt,
+    const doerObj = doer.toObject();
+    const normalizedDoerData = normalizeDoer(doerObj);
+
+    const stats = {
+      activeAssignments: activeCount,
+      completedProjects: doer.totalProjectsCompleted || 0,
+      totalEarnings: doer.totalEarnings || 0,
+      pendingEarnings: wallet?.balance || 0,
+      averageRating: doer.averageRating || 0,
+      totalReviews: doer.totalReviews || 0,
+      successRate: doer.successRate || 0,
+      onTimeDeliveryRate: doer.onTimeDeliveryRate || 0,
+      qualityRating: 0,
+      timelinessRating: 0,
+      communicationRating: 0,
     };
 
-    let normalizedDoer = null;
-    let stats = null;
-
-    if (doer) {
-      normalizedDoer = normalizeDoer(doer.toObject());
-      stats = {
-        activeAssignments: activeCount,
-        completedProjects: doer.totalProjectsCompleted || 0,
-        totalEarnings: doer.totalEarnings || 0,
-        pendingEarnings: wallet?.balance || 0,
-        averageRating: doer.averageRating || 0,
-        totalReviews: doer.totalReviews || 0,
-        successRate: doer.successRate || 0,
-        onTimeDeliveryRate: doer.onTimeDeliveryRate || 0,
-        qualityRating: 0,
-        timelinessRating: 0,
-        communicationRating: 0,
-      };
-    }
-
-    res.json({ profile: normalizedProfile, doer: normalizedDoer, stats });
+    res.json({ doer: normalizedDoerData, stats });
   } catch (err) {
     next(err);
   }
@@ -138,7 +122,7 @@ router.get('/by-profile/:profileId/full', authenticate, async (req: Request, res
 // GET /doers/:id
 router.get('/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const doer = await Doer.findById(req.params.id).populate('profileId', 'fullName email avatarUrl phone');
+    const doer = await Doer.findById(req.params.id);
     if (!doer) throw new AppError('Doer not found', 404);
     res.json({ doer });
   } catch (err) {
@@ -217,32 +201,60 @@ router.get('/:id/reviews', authenticate, async (req: Request, res: Response, nex
   try {
     const { page = '1', limit = '20' } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
+    const doerId = req.params.id;
 
-    const [reviews, total] = await Promise.all([
-      DoerReview.find({ doerId: req.params.id })
-        .populate('reviewerId', 'fullName avatarUrl')
+    const [userReviews, supervisorReviews, userTotal, supervisorTotal] = await Promise.all([
+      UserDoerReview.find({ doerId })
+        .populate('userId', 'fullName avatarUrl')
         .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(Number(limit)),
-      DoerReview.countDocuments({ doerId: req.params.id }),
+        .lean(),
+      SupervisorDoerReview.find({ doerId })
+        .populate('supervisorId', 'fullName avatarUrl')
+        .sort({ createdAt: -1 })
+        .lean(),
+      UserDoerReview.countDocuments({ doerId }),
+      SupervisorDoerReview.countDocuments({ doerId }),
     ]);
 
-    const normalizedReviews = reviews.map(r => {
-      const obj = r.toObject();
-      const reviewer = obj.reviewerId && typeof obj.reviewerId === 'object' ? obj.reviewerId as any : null;
+    // Normalize and tag each review with its source
+    const normalizedUserReviews = userReviews.map((r: any) => {
+      const reviewer = r.userId && typeof r.userId === 'object' ? r.userId : null;
       return {
-        ...obj,
-        id: obj._id,
-        doer_id: obj.doerId,
-        reviewer_id: obj.reviewerId,
-        project_id: obj.projectId,
-        created_at: obj.createdAt,
+        id: r._id,
+        doer_id: r.doerId,
+        project_id: r.projectId,
+        rating: r.rating,
+        review: r.review,
+        source: 'user',
         reviewer_name: reviewer?.fullName || null,
         reviewer_avatar: reviewer?.avatarUrl || null,
+        created_at: r.createdAt,
       };
     });
 
-    res.json({ reviews: normalizedReviews, total });
+    const normalizedSupervisorReviews = supervisorReviews.map((r: any) => {
+      const reviewer = r.supervisorId && typeof r.supervisorId === 'object' ? r.supervisorId : null;
+      return {
+        id: r._id,
+        doer_id: r.doerId,
+        project_id: r.projectId,
+        rating: r.rating,
+        review: r.review,
+        source: 'supervisor',
+        reviewer_name: reviewer?.fullName || null,
+        reviewer_avatar: reviewer?.avatarUrl || null,
+        created_at: r.createdAt,
+      };
+    });
+
+    // Combine, sort by date descending, then paginate
+    const allReviews = [...normalizedUserReviews, ...normalizedSupervisorReviews]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(skip, skip + Number(limit));
+
+    const total = userTotal + supervisorTotal;
+
+    res.json({ reviews: allReviews, total });
   } catch (err) {
     next(err);
   }
