@@ -217,7 +217,7 @@ class ChatSender {
 class ChatParticipant {
   final String id;
   final String chatRoomId;
-  final String profileId;
+  final String userId;
   final String participantRole;
   final bool isActive;
   final DateTime? lastReadAt;
@@ -228,7 +228,7 @@ class ChatParticipant {
   const ChatParticipant({
     required this.id,
     required this.chatRoomId,
-    required this.profileId,
+    required this.userId,
     required this.participantRole,
     this.isActive = true,
     this.lastReadAt,
@@ -243,7 +243,7 @@ class ChatParticipant {
     return ChatParticipant(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       chatRoomId: (json['chat_room_id'] ?? json['chatRoomId'] ?? '').toString(),
-      profileId: (json['profile_id'] ?? json['profileId'] ?? '').toString(),
+      userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
       participantRole: (json['participant_role'] ?? json['participantRole']) as String? ?? 'user',
       isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
       lastReadAt: lastReadStr != null ? DateTime.tryParse(lastReadStr) : null,

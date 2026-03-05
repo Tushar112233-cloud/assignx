@@ -38,9 +38,9 @@ export function usePayment() {
    * Create a top-up order with retry logic
    */
   const createTopUpOrder = useCallback(
-    async (profileId: string, amount: number): Promise<RazorpayOrder | null> => {
+    async (userId: string, amount: number): Promise<RazorpayOrder | null> => {
       // Generate idempotency key
-      const idempotencyKey = generateIdempotencyKey(profileId, "topup", String(amount))
+      const idempotencyKey = generateIdempotencyKey(userId, "topup", String(amount))
 
       // Check for duplicate request
       if (idempotencyKeysRef.current.has(idempotencyKey)) {
@@ -53,7 +53,7 @@ export function usePayment() {
 
       try {
         const result = await withRetry(
-          () => walletService.createTopUpOrder(profileId, amount),
+          () => walletService.createTopUpOrder(userId, amount),
           {
             ...PAYMENT_RETRY_OPTIONS,
             onRetry: (attempt, error, delayMs) => {
@@ -145,9 +145,9 @@ export function usePayment() {
    * Pay from wallet with retry logic
    */
   const payFromWallet = useCallback(
-    async (profileId: string, projectId: string, amount: number): Promise<boolean> => {
+    async (userId: string, projectId: string, amount: number): Promise<boolean> => {
       const idempotencyKey = generateIdempotencyKey(
-        profileId,
+        userId,
         "wallet_pay",
         `${projectId}_${amount}`
       )
@@ -162,7 +162,7 @@ export function usePayment() {
 
       try {
         const result = await withRetry(
-          () => walletService.payFromWallet(profileId, projectId, amount),
+          () => walletService.payFromWallet(userId, projectId, amount),
           {
             ...PAYMENT_RETRY_OPTIONS,
             maxAttempts: 2, // Fewer retries for wallet payments (already atomic)
@@ -197,7 +197,7 @@ export function usePayment() {
    */
   const verifyPayment = useCallback(
     async (
-      profileId: string,
+      userId: string,
       paymentData: {
         razorpay_order_id: string
         razorpay_payment_id: string
@@ -207,7 +207,7 @@ export function usePayment() {
       projectId?: string
     ): Promise<boolean> => {
       const idempotencyKey = generateIdempotencyKey(
-        profileId,
+        userId,
         "verify",
         paymentData.razorpay_payment_id
       )
@@ -223,7 +223,7 @@ export function usePayment() {
       try {
         const result = await withRetry(
           () =>
-            walletService.verifyAndCreditWallet(profileId, paymentData, amount, projectId),
+            walletService.verifyAndCreditWallet(userId, paymentData, amount, projectId),
           {
             ...PAYMENT_RETRY_OPTIONS,
             onRetry: (attempt) => {

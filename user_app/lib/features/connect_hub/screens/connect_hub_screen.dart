@@ -18,7 +18,7 @@ import '../../pro_network/screens/pro_network_screen.dart';
 final professionalDataProvider =
     FutureProvider.autoDispose<ProfessionalData?>((ref) async {
   try {
-    final response = await ApiClient.get('/profiles/me/professional');
+    final response = await ApiClient.get('/users/me/professional');
     if (response == null) return null;
     return ProfessionalData.fromJson(response as Map<String, dynamic>);
   } catch (e) {

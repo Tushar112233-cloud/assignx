@@ -260,7 +260,7 @@ class DangerZoneSection extends ConsumerWidget {
   /// Deactivates the account via the API, then signs out.
   Future<void> _deactivateAccount(BuildContext context, WidgetRef ref) async {
     try {
-      await ApiClient.post('/profiles/me/deactivate', {});
+      await ApiClient.post('/users/me/deactivate', {});
 
       final repository = ref.read(profileRepositoryProvider);
       await repository.logout();
@@ -392,7 +392,7 @@ class DangerZoneSection extends ConsumerWidget {
   /// Deletes the account by setting deleted_at = now(), then signs out.
   Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
     try {
-      await ApiClient.post('/profiles/me/delete', {});
+      await ApiClient.post('/users/me/delete', {});
 
       final repository = ref.read(profileRepositoryProvider);
       await repository.logout();

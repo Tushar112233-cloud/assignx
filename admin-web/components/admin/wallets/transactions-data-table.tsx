@@ -83,10 +83,9 @@ interface TransactionListItem {
   wallet_id: string | null;
   created_at: string;
   wallet?: {
-    profiles: {
-      full_name: string | null;
-      email: string | null;
-    } | null;
+    full_name: string | null;
+    email: string | null;
+    avatar_url?: string | null;
   } | null;
 }
 
@@ -172,7 +171,7 @@ export function TransactionsDataTable({
           <TableBody>
             {data.length > 0 ? (
               data.map((txn) => {
-                const walletProfile = txn.wallet?.profiles;
+                const walletProfile = txn.wallet;
                 return (
                   <TableRow key={txn.id}>
                     <TableCell>

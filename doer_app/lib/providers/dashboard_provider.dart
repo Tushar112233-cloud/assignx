@@ -187,7 +187,7 @@ class DashboardNotifier extends Notifier<DashboardState> {
   /// Loads recent reviews from API.
   Future<void> _loadReviews(String profileId) async {
     try {
-      final response = await ApiClient.get('/profiles/me/reviews?limit=50');
+      final response = await ApiClient.get('/doers/me/reviews?limit=50');
       final list = response is List
           ? response
           : (response as Map<String, dynamic>)['reviews'] as List? ?? [];
@@ -225,10 +225,9 @@ class DashboardNotifier extends Notifier<DashboardState> {
   /// Loads doer availability status from API.
   Future<void> _loadAvailability(String doerId) async {
     try {
-      final response = await ApiClient.get('/profiles/me');
+      final response = await ApiClient.get('/doers/me');
       if (response is Map<String, dynamic>) {
-        final doer = response['doer'] as Map<String, dynamic>?;
-        state = state.copyWith(isAvailable: doer?['isAvailable'] as bool? ?? true);
+        state = state.copyWith(isAvailable: response['isAvailable'] as bool? ?? true);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -242,7 +241,7 @@ class DashboardNotifier extends Notifier<DashboardState> {
     final newStatus = !state.isAvailable;
 
     try {
-      await ApiClient.put('/profiles/me/availability', {
+      await ApiClient.put('/doers/me/availability', {
         'isAvailable': newStatus,
       });
 

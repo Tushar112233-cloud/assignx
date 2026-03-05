@@ -74,7 +74,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       UserModel? profile;
       try {
-        profile = await _repository.fetchUserProfile(user.id);
+        profile = await _repository.fetchUserProfile();
       } catch (e) {
         debugPrint('Profile fetch failed: $e');
       }

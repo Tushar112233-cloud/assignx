@@ -151,7 +151,8 @@ extension TicketPriorityExtension on TicketPriority {
 class TicketModel {
   const TicketModel({
     required this.id,
-    required this.userId,
+    required this.raisedById,
+    required this.raisedByRole,
     required this.subject,
     required this.category,
     required this.status,
@@ -174,8 +175,11 @@ class TicketModel {
   /// Ticket number for reference.
   final String? ticketNumber;
 
-  /// User ID who created the ticket.
-  final String userId;
+  /// ID of the user/supervisor/doer who raised the ticket.
+  final String raisedById;
+
+  /// Role of the person who raised the ticket (e.g. 'supervisor', 'doer', 'user').
+  final String raisedByRole;
 
   /// Ticket subject.
   final String subject;
@@ -253,7 +257,8 @@ class TicketModel {
     return TicketModel(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       ticketNumber: (json['ticketNumber'] ?? json['ticket_number']) as String?,
-      userId: (json['requesterId'] ?? json['requester_id'] ?? json['userId'] ?? json['user_id'] ?? '').toString(),
+      raisedById: (json['raisedById'] ?? json['raised_by_id'] ?? json['requesterId'] ?? json['requester_id'] ?? json['userId'] ?? json['user_id'] ?? '').toString(),
+      raisedByRole: (json['raisedByRole'] ?? json['raised_by_role'] ?? 'supervisor').toString(),
       subject: json['subject'] as String? ?? '',
       description: json['description'] as String?,
       category: _parseCategory(json['category'] as String?),
@@ -280,7 +285,8 @@ class TicketModel {
     return {
       'id': id,
       'ticket_number': ticketNumber,
-      'user_id': userId,
+      'raised_by_id': raisedById,
+      'raised_by_role': raisedByRole,
       'subject': subject,
       'description': description,
       'category': category.name,
@@ -300,7 +306,8 @@ class TicketModel {
   TicketModel copyWith({
     String? id,
     String? ticketNumber,
-    String? userId,
+    String? raisedById,
+    String? raisedByRole,
     String? subject,
     String? description,
     TicketCategory? category,
@@ -318,7 +325,8 @@ class TicketModel {
     return TicketModel(
       id: id ?? this.id,
       ticketNumber: ticketNumber ?? this.ticketNumber,
-      userId: userId ?? this.userId,
+      raisedById: raisedById ?? this.raisedById,
+      raisedByRole: raisedByRole ?? this.raisedByRole,
       subject: subject ?? this.subject,
       description: description ?? this.description,
       category: category ?? this.category,

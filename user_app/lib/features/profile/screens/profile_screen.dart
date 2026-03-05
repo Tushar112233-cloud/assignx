@@ -1415,7 +1415,7 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(dialogContext);
               try {
-                await ApiClient.post('/profiles/me/deactivate', {});
+                await ApiClient.post('/users/me/deactivate', {});
                 final repository = ref.read(profileRepositoryProvider);
                 await repository.logout();
                 if (context.mounted) {
@@ -1499,7 +1499,7 @@ class ProfileScreen extends ConsumerWidget {
                   ? () async {
                       Navigator.pop(dialogContext);
                       try {
-                        await ApiClient.post('/profiles/me/delete', {});
+                        await ApiClient.post('/users/me/delete', {});
                         final repository =
                             ref.read(profileRepositoryProvider);
                         await repository.logout();

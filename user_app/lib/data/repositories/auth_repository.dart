@@ -72,7 +72,7 @@ class AuthRepository {
   /// Returns null if profile doesn't exist.
   Future<UserProfile?> getUserProfile(String userId) async {
     try {
-      final response = await ApiClient.get('/profiles/me');
+      final response = await ApiClient.get('/users/me');
       if (response == null) return null;
       final data = _extractProfile(response as Map<String, dynamic>);
       return UserProfile.fromJson(data);
@@ -110,7 +110,7 @@ class AuthRepository {
       data['onboardingCompleted'] = onboardingCompleted;
     }
 
-    final response = await ApiClient.put('/profiles/me', data);
+    final response = await ApiClient.put('/users/me', data);
     final profileData = _extractProfile(response as Map<String, dynamic>);
     return UserProfile.fromJson(profileData);
   }
@@ -142,7 +142,7 @@ class AuthRepository {
       data['preferredSubjects'] = preferredSubjects;
     }
 
-    final response = await ApiClient.post('/profiles/student', data);
+    final response = await ApiClient.post('/users/me/student', data);
     final respData = response as Map<String, dynamic>;
     final studentData = respData['student'] as Map<String, dynamic>? ?? respData;
     return StudentData.fromJson(studentData);
@@ -170,7 +170,7 @@ class AuthRepository {
     if (businessType != null) data['businessType'] = businessType;
     if (gstNumber != null) data['gstNumber'] = gstNumber;
 
-    final response = await ApiClient.post('/profiles/professional', data);
+    final response = await ApiClient.post('/users/me/professional', data);
     final respData = response as Map<String, dynamic>;
     final profData = respData['professional'] as Map<String, dynamic>? ?? respData;
     return ProfessionalData.fromJson(profData);
@@ -179,7 +179,7 @@ class AuthRepository {
   /// Get student data for a profile.
   Future<StudentData?> getStudentData(String profileId) async {
     try {
-      final response = await ApiClient.get('/profiles/student');
+      final response = await ApiClient.get('/users/me/student');
       if (response == null) return null;
       final data = response as Map<String, dynamic>;
       final studentData = data['student'] as Map<String, dynamic>? ?? data;
@@ -192,7 +192,7 @@ class AuthRepository {
   /// Get professional data for a profile.
   Future<ProfessionalData?> getProfessionalData(String profileId) async {
     try {
-      final response = await ApiClient.get('/profiles/professional');
+      final response = await ApiClient.get('/users/me/professional');
       if (response == null) return null;
       final data = response as Map<String, dynamic>;
       final profData = data['professional'] as Map<String, dynamic>? ?? data;
@@ -223,7 +223,7 @@ class AuthRepository {
   /// Update last login timestamp.
   Future<void> updateLastLogin(String userId) async {
     try {
-      await ApiClient.put('/profiles/me', {
+      await ApiClient.put('/users/me', {
         'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
       });
     } catch (_) {

@@ -79,11 +79,6 @@ class ProfessionalData {
   /// Unique identifier for this professional record.
   final String id;
 
-  /// Reference to the associated [UserProfile.id].
-  ///
-  /// This is a unique foreign key ensuring one-to-one relationship.
-  final String profileId;
-
   /// The category of professional user.
   ///
   /// Determines available features and services:
@@ -138,10 +133,9 @@ class ProfessionalData {
 
   /// Creates a new [ProfessionalData] instance.
   ///
-  /// Required fields: [id], [profileId], [professionalType], [createdAt]
+  /// Required fields: [id], [professionalType], [createdAt]
   const ProfessionalData({
     required this.id,
-    required this.profileId,
     required this.professionalType,
     this.industryId,
     this.industryName,
@@ -170,7 +164,6 @@ class ProfessionalData {
   factory ProfessionalData.fromJson(Map<String, dynamic> json) {
     return ProfessionalData(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
-      profileId: (json['profile_id'] ?? json['profileId'] ?? '').toString(),
       professionalType:
           ProfessionalType.fromString((json['professional_type'] ?? json['professionalType']) as String?) ??
               ProfessionalType.jobSeeker,
@@ -201,7 +194,6 @@ class ProfessionalData {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'profile_id': profileId,
       'professional_type': professionalType.toDbString(),
       'industry_id': industryId,
       'job_title': jobTitle,
@@ -225,7 +217,6 @@ class ProfessionalData {
   /// ```
   ProfessionalData copyWith({
     String? id,
-    String? profileId,
     ProfessionalType? professionalType,
     String? industryId,
     String? industryName,
@@ -239,7 +230,6 @@ class ProfessionalData {
   }) {
     return ProfessionalData(
       id: id ?? this.id,
-      profileId: profileId ?? this.profileId,
       professionalType: professionalType ?? this.professionalType,
       industryId: industryId ?? this.industryId,
       industryName: industryName ?? this.industryName,

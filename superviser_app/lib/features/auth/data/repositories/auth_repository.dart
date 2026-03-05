@@ -124,13 +124,13 @@ class AuthRepository {
     return TokenStorage.hasTokens();
   }
 
-  Future<UserModel?> fetchUserProfile(String userId) async {
+  Future<UserModel?> fetchUserProfile() async {
     try {
-      final response = await ApiClient.get('/profiles/$userId');
+      final response = await ApiClient.get('/supervisors/me');
       if (response == null) return null;
 
       final data = response is Map<String, dynamic>
-          ? (response['profile'] as Map<String, dynamic>? ?? response)
+          ? (response['supervisor'] as Map<String, dynamic>? ?? response)
           : response as Map<String, dynamic>;
 
       return UserModel.fromJson(data);

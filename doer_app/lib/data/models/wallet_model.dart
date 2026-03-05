@@ -6,7 +6,7 @@ library;
 /// Wallet model representing the doer's wallet.
 class WalletModel {
   final String id;
-  final String profileId;
+  final String doerId;
   final double balance;
   final double lockedAmount;
   final double totalCredited;
@@ -31,7 +31,7 @@ class WalletModel {
 
   const WalletModel({
     required this.id,
-    required this.profileId,
+    required this.doerId,
     this.balance = 0.0,
     this.lockedAmount = 0.0,
     this.totalCredited = 0.0,
@@ -46,18 +46,18 @@ class WalletModel {
       return DateTime.tryParse(value.toString());
     }
 
-    // Handle profileId which may be a populated Mongoose object.
-    String profileId = '';
-    final rawProfileId = json['profile_id'] ?? json['profileId'];
-    if (rawProfileId is String) {
-      profileId = rawProfileId;
-    } else if (rawProfileId is Map<String, dynamic>) {
-      profileId = (rawProfileId['_id'] ?? rawProfileId['id'] ?? '').toString();
+    // Handle doerId which may be a populated Mongoose object.
+    String doerId = '';
+    final rawDoerId = json['doer_id'] ?? json['doerId'] ?? json['profile_id'] ?? json['profileId'];
+    if (rawDoerId is String) {
+      doerId = rawDoerId;
+    } else if (rawDoerId is Map<String, dynamic>) {
+      doerId = (rawDoerId['_id'] ?? rawDoerId['id'] ?? '').toString();
     }
 
     return WalletModel(
       id: (json['_id'] ?? json['id'] ?? '').toString(),
-      profileId: profileId,
+      doerId: doerId,
       balance: (json['balance'] as num?)?.toDouble() ?? 0.0,
       lockedAmount: ((json['locked_amount'] ?? json['lockedAmount']) as num?)?.toDouble() ?? 0.0,
       totalCredited: ((json['total_credited'] ?? json['totalCredited']) as num?)?.toDouble() ?? 0.0,
@@ -222,7 +222,7 @@ class WithdrawalRequest {
 
     return WithdrawalRequest(
       id: (json['_id'] ?? json['id'] ?? '').toString(),
-      walletId: (json['profile_id'] ?? json['profileId'] ?? json['wallet_id'] ?? json['walletId'] ?? '').toString(),
+      walletId: (json['wallet_id'] ?? json['walletId'] ?? json['doer_id'] ?? json['doerId'] ?? '').toString(),
       amount: ((json['requested_amount'] ?? json['requestedAmount']) as num?)?.toDouble() ??
               (json['amount'] as num?)?.toDouble() ?? 0.0,
       withdrawalMethod: (json['withdrawal_method'] ?? json['withdrawalMethod'] ?? 'bank_transfer').toString(),

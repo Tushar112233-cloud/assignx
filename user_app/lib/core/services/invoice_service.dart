@@ -136,7 +136,7 @@ class InvoiceService {
       final project = Project.fromJson(projectResponse as Map<String, dynamic>);
 
       // Fetch user profile via API
-      final profileResponse = await ApiClient.get('/profiles/me');
+      final profileResponse = await ApiClient.get('/users/me');
       if (profileResponse == null) return null;
       final profile = UserProfile.fromJson(profileResponse as Map<String, dynamic>);
 

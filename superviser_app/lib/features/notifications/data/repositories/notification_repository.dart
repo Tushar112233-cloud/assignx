@@ -69,7 +69,7 @@ class NotificationRepository {
   /// Get notification settings from user preferences.
   Future<NotificationSettings> getSettings() async {
     try {
-      final response = await ApiClient.get('/profiles/me/preferences');
+      final response = await ApiClient.get('/supervisors/me/preferences');
       if (response != null && response is Map<String, dynamic>) {
         return NotificationSettings.fromJson(response);
       }
@@ -79,7 +79,7 @@ class NotificationRepository {
 
   /// Update notification settings in user preferences.
   Future<void> updateSettings(NotificationSettings settings) async {
-    await ApiClient.put('/profiles/me/preferences', settings.toJson());
+    await ApiClient.put('/supervisors/me/preferences', settings.toJson());
   }
 
   /// Register device token for push notifications.

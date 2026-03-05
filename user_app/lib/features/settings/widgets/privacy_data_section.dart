@@ -103,7 +103,7 @@ class PrivacyNotifier extends StateNotifier<PrivacyState> {
   /// Sync a preference to the API.
   Future<void> _syncToApi(String key, bool value) async {
     try {
-      await ApiClient.put('/profiles/me/preferences', {
+      await ApiClient.put('/users/me/preferences', {
         key: value,
       });
     } catch (_) {
@@ -283,7 +283,7 @@ class _PrivacyDataSectionState extends ConsumerState<PrivacyDataSection> {
     setState(() => _isExporting = true);
 
     try {
-      final response = await ApiClient.get('/profiles/me/export');
+      final response = await ApiClient.get('/users/me/export');
       final exportData = response as Map<String, dynamic>? ?? {};
 
       final jsonString = const JsonEncoder.withIndent('  ').convert(exportData);

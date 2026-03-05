@@ -99,9 +99,7 @@ interface TicketListItem {
   priority: string;
   created_at: string;
   requester: { full_name: string | null } | null;
-  assigned_admin: {
-    profiles: { full_name: string | null } | null;
-  } | null;
+  assigned_admin: { full_name: string | null; email?: string | null; avatar_url?: string | null } | null;
 }
 
 interface TicketsDataTableProps {
@@ -204,7 +202,7 @@ export function TicketsDataTable({
           <TableBody>
             {data.length > 0 ? (
               data.map((ticket) => {
-                const assignedProfile = ticket.assigned_admin?.profiles;
+                const assignedProfile = ticket.assigned_admin;
                 return (
                   <TableRow key={ticket.id}>
                     <TableCell className="font-mono text-sm">

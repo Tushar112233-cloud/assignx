@@ -23,8 +23,11 @@ class AppNotification {
   /// Unique identifier (UUID).
   final String id;
 
-  /// Profile ID of the user (FK to profiles table).
-  final String profileId;
+  /// Recipient user ID (FK to users collection).
+  final String recipientId;
+
+  /// Recipient's role for this notification.
+  final String? recipientRole;
 
   /// Type of notification.
   final NotificationType notificationType;
@@ -73,7 +76,8 @@ class AppNotification {
 
   const AppNotification({
     required this.id,
-    required this.profileId,
+    required this.recipientId,
+    this.recipientRole,
     required this.notificationType,
     required this.title,
     required this.body,
@@ -95,7 +99,8 @@ class AppNotification {
   factory AppNotification.fromJson(Map<String, dynamic> json) {
     return AppNotification(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
-      profileId: (json['profile_id'] ?? json['profileId'] ?? '').toString(),
+      recipientId: (json['recipient_id'] ?? json['recipientId'] ?? '').toString(),
+      recipientRole: (json['recipient_role'] ?? json['recipientRole']) as String?,
       notificationType: _parseNotificationType((json['notification_type'] ?? json['notificationType']) as String?),
       title: (json['title'] as String?) ?? '',
       body: (json['body'] as String?) ?? '',
@@ -126,7 +131,8 @@ class AppNotification {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'profile_id': profileId,
+      'recipient_id': recipientId,
+      'recipient_role': recipientRole,
       'notification_type': _notificationTypeToString(notificationType),
       'title': title,
       'body': body,
@@ -226,7 +232,8 @@ class AppNotification {
   /// Creates a copy of this notification with the given fields replaced.
   AppNotification copyWith({
     String? id,
-    String? profileId,
+    String? recipientId,
+    String? recipientRole,
     NotificationType? notificationType,
     String? title,
     String? body,
@@ -245,7 +252,8 @@ class AppNotification {
   }) {
     return AppNotification(
       id: id ?? this.id,
-      profileId: profileId ?? this.profileId,
+      recipientId: recipientId ?? this.recipientId,
+      recipientRole: recipientRole ?? this.recipientRole,
       notificationType: notificationType ?? this.notificationType,
       title: title ?? this.title,
       body: body ?? this.body,
@@ -266,7 +274,7 @@ class AppNotification {
 
   @override
   String toString() {
-    return 'AppNotification(id: $id, profileId: $profileId, notificationType: $notificationType, title: $title)';
+    return 'AppNotification(id: $id, recipientId: $recipientId, notificationType: $notificationType, title: $title)';
   }
 
   @override

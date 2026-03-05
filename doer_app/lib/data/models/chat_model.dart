@@ -49,8 +49,8 @@ class ChatRoomModel {
         if (p is Map<String, dynamic>) {
           if (p['profile'] != null && p['profile'] is Map) {
             participants.add(ChatParticipant.fromJson(p['profile'] as Map<String, dynamic>));
-          } else if (p['profileId'] != null && p['profileId'] is Map) {
-            participants.add(ChatParticipant.fromJson(p['profileId'] as Map<String, dynamic>));
+          } else if (p['userId'] != null && p['userId'] is Map) {
+            participants.add(ChatParticipant.fromJson(p['userId'] as Map<String, dynamic>));
           } else {
             // Flat participant object.
             participants.add(ChatParticipant.fromJson(p));

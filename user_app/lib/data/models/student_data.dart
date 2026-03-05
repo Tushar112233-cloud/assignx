@@ -68,11 +68,6 @@ class StudentData {
   /// Unique identifier for this student record.
   final String id;
 
-  /// Reference to the associated [UserProfile.id].
-  ///
-  /// This is a unique foreign key ensuring one-to-one relationship.
-  final String profileId;
-
   /// Reference ID to the universities lookup table.
   ///
   /// Used for standardized university data and validation.
@@ -145,10 +140,9 @@ class StudentData {
 
   /// Creates a new [StudentData] instance.
   ///
-  /// Required fields: [id], [profileId], [createdAt]
+  /// Required fields: [id], [createdAt]
   const StudentData({
     required this.id,
-    required this.profileId,
     this.universityId,
     this.universityName,
     this.courseId,
@@ -180,7 +174,6 @@ class StudentData {
   factory StudentData.fromJson(Map<String, dynamic> json) {
     return StudentData(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
-      profileId: (json['profile_id'] ?? json['profileId'] ?? '').toString(),
       universityId: (json['university_id'] ?? json['universityId']) as String?,
       universityName: (json['university_name'] ?? json['universityName']) as String?,
       courseId: (json['course_id'] ?? json['courseId']) as String?,
@@ -215,7 +208,6 @@ class StudentData {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'profile_id': profileId,
       'university_id': universityId,
       'course_id': courseId,
       'semester': semester,
@@ -242,7 +234,6 @@ class StudentData {
   /// ```
   StudentData copyWith({
     String? id,
-    String? profileId,
     String? universityId,
     String? universityName,
     String? courseId,
@@ -260,7 +251,6 @@ class StudentData {
   }) {
     return StudentData(
       id: id ?? this.id,
-      profileId: profileId ?? this.profileId,
       universityId: universityId ?? this.universityId,
       universityName: universityName ?? this.universityName,
       courseId: courseId ?? this.courseId,

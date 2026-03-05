@@ -107,7 +107,7 @@ enum TransactionStatus {
 /// Wallet model for user balance and transactions.
 class Wallet {
   final String id;
-  final String profileId;
+  final String userId;
   final double balance;
   final String currency;
   final double totalCredited;
@@ -119,7 +119,7 @@ class Wallet {
 
   const Wallet({
     this.id = '',
-    required this.profileId,
+    required this.userId,
     this.balance = 0,
     this.currency = 'INR',
     this.totalCredited = 0,
@@ -161,7 +161,7 @@ class Wallet {
 
     return Wallet(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
-      profileId: (json['profile_id'] ?? json['profileId'] ?? '').toString(),
+      userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
       balance: _parseDouble(json['balance']),
       currency: json['currency'] as String? ?? 'INR',
       totalCredited: _parseDouble(json['total_credited'] ?? json['totalCredited']),
@@ -176,7 +176,7 @@ class Wallet {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'profile_id': profileId,
+      'user_id': userId,
       'balance': balance,
       'currency': currency,
       'total_credited': totalCredited,
@@ -190,7 +190,7 @@ class Wallet {
 
   Wallet copyWith({
     String? id,
-    String? profileId,
+    String? userId,
     double? balance,
     String? currency,
     double? totalCredited,
@@ -202,7 +202,7 @@ class Wallet {
   }) {
     return Wallet(
       id: id ?? this.id,
-      profileId: profileId ?? this.profileId,
+      userId: userId ?? this.userId,
       balance: balance ?? this.balance,
       currency: currency ?? this.currency,
       totalCredited: totalCredited ?? this.totalCredited,

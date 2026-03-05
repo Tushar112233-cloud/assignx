@@ -720,7 +720,7 @@ class ActivationNotifier extends Notifier<ActivationState> {
         });
 
         // Update doer table as well
-        await ApiClient.put('/profiles/me/activation', {
+        await ApiClient.put('/doers/me/activation', {
           'isActivated': true,
         });
       } catch (e) {

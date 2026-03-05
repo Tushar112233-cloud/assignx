@@ -13,7 +13,7 @@ class ProfileRepository {
   /// Get current user's profile.
   Future<SupervisorProfile?> getProfile() async {
     try {
-      final response = await ApiClient.get('/supervisor/profile');
+      final response = await ApiClient.get('/supervisors/me');
       if (response == null) return null;
       return SupervisorProfile.fromJson(response as Map<String, dynamic>);
     } catch (e) {
@@ -28,7 +28,7 @@ class ProfileRepository {
   Future<SupervisorProfile?> updateProfile(SupervisorProfile profile) async {
     try {
       final response = await ApiClient.put(
-        '/supervisor/profile',
+        '/supervisors/me',
         profile.toJson(),
       );
       if (response == null) return null;
@@ -62,7 +62,7 @@ class ProfileRepository {
   /// Update availability status.
   Future<bool> updateAvailability(bool isAvailable) async {
     try {
-      await ApiClient.put('/supervisor/profile/availability', {
+      await ApiClient.put('/supervisors/me/availability', {
         'is_available': isAvailable,
       });
       return true;
@@ -95,7 +95,7 @@ class ProfileRepository {
       }
       final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
 
-      final response = await ApiClient.get('/supervisor/reviews?$query');
+      final response = await ApiClient.get('/supervisors/me/reviews?$query');
       final list = response is List
           ? response
           : (response as Map<String, dynamic>)['reviews'] as List? ?? [];
@@ -114,7 +114,7 @@ class ProfileRepository {
   /// Get reviews summary.
   Future<ReviewsSummary> getReviewsSummary() async {
     try {
-      final response = await ApiClient.get('/supervisor/reviews/summary');
+      final response = await ApiClient.get('/supervisors/me/reviews/summary');
 
       if (response == null) {
         return const ReviewsSummary(
@@ -145,7 +145,7 @@ class ProfileRepository {
   /// Get blacklisted doers.
   Future<List<DoerInfo>> getBlacklistedDoers() async {
     try {
-      final response = await ApiClient.get('/supervisor/blacklist');
+      final response = await ApiClient.get('/supervisors/me/blacklist');
       final list = response is List
           ? response
           : (response as Map<String, dynamic>)['doers'] as List? ?? [];
@@ -164,7 +164,7 @@ class ProfileRepository {
   /// Add doer to blacklist.
   Future<bool> blacklistDoer(String doerId, String reason) async {
     try {
-      await ApiClient.post('/supervisor/blacklist', {
+      await ApiClient.post('/supervisors/me/blacklist', {
         'doer_id': doerId,
         'reason': reason,
       });
@@ -180,7 +180,7 @@ class ProfileRepository {
   /// Remove doer from blacklist.
   Future<bool> unblacklistDoer(String doerId) async {
     try {
-      await ApiClient.delete('/supervisor/blacklist/$doerId');
+      await ApiClient.delete('/supervisors/me/blacklist/$doerId');
       return true;
     } catch (e) {
       if (kDebugMode) {

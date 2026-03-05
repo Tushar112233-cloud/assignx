@@ -166,7 +166,10 @@ export const chatService = {
       method: 'POST',
       body: JSON.stringify({ userId }),
     })
-    return result.room || result as any
+    if (!result.room) {
+      throw new Error('Failed to get or create chat room: unexpected API response')
+    }
+    return result.room
   },
 
   /**

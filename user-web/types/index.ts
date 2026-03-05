@@ -1,4 +1,4 @@
-export * from "./database";
+export * from "./profile";
 export * from "./project";
 export * from "./account-upgrade";
 

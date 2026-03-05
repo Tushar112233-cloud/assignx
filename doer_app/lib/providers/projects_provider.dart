@@ -170,12 +170,9 @@ class MyProjectsNotifier extends Notifier<MyProjectsState> {
   Future<String?> _getDoerId() async {
     if (_cachedDoerId != null) return _cachedDoerId;
     try {
-      final response = await ApiClient.get('/profiles/me');
+      final response = await ApiClient.get('/doers/me');
       if (response is Map<String, dynamic>) {
-        final doer = response['doer'] as Map<String, dynamic>?;
-        if (doer != null) {
-          _cachedDoerId = (doer['_id'] ?? doer['id'])?.toString();
-        }
+        _cachedDoerId = (response['_id'] ?? response['id'])?.toString();
       }
       return _cachedDoerId;
     } catch (_) {

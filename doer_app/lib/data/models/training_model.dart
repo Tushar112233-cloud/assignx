@@ -405,7 +405,7 @@ class TrainingProgress {
 
     return TrainingProgress(
       id: (json['_id'] ?? json['id'] ?? '').toString(),
-      doerId: (json['profile_id'] ?? json['profileId'] ?? json['doer_id'] ?? json['doerId'] ?? '').toString(),
+      doerId: (json['doer_id'] ?? json['doerId'] ?? '').toString(),
       moduleId: moduleId,
       isCompleted: isCompleted,
       progressPercent: (json['progress_percentage'] ?? json['progressPercentage']

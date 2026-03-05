@@ -105,7 +105,7 @@ export const walletService = {
     userId: string,
     filters?: TransactionFilters
   ): Promise<WalletTransaction[]> {
-    const params = new URLSearchParams({ userId: userId, walletType: 'user' })
+    const params = new URLSearchParams({ user_id: userId, wallet_type: 'user' })
     if (filters?.type) params.set('type', filters.type)
     if (filters?.fromDate) params.set('fromDate', filters.fromDate)
     if (filters?.toDate) params.set('toDate', filters.toDate)
@@ -264,7 +264,7 @@ export const walletService = {
    */
   async getPaymentMethods(userId: string): Promise<PaymentMethod[]> {
     const result = await apiClient<{ paymentMethods: PaymentMethod[] }>(
-      `/api/wallets/payment-methods?userId=${userId}&roleContext=user`
+      `/api/wallets/payment-methods?user_id=${userId}&role_context=user`
     )
     return result.paymentMethods || result as any
   },
@@ -286,7 +286,7 @@ export const walletService = {
   async removePaymentMethod(paymentMethodId: string): Promise<void> {
     await apiClient(`/api/wallets/payment-methods/${paymentMethodId}`, {
       method: 'DELETE',
-      body: JSON.stringify({ roleContext: 'user' }),
+      body: JSON.stringify({ role_context: 'user' }),
     })
   },
 
@@ -299,7 +299,7 @@ export const walletService = {
   ): Promise<void> {
     await apiClient(`/api/wallets/payment-methods/${paymentMethodId}/default`, {
       method: 'PATCH',
-      body: JSON.stringify({ userId: userId, roleContext: 'user' }),
+      body: JSON.stringify({ user_id: userId, role_context: 'user' }),
     })
   },
 
@@ -313,7 +313,7 @@ export const walletService = {
   ): Promise<{ credits: number; debits: number }> {
     try {
       const result = await apiClient<{ credits: number; debits: number }>(
-        `/api/wallets/transaction-summary?userId=${userId}&walletType=user&fromDate=${fromDate}&toDate=${toDate}`
+        `/api/wallets/transaction-summary?user_id=${userId}&wallet_type=user&from_date=${fromDate}&to_date=${toDate}`
       )
       return result
     } catch {

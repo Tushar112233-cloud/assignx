@@ -112,7 +112,7 @@ class _InvoiceDownloadButtonState extends ConsumerState<InvoiceDownloadButton> {
 
     try {
       // Fetch user profile from API
-      final profileResponse = await ApiClient.get('/profiles/me');
+      final profileResponse = await ApiClient.get('/users/me');
       if (profileResponse == null) {
         throw Exception('User not authenticated');
       }

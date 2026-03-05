@@ -224,32 +224,17 @@ class ApiAuthRepository implements AuthRepository {
     LoggerService.info('AuthRepository: Fetching user profile', data: {'userId': userId});
 
     try {
-      final response = await ApiClient.get('/profiles/$userId?include=doer,skills,subjects');
+      final response = await ApiClient.get('/doers/me');
 
       if (response == null) {
         LoggerService.warning('AuthRepository: Profile not found', data: {'userId': userId});
         return null;
       }
 
-      // API returns { profile: {...} } — unwrap if needed
+      // API returns doer data directly (no profile wrapper needed)
       final data = response is Map<String, dynamic>
-          ? (response['profile'] as Map<String, dynamic>? ?? response)
+          ? (response['doer'] as Map<String, dynamic>? ?? response)
           : response as Map<String, dynamic>;
-
-      // Also fetch /auth/me to get roleData (doer-specific fields like isActivated, doerId)
-      // since /profiles/:id doesn't include doer data
-      try {
-        final meResponse = await ApiClient.get('/auth/me');
-        if (meResponse is Map<String, dynamic>) {
-          final roleData = meResponse['roleData'] as Map<String, dynamic>?;
-          if (roleData != null) {
-            // Merge roleData as the 'doer' nested object that UserModel.fromJson expects
-            data['doer'] = roleData;
-          }
-        }
-      } catch (e) {
-        LoggerService.warning('AuthRepository: Could not fetch roleData from /auth/me', data: {'error': e.toString()});
-      }
 
       return UserModel.fromJson(data);
     } catch (e) {
@@ -265,9 +250,9 @@ class ApiAuthRepository implements AuthRepository {
     required String fullName,
     required String phone,
   }) async {
-    LoggerService.info('AuthRepository: Creating profile', data: {'userId': userId});
+    LoggerService.info('AuthRepository: Creating doer', data: {'userId': userId});
 
-    await ApiClient.post('/profiles', {
+    await ApiClient.post('/doers', {
       'id': userId,
       'email': email,
       'full_name': fullName,
@@ -281,10 +266,9 @@ class ApiAuthRepository implements AuthRepository {
     required String profileId,
     required ProfileSetupData data,
   }) async {
-    LoggerService.info('AuthRepository: Creating doer profile', data: {'profileId': profileId});
+    LoggerService.info('AuthRepository: Creating doer profile', data: {'doerId': profileId});
 
     final response = await ApiClient.post('/doers', {
-      'profileId': profileId,
       ...data.toDoerInsertData(profileId),
       'skillIds': data.skillIds,
       'subjectIds': data.subjectIds,

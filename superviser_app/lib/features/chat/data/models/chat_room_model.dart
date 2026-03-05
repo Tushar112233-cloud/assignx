@@ -98,18 +98,14 @@ class ChatRoomModel {
     projectTitle ??= (json['projectTitle'] ?? json['project_title'] ?? json['name']) as String?;
     projectNumber ??= (json['projectNumber'] ?? json['project_number']) as String?;
 
-    // Extract participants - may be list of strings or list of populated objects
+    // Extract participants - may be list of strings or list of { id, role } objects
     List<String>? participants;
     if (json['participants'] is List) {
       participants = (json['participants'] as List).map((p) {
         if (p is String) return p;
         if (p is Map<String, dynamic>) {
-          // Could be a populated profileId object
-          final profileId = p['profileId'] ?? p['profile_id'];
-          if (profileId is Map<String, dynamic>) {
-            return (profileId['_id'] ?? profileId['id'] ?? '').toString();
-          }
-          return (p['_id'] ?? p['id'] ?? p['profileId'] ?? p['profile_id'] ?? '').toString();
+          // New format: { id, role } where id is the doer/supervisor/user _id
+          return (p['id'] ?? p['_id'] ?? '').toString();
         }
         return p.toString();
       }).toList();

@@ -150,14 +150,14 @@ export default async function ReportsPage() {
               {topSupervisors.map((s: any) => (
                 <div key={s._id || s.id} className="py-2 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                    {(s.full_name || s.fullName || s.profile?.full_name || "?")[0].toUpperCase()}
+                    {(s.full_name || s.fullName || "?")[0].toUpperCase()}
                   </div>
                   <div>
                     <p className="text-sm font-medium">
-                      {s.full_name || s.fullName || s.profile?.full_name || "-"}
+                      {s.full_name || s.fullName || "-"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {s.email || s.profile?.email || ""}
+                      {s.email || ""}
                     </p>
                   </div>
                 </div>

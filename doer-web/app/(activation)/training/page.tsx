@@ -52,14 +52,14 @@ export default function TrainingPage() {
 
       const [mods, prog] = await Promise.all([
         getTrainingModules('doer'),
-        getTrainingProgress(user.id),
+        getTrainingProgress(),
       ])
 
       setModules(mods)
       setProgress(prog)
 
       // Check if all training is complete
-      const done = await isTrainingComplete(user.id, 'doer')
+      const done = await isTrainingComplete('doer')
       setAllDone(done)
     } catch (err) {
       console.error('Error loading training data:', err)
@@ -79,14 +79,14 @@ export default function TrainingPage() {
     setError(null)
 
     try {
-      await markModuleComplete(userId, moduleId)
+      await markModuleComplete(moduleId)
 
       // Refresh progress
-      const updatedProgress = await getTrainingProgress(userId)
+      const updatedProgress = await getTrainingProgress()
       setProgress(updatedProgress)
 
       // Check if all done
-      const done = await isTrainingComplete(userId, 'doer')
+      const done = await isTrainingComplete('doer')
       setAllDone(done)
     } catch (err) {
       console.error('Error marking module complete:', err)

@@ -4,7 +4,7 @@
 /// User model combining profile and doer data for the Doer application.
 ///
 /// This file contains the [UserModel] class which provides a unified view
-/// of user data from both the `profiles` and `doers` tables, along with
+/// of user data from the `doers` collection, along with
 /// supporting data classes for registration and profile setup.
 ///
 /// ## Models in this file
@@ -18,11 +18,10 @@ library user_model;
 import 'doer_model.dart';
 import 'profile_model.dart';
 
-/// Combined user model representing a DOER user with both profile and doer data.
+/// Combined user model representing a DOER user.
 ///
-/// This is a convenience model that combines data from the `profiles` and `doers`
-/// tables for use in the UI layer. It provides a unified view of the user,
-/// eliminating the need to manage two separate models in widgets and providers.
+/// This model represents doer data from the `doers` collection
+/// for use in the UI layer. JWT `sub` = Doer `_id`.
 ///
 /// ## JSON Structure
 ///
@@ -797,7 +796,6 @@ class RegistrationData {
 ///
 /// ```json
 /// {
-///   "profile_id": "uuid",
 ///   "qualification": "B.Tech",
 ///   "university_name": "IIT Mumbai",
 ///   "experience_level": "intermediate",
@@ -891,11 +889,10 @@ class ProfileSetupData {
   /// Generates a map suitable for Supabase insert operation.
   /// Only includes non-null optional fields.
   ///
-  /// @param profileId The profile UUID to link this doer record to.
+  /// @param _doerId Unused legacy parameter (doer ID comes from JWT).
   /// @returns A map of column names to values for database insert.
-  Map<String, dynamic> toDoerInsertData(String profileId) {
+  Map<String, dynamic> toDoerInsertData(String _doerId) {
     return {
-      'profile_id': profileId,
       'qualification': qualification,
       if (universityName != null) 'university_name': universityName,
       'experience_level': experienceLevel,

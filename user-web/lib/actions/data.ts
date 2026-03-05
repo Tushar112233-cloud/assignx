@@ -329,12 +329,12 @@ export async function submitFeedback(data: {
  * Update profile
  */
 export async function updateProfile(data: {
-  fullName?: string;
+  full_name?: string;
   phone?: string;
   city?: string;
   state?: string;
   country?: string;
-  avatarUrl?: string;
+  avatar_url?: string;
 }) {
   const token = await getToken();
   if (!token) return { error: "Not authenticated" };
@@ -554,7 +554,7 @@ export async function uploadAvatar(base64Data: string, fileName: string) {
     // Update profile with new avatar URL
     await serverApiClient("/api/users/me", {
       method: "PUT",
-      body: JSON.stringify({ avatarUrl: result.url }),
+      body: JSON.stringify({ avatar_url: result.url }),
     }, token);
 
     revalidatePath("/profile");

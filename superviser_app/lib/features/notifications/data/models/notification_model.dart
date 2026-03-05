@@ -114,7 +114,8 @@ extension NotificationTypeExtension on NotificationType {
 class NotificationModel {
   const NotificationModel({
     required this.id,
-    required this.userId,
+    required this.recipientId,
+    required this.recipientRole,
     required this.type,
     required this.title,
     required this.body,
@@ -129,8 +130,11 @@ class NotificationModel {
   /// Unique notification ID.
   final String id;
 
-  /// User ID this notification belongs to.
-  final String userId;
+  /// Recipient ID this notification belongs to.
+  final String recipientId;
+
+  /// Role of the recipient (e.g. 'supervisor', 'doer', 'user').
+  final String recipientRole;
 
   /// Type of notification.
   final NotificationType type;
@@ -203,7 +207,8 @@ class NotificationModel {
 
     return NotificationModel(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
-      userId: (json['profileId'] ?? json['profile_id'] ?? json['userId'] ?? json['user_id'] ?? '').toString(),
+      recipientId: (json['recipientId'] ?? json['recipient_id'] ?? json['profileId'] ?? json['profile_id'] ?? json['userId'] ?? json['user_id'] ?? '').toString(),
+      recipientRole: (json['recipientRole'] ?? json['recipient_role'] ?? 'supervisor').toString(),
       type: _parseType(
           (json['notificationType'] ?? json['notification_type'] ?? json['type']) as String?),
       title: json['title'] as String? ?? '',
@@ -226,7 +231,8 @@ class NotificationModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'user_id': userId,
+      'recipient_id': recipientId,
+      'recipient_role': recipientRole,
       'type': type.name,
       'title': title,
       'body': body,
@@ -241,7 +247,8 @@ class NotificationModel {
 
   NotificationModel copyWith({
     String? id,
-    String? userId,
+    String? recipientId,
+    String? recipientRole,
     NotificationType? type,
     String? title,
     String? body,
@@ -254,7 +261,8 @@ class NotificationModel {
   }) {
     return NotificationModel(
       id: id ?? this.id,
-      userId: userId ?? this.userId,
+      recipientId: recipientId ?? this.recipientId,
+      recipientRole: recipientRole ?? this.recipientRole,
       type: type ?? this.type,
       title: title ?? this.title,
       body: body ?? this.body,

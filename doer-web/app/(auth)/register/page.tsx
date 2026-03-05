@@ -237,7 +237,13 @@ export default function RegisterPage() {
         upiId: upiId || null,
       }
 
-      await doerSignup(trimmedEmail, otpCode, fullName.trim(), metadata)
+      const result = await doerSignup(trimmedEmail, otpCode, fullName.trim(), metadata)
+      if (!result.success) {
+        setError(result.message || 'Signup failed. Please try again.')
+        setOtp(['', '', '', '', '', ''])
+        inputRefs.current[0]?.focus()
+        return
+      }
       router.push(`/pending?email=${encodeURIComponent(trimmedEmail)}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')

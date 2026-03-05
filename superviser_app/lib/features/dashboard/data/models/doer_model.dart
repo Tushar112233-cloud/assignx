@@ -4,16 +4,16 @@
 /// - [DoerModel]: The main data model for writers/doers
 /// - [DoerReview]: Model for doer reviews/ratings
 ///
-/// The models map to the `doers` table in Supabase with joins to
-/// `profiles` and `doer_subjects` tables.
+/// The models map to the `doers` collection in MongoDB.
+/// Auth fields (name, email) are stored directly on the doer document.
 library;
 
 /// A data model representing a writer/doer who can be assigned to projects.
 ///
 /// This model encapsulates all information about a doer including their
 /// profile, expertise areas, ratings, and availability status. It maps to
-/// the `doers` table in Supabase with joined data from `profiles` and
-/// `doer_subjects` tables.
+/// the `doers` collection in MongoDB. Auth fields (name, email) live
+/// directly on the doer document (no separate profiles collection).
 ///
 /// ## Usage
 ///
@@ -26,7 +26,7 @@ library;
 /// ## Database Mapping
 ///
 /// The model expects joined data in the following format:
-/// - `profile`: from `profiles` table via `profile_id`
+/// - Auth fields (`fullName`, `email`) are on the doer document directly
 /// - `subjects`: from `doer_subjects` with nested `subject` from `subjects`
 ///
 /// See also:
@@ -35,11 +35,10 @@ library;
 class DoerModel {
   /// Creates a new [DoerModel] instance.
   ///
-  /// Required fields are [id], [profileId], [name], [email], and [expertise].
+  /// Required fields are [id], [name], [email], and [expertise].
   /// Other fields have sensible defaults.
   const DoerModel({
     required this.id,
-    required this.profileId,
     required this.name,
     required this.email,
     required this.expertise,
@@ -61,13 +60,9 @@ class DoerModel {
 
   /// Unique identifier for the doer.
   ///
-  /// This is the primary key from the `doers` table (UUID format).
+  /// This is the primary key from the `doers` collection.
+  /// JWT `sub` maps directly to this ID.
   final String id;
-
-  /// The profile ID linking to the user's profile.
-  ///
-  /// References `profiles.id` via the `doers.profile_id` foreign key.
-  final String profileId;
 
   /// The doer's full name.
   ///
@@ -225,7 +220,6 @@ class DoerModel {
   /// Returns a new [DoerModel] instance with the updated values.
   DoerModel copyWith({
     String? id,
-    String? profileId,
     String? name,
     String? email,
     List<String>? expertise,
@@ -246,7 +240,6 @@ class DoerModel {
   }) {
     return DoerModel(
       id: id ?? this.id,
-      profileId: profileId ?? this.profileId,
       name: name ?? this.name,
       email: email ?? this.email,
       expertise: expertise ?? this.expertise,
@@ -283,52 +276,23 @@ class DoerModel {
   ///
   /// Throws [FormatException] if required fields are missing or malformed.
   factory DoerModel.fromJson(Map<String, dynamic> json) {
-    // Helper to extract ID from a field that may be a string or populated object.
-    String _extractProfileId(dynamic value) {
-      if (value == null) return '';
-      if (value is String) return value;
-      if (value is Map<String, dynamic>) {
-        return (value['_id'] ?? value['id'] ?? '').toString();
-      }
-      return value.toString();
-    }
-
-    // Extract profile data from join or populated profileId object
+    // Extract doer data - auth fields are now directly on the doer document.
     String name = 'Unknown';
     String email = '';
     String? avatarUrl;
-    String profileId = '';
 
-    if (json['profile'] is Map) {
+    // Try top-level fields first (new schema: auth fields on doer doc)
+    name = (json['fullName'] ?? json['full_name'] ?? json['name']) as String? ?? 'Unknown';
+    email = json['email'] as String? ?? '';
+    avatarUrl = (json['avatarUrl'] ?? json['avatar_url']) as String?;
+
+    // Fallback: legacy nested profile object
+    if (name == 'Unknown' && json['profile'] is Map) {
       final profile = json['profile'] as Map<String, dynamic>;
       name = (profile['fullName'] ?? profile['full_name']) as String? ?? 'Unknown';
-      email = profile['email'] as String? ?? '';
-      avatarUrl = (profile['avatarUrl'] ?? profile['avatar_url']) as String?;
+      if (email.isEmpty) email = profile['email'] as String? ?? '';
+      avatarUrl ??= (profile['avatarUrl'] ?? profile['avatar_url']) as String?;
     }
-
-    // Handle populated profileId object (MongoDB)
-    final profileIdRaw = json['profileId'] ?? json['profile_id'];
-    if (profileIdRaw is Map<String, dynamic>) {
-      profileId = (profileIdRaw['_id'] ?? profileIdRaw['id'] ?? '').toString();
-      if (name == 'Unknown') {
-        name = (profileIdRaw['fullName'] ?? profileIdRaw['full_name']) as String? ?? 'Unknown';
-      }
-      if (email.isEmpty) {
-        email = profileIdRaw['email'] as String? ?? '';
-      }
-      avatarUrl ??= (profileIdRaw['avatarUrl'] ?? profileIdRaw['avatar_url']) as String?;
-    } else {
-      profileId = _extractProfileId(profileIdRaw);
-    }
-
-    // Fallback: try top-level name/email fields (flat API response)
-    if (name == 'Unknown') {
-      name = (json['fullName'] ?? json['full_name'] ?? json['name']) as String? ?? 'Unknown';
-    }
-    if (email.isEmpty) {
-      email = json['email'] as String? ?? '';
-    }
-    avatarUrl ??= (json['avatarUrl'] ?? json['avatar_url']) as String?;
 
     // Extract subject names from doer_subjects join or flat expertise array
     List<String> expertise = [];
@@ -350,7 +314,6 @@ class DoerModel {
 
     return DoerModel(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
-      profileId: profileId,
       name: name,
       email: email,
       expertise: expertise,
@@ -387,7 +350,6 @@ class DoerModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'profile_id': profileId,
       'qualification': qualification,
       'experience_level': experienceLevel,
       'years_of_experience': yearsOfExperience,

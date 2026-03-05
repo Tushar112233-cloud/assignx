@@ -21,7 +21,7 @@ const QuizComponent = dynamic(
 import { apiClient, getAccessToken } from '@/lib/api/client'
 import { activationService } from '@/services/activation.service'
 import { useAuthToken } from '@/hooks/useAuthToken'
-import type { QuizQuestion } from '@/types/database'
+import type { Doer, QuizQuestion } from '@/types/database'
 
 /** Quiz questions without correct answers (security - not sent to client) */
 type SafeQuizQuestion = Omit<QuizQuestion, 'correct_option_ids'>
@@ -74,7 +74,7 @@ export default function QuizPage() {
 
         // Get doer record
         try {
-          const doer = await apiClient<{ id: string }>(`/api/doers/me`)
+          const doer = await apiClient<Doer>(`/api/doers/me`)
           if (doer && isMountedRef.current) {
             // Fetch activation status to get attempt count
             const activation = await activationService.getActivationStatus(doer.id)
@@ -115,9 +115,9 @@ export default function QuizPage() {
       }
 
       // Get doer record
-      let doer: { id: string } | null = null
+      let doer: Doer | null = null
       try {
-        doer = await apiClient<{ id: string }>(`/api/doers/me`)
+        doer = await apiClient<Doer>(`/api/doers/me`)
       } catch {
         // No doer record
       }
@@ -180,7 +180,7 @@ export default function QuizPage() {
       }
 
       // Get doer record
-      const doer = await apiClient<{ id: string }>(`/api/doers/me`).catch(() => null)
+      const doer = await apiClient<Doer>(`/api/doers/me`).catch(() => null)
 
       if (!isMountedRef.current) return
 

@@ -89,7 +89,7 @@ class RequestModel {
 
   /// The client's display name.
   ///
-  /// Retrieved from `profiles.full_name` via the `user_id` foreign key.
+  /// Retrieved from the user document's `fullName` field.
   final String clientName;
 
   /// The subject or field of study for this project.
@@ -138,7 +138,7 @@ class RequestModel {
 
   /// The name of the assigned doer.
   ///
-  /// Retrieved from `profiles.full_name` via `doers.profile_id`.
+  /// Retrieved from the doer document's `fullName` field.
   /// Returns null if no doer has been assigned yet.
   final String? doerName;
 
@@ -161,7 +161,7 @@ class RequestModel {
 
   /// The client's user ID.
   ///
-  /// References `profiles.id` for the user who submitted this request.
+  /// References the user document `_id` for the client who submitted this request.
   final String? userId;
 
   /// The type of service requested.

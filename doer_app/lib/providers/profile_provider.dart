@@ -890,7 +890,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final response = await ApiClient.get('/profiles/me?include=doer,skills,subjects');
+      final response = await ApiClient.get('/doers/me');
 
       if (response == null || response is! Map<String, dynamic>) {
         state = state.copyWith(
@@ -1019,7 +1019,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
   /// Updates [ProfileState.notificationPreferences] with loaded preferences.
   Future<void> _loadNotificationPreferences() async {
     try {
-      final response = await ApiClient.get('/profiles/me/preferences');
+      final response = await ApiClient.get('/doers/me/preferences');
 
       if (response != null && response is Map<String, dynamic>) {
         state = state.copyWith(
@@ -1080,7 +1080,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
         skills: skills,
       );
 
-      await ApiClient.put('/profiles/me', updatedProfile.toJson());
+      await ApiClient.put('/doers/me', updatedProfile.toJson());
 
       state = state.copyWith(
         profile: updatedProfile,
@@ -1183,7 +1183,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(profile: updatedProfile);
 
     try {
-      await ApiClient.put('/profiles/me/availability', {
+      await ApiClient.put('/doers/me/availability', {
         'isAvailable': isAvailable,
       });
     } catch (e) {
@@ -1216,7 +1216,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(notificationPreferences: preferences);
 
     try {
-      await ApiClient.put('/profiles/me/preferences', preferences.toJson());
+      await ApiClient.put('/doers/me/preferences', preferences.toJson());
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ProfileNotifier.updateNotificationPreferences error: $e');

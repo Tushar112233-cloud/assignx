@@ -45,7 +45,7 @@ export async function getDoerProfile(): Promise<{
 }
 
 export async function updateDoerProfile(
-  doerId: string,
+  _doerId: string,
   updates: DoerUpdatePayload
 ): Promise<{ success: boolean; error?: string }> {
   try {
@@ -60,7 +60,7 @@ export async function updateDoerProfile(
 }
 
 export async function uploadAvatar(
-  doerId: string,
+  _doerId: string,
   file: File
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {

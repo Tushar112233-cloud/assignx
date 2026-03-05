@@ -75,7 +75,7 @@ class RolesNotifier extends StateNotifier<RolesState> {
   /// Load roles from the API.
   Future<void> _loadRoles() async {
     try {
-      final response = await ApiClient.get('/profiles/me/preferences');
+      final response = await ApiClient.get('/users/me/preferences');
       if (response == null) {
         state = const RolesState(isLoading: false);
         return;
@@ -115,7 +115,7 @@ class RolesNotifier extends StateNotifier<RolesState> {
     }
 
     try {
-      await ApiClient.put('/profiles/me/preferences', {
+      await ApiClient.put('/users/me/preferences', {
         'roles': state.toJson(),
       });
       state = state.copyWith(isSaving: false);

@@ -25,7 +25,7 @@ class ProfileRepository {
   /// Get current user's profile.
   Future<UserProfile> getProfile() async {
     try {
-      final response = await ApiClient.get('/profiles/me');
+      final response = await ApiClient.get('/users/me');
       final data = response as Map<String, dynamic>;
       // API may return flat profile or wrapped in { profile: {...} }
       final profileData = data.containsKey('email') ? data : (data['profile'] as Map<String, dynamic>? ?? data);
@@ -56,7 +56,7 @@ class ProfileRepository {
       if (state != null) updates['state'] = state;
       if (userType != null) updates['userType'] = userType.toDbString();
 
-      final response = await ApiClient.put('/profiles/me', updates);
+      final response = await ApiClient.put('/users/me', updates);
       final data = response as Map<String, dynamic>;
       // PUT returns { profile: {...} } wrapped
       final profileData = data.containsKey('email') ? data : (data['profile'] as Map<String, dynamic>? ?? data);
@@ -115,7 +115,7 @@ class ProfileRepository {
   /// Get payment methods.
   Future<List<PaymentMethod>> getPaymentMethods() async {
     try {
-      final response = await ApiClient.get('/profiles/me/payment-methods');
+      final response = await ApiClient.get('/users/me/payment-methods');
       final list = response is List ? response : (response as Map<String, dynamic>)['paymentMethods'] as List? ?? [];
       return list
           .map((json) => PaymentMethod.fromJson(json as Map<String, dynamic>))
@@ -135,7 +135,7 @@ class ProfileRepository {
     bool setAsDefault = false,
   }) async {
     try {
-      final response = await ApiClient.post('/profiles/me/payment-methods', {
+      final response = await ApiClient.post('/users/me/payment-methods', {
         'methodType': type.toDbString(),
         'displayName': displayName,
         'cardLastFour': lastFourDigits,
@@ -152,7 +152,7 @@ class ProfileRepository {
   /// Delete payment method.
   Future<void> deletePaymentMethod(String id) async {
     try {
-      await ApiClient.delete('/profiles/me/payment-methods/$id');
+      await ApiClient.delete('/users/me/payment-methods/$id');
     } catch (e) {
       _logger.e('Error deleting payment method: $e');
       rethrow;
@@ -162,7 +162,7 @@ class ProfileRepository {
   /// Get referral info.
   Future<Referral> getReferral() async {
     try {
-      final response = await ApiClient.get('/profiles/me/referral');
+      final response = await ApiClient.get('/users/me/referral');
       final data = response as Map<String, dynamic>;
       return Referral.fromJson(data);
     } catch (e) {

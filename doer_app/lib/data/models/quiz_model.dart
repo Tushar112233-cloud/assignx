@@ -380,7 +380,7 @@ class QuizAttempt {
 
     return QuizAttempt(
       id: (json['_id'] ?? json['id'] ?? '').toString(),
-      doerId: (json['profile_id'] ?? json['profileId'] ?? json['doer_id'] ?? json['doerId'] ?? '').toString(),
+      doerId: (json['doer_id'] ?? json['doerId'] ?? '').toString(),
       score: (json['correct_answers'] ?? json['correctAnswers'] ?? json['score']) as int? ?? 0,
       totalQuestions: (json['total_questions'] ?? json['totalQuestions']) as int? ?? 0,
       passed: json['is_passed'] as bool? ?? json['isPassed'] as bool? ?? json['passed'] as bool? ?? false,
