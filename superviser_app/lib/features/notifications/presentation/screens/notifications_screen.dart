@@ -134,18 +134,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       case NotificationType.deliveryDue:
       case NotificationType.revisionRequested:
         if (notification.projectId != null) {
-          context.pushNamed(
-            RouteNames.projectDetail,
-            pathParameters: {'projectId': notification.projectId!},
-          );
+          context.push('${RoutePaths.projects}/${notification.projectId!}');
         }
         break;
       case NotificationType.chatMessage:
         if (notification.chatRoomId != null) {
-          context.pushNamed(
-            RouteNames.chat,
-            pathParameters: {'roomId': notification.chatRoomId!},
-          );
+          context.push('${RoutePaths.chat}/${notification.chatRoomId!}');
         }
         break;
       case NotificationType.paymentReceived:

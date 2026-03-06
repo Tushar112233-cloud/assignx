@@ -83,6 +83,7 @@ import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/reviews_screen.dart';
 import '../../features/profile/presentation/screens/blacklist_screen.dart';
 import '../../features/earnings/presentation/screens/earnings_screen.dart';
+import '../../features/notifications/presentation/providers/notifications_provider.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/support/presentation/screens/support_screen.dart';
 import '../../features/support/presentation/screens/ticket_detail_screen.dart';
@@ -261,6 +262,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ActivationCompleteScreen(),
       ),
 
+      // Chat Room (outside shell to hide bottom nav)
+      GoRoute(
+        path: '/chat/:roomId',
+        name: RouteNames.chatRoom,
+        builder: (context, state) {
+          final roomId = state.pathParameters['roomId']!;
+          return ChatScreen(projectId: roomId);
+        },
+      ),
+
       // Main App Shell with Bottom Navigation
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),
@@ -289,16 +300,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: RoutePaths.chat,
             name: RouteNames.chat,
             builder: (context, state) => const ChatListScreen(),
-            routes: [
-              GoRoute(
-                path: ':roomId',
-                name: RouteNames.chatRoom,
-                builder: (context, state) {
-                  final roomId = state.pathParameters['roomId']!;
-                  return ChatScreen(projectId: roomId);
-                },
-              ),
-            ],
           ),
           GoRoute(
             path: RoutePaths.profile,
@@ -530,42 +531,12 @@ class AppShell extends ConsumerWidget {
 /// - Chat
 /// - Profile
 ///
-/// The selected index is determined by the current route location.
+/// Shows unread notification count badge on Dashboard tab.
 class AppBottomNavigationBar extends ConsumerWidget {
   /// Creates the bottom navigation bar.
   const AppBottomNavigationBar({super.key});
 
-  /// The navigation items displayed in the bar.
-  static final _items = [
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.dashboard_outlined),
-      activeIcon: Icon(Icons.dashboard),
-      label: 'Dashboard',
-    ),
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.folder_outlined),
-      activeIcon: Icon(Icons.folder),
-      label: 'Projects',
-    ),
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.chat_outlined),
-      activeIcon: Icon(Icons.chat),
-      label: 'Chat',
-    ),
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.person_outlined),
-      activeIcon: Icon(Icons.person),
-      label: 'Profile',
-    ),
-  ];
-
   /// Calculates the selected index based on the current route location.
-  ///
-  /// Returns the index corresponding to the current route:
-  /// - 0: Dashboard
-  /// - 1: Projects
-  /// - 2: Chat
-  /// - 3: Profile
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith(RoutePaths.dashboard)) return 0;
@@ -576,8 +547,6 @@ class AppBottomNavigationBar extends ConsumerWidget {
   }
 
   /// Handles navigation when a bar item is tapped.
-  ///
-  /// Navigates to the corresponding route for the tapped index.
   void _onItemTapped(BuildContext context, int index) {
     switch (index) {
       case 0:
@@ -597,11 +566,64 @@ class AppBottomNavigationBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final unreadCount = ref.watch(unreadNotificationCountProvider);
+
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: _calculateSelectedIndex(context),
       onTap: (index) => _onItemTapped(context, index),
-      items: _items,
+      items: [
+        BottomNavigationBarItem(
+          icon: _BadgeIcon(
+            icon: Icons.dashboard_outlined,
+            count: unreadCount,
+          ),
+          activeIcon: _BadgeIcon(
+            icon: Icons.dashboard,
+            count: unreadCount,
+          ),
+          label: 'Dashboard',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.folder_outlined),
+          activeIcon: Icon(Icons.folder),
+          label: 'Projects',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.chat_outlined),
+          activeIcon: Icon(Icons.chat),
+          label: 'Chat',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.person_outlined),
+          activeIcon: Icon(Icons.person),
+          label: 'Profile',
+        ),
+      ],
+    );
+  }
+}
+
+/// Icon with optional unread badge overlay.
+class _BadgeIcon extends StatelessWidget {
+  const _BadgeIcon({
+    required this.icon,
+    required this.count,
+  });
+
+  final IconData icon;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) return Icon(icon);
+
+    return Badge(
+      label: Text(
+        count > 99 ? '99+' : count.toString(),
+        style: const TextStyle(fontSize: 10),
+      ),
+      child: Icon(icon),
     );
   }
 }

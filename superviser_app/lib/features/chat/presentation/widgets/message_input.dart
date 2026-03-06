@@ -230,20 +230,10 @@ class _MessageInputState extends State<MessageInput> {
               ),
             // Input row
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Attachment button
-                  if (widget.onAttachment != null)
-                    IconButton(
-                      onPressed: widget.enabled ? widget.onAttachment : null,
-                      icon: const Icon(Icons.attach_file),
-                      color: AppColors.textSecondaryLight,
-                      constraints: const BoxConstraints(),
-                      padding: const EdgeInsets.all(8),
-                    ),
-                  const SizedBox(width: 8),
                   // Text field
                   Expanded(
                     child: Container(

@@ -22,6 +22,7 @@ import '../widgets/field_filter.dart';
 import '../widgets/request_card.dart';
 import '../widgets/quote_form_sheet.dart';
 import '../widgets/doer_selection_sheet.dart';
+import '../../../notifications/presentation/providers/notifications_provider.dart';
 
 /// The main dashboard screen for supervisors.
 ///
@@ -74,6 +75,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
+    final unreadNotifs = ref.watch(unreadNotificationCountProvider);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -87,7 +89,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               child: DashboardHeader(
                 onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
                 onNotificationTap: _openNotifications,
-                notificationCount: dashboardState.pendingCount,
+                notificationCount: unreadNotifs,
               ),
             ),
             // KPI stat cards
@@ -204,12 +206,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
       // Quick action FAB
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: _showQuickActions,
-        icon: const Icon(Icons.add),
-        label: Text('Quick Action'.tr(context)),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
+        child: const Icon(Icons.bolt_rounded),
       ),
     );
   }

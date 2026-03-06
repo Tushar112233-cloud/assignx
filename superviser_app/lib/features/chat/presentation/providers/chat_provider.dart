@@ -278,6 +278,11 @@ class ActiveChatNotifier extends StateNotifier<ActiveChatState> {
   }
 
   /// Sends a text message.
+  ///
+  /// The message is NOT added optimistically from the REST response because
+  /// the server also emits `chat:message` via Socket.IO, which would cause
+  /// duplicates. Instead, we rely on the socket subscription to deliver the
+  /// message to the UI.
   Future<bool> sendMessage(String content) async {
     if (state.room == null || content.trim().isEmpty) return false;
     if (state.isSuspended) return false;
@@ -292,11 +297,21 @@ class ActiveChatNotifier extends StateNotifier<ActiveChatState> {
       );
 
       if (message != null) {
-        state = state.copyWith(
-          messages: [...state.messages, message],
-          isSending: false,
-          clearReplyTo: true,
-        );
+        // Don't add message here — the socket `chat:message` handler will
+        // deliver it via _subscribeToMessages to avoid duplicates.
+        // Only add if we don't have an active socket subscription.
+        if (_messagesSubscription == null) {
+          state = state.copyWith(
+            messages: [...state.messages, message],
+            isSending: false,
+            clearReplyTo: true,
+          );
+        } else {
+          state = state.copyWith(
+            isSending: false,
+            clearReplyTo: true,
+          );
+        }
         return true;
       }
 

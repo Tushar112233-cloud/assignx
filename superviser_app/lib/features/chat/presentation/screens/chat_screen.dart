@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
-import '../../../../core/services/external_actions_service.dart';
-import '../../../../core/services/snackbar_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -191,7 +188,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onSend: (message) async {
               await ref.read(activeChatProvider.notifier).sendMessage(message);
             },
-            onAttachment: _showAttachmentOptions,
             replyTo: state.replyTo,
             onCancelReply: () =>
                 ref.read(activeChatProvider.notifier).clearReplyTo(),
@@ -263,63 +259,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _showChatInfo();
         break;
     }
-  }
-
-  void _showAttachmentOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.image, color: Colors.blue),
-              ),
-              title: Text('Photo'.tr(context)),
-              onTap: () async {
-                Navigator.pop(context);
-                final picker = ImagePicker();
-                final image = await picker.pickImage(source: ImageSource.gallery);
-                if (image != null) {
-                  ref.read(snackbarServiceProvider).showInfo('Uploading image...'.tr(context));
-                  // Image upload would be handled by chat provider
-                  ref.read(activeChatProvider.notifier).sendAttachment(image.path, 'image');
-                }
-              },
-            ),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.purple.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.insert_drive_file, color: Colors.purple),
-              ),
-              title: Text('Document'.tr(context)),
-              onTap: () async {
-                Navigator.pop(context);
-                final files = await ref.read(externalActionsServiceProvider).pickFiles();
-                if (files != null && files.isNotEmpty) {
-                  final file = files.first;
-                  if (file.path != null) {
-                    ref.read(snackbarServiceProvider).showInfo('Uploading document...'.tr(context));
-                    ref.read(activeChatProvider.notifier).sendAttachment(file.path!, 'file');
-                  }
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _showChatInfo() {
