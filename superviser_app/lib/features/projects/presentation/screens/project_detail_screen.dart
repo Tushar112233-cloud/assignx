@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/services/external_actions_service.dart';
 import '../../../../core/services/snackbar_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../shared/widgets/buttons/primary_button.dart';
+import '../../data/models/project_model.dart';
 import '../providers/projects_provider.dart';
 import '../widgets/deadline_timer.dart';
 import '../widgets/status_badge.dart';
@@ -106,9 +108,43 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                         // Project info
                         _InfoSection(project: state.project!),
                         const SizedBox(height: 24),
+                        // Description / Brief
+                        if (state.project!.description.isNotEmpty)
+                          _DescriptionSection(project: state.project!),
+                        // Instructions
+                        if (state.project!.instructions != null &&
+                            state.project!.instructions!.isNotEmpty) ...[
+                          const SizedBox(height: 24),
+                          _InstructionsSection(project: state.project!),
+                        ],
+                        // Focus Areas
+                        if (state.project!.focusAreas != null &&
+                            state.project!.focusAreas!.isNotEmpty) ...[
+                          const SizedBox(height: 24),
+                          _FocusAreasSection(project: state.project!),
+                        ],
+                        const SizedBox(height: 24),
                         // People involved
                         _PeopleSection(project: state.project!),
                         const SizedBox(height: 24),
+                        // Live Document Link
+                        if (state.project!.liveDocumentUrl != null &&
+                            state.project!.liveDocumentUrl!.isNotEmpty) ...[
+                          _LiveDocumentSection(
+                            url: state.project!.liveDocumentUrl!,
+                            onOpen: () => _openUrl(state.project!.liveDocumentUrl!),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                        // Client-uploaded files / attachments
+                        if (state.project!.files != null &&
+                            state.project!.files!.isNotEmpty) ...[
+                          _FilesSection(
+                            files: state.project!.files!,
+                            onOpenFile: _openUrl,
+                          ),
+                          const SizedBox(height: 24),
+                        ],
                         // Deliverables
                         if (state.deliverables.isNotEmpty) ...[
                           _SectionTitle(
@@ -127,9 +163,21 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                               )),
                           const SizedBox(height: 24),
                         ],
+                        // Quality Check section
+                        if (_hasQualityCheckData(state.project!)) ...[
+                          _QualityCheckSection(
+                            project: state.project!,
+                            onOpenReport: _openUrl,
+                          ),
+                          const SizedBox(height: 24),
+                        ],
                         // Pricing breakdown
                         if (state.project!.userQuote != null)
                           _PricingSection(project: state.project!),
+                        if (state.project!.userQuote != null)
+                          const SizedBox(height: 24),
+                        // Timeline
+                        _TimelineSection(project: state.project!),
                         // Bottom padding for actions
                         const SizedBox(height: 100),
                       ],
@@ -148,6 +196,13 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     );
   }
 
+  bool _hasQualityCheckData(ProjectModel project) {
+    return project.aiScore != null ||
+        project.plagiarismScore != null ||
+        (project.aiReportUrl != null && project.aiReportUrl!.isNotEmpty) ||
+        (project.plagiarismReportUrl != null && project.plagiarismReportUrl!.isNotEmpty);
+  }
+
   bool _showActions(ProjectDetailState state) {
     return state.canApprove ||
         state.canRequestRevision ||
@@ -156,6 +211,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
   void _openChat() {
     context.push('${RoutePaths.chat}/${widget.projectId}');
+  }
+
+  void _openUrl(String url) {
+    ref.read(externalActionsServiceProvider).openUrl(url);
   }
 
   void _handleMenuAction(String action) {
@@ -173,12 +232,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 
   void _viewDeliverable(String url) {
-    // Open file in browser or native viewer
     ref.read(externalActionsServiceProvider).openUrl(url);
   }
 
   void _downloadDeliverable(String url) {
-    // Open URL which will trigger download in browser
     ref.read(externalActionsServiceProvider).openUrl(url);
     ref.read(snackbarServiceProvider).showInfo('Download started');
   }
@@ -283,7 +340,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 }
 
-/// Header section with status and deadline.
+/// Header section with status, deadline, and urgent badge.
 class _HeaderSection extends StatelessWidget {
   const _HeaderSection({required this.project});
 
@@ -308,7 +365,41 @@ class _HeaderSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    StatusBadge(status: project.status),
+                    Row(
+                      children: [
+                        StatusBadge(status: project.status),
+                        if (project.isUrgent) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.red.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.bolt, size: 14, color: Colors.red),
+                                const SizedBox(width: 2),
+                                Text(
+                                  'URGENT'.tr(context),
+                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       project.title,
@@ -316,6 +407,45 @@ class _HeaderSection extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                     ),
+                    if (project.topic != null && project.topic!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        project.topic!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondaryLight,
+                            ),
+                      ),
+                    ],
+                    if (project.progressPercentage != null &&
+                        project.progressPercentage! > 0) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: project.progressPercentage! / 100.0,
+                                backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  project.progressPercentage! >= 100
+                                      ? AppColors.success
+                                      : AppColors.primary,
+                                ),
+                                minHeight: 6,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${project.progressPercentage}%',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -358,6 +488,13 @@ class _InfoSection extends StatelessWidget {
                 value: project.subject,
                 icon: Icons.book_outlined,
               ),
+              if (project.serviceType != null &&
+                  project.serviceType!.isNotEmpty)
+                _InfoRow(
+                  label: 'Service Type'.tr(context),
+                  value: _formatServiceType(project.serviceType!),
+                  icon: Icons.category_outlined,
+                ),
               if (project.wordCount != null)
                 _InfoRow(
                   label: 'Word Count'.tr(context),
@@ -375,25 +512,147 @@ class _InfoSection extends StatelessWidget {
                 value: '${project.revisionCount}',
                 icon: Icons.replay,
               ),
+              _InfoRow(
+                label: 'Project #'.tr(context),
+                value: project.projectNumber,
+                icon: Icons.tag,
+              ),
             ],
           ),
         ),
-        if (project.description.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Description'.tr(context),
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+      ],
+    );
+  }
+
+  String _formatServiceType(String type) {
+    // Convert camelCase or snake_case to title case
+    return type
+        .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}')
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w)
+        .join(' ');
+  }
+}
+
+/// Description / Project Brief section - fully visible, not truncated.
+class _DescriptionSection extends StatelessWidget {
+  const _DescriptionSection({required this.project});
+
+  final dynamic project;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(title: 'Project Brief'.tr(context)),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(height: 8),
-          Text(
+          child: Text(
             project.description,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondaryLight,
+                  height: 1.6,
                 ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Instructions section - shows specific instructions from the client.
+class _InstructionsSection extends StatelessWidget {
+  const _InstructionsSection({required this.project});
+
+  final dynamic project;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(title: 'Specific Instructions'.tr(context)),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.amber.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.amber.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 20,
+                color: Colors.amber[700],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  project.instructions!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        height: 1.6,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Focus areas section - shows focus areas as chips.
+class _FocusAreasSection extends StatelessWidget {
+  const _FocusAreasSection({required this.project});
+
+  final dynamic project;
+
+  @override
+  Widget build(BuildContext context) {
+    final areas = project.focusAreas as List<String>;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(title: 'Focus Areas'.tr(context)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: areas.map((area) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Text(
+                area,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            );
+          }).toList(),
+        ),
       ],
     );
   }
@@ -435,6 +694,22 @@ class _PeopleSection extends StatelessWidget {
               ),
           ],
         ),
+        if (project.clientName == null && project.doerName == null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              'No participants assigned yet'.tr(context),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+          ),
       ],
     );
   }
@@ -495,10 +770,443 @@ class _PersonCard extends StatelessWidget {
                         color: color,
                       ),
                 ),
+                if (email != null && email!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    email!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondaryLight,
+                          fontSize: 11,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Live document link section.
+class _LiveDocumentSection extends StatelessWidget {
+  const _LiveDocumentSection({
+    required this.url,
+    required this.onOpen,
+  });
+
+  final String url;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(title: 'Live Document'.tr(context)),
+        const SizedBox(height: 12),
+        InkWell(
+          onTap: onOpen,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.blue.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.open_in_new, size: 20, color: Colors.blue),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Open Live Document'.tr(context),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        url,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondaryLight,
+                            ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Colors.blue),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Files/attachments section - shows client-uploaded reference files.
+class _FilesSection extends StatelessWidget {
+  const _FilesSection({
+    required this.files,
+    required this.onOpenFile,
+  });
+
+  final List<ProjectFile> files;
+  final void Function(String url) onOpenFile;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(
+          title: 'Shared Documents'.tr(context),
+          count: files.length,
+        ),
+        const SizedBox(height: 12),
+        ...files.map((file) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _FileCard(
+                file: file,
+                onTap: () => onOpenFile(file.fileUrl),
+              ),
+            )),
+      ],
+    );
+  }
+}
+
+/// Individual file card widget.
+class _FileCard extends StatelessWidget {
+  const _FileCard({
+    required this.file,
+    required this.onTap,
+  });
+
+  final ProjectFile file;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.grey.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _fileColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(_fileIcon, size: 20, color: _fileColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    file.fileName,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      if (file.formattedSize.isNotEmpty) ...[
+                        Text(
+                          file.formattedSize,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondaryLight,
+                              ),
+                        ),
+                      ],
+                      if (file.fileCategory != null &&
+                          file.fileCategory!.isNotEmpty) ...[
+                        if (file.formattedSize.isNotEmpty)
+                          Text(
+                            '  |  ',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondaryLight,
+                                ),
+                          ),
+                        Text(
+                          file.fileCategory!,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondaryLight,
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.download_outlined,
+              size: 20,
+              color: AppColors.textSecondaryLight,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData get _fileIcon {
+    final ext = file.extension;
+    switch (ext) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.article;
+      case 'xls':
+      case 'xlsx':
+        return Icons.table_chart;
+      case 'ppt':
+      case 'pptx':
+        return Icons.slideshow;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'webp':
+        return Icons.image;
+      case 'zip':
+      case 'rar':
+        return Icons.folder_zip;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  Color get _fileColor {
+    final ext = file.extension;
+    switch (ext) {
+      case 'pdf':
+        return Colors.red;
+      case 'doc':
+      case 'docx':
+        return Colors.blue;
+      case 'xls':
+      case 'xlsx':
+        return Colors.green;
+      case 'ppt':
+      case 'pptx':
+        return Colors.orange;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'webp':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+}
+
+/// Quality check section - AI and plagiarism scores/reports.
+class _QualityCheckSection extends StatelessWidget {
+  const _QualityCheckSection({
+    required this.project,
+    required this.onOpenReport,
+  });
+
+  final ProjectModel project;
+  final void Function(String url) onOpenReport;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(title: 'Quality Check'.tr(context)),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              if (project.aiScore != null)
+                _QualityRow(
+                  label: 'AI Score'.tr(context),
+                  score: project.aiScore!,
+                  reportUrl: project.aiReportUrl,
+                  icon: Icons.smart_toy_outlined,
+                  onOpenReport: onOpenReport,
+                ),
+              if (project.aiScore != null && project.plagiarismScore != null)
+                const Divider(height: 20),
+              if (project.plagiarismScore != null)
+                _QualityRow(
+                  label: 'Plagiarism Score'.tr(context),
+                  score: project.plagiarismScore!,
+                  reportUrl: project.plagiarismReportUrl,
+                  icon: Icons.content_copy_outlined,
+                  onOpenReport: onOpenReport,
+                ),
+              // Show report links even without scores
+              if (project.aiScore == null &&
+                  project.aiReportUrl != null &&
+                  project.aiReportUrl!.isNotEmpty)
+                _ReportLink(
+                  label: 'AI Report'.tr(context),
+                  url: project.aiReportUrl!,
+                  icon: Icons.smart_toy_outlined,
+                  onOpen: () => onOpenReport(project.aiReportUrl!),
+                ),
+              if (project.plagiarismScore == null &&
+                  project.plagiarismReportUrl != null &&
+                  project.plagiarismReportUrl!.isNotEmpty)
+                _ReportLink(
+                  label: 'Plagiarism Report'.tr(context),
+                  url: project.plagiarismReportUrl!,
+                  icon: Icons.content_copy_outlined,
+                  onOpen: () => onOpenReport(project.plagiarismReportUrl!),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Quality score row with optional report link.
+class _QualityRow extends StatelessWidget {
+  const _QualityRow({
+    required this.label,
+    required this.score,
+    this.reportUrl,
+    required this.icon,
+    required this.onOpenReport,
+  });
+
+  final String label;
+  final double score;
+  final String? reportUrl;
+  final IconData icon;
+  final void Function(String url) onOpenReport;
+
+  @override
+  Widget build(BuildContext context) {
+    final scoreColor = score <= 15
+        ? AppColors.success
+        : score <= 30
+            ? Colors.orange
+            : Colors.red;
+
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppColors.textSecondaryLight),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondaryLight,
+              ),
+        ),
+        const Spacer(),
+        Text(
+          '${score.toStringAsFixed(1)}%',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: scoreColor,
+              ),
+        ),
+        if (reportUrl != null && reportUrl!.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () => onOpenReport(reportUrl!),
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                Icons.open_in_new,
+                size: 16,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Report link widget (when score is not available but URL is).
+class _ReportLink extends StatelessWidget {
+  const _ReportLink({
+    required this.label,
+    required this.url,
+    required this.icon,
+    required this.onOpen,
+  });
+
+  final String label;
+  final String url;
+  final IconData icon;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onOpen,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: AppColors.textSecondaryLight),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.primary,
+                  ),
+            ),
+            const Spacer(),
+            Icon(Icons.open_in_new, size: 16, color: AppColors.primary),
+          ],
+        ),
       ),
     );
   }
@@ -558,6 +1266,166 @@ class _PricingSection extends StatelessWidget {
   }
 }
 
+/// Timeline section showing key dates.
+class _TimelineSection extends StatelessWidget {
+  const _TimelineSection({required this.project});
+
+  final dynamic project;
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFormat = DateFormat('MMM d, yyyy  h:mm a');
+
+    // Build list of timeline events
+    final events = <_TimelineEvent>[];
+
+    if (project.createdAt != null) {
+      events.add(_TimelineEvent(
+        label: 'Created'.tr(context),
+        date: project.createdAt,
+        icon: Icons.add_circle_outline,
+        color: Colors.grey,
+      ));
+    }
+    if (project.paidAt != null) {
+      events.add(_TimelineEvent(
+        label: 'Payment Received'.tr(context),
+        date: project.paidAt!,
+        icon: Icons.payment,
+        color: Colors.green,
+      ));
+    }
+    if (project.assignedAt != null) {
+      events.add(_TimelineEvent(
+        label: 'Doer Assigned'.tr(context),
+        date: project.assignedAt!,
+        icon: Icons.person_add_outlined,
+        color: Colors.blue,
+      ));
+    }
+    if (project.startedAt != null) {
+      events.add(_TimelineEvent(
+        label: 'Work Started'.tr(context),
+        date: project.startedAt!,
+        icon: Icons.play_circle_outline,
+        color: Colors.orange,
+      ));
+    }
+    if (project.deliveredAt != null) {
+      events.add(_TimelineEvent(
+        label: 'Delivered'.tr(context),
+        date: project.deliveredAt!,
+        icon: Icons.local_shipping_outlined,
+        color: Colors.purple,
+      ));
+    }
+    if (project.completedAt != null) {
+      events.add(_TimelineEvent(
+        label: 'Completed'.tr(context),
+        date: project.completedAt!,
+        icon: Icons.check_circle_outline,
+        color: AppColors.success,
+      ));
+    }
+
+    if (events.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(title: 'Timeline'.tr(context)),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: events.asMap().entries.map((entry) {
+              final index = entry.key;
+              final event = entry.value;
+              final isLast = index == events.length - 1;
+
+              return IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Timeline line and dot
+                    SizedBox(
+                      width: 32,
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: event.color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          if (!isLast)
+                            Expanded(
+                              child: Container(
+                                width: 2,
+                                color: Colors.grey.withValues(alpha: 0.3),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    // Event details
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          bottom: isLast ? 0 : 16,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              event.label,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              dateFormat.format(event.date),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondaryLight,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Timeline event data.
+class _TimelineEvent {
+  const _TimelineEvent({
+    required this.label,
+    required this.date,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final DateTime date;
+  final IconData icon;
+  final Color color;
+}
+
 /// Pricing row.
 class _PricingRow extends StatelessWidget {
   const _PricingRow({
@@ -590,7 +1458,7 @@ class _PricingRow extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            '₹${amount.toStringAsFixed(2)}',
+            '\u20B9${amount.toStringAsFixed(2)}',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
                   color: color,
@@ -671,11 +1539,16 @@ class _InfoRow extends StatelessWidget {
                 ),
           ),
           const Spacer(),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+          Flexible(
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+              textAlign: TextAlign.end,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

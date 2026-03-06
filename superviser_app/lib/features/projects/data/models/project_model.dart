@@ -37,6 +37,16 @@ class ProjectModel {
     this.startedAt,
     this.deliveredAt,
     this.completedAt,
+    this.topic,
+    this.focusAreas,
+    this.serviceType,
+    this.liveDocumentUrl,
+    this.progressPercentage,
+    this.files,
+    this.aiReportUrl,
+    this.aiScore,
+    this.plagiarismReportUrl,
+    this.plagiarismScore,
   });
 
   /// Unique identifier
@@ -135,6 +145,36 @@ class ProjectModel {
   /// When project was completed
   final DateTime? completedAt;
 
+  /// Project topic
+  final String? topic;
+
+  /// Focus areas for the project
+  final List<String>? focusAreas;
+
+  /// Service type (e.g., writing, editing)
+  final String? serviceType;
+
+  /// Live document URL (e.g., Google Docs link)
+  final String? liveDocumentUrl;
+
+  /// Progress percentage (0-100)
+  final int? progressPercentage;
+
+  /// Client-uploaded reference files
+  final List<ProjectFile>? files;
+
+  /// AI check report URL
+  final String? aiReportUrl;
+
+  /// AI check score
+  final double? aiScore;
+
+  /// Plagiarism report URL
+  final String? plagiarismReportUrl;
+
+  /// Plagiarism check score
+  final double? plagiarismScore;
+
   /// Creates a ProjectModel from JSON data.
   ///
   /// Handles both flat Supabase-style and nested MongoDB/Mongoose-style responses.
@@ -189,6 +229,8 @@ class ProjectModel {
     final pricing = json['pricing'] as Map<String, dynamic>? ?? {};
     final payment = json['payment'] as Map<String, dynamic>? ?? {};
     final delivery = json['delivery'] as Map<String, dynamic>? ?? {};
+    final qualityCheck = json['qualityCheck'] as Map<String, dynamic>?
+        ?? json['quality_check'] as Map<String, dynamic>? ?? {};
 
     // Handle subject - could be a string, Map from Supabase join, or populated MongoDB object.
     String subject = 'General';
@@ -267,8 +309,8 @@ class ProjectModel {
       clientName: clientName,
       clientEmail: clientEmail,
       doerName: doerName,
-      attachments: null,
-      chatRoomId: null,
+      attachments: (json['attachments'] as List?)?.map((e) => e.toString()).toList(),
+      chatRoomId: (json['chat_room_id'] ?? json['chatRoomId']) as String?,
       instructions: (json['specific_instructions'] ?? json['specificInstructions']) as String?,
       revisionCount: (json['revision_count'] ?? json['revisionCount']) as int? ?? 0,
       isUrgent: json['is_urgent'] as bool? ?? false,
@@ -284,6 +326,23 @@ class ProjectModel {
           ?? delivery['deliveredAt']),
       completedAt: _parseDate(json['completed_at'] ?? json['completedAt']
           ?? delivery['completedAt']),
+      // New fields
+      topic: (json['topic'] as String?),
+      focusAreas: (json['focusAreas'] as List?)?.map((e) => e.toString()).toList()
+          ?? (json['focus_areas'] as List?)?.map((e) => e.toString()).toList(),
+      serviceType: (json['serviceType'] ?? json['service_type']) as String?,
+      liveDocumentUrl: (json['liveDocumentUrl'] ?? json['live_document_url']
+          ?? qualityCheck['liveDocumentUrl']) as String?,
+      progressPercentage: (json['progressPercentage'] ?? json['progress_percentage']) as int?,
+      files: (json['files'] as List?)
+          ?.map((f) => ProjectFile.fromJson(f as Map<String, dynamic>))
+          .toList(),
+      aiReportUrl: (qualityCheck['aiReportUrl'] ?? json['ai_report_url']) as String?,
+      aiScore: _parseDouble(qualityCheck['aiScore'] ?? json['ai_score']),
+      plagiarismReportUrl: (qualityCheck['plagiarismReportUrl']
+          ?? json['plagiarism_report_url']) as String?,
+      plagiarismScore: _parseDouble(qualityCheck['plagiarismScore']
+          ?? json['plagiarism_score']),
     );
   }
 
@@ -350,6 +409,16 @@ class ProjectModel {
     DateTime? startedAt,
     DateTime? deliveredAt,
     DateTime? completedAt,
+    String? topic,
+    List<String>? focusAreas,
+    String? serviceType,
+    String? liveDocumentUrl,
+    int? progressPercentage,
+    List<ProjectFile>? files,
+    String? aiReportUrl,
+    double? aiScore,
+    String? plagiarismReportUrl,
+    double? plagiarismScore,
   }) {
     return ProjectModel(
       id: id ?? this.id,
@@ -384,6 +453,16 @@ class ProjectModel {
       startedAt: startedAt ?? this.startedAt,
       deliveredAt: deliveredAt ?? this.deliveredAt,
       completedAt: completedAt ?? this.completedAt,
+      topic: topic ?? this.topic,
+      focusAreas: focusAreas ?? this.focusAreas,
+      serviceType: serviceType ?? this.serviceType,
+      liveDocumentUrl: liveDocumentUrl ?? this.liveDocumentUrl,
+      progressPercentage: progressPercentage ?? this.progressPercentage,
+      files: files ?? this.files,
+      aiReportUrl: aiReportUrl ?? this.aiReportUrl,
+      aiScore: aiScore ?? this.aiScore,
+      plagiarismReportUrl: plagiarismReportUrl ?? this.plagiarismReportUrl,
+      plagiarismScore: plagiarismScore ?? this.plagiarismScore,
     );
   }
 
@@ -429,4 +508,76 @@ class ProjectModel {
   /// Total project amount.
   double get totalAmount =>
       (doerAmount ?? 0) + (supervisorAmount ?? 0) + (platformAmount ?? 0);
+}
+
+/// Model representing a file attached to a project (client-uploaded references).
+class ProjectFile {
+  const ProjectFile({
+    required this.fileName,
+    required this.fileUrl,
+    this.fileType,
+    this.fileSizeBytes,
+    this.fileCategory,
+    this.uploadedBy,
+    this.uploadedByRole,
+    this.createdAt,
+  });
+
+  /// Original file name
+  final String fileName;
+
+  /// File URL in storage
+  final String fileUrl;
+
+  /// MIME type
+  final String? fileType;
+
+  /// File size in bytes
+  final int? fileSizeBytes;
+
+  /// Category (e.g., reference, requirement)
+  final String? fileCategory;
+
+  /// Uploader user ID
+  final String? uploadedBy;
+
+  /// Role of uploader (user, doer, supervisor)
+  final String? uploadedByRole;
+
+  /// Upload timestamp
+  final DateTime? createdAt;
+
+  /// Creates a ProjectFile from JSON.
+  factory ProjectFile.fromJson(Map<String, dynamic> json) {
+    return ProjectFile(
+      fileName: (json['fileName'] ?? json['file_name'] ?? '') as String,
+      fileUrl: (json['fileUrl'] ?? json['file_url'] ?? '') as String,
+      fileType: (json['fileType'] ?? json['file_type']) as String?,
+      fileSizeBytes: (json['fileSizeBytes'] ?? json['file_size_bytes']) as int?,
+      fileCategory: (json['fileCategory'] ?? json['file_category']) as String?,
+      uploadedBy: json['uploadedBy']?.toString() ?? json['uploaded_by']?.toString(),
+      uploadedByRole: (json['uploadedByRole'] ?? json['uploaded_by_role']) as String?,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : json['created_at'] != null
+              ? DateTime.tryParse(json['created_at'].toString())
+              : null,
+    );
+  }
+
+  /// Formatted file size string.
+  String get formattedSize {
+    if (fileSizeBytes == null) return '';
+    if (fileSizeBytes! < 1024) return '$fileSizeBytes B';
+    if (fileSizeBytes! < 1024 * 1024) {
+      return '${(fileSizeBytes! / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(fileSizeBytes! / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  /// File extension.
+  String get extension {
+    final parts = fileName.split('.');
+    return parts.length > 1 ? parts.last.toLowerCase() : '';
+  }
 }
