@@ -44,17 +44,13 @@ export async function updateSession(request: NextRequest) {
     "/projects",
     "/project",
     "/profile",
-    "/connect",
     "/settings",
     "/support",
     "/wallet",
     "/payment-methods",
     "/experts",
     "/campus-connect",
-    "/marketplace",
     "/dashboard",
-    "/business-hub",
-    "/pro-network",
   ];
 
   const isProtectedRoute = protectedRoutes.some((route) =>
@@ -83,6 +79,14 @@ export async function updateSession(request: NextRequest) {
   if (!loggedIn && isOnboardingRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Check onboarding completion for protected routes
+  const onboardingDone = request.cookies.get("onboardingCompleted")?.value === "true";
+  if (isProtectedRoute && loggedIn && !onboardingDone) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/signup/professional";
     return NextResponse.redirect(url);
   }
 

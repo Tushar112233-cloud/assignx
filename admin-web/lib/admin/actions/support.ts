@@ -19,7 +19,14 @@ export async function getTickets(params: {
   if (params.perPage) query.set("perPage", String(params.perPage));
 
   const result = await serverFetch(`/api/support/tickets?${query.toString()}`);
-  const arr = result.tickets || result.data || [];
+  const raw = result.tickets || result.data || [];
+  const arr = raw.map((t: Record<string, unknown>) => ({
+    ...t,
+    id: t._id || t.id,
+    ticket_number: t.ticketNumber || t.ticket_number || null,
+    created_at: t.createdAt || t.created_at,
+    requester: t.requester || (t.raisedByName ? { full_name: t.raisedByName } : null),
+  }));
   return {
     data: arr,
     total: result.total || arr.length,

@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useTheme } from "next-themes";
+import { useState, useMemo } from "react";
 import {
-  Settings,
   Download,
   Trash2,
   Loader2,
@@ -12,8 +10,6 @@ import {
   ExternalLink,
   Shield,
   Bell,
-  Moon,
-  Sun,
   Bug,
   Lightbulb,
   Send,
@@ -136,40 +132,6 @@ function SettingToggle({
 }
 
 /**
- * Theme option button
- */
-function ThemeOption({
-  icon: Icon,
-  label,
-  value,
-  currentTheme,
-  onClick,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  currentTheme: string;
-  onClick: () => void;
-}) {
-  const isActive = currentTheme === value;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors",
-        isActive
-          ? "border-primary bg-primary/5"
-          : "border-border hover:border-foreground/20"
-      )}
-    >
-      <Icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-muted-foreground")} />
-      <span className={cn("text-xs font-medium", isActive ? "text-primary" : "text-muted-foreground")}>{label}</span>
-    </button>
-  );
-}
-
-/**
  * Feedback type selection button
  */
 function FeedbackTypeOption({
@@ -239,8 +201,6 @@ function LegalLink({
  * Settings Page Component
  */
 export function SettingsPro() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
@@ -289,10 +249,6 @@ export function SettingsPro() {
     updatePrivacy,
     updateAppearance,
   } = useUserPreferences();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const lastUpdated = format(new Date(appVersion.lastUpdated), "MMM d, yyyy");
 
@@ -439,28 +395,7 @@ export function SettingsPro() {
           <StaggerItem>
             <SettingsSection icon={Palette} title="Appearance" description="Customize how the app looks">
           <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-foreground mb-3">Theme</p>
-              {mounted && (
-                <div className="grid grid-cols-2 gap-3">
-                  <ThemeOption
-                    icon={Sun}
-                    label="Light"
-                    value="light"
-                    currentTheme={theme || "light"}
-                    onClick={() => setTheme("light")}
-                  />
-                  <ThemeOption
-                    icon={Moon}
-                    label="Dark"
-                    value="dark"
-                    currentTheme={theme || "light"}
-                    onClick={() => setTheme("dark")}
-                  />
-                </div>
-              )}
-            </div>
-            <div className="pt-2 border-t border-border space-y-1">
+            <div className="space-y-1">
               <SettingToggle
                 label="Reduced Motion"
                 description="Minimize animations"

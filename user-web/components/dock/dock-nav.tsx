@@ -9,10 +9,6 @@ import {
   Wallet,
   Settings,
   GraduationCap,
-  Briefcase,
-  Building2,
-  ShoppingBag,
-  UserPlus,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -50,34 +46,10 @@ const navItems = [
     tourId: "campus-connect",
   },
   {
-    title: "Connect",
-    url: "/connect",
-    icon: UserPlus,
-    tourId: "connect",
-  },
-  {
-    title: "Pro Network",
-    url: "/pro-network",
-    icon: Briefcase,
-    tourId: "pro-network",
-  },
-  {
-    title: "Business Hub",
-    url: "/business-hub",
-    icon: Building2,
-    tourId: "business-hub",
-  },
-  {
     title: "Experts",
     url: "/experts",
     icon: GraduationCap,
     tourId: "experts",
-  },
-  {
-    title: "Marketplace",
-    url: "/marketplace",
-    icon: ShoppingBag,
-    tourId: "marketplace",
   },
   {
     title: "Wallet",
@@ -158,6 +130,24 @@ export function DockNav() {
           {/* Separator */}
           <div className="mx-1 h-8 w-px bg-border/50" />
 
+          {/* Profile */}
+          <DockIcon data-tour="profile">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex h-full w-full items-center justify-center">
+                  <DockProfile />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                sideOffset={8}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium"
+              >
+                Profile
+              </TooltipContent>
+            </Tooltip>
+          </DockIcon>
+
           {/* Settings */}
           <DockIcon className="relative">
             <Tooltip>
@@ -198,24 +188,6 @@ export function DockNav() {
                 className="rounded-lg px-3 py-1.5 text-xs font-medium"
               >
                 Settings
-              </TooltipContent>
-            </Tooltip>
-          </DockIcon>
-
-          {/* Profile */}
-          <DockIcon data-tour="profile">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex h-full w-full items-center justify-center">
-                  <DockProfile />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                sideOffset={8}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium"
-              >
-                Profile
               </TooltipContent>
             </Tooltip>
           </DockIcon>

@@ -41,7 +41,7 @@ import { cn } from "@/lib/utils";
 const MAIN_NAV_STATIC = [
   { key: "nav.dashboard" as const, href: "/home", icon: Home },
   { key: "nav.projects" as const, href: "/projects", icon: FolderKanban },
-  { key: "nav.campus_connect" as const, href: "/connect", icon: Users },
+  { key: "nav.campus_connect" as const, href: "/campus-connect", icon: Users },
 ];
 
 const FINANCE_NAV_STATIC = [

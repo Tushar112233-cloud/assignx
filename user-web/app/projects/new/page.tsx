@@ -177,7 +177,7 @@ function NewProjectContent() {
   // Support aliases: plagiarism -> report, ai -> report
   const serviceType: ServiceType =
     typeParam === "proofreading" ? "proofreading" :
-    typeParam === "report" || typeParam === "plagiarism" || typeParam === "ai" ? "report" :
+    typeParam === "report" || typeParam === "plagiarism" || typeParam === "ai" || typeParam === "turnitin" ? "report" :
     typeParam === "consultation" ? "consultation" :
     "project";
 

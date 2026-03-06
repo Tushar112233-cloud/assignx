@@ -162,18 +162,23 @@ class DashboardNotifier extends Notifier<DashboardState> {
     }
   }
 
-  /// Loads doer statistics from API.
+  /// Loads doer statistics from the doer profile endpoint.
   Future<void> _loadStats(String profileId) async {
     try {
-      final response = await ApiClient.get('/projects/doer/statistics');
+      final response = await ApiClient.get('/doers/me');
       if (response is Map<String, dynamic>) {
         state = state.copyWith(
           stats: DoerStats(
-            totalEarnings: (response['totalEarnings'] as num?)?.toDouble() ?? 0,
-            completedProjects: response['completedProjects'] as int? ?? 0,
-            activeProjects: response['activeProjects'] as int? ?? 0,
-            rating: (response['averageRating'] as num?)?.toDouble() ?? 0,
-            onTimeDeliveryRate: (response['onTimeRate'] as num?)?.toDouble() ?? 0.95,
+            totalEarnings: (response['total_earnings'] as num?)?.toDouble() ??
+                (response['totalEarnings'] as num?)?.toDouble() ?? 0,
+            completedProjects: response['total_projects_completed'] as int? ??
+                response['totalProjectsCompleted'] as int? ?? 0,
+            activeProjects: response['active_projects'] as int? ??
+                response['activeProjects'] as int? ?? 0,
+            rating: (response['average_rating'] as num?)?.toDouble() ??
+                (response['averageRating'] as num?)?.toDouble() ?? 0,
+            onTimeDeliveryRate: (response['on_time_delivery_rate'] as num?)?.toDouble() ??
+                (response['onTimeDeliveryRate'] as num?)?.toDouble() ?? 0.95,
           ),
         );
       }
@@ -184,10 +189,10 @@ class DashboardNotifier extends Notifier<DashboardState> {
     }
   }
 
-  /// Loads recent reviews from API.
-  Future<void> _loadReviews(String profileId) async {
+  /// Loads recent reviews from API using the doer's ID.
+  Future<void> _loadReviews(String doerId) async {
     try {
-      final response = await ApiClient.get('/doers/me/reviews?limit=50');
+      final response = await ApiClient.get('/doers/$doerId/reviews', queryParams: {'limit': '50'});
       final list = response is List
           ? response
           : (response as Map<String, dynamic>)['reviews'] as List? ?? [];
@@ -239,9 +244,11 @@ class DashboardNotifier extends Notifier<DashboardState> {
   /// Toggles the doer's availability status.
   Future<void> toggleAvailability() async {
     final newStatus = !state.isAvailable;
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
 
     try {
-      await ApiClient.put('/doers/me/availability', {
+      await ApiClient.put('/doers/${user.id}', {
         'isAvailable': newStatus,
       });
 

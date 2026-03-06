@@ -51,7 +51,7 @@ function PendingContent() {
         </div>
         <div>
           <p className="text-base font-bold text-slate-900">AssignX</p>
-          <p className="text-xs text-slate-500">Doer Portal</p>
+          <p className="text-xs text-slate-500">Dolancer Portal</p>
         </div>
       </div>
 

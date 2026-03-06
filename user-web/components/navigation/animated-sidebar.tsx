@@ -46,7 +46,7 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
   { title: "Home", url: "/home", icon: Home },
   { title: "My Projects", url: "/projects", icon: FolderKanban },
-  { title: "Connect", url: "/connect", icon: Users },
+  { title: "Campus Connect", url: "/campus-connect", icon: Users },
   { title: "Profile", url: "/profile", icon: User },
 ]
 

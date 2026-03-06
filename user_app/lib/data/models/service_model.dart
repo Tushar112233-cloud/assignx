@@ -35,7 +35,7 @@ class ServiceItem {
       title: 'Project Support',
       subtitle: 'Get expert help',
       icon: Icons.assignment_outlined,
-      route: '/add-project/new',
+      route: '/add-project/wizard',
     ),
     const ServiceItem(
       type: ServiceType.aiPlagReport,

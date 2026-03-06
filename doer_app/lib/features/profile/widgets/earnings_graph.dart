@@ -81,26 +81,9 @@ class EarningsGraph extends StatefulWidget {
 class _EarningsGraphState extends State<EarningsGraph> {
   EarningsPeriod _selectedPeriod = EarningsPeriod.month;
 
-  /// Mock earnings data for demonstration.
+  /// Returns earnings data, or empty list if none provided.
   List<EarningsDataPoint> get _data {
-    if (widget.earningsData != null) {
-      return widget.earningsData!;
-    }
-
-    // Generate mock data
-    final now = DateTime.now();
-    return List.generate(_selectedPeriod.days, (index) {
-      final date =
-          now.subtract(Duration(days: _selectedPeriod.days - index - 1));
-      final baseAmount = 500.0 + (index * 50);
-      final variation = (index % 7 == 0 || index % 7 == 6) ? 0.3 : 1.0;
-      final weeklyBonus = (index % 7 == 5) ? 800.0 : 0.0;
-      return EarningsDataPoint(
-        date: date,
-        amount: (baseAmount * variation + weeklyBonus) *
-            (0.5 + (index / _selectedPeriod.days)),
-      );
-    });
+    return widget.earningsData ?? [];
   }
 
   /// Calculates total for the selected period.
@@ -187,46 +170,48 @@ class _EarningsGraphState extends State<EarningsGraph> {
           ),
         ),
         const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: EarningsPeriod.values.map((period) {
-              final isSelected = period == _selectedPeriod;
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedPeriod = period;
-                  });
-                  widget.onPeriodChanged?.call(period);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        isSelected ? AppColors.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    period.label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.textSecondary,
+        Flexible(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: EarningsPeriod.values.map((period) {
+                final isSelected = period == _selectedPeriod;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedPeriod = period;
+                    });
+                    widget.onPeriodChanged?.call(period);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          isSelected ? AppColors.primary : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      period.label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textSecondary,
+                      ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
         ),
       ],
@@ -279,38 +264,43 @@ class _EarningsGraphState extends State<EarningsGraph> {
         ),
 
         // Trend indicator
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 6,
-          ),
-          decoration: BoxDecoration(
-            color: (isPositive ? AppColors.success : AppColors.error)
-                .withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isPositive ? Icons.trending_up : Icons.trending_down,
-                size: 16,
-                color: isPositive ? AppColors.success : AppColors.error,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${isPositive ? '+' : ''}${trend.toStringAsFixed(1)}%',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
+        Flexible(
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: (isPositive ? AppColors.success : AppColors.error)
+                  .withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isPositive ? Icons.trending_up : Icons.trending_down,
+                  size: 14,
                   color: isPositive ? AppColors.success : AppColors.error,
                 ),
-              ),
-            ],
+                const SizedBox(width: 3),
+                Flexible(
+                  child: Text(
+                    '${isPositive ? '+' : ''}${trend.toStringAsFixed(1)}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isPositive ? AppColors.success : AppColors.error,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
 
-        const SizedBox(width: AppSpacing.md),
+        const SizedBox(width: AppSpacing.sm),
 
         // Daily average
         Column(
@@ -319,7 +309,7 @@ class _EarningsGraphState extends State<EarningsGraph> {
             Text(
               'Daily Avg'.tr(context),
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 color: AppColors.textSecondary,
               ),
             ),
@@ -327,7 +317,7 @@ class _EarningsGraphState extends State<EarningsGraph> {
             Text(
               '\u20B9${_formatAmount(_dailyAverage)}'.tr(context),
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),

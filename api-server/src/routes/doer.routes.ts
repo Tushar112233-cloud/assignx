@@ -36,12 +36,25 @@ function normalizeDoer(obj: Record<string, any>) {
     bank_name: obj.bankDetails?.bankName,
     bank_upi_id: obj.bankDetails?.upiId,
     bank_verified: obj.bankDetails?.verified,
+    training_completed: obj.trainingCompleted,
+    trainingCompleted: obj.trainingCompleted,
+    onboarding_completed: obj.onboardingCompleted,
+    onboardingCompleted: obj.onboardingCompleted,
     is_flagged: obj.isFlagged,
     is_access_granted: obj.isAccessGranted,
     created_at: obj.createdAt,
     updated_at: obj.updatedAt,
   };
 }
+
+// GET /doers/me — current doer's own profile
+router.get('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const doer = await Doer.findById(req.user!.id).lean();
+    if (!doer) throw new AppError('Doer not found', 404);
+    res.json(normalizeDoer(doer as Record<string, any>));
+  } catch (err) { next(err); }
+});
 
 // GET /doers
 router.get('/', authenticate, requireRole('admin', 'supervisor'), async (req: Request, res: Response, next: NextFunction) => {

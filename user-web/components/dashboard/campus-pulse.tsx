@@ -168,7 +168,7 @@ export function CampusPulse() {
           </div>
         </div>
         <Button variant="ghost" size="sm" asChild className="text-xs h-8">
-          <Link href="/connect" className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/campus-connect" className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors">
             See all
             <ChevronRight className="h-3.5 w-3.5" />
           </Link>
@@ -194,7 +194,7 @@ export function CampusPulse() {
         </motion.div>
       </div>
 
-      <Link href="/connect" className="dashboard-view-all">
+      <Link href="/campus-connect" className="dashboard-view-all">
         Explore marketplace
         <ArrowRight className="h-4 w-4" />
       </Link>
@@ -210,7 +210,7 @@ function PulseCard({ item }: { item: PulseItem }) {
   const Icon = config.icon;
 
   return (
-    <Link href={`/connect?item=${item.id}`}>
+    <Link href={`/campus-connect?item=${item.id}`}>
       <div className="group relative min-w-[150px] max-w-[150px] cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-card transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/30">
         {/* Image / gradient background */}
         <div

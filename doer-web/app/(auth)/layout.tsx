@@ -1,6 +1,6 @@
 /**
- * @fileoverview Auth layout for login and registration pages
- * Social Proof Focus design with 55/45 split and refined visual design
+ * @fileoverview Auth layout — 40/60 split
+ * Left: bold blue branded panel | Right: clean white form area
  */
 
 export default function AuthLayout({
@@ -9,48 +9,72 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen h-screen bg-[#EEF2F8] px-4 py-6 text-slate-900">
-      <div className="mx-auto h-full max-w-6xl overflow-hidden rounded-[36px] bg-white shadow-[0_40px_120px_-70px_rgba(36,64,122,0.5)]">
-        <div className="grid h-full grid-cols-1 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="relative hidden h-full flex-col justify-between bg-[#0C0F14] p-10 text-white lg:flex">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-white/80">
-                <span className="text-base">✨</span>
-                AssignX Doer Portal
-              </div>
-            </div>
+    <div className="min-h-screen h-screen flex">
+      {/* Left panel — 40% — Blue branded side */}
+      <div className="relative hidden lg:flex w-[40%] flex-col justify-between overflow-hidden bg-[#0B0F1A] p-10 text-white">
+        {/* Background gradient accents */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-[#5A7CFF]/20 blur-[100px]" />
+          <div className="absolute bottom-0 right-0 h-[350px] w-[350px] rounded-full bg-[#818CF8]/15 blur-[100px]" />
+        </div>
 
-            <div className="space-y-4">
-              <h1 className="text-4xl leading-tight font-semibold">
-                Turn your skills
-                <br />
-                into real earnings.
-              </h1>
-              <p className="text-sm text-white/70 max-w-sm">
-                Build your reputation, choose work you love, and grow on your own terms.
-              </p>
-            </div>
+        {/* Grid pattern */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+          }}
+        />
 
-            <div className="relative h-52 overflow-hidden rounded-[28px] border border-white/10 bg-white/5">
-              <div className="absolute inset-0">
-                <div className="absolute -left-8 bottom-[-20%] h-48 w-48 rounded-full bg-gradient-to-br from-[#5C7CFF] to-[#9AA9FF] opacity-50 blur-2xl" />
-                <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-gradient-to-br from-[#FFB199] to-[#7C8BFF] opacity-40 blur-2xl" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.08),transparent_60%)]" />
-              </div>
-              <div className="relative grid h-full grid-cols-3 items-end gap-3 p-6">
-                <div className="h-20 rounded-2xl bg-white/10" />
-                <div className="h-28 rounded-2xl bg-white/20" />
-                <div className="h-16 rounded-2xl bg-white/10" />
-              </div>
+        {/* Logo */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5A7CFF]">
+              <span className="text-sm font-bold text-white">D</span>
             </div>
+            <span className="text-lg font-bold tracking-tight">Dolancer</span>
           </div>
+        </div>
 
-          <div className="relative flex h-full items-center justify-center px-6 py-8">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(76,127,255,0.08),transparent_55%)]" />
-            <div className="relative w-full max-w-md">
-              {children}
+        {/* Headline */}
+        <div className="relative z-10 space-y-4">
+          <h1 className="text-[2.5rem] leading-[1.1] font-bold tracking-tight">
+            Turn your skills
+            <br />
+            into real{' '}
+            <span className="bg-gradient-to-r from-[#5A7CFF] to-[#A5B4FC] bg-clip-text text-transparent">
+              earnings
+            </span>
+          </h1>
+          <p className="text-sm leading-relaxed text-white/50 max-w-xs">
+            Choose projects that match your expertise. Work on your schedule. Get paid fast.
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className="relative z-10 flex gap-8">
+          {[
+            { value: '2,400+', label: 'Active Doers' },
+            { value: '48h', label: 'Avg. Payout' },
+            { value: '4.9', label: 'Avg. Rating' },
+          ].map((stat) => (
+            <div key={stat.label}>
+              <p className="text-lg font-bold text-white">{stat.value}</p>
+              <p className="text-[11px] text-white/40">{stat.label}</p>
             </div>
-          </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Right panel — 60% — Form area */}
+      <div className="relative flex w-full lg:w-[60%] items-center justify-center bg-white px-6 py-10">
+        {/* Subtle radial gradient */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(90,124,255,0.04),transparent_60%)]" />
+
+        <div className="relative w-full max-w-md">
+          {children}
         </div>
       </div>
     </div>

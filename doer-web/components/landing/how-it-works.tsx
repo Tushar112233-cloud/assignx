@@ -25,10 +25,10 @@ const steps = [
     description:
       "See all available tasks filtered by your subject area. Each task shows the payout, deadline, and requirements — no guesswork.",
     lottieFile: "/lottie/browse-tasks.json",
-    bgColor: "bg-teal-50 dark:bg-teal-950/20",
-    iconBg: "bg-teal-100 dark:bg-teal-900/30",
-    iconColor: "text-teal-600 dark:text-teal-400",
-    watermarkColor: "text-teal-600",
+    bgColor: "bg-blue-50 dark:bg-blue-950/20",
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+    iconColor: "text-blue-600 dark:text-blue-400",
+    watermarkColor: "text-blue-600",
   },
   {
     number: "02",
@@ -37,10 +37,10 @@ const steps = [
     description:
       "Pick tasks that match your skills. Work on your own schedule, submit when ready. Your supervisor reviews and gives feedback.",
     lottieFile: "/lottie/complete-work.json",
-    bgColor: "bg-emerald-50 dark:bg-emerald-950/20",
-    iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
-    watermarkColor: "text-emerald-600",
+    bgColor: "bg-indigo-50 dark:bg-indigo-950/20",
+    iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
+    iconColor: "text-indigo-600 dark:text-indigo-400",
+    watermarkColor: "text-indigo-600",
   },
   {
     number: "03",
@@ -49,10 +49,10 @@ const steps = [
     description:
       "Payment released within 48 hours of approval. No waiting, no disputes. Build your rating and unlock higher-value tasks.",
     lottieFile: "/lottie/get-paid.json",
-    bgColor: "bg-green-50 dark:bg-green-950/20",
-    iconBg: "bg-green-100 dark:bg-green-900/30",
-    iconColor: "text-green-600 dark:text-green-400",
-    watermarkColor: "text-green-600",
+    bgColor: "bg-violet-50 dark:bg-violet-950/20",
+    iconBg: "bg-violet-100 dark:bg-violet-900/30",
+    iconColor: "text-violet-600 dark:text-violet-400",
+    watermarkColor: "text-violet-600",
   },
 ]
 

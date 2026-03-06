@@ -12,7 +12,7 @@ const router = Router();
 
 const DEV_BYPASS_EMAILS = ['admin@gmail.com'];
 
-function getModelByRole(role: string) {
+function getModelByRole(role: string): any {
   switch (role) {
     case 'user': case 'student': case 'professional': case 'business': return User;
     case 'doer': return Doer;
@@ -325,8 +325,9 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
 
 router.post('/logout', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const user = (req as any).user!;
     const { refreshToken } = req.body;
-    await logout(req.user!.id, req.user!.role, refreshToken || '');
+    await logout(user.id, user.role, refreshToken || '');
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -335,15 +336,16 @@ router.post('/logout', authenticate, async (req: Request, res: Response, next: N
 
 router.get('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const Model = getModelByRole(req.user!.role);
-    const account = await Model.findById(req.user!.id).select('-refreshTokens');
+    const user = (req as any).user!;
+    const Model = getModelByRole(user.role);
+    const account = await Model.findById(user.id).select('-refreshTokens');
     if (!account) throw new AppError('Account not found', 404);
 
     res.json({
       ...((account as any).toObject()),
       id: account._id,
-      role: req.user!.role,
-      userType: req.user!.role,
+      role: user.role,
+      userType: user.role,
     });
   } catch (err) {
     next(err);

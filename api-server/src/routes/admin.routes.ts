@@ -892,7 +892,13 @@ router.post('/access-requests/:id/approve', async (req: Request, res: Response, 
     // Create Doer or Supervisor directly (they own auth fields now, no separate Profile)
     if (request.role === 'doer') {
       const existingDoer = await Doer.findOne({ email: request.email });
-      if (!existingDoer) {
+      if (existingDoer) {
+        // Activate existing doer created during registration
+        existingDoer.isActivated = true;
+        existingDoer.isAccessGranted = true;
+        existingDoer.activatedAt = new Date();
+        await existingDoer.save();
+      } else {
         const meta = request.metadata || {};
         const doer = await Doer.create({
           email: request.email,
@@ -923,7 +929,14 @@ router.post('/access-requests/:id/approve', async (req: Request, res: Response, 
 
     if (request.role === 'supervisor') {
       const existingSupervisor = await Supervisor.findOne({ email: request.email });
-      if (!existingSupervisor) {
+      if (existingSupervisor) {
+        // Activate existing supervisor created during registration
+        existingSupervisor.isActivated = true;
+        existingSupervisor.isAccessGranted = true;
+        existingSupervisor.isApproved = true;
+        existingSupervisor.activatedAt = new Date();
+        await existingSupervisor.save();
+      } else {
         const meta = request.metadata || {};
         const supervisor = await Supervisor.create({
           email: request.email,

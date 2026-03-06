@@ -7,28 +7,22 @@
 "use client"
 
 import { useState } from "react"
-import { Bell, Moon, Sun, Search } from "lucide-react"
-import { useTheme } from "next-themes"
-import Link from "next/link"
+import { Bell, Search, CheckCheck } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { apiFetch } from "@/lib/api/client"
-import { LanguageSelector } from "@/components/language-selector"
+import { useNotifications } from "@/hooks/use-notifications"
+import { NotificationItem } from "@/components/notifications/notification-item"
+import type { Notification as NotifType } from "@/components/notifications/types"
 
 interface HeaderV2Props {
   userName?: string
@@ -41,8 +35,32 @@ export function HeaderV2({
   notificationCount = 0,
   initialAvailability = true,
 }: HeaderV2Props) {
-  const { setTheme } = useTheme()
+  const router = useRouter()
   const [isAvailable, setIsAvailable] = useState(initialAvailability)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const {
+    notifications: rawNotifs,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+  } = useNotifications({ limit: 10 })
+
+  const recentNotifs: NotifType[] = rawNotifs.slice(0, 8).map((n) => {
+    const raw = n as unknown as Record<string, unknown>
+    return {
+      id: (raw._id as string) || n.id,
+      type: (raw.type as NotifType["type"]) || (raw.notification_type as NotifType["type"]) || "system_alert",
+      title: (raw.title as string) || "Notification",
+      message: (raw.message as string) || (raw.body as string) || "",
+      project_id: undefined,
+      project_number: undefined,
+      action_url: (raw.action_url as string) || undefined,
+      is_read: (raw.isRead as boolean) || (raw.is_read as boolean) || false,
+      created_at: (raw.createdAt as string) || n.created_at || new Date().toISOString(),
+    }
+  })
+
+  const displayCount = unreadCount || notificationCount
 
   const handleAvailabilityToggle = async () => {
     const newValue = !isAvailable
@@ -74,9 +92,6 @@ export function HeaderV2({
 
       {/* Right Actions */}
       <div className="flex items-center gap-3">
-        {/* Language Selector */}
-        <LanguageSelector />
-
         {/* Availability Toggle */}
         <button
           onClick={handleAvailabilityToggle}
@@ -113,78 +128,73 @@ export function HeaderV2({
         {/* Divider */}
         <div className="w-px h-6 bg-gray-200" />
 
-        {/* Theme Toggle */}
-        <TooltipProvider delayDuration={300}>
-          <Tooltip>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 rounded-xl text-gray-500 hover:text-[#F97316] hover:bg-gray-100 transition-all duration-300 hover:scale-110"
-                  >
-                    <Sun className="h-5 w-5 rotate-0 scale-100 transition-transform duration-300 dark:-rotate-90 dark:scale-0" />
-                    <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-transform duration-300 dark:rotate-0 dark:scale-100" />
-                    <span className="sr-only">Toggle theme</span>
-                  </Button>
-                </TooltipTrigger>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-white border-gray-200 rounded-xl shadow-xl p-2 min-w-[150px]">
-                <DropdownMenuItem
-                  onClick={() => setTheme("light")}
-                  className="text-gray-700 hover:text-[#1C1C1C] hover:bg-gray-50 rounded-lg cursor-pointer"
-                >
-                  <Sun className="mr-2 h-4 w-4 text-[#F97316]" />
-                  Light
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setTheme("dark")}
-                  className="text-gray-700 hover:text-[#1C1C1C] hover:bg-gray-50 rounded-lg cursor-pointer"
-                >
-                  <Moon className="mr-2 h-4 w-4 text-[#F97316]" />
-                  Dark
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-gray-100 my-1" />
-                <DropdownMenuItem
-                  onClick={() => setTheme("system")}
-                  className="text-gray-700 hover:text-[#1C1C1C] hover:bg-gray-50 rounded-lg cursor-pointer"
-                >
-                  System
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <TooltipContent side="bottom" className="bg-[#1C1C1C] text-white border-0 rounded-lg text-xs">
-              Theme
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
         {/* Notifications */}
-        <TooltipProvider delayDuration={300}>
-          <Tooltip>
-            <TooltipTrigger asChild>
+        <Popover open={notifOpen} onOpenChange={setNotifOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 relative rounded-xl text-gray-500 hover:text-[#F97316] hover:bg-gray-100 transition-all duration-300 hover:scale-110"
+            >
+              <Bell className="h-5 w-5" />
+              {displayCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-br from-[#F97316] to-[#EA580C] px-1 text-[10px] font-bold text-white shadow-lg shadow-orange-500/50">
+                  {displayCount > 9 ? "9+" : displayCount}
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-96 p-0" sideOffset={8}>
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h4 className="text-sm font-semibold">Notifications</h4>
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => markAllAsRead()}
+                >
+                  <CheckCheck className="h-3 w-3" />
+                  Mark all read
+                </Button>
+              )}
+            </div>
+            <ScrollArea className="max-h-[400px]">
+              {recentNotifs.length === 0 ? (
+                <div className="text-center py-8">
+                  <Bell className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No notifications yet</p>
+                </div>
+              ) : (
+                recentNotifs.map((notif) => (
+                  <NotificationItem
+                    key={notif.id}
+                    notification={notif}
+                    onMarkAsRead={(id) => markAsRead(id)}
+                    onClick={(n) => {
+                      if (!n.is_read) markAsRead(n.id)
+                      setNotifOpen(false)
+                      if (n.action_url) router.push(n.action_url)
+                    }}
+                  />
+                ))
+              )}
+            </ScrollArea>
+            <div className="border-t px-4 py-2">
               <Button
                 variant="ghost"
-                size="icon"
-                className="h-10 w-10 relative rounded-xl text-gray-500 hover:text-[#F97316] hover:bg-gray-100 transition-all duration-300 hover:scale-110"
-                asChild
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => {
+                  setNotifOpen(false)
+                  router.push("/notifications")
+                }}
               >
-                <Link href="/notifications">
-                  <Bell className="h-5 w-5" />
-                  {notificationCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-br from-[#F97316] to-[#EA580C] px-1 text-[10px] font-bold text-white shadow-lg shadow-orange-500/50">
-                      {notificationCount > 9 ? "9+" : notificationCount}
-                    </span>
-                  )}
-                </Link>
+                View all notifications
               </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-[#1C1C1C] text-white border-0 rounded-lg text-xs">
-              {notificationCount > 0 ? `${notificationCount} notifications` : "Notifications"}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </header>
   )

@@ -3,10 +3,7 @@
  * Types for account type management and upgrade flows
  */
 
-/**
- * Account type representing user categories
- */
-export type AccountType = 'student' | 'professional' | 'business_owner';
+import type { AccountType } from './profile';
 
 /**
  * Account tier with detailed information

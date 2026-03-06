@@ -65,7 +65,7 @@ class FabBottomSheet extends StatelessWidget {
                     color: AppColors.primary,
                     onTap: () {
                       Navigator.pop(context);
-                      context.push('/add-project/new');
+                      context.push('/add-project/wizard');
                     },
                   ),
                 ),

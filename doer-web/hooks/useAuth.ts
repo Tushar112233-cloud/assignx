@@ -130,7 +130,15 @@ export function useAuth() {
         }
 
         setDoerRef.current(doerData)
-        setOnboardedRef.current(true)
+        setOnboardedRef.current(doerData.onboardingCompleted ?? false)
+
+        // Redirect to onboarding if not completed
+        if (!doerData.onboardingCompleted) {
+          const pathname = window.location.pathname
+          if (pathname !== '/profile-setup' && pathname !== '/welcome') {
+            routerRef.current.push('/profile-setup')
+          }
+        }
       } catch (error) {
         logger.error('Auth', 'Error during init:', error)
       } finally {

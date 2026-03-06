@@ -32,7 +32,7 @@ const navItems: NavItem[] = [
   { title: "Projects", href: "/projects", icon: FolderKanban },
   // Center FAB placeholder
   { title: "Create", href: "#create", icon: Plus },
-  { title: "Connect", href: "/connect", icon: Users },
+  { title: "Campus", href: "/campus-connect", icon: Users },
   { title: "Profile", href: "/profile", icon: User },
 ]
 

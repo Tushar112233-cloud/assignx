@@ -35,7 +35,6 @@ import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/onboarding/screens/profile_setup_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
-import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/activation/screens/activation_gate_screen.dart';
 import '../../features/activation/screens/training_screen.dart';
 import '../../features/activation/screens/quiz_screen.dart';
@@ -51,7 +50,6 @@ import '../../features/workspace/screens/chat_screen.dart';
 import '../../features/projects/screens/my_projects_screen.dart';
 import '../../features/resources/screens/resources_hub_screen.dart';
 import '../../features/resources/screens/training_center_screen.dart';
-import '../../features/resources/screens/ai_checker_screen.dart';
 import '../../features/resources/screens/citation_builder_screen.dart';
 import '../../features/resources/screens/format_templates_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
@@ -60,10 +58,6 @@ import '../../features/profile/screens/payment_history_screen.dart';
 import '../../features/profile/screens/settings_screen.dart';
 import '../../features/profile/screens/notifications_screen.dart';
 import '../../features/support/screens/support_screen.dart';
-import '../../features/community/screens/community_screen.dart';
-import '../../features/community/screens/create_post_screen.dart';
-import '../../features/community/screens/post_detail_screen.dart';
-import '../../features/community/screens/saved_posts_screen.dart';
 import '../../providers/auth_provider.dart';
 
 /// Public routes that don't require authentication.
@@ -75,7 +69,6 @@ const _publicRoutes = [
   RouteNames.onboarding,
   RouteNames.login,
   RouteNames.register,
-  RouteNames.forgotPassword,
 ];
 
 /// Routes accessible during activation (unactivated but authenticated users).
@@ -201,12 +194,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'register',
         builder: (context, state) => const RegisterScreen(),
       ),
-      GoRoute(
-        path: RouteNames.forgotPassword,
-        name: 'forgotPassword',
-        builder: (context, state) => const ForgotPasswordScreen(),
-      ),
-
       // Profile Setup
       GoRoute(
         path: RouteNames.profileSetup,
@@ -290,31 +277,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SupportScreen(),
       ),
 
-      // Community (Pro Network) Routes
-      GoRoute(
-        path: RouteNames.community,
-        name: 'community',
-        builder: (context, state) => const CommunityScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.communityCreate,
-        name: 'communityCreate',
-        builder: (context, state) => const CreatePostScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.communitySaved,
-        name: 'communitySaved',
-        builder: (context, state) => const SavedPostsScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.communityPost,
-        name: 'communityPost',
-        builder: (context, state) {
-          final postId = state.pathParameters['id']!;
-          return PostDetailScreen(postId: postId);
-        },
-      ),
-
       // Project & Workspace Routes
       GoRoute(
         path: RouteNames.projectDetail,
@@ -372,11 +334,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RouteNames.trainingCenter,
         name: 'trainingCenter',
         builder: (context, state) => const TrainingCenterScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.aiChecker,
-        name: 'aiChecker',
-        builder: (context, state) => const AICheckerScreen(),
       ),
       GoRoute(
         path: RouteNames.citationBuilder,

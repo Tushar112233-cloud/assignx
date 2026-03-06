@@ -11,12 +11,8 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/marketplace_provider.dart';
 import '../widgets/campus_connect_hero.dart';
 import '../widgets/college_filter.dart';
-import '../widgets/feature_carousel.dart';
-import '../widgets/feature_cards_grid.dart';
 import '../widgets/filter_tabs_bar.dart';
-import '../widgets/live_feed_preview.dart';
 import '../widgets/post_card.dart';
-import '../widgets/quick_access_row.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/housing_filters.dart';
 import '../widgets/event_filters.dart';
@@ -53,13 +49,6 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     return profile?.userType == UserType.student;
   }
 
-  /// Set category filter from child widgets (feature cards, quick access).
-  void _selectCategory(CampusConnectCategory category) {
-    setState(() {
-      _selectedCategory = category;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final listingsAsync = ref.watch(marketplaceListingsProvider);
@@ -89,31 +78,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                   ),
                 ),
 
-                // 2. Live Feed Preview - recent posts from connected cities
-                const SliverToBoxAdapter(
-                  child: LiveFeedPreview(),
-                ),
-
-                // 3. Feature Carousel - auto-scrolling feature highlights
-                const SliverToBoxAdapter(
-                  child: FeatureCarousel(),
-                ),
-
-                // 4. Feature Cards Grid - "What is Campus Connect?"
-                SliverToBoxAdapter(
-                  child: FeatureCardsGrid(
-                    onCategorySelected: _selectCategory,
-                  ),
-                ),
-
-                // 5. Quick Access Row - circular action shortcuts
-                SliverToBoxAdapter(
-                  child: QuickAccessRow(
-                    onCategorySelected: _selectCategory,
-                  ),
-                ),
-
-                // 6. Search bar + College filter
+                // 2. Search bar
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 8),
@@ -131,7 +96,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                   ),
                 ),
 
-                // 7. Filter tabs with college filter (all 12 categories)
+                // 3. Filter tabs with college filter (all 12 categories)
                 SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,7 +140,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                   ),
                 ),
 
-                // 8. Listings count
+                // 4. Listings count
                 SliverToBoxAdapter(
                   child: listingsAsync.when(
                     data: (listings) {
@@ -187,7 +152,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                   ),
                 ),
 
-                // 9. Staggered posts grid (existing feed)
+                // 5. Staggered posts grid (existing feed)
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   sliver: isHousingRestricted

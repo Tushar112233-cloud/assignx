@@ -35,8 +35,8 @@ import {
   getVerificationRequirements,
   getProcessingTime,
 } from "@/lib/data/account-upgrade";
+import type { AccountType } from "@/types/profile";
 import type {
-  AccountType,
   UpgradeStep,
   VerificationRequirement,
 } from "@/types/account-upgrade";

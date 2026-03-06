@@ -12,7 +12,6 @@ import {
   CheckCheck,
   Filter,
   Search,
-  Trash2,
 } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
@@ -28,17 +27,6 @@ import {
 import { Card, CardContent, CardDescription } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { NotificationItem } from "./notification-item"
@@ -55,7 +43,6 @@ export function NotificationList() {
     error,
     markAsRead: markAsReadRemote,
     markAllAsRead: markAllAsReadRemote,
-    deleteNotification: deleteNotificationRemote,
   } = useNotifications()
 
   // Map database notifications to the component's Notification type
@@ -176,23 +163,6 @@ export function NotificationList() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteNotificationRemote(id)
-      setNotifications((prev) => prev.filter((n) => n.id !== id))
-      toast.success("Notification deleted")
-    } catch {
-      toast.error("Failed to delete notification")
-    }
-  }
-
-  const handleDeleteAll = () => {
-    // Delete all one by one
-    notifications.forEach((n) => deleteNotificationRemote(n.id).catch(() => {}))
-    setNotifications([])
-    toast.success("All notifications deleted")
-  }
-
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.is_read) {
       handleMarkAsRead(notification.id)
@@ -252,36 +222,6 @@ export function NotificationList() {
                   <span className="hidden sm:inline">Mark all read</span>
                 </Button>
               )}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2 text-destructive hover:text-destructive"
-                    disabled={notifications.length === 0}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Clear all</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Clear all notifications?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete all notifications. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteAll}
-                      className="bg-destructive hover:bg-destructive/90"
-                    >
-                      Delete All
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
             </div>
           </div>
         </CardContent>
@@ -338,7 +278,6 @@ export function NotificationList() {
                         key={notification.id}
                         notification={notification}
                         onMarkAsRead={handleMarkAsRead}
-                        onDelete={handleDelete}
                         onClick={handleNotificationClick}
                       />
                     ))}

@@ -35,23 +35,16 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Step 1 data
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
-
-  // Step 2 data
   const [qualification, setQualification] = useState('')
   const [experienceLevel, setExperienceLevel] = useState('')
   const [skills, setSkills] = useState<string[]>([])
   const [bio, setBio] = useState('')
-
-  // Step 3 data
   const [bankName, setBankName] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
   const [ifscCode, setIfscCode] = useState('')
   const [upiId, setUpiId] = useState('')
-
-  // Step 5 OTP data
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [resendCooldown, setResendCooldown] = useState(0)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
@@ -62,7 +55,6 @@ export default function RegisterPage() {
     return () => clearTimeout(timer)
   }, [resendCooldown])
 
-  // Auto-submit OTP when all digits entered
   useEffect(() => {
     const code = otp.join('')
     if (code.length === 6 && step === 5) {
@@ -72,11 +64,7 @@ export default function RegisterPage() {
   }, [otp])
 
   const toggleSkill = (value: string) => {
-    setSkills(prev =>
-      prev.includes(value)
-        ? prev.filter(s => s !== value)
-        : [...prev, value]
-    )
+    setSkills(prev => prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value])
   }
 
   const handleOtpChange = (index: number, value: string) => {
@@ -85,15 +73,11 @@ export default function RegisterPage() {
     newOtp[index] = value.slice(-1)
     setOtp(newOtp)
     setError(null)
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus()
-    }
+    if (value && index < 5) inputRefs.current[index + 1]?.focus()
   }
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus()
-    }
+    if (e.key === 'Backspace' && !otp[index] && index > 0) inputRefs.current[index - 1]?.focus()
   }
 
   const handleOtpPaste = (e: React.ClipboardEvent) => {
@@ -101,48 +85,29 @@ export default function RegisterPage() {
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
     if (pasted.length === 0) return
     const newOtp = [...otp]
-    for (let i = 0; i < 6; i++) {
-      newOtp[i] = pasted[i] || ''
-    }
+    for (let i = 0; i < 6; i++) newOtp[i] = pasted[i] || ''
     setOtp(newOtp)
-    const focusIndex = Math.min(pasted.length, 5)
-    inputRefs.current[focusIndex]?.focus()
+    inputRefs.current[Math.min(pasted.length, 5)]?.focus()
   }
 
   const validateStep = () => {
     setError(null)
     if (step === 1) {
       const result = doerEmailNameSchema.safeParse({ email: email.trim(), fullName: fullName.trim() })
-      if (!result.success) {
-        setError(result.error.issues[0].message)
-        return false
-      }
+      if (!result.success) { setError(result.error.issues[0].message); return false }
     } else if (step === 2) {
       const result = doerProfileSchema.safeParse({ qualification, experienceLevel, skills, bio: bio || undefined })
-      if (!result.success) {
-        setError(result.error.issues[0].message)
-        return false
-      }
+      if (!result.success) { setError(result.error.issues[0].message); return false }
     } else if (step === 3) {
-      const result = doerBankingSchema.safeParse({
-        bankName,
-        accountNumber,
-        ifscCode: ifscCode.toUpperCase(),
-        upiId: upiId || '',
-      })
-      if (!result.success) {
-        setError(result.error.issues[0].message)
-        return false
-      }
+      const result = doerBankingSchema.safeParse({ bankName, accountNumber, ifscCode: ifscCode.toUpperCase(), upiId: upiId || '' })
+      if (!result.success) { setError(result.error.issues[0].message); return false }
     }
     return true
   }
 
   const handleNext = async () => {
     if (!validateStep()) return
-
     if (step === 1) {
-      // Check if already submitted
       setIsLoading(true)
       setError(null)
       try {
@@ -150,45 +115,26 @@ export default function RegisterPage() {
           `/api/access-requests/check?email=${encodeURIComponent(email.trim().toLowerCase())}&role=doer`,
           { skipAuth: true }
         )
-
         if (existing) {
           const s = existing.status
-          if (s === 'approved') {
-            setError('This email is already approved. Please sign in instead.')
-            return
-          }
-          if (s === 'rejected') {
-            setError('This email was not approved. Please contact support.')
-            return
-          }
-          if (s === 'pending') {
-            router.push(`/pending?email=${encodeURIComponent(email.trim().toLowerCase())}`)
-            return
-          }
+          if (s === 'approved') { setError('This email is already approved. Please sign in instead.'); return }
+          if (s === 'rejected') { setError('This email was not approved. Please contact support.'); return }
+          if (s === 'pending') { router.push(`/pending?email=${encodeURIComponent(email.trim().toLowerCase())}`); return }
         }
-      } catch {
-        // continue to next step even if check fails (404 means no existing request)
-      } finally {
-        setIsLoading(false)
-      }
+      } catch { /* 404 = no existing request, continue */ } finally { setIsLoading(false) }
     }
-
     setStep(prev => prev + 1)
   }
 
   const handleBack = () => {
     setError(null)
-    if (step === 5) {
-      setOtp(['', '', '', '', '', ''])
-    }
+    if (step === 5) setOtp(['', '', '', '', '', ''])
     setStep(prev => prev - 1)
   }
 
-  /** Step 4 → 5: Send OTP and move to verification */
   const handleSendOtp = async () => {
     setIsLoading(true)
     setError(null)
-
     try {
       await sendOTP(email.trim().toLowerCase(), 'signup', 'doer')
       setStep(5)
@@ -196,89 +142,50 @@ export default function RegisterPage() {
       setTimeout(() => inputRefs.current[0]?.focus(), 100)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to send verification code.')
-    } finally {
-      setIsLoading(false)
-    }
+    } finally { setIsLoading(false) }
   }
 
   const handleResendOtp = async () => {
     if (resendCooldown > 0) return
-    try {
-      setError(null)
-      await sendOTP(email.trim().toLowerCase(), 'signup', 'doer')
-      setOtp(['', '', '', '', '', ''])
-      setResendCooldown(30)
-    } catch {
-      setError('Failed to resend. Please try again.')
-    }
+    try { setError(null); await sendOTP(email.trim().toLowerCase(), 'signup', 'doer'); setOtp(['', '', '', '', '', '']); setResendCooldown(30) }
+    catch { setError('Failed to resend. Please try again.') }
   }
 
-  /** Step 5: Verify OTP + create account */
   const handleOtpSubmit = async (code?: string) => {
     const otpCode = code || otp.join('')
-    if (otpCode.length !== 6) {
-      setError('Please enter the 6-digit code.')
-      return
-    }
-
+    if (otpCode.length !== 6) { setError('Please enter the 6-digit code.'); return }
     setIsLoading(true)
     setError(null)
-
     try {
       const trimmedEmail = email.trim().toLowerCase()
-      const metadata = {
-        qualification,
-        experienceLevel,
-        skills,
-        bio: bio || null,
-        bankName,
-        accountNumber,
-        ifscCode: ifscCode.toUpperCase(),
-        upiId: upiId || null,
-      }
-
+      const metadata = { qualification, experienceLevel, skills, bio: bio || null, bankName, accountNumber, ifscCode: ifscCode.toUpperCase(), upiId: upiId || null }
       const result = await doerSignup(trimmedEmail, otpCode, fullName.trim(), metadata)
-      if (!result.success) {
-        setError(result.message || 'Signup failed. Please try again.')
-        setOtp(['', '', '', '', '', ''])
-        inputRefs.current[0]?.focus()
-        return
-      }
+      if (!result.success) { setError(result.message || 'Signup failed. Please try again.'); setOtp(['', '', '', '', '', '']); inputRefs.current[0]?.focus(); return }
       router.push(`/pending?email=${encodeURIComponent(trimmedEmail)}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
-      setOtp(['', '', '', '', '', ''])
-      inputRefs.current[0]?.focus()
-    } finally {
-      setIsLoading(false)
-    }
+      setOtp(['', '', '', '', '', '']); inputRefs.current[0]?.focus()
+    } finally { setIsLoading(false) }
   }
 
   return (
     <div className="space-y-6">
       {/* Mobile logo */}
-      <div className="lg:hidden flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
-          <span className="text-lg font-bold text-white">AX</span>
+      <div className="lg:hidden flex items-center gap-2.5 mb-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5A7CFF]">
+          <span className="text-xs font-bold text-white">D</span>
         </div>
-        <div>
-          <p className="text-base font-bold text-slate-900">AssignX</p>
-          <p className="text-xs text-slate-500">Doer Portal</p>
-        </div>
+        <span className="text-base font-bold tracking-tight text-slate-900">Dolancer</span>
       </div>
 
       {/* Header */}
-      <div className="space-y-2">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-[#EEF2FF] border border-[#C7D2FE] px-3 py-1 text-xs font-semibold text-[#5A7CFF]">
+      <div className="space-y-1">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-[#5A7CFF]/20 bg-[#EEF2FF] px-3 py-1 text-xs font-semibold text-[#5A7CFF]">
           <Sparkles className="h-3 w-3" />
           Now accepting applications
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-          Become a Doer
-        </h1>
-        <p className="text-sm text-slate-500">
-          Complete the form below to apply for access.
-        </p>
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">Become a Dolancer</h1>
+        <p className="text-sm text-slate-500">Complete the form below to apply for access.</p>
       </div>
 
       {/* Stepper */}
@@ -288,28 +195,24 @@ export default function RegisterPage() {
           const isActive = stepNum === step
           const isCompleted = stepNum < step
           return (
-            <div key={s.label} className="flex items-center gap-1.5 flex-1">
-              <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                    isCompleted
-                      ? 'bg-emerald-500 text-white'
-                      : isActive
-                      ? 'bg-[#5A7CFF] text-white'
-                      : 'border-2 border-slate-200 text-slate-400'
-                  }`}
-                >
+            <div key={s.label} className="flex items-center flex-1 last:flex-none">
+              <div className="flex flex-col items-center gap-1.5">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                  isCompleted
+                    ? 'bg-[#5A7CFF] text-white'
+                    : isActive
+                    ? 'bg-[#5A7CFF] text-white ring-4 ring-[#5A7CFF]/15'
+                    : 'border-2 border-slate-200 text-slate-400'
+                }`}>
                   {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : stepNum}
                 </div>
                 <span className={`text-[10px] font-medium ${
-                  isActive ? 'text-[#5A7CFF]' : isCompleted ? 'text-emerald-600' : 'text-slate-400'
-                }`}>
-                  {s.label}
-                </span>
+                  isActive || isCompleted ? 'text-[#5A7CFF]' : 'text-slate-400'
+                }`}>{s.label}</span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`flex-1 h-0.5 rounded-full mb-4 mx-1 ${
-                  stepNum < step ? 'bg-emerald-400' : 'bg-slate-200'
+                <div className={`mx-1.5 mb-5 h-0.5 flex-1 rounded-full ${
+                  stepNum < step ? 'bg-[#5A7CFF]' : 'bg-slate-200'
                 }`} />
               )}
             </div>
@@ -317,49 +220,35 @@ export default function RegisterPage() {
         })}
       </div>
 
-      {/* Form card */}
-      <div className="rounded-2xl border border-slate-200/80 bg-[#F7F9FF] p-5 shadow-[0_4px_20px_rgba(148,163,184,0.08)]">
-        {/* Step 1: Email & Name */}
+      {/* Form content */}
+      <div>
         {step === 1 && (
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm font-semibold text-slate-700">Email address</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-slate-700">Email address</Label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[17px] w-[17px] text-slate-400 pointer-events-none" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-11 bg-white border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10 transition-all"
-                />
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)}
+                  className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10" />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="fullName" className="text-sm font-semibold text-slate-700">Full name</Label>
+              <Label htmlFor="fullName" className="text-sm font-medium text-slate-700">Full name</Label>
               <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[17px] w-[17px] text-slate-400 pointer-events-none" />
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Your full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="pl-10 h-11 bg-white border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10 transition-all"
-                />
+                <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input id="fullName" type="text" placeholder="Your full name" value={fullName} onChange={(e) => setFullName(e.target.value)}
+                  className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10" />
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 2: Professional Profile */}
         {step === 2 && (
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-sm font-semibold text-slate-700">Qualification</Label>
+              <Label className="text-sm font-medium text-slate-700">Qualification</Label>
               <Select value={qualification} onValueChange={setQualification}>
-                <SelectTrigger className="w-full h-11 bg-white border-slate-200 rounded-xl">
+                <SelectTrigger className="w-full h-11 rounded-xl border-slate-200 bg-white">
                   <SelectValue placeholder="Select your qualification" />
                 </SelectTrigger>
                 <SelectContent>
@@ -371,19 +260,15 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-semibold text-slate-700">Experience level</Label>
+              <Label className="text-sm font-medium text-slate-700">Experience level</Label>
               <div className="grid grid-cols-3 gap-2">
                 {EXPERIENCE_LEVELS.map(level => (
-                  <button
-                    key={level.value}
-                    type="button"
-                    onClick={() => setExperienceLevel(level.value)}
+                  <button key={level.value} type="button" onClick={() => setExperienceLevel(level.value)}
                     className={`rounded-xl border px-3 py-2.5 text-center transition-all ${
                       experienceLevel === level.value
-                        ? 'border-[#5A7CFF] bg-[#5A7CFF]/10 text-[#5A7CFF]'
+                        ? 'border-[#5A7CFF] bg-[#EEF2FF] text-[#5A7CFF]'
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                    }`}
-                  >
+                    }`}>
                     <p className="text-sm font-semibold">{level.label}</p>
                     <p className="text-[10px] text-slate-500">{level.description}</p>
                   </button>
@@ -392,21 +277,17 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-semibold text-slate-700">
+              <Label className="text-sm font-medium text-slate-700">
                 Skill areas <span className="font-normal text-slate-400">({skills.length} selected)</span>
               </Label>
               <div className="flex flex-wrap gap-2">
                 {SKILL_AREAS.map(skill => (
-                  <button
-                    key={skill.value}
-                    type="button"
-                    onClick={() => toggleSkill(skill.value)}
+                  <button key={skill.value} type="button" onClick={() => toggleSkill(skill.value)}
                     className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                       skills.includes(skill.value)
                         ? 'bg-[#5A7CFF] text-white'
-                        : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
-                    }`}
-                  >
+                        : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    }`}>
                     {skill.label}
                     {skills.includes(skill.value) && <X className="h-3 w-3" />}
                   </button>
@@ -415,30 +296,23 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="bio" className="text-sm font-semibold text-slate-700">
+              <Label htmlFor="bio" className="text-sm font-medium text-slate-700">
                 Bio <span className="font-normal text-slate-400">(optional)</span>
               </Label>
-              <textarea
-                id="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                maxLength={500}
-                rows={3}
+              <textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} maxLength={500} rows={3}
                 placeholder="Tell us about yourself..."
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10 focus-visible:outline-none transition-all resize-none"
-              />
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10 focus-visible:outline-none resize-none" />
               <p className="text-right text-[11px] text-slate-400">{bio.length}/500</p>
             </div>
           </div>
         )}
 
-        {/* Step 3: Bank Details */}
         {step === 3 && (
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-sm font-semibold text-slate-700">Bank name</Label>
+              <Label className="text-sm font-medium text-slate-700">Bank name</Label>
               <Select value={bankName} onValueChange={setBankName}>
-                <SelectTrigger className="w-full h-11 bg-white border-slate-200 rounded-xl">
+                <SelectTrigger className="w-full h-11 rounded-xl border-slate-200 bg-white">
                   <SelectValue placeholder="Select your bank" />
                 </SelectTrigger>
                 <SelectContent>
@@ -448,88 +322,46 @@ export default function RegisterPage() {
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-1.5">
-              <Label htmlFor="accountNumber" className="text-sm font-semibold text-slate-700">Account number</Label>
-              <Input
-                id="accountNumber"
-                type="text"
-                inputMode="numeric"
-                placeholder="Enter account number"
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
-                maxLength={18}
-                className="h-11 bg-white border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10 transition-all"
-              />
+              <Label htmlFor="accountNumber" className="text-sm font-medium text-slate-700">Account number</Label>
+              <Input id="accountNumber" type="text" inputMode="numeric" placeholder="Enter account number" value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))} maxLength={18}
+                className="h-11 rounded-xl border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10" />
             </div>
-
             <div className="space-y-1.5">
-              <Label htmlFor="ifscCode" className="text-sm font-semibold text-slate-700">IFSC code</Label>
-              <Input
-                id="ifscCode"
-                type="text"
-                placeholder="e.g. SBIN0001234"
-                value={ifscCode}
-                onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
-                maxLength={11}
-                className="h-11 bg-white border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10 transition-all uppercase"
-              />
+              <Label htmlFor="ifscCode" className="text-sm font-medium text-slate-700">IFSC code</Label>
+              <Input id="ifscCode" type="text" placeholder="e.g. SBIN0001234" value={ifscCode}
+                onChange={(e) => setIfscCode(e.target.value.toUpperCase())} maxLength={11}
+                className="h-11 rounded-xl border-slate-200 bg-white text-slate-900 uppercase placeholder:text-slate-400 placeholder:normal-case focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10" />
             </div>
-
             <div className="space-y-1.5">
-              <Label htmlFor="upiId" className="text-sm font-semibold text-slate-700">
+              <Label htmlFor="upiId" className="text-sm font-medium text-slate-700">
                 UPI ID <span className="font-normal text-slate-400">(optional)</span>
               </Label>
-              <Input
-                id="upiId"
-                type="text"
-                placeholder="yourname@upi"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-                className="h-11 bg-white border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10 transition-all"
-              />
+              <Input id="upiId" type="text" placeholder="yourname@upi" value={upiId} onChange={(e) => setUpiId(e.target.value)}
+                className="h-11 rounded-xl border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10" />
             </div>
           </div>
         )}
 
-        {/* Step 4: Review */}
         {step === 4 && (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+          <div className="space-y-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
               <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                <Mail className="h-4 w-4 text-[#5A7CFF]" />
-                Personal Details
+                <Mail className="h-4 w-4 text-[#5A7CFF]" /> Personal Details
               </h3>
               <div className="grid gap-1.5 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Email</span>
-                  <span className="font-medium text-slate-900">{email}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Name</span>
-                  <span className="font-medium text-slate-900">{fullName}</span>
-                </div>
+                <div className="flex justify-between"><span className="text-slate-500">Email</span><span className="font-medium text-slate-900">{email}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Name</span><span className="font-medium text-slate-900">{fullName}</span></div>
               </div>
             </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
               <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-[#5A7CFF]" />
-                Professional Profile
+                <Briefcase className="h-4 w-4 text-[#5A7CFF]" /> Professional Profile
               </h3>
               <div className="grid gap-1.5 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Qualification</span>
-                  <span className="font-medium text-slate-900">
-                    {QUALIFICATION_OPTIONS.find(q => q.value === qualification)?.label}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Experience</span>
-                  <span className="font-medium text-slate-900">
-                    {EXPERIENCE_LEVELS.find(e => e.value === experienceLevel)?.label}
-                  </span>
-                </div>
+                <div className="flex justify-between"><span className="text-slate-500">Qualification</span><span className="font-medium text-slate-900">{QUALIFICATION_OPTIONS.find(q => q.value === qualification)?.label}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Experience</span><span className="font-medium text-slate-900">{EXPERIENCE_LEVELS.find(e => e.value === experienceLevel)?.label}</span></div>
                 <div>
                   <span className="text-slate-500">Skills</span>
                   <div className="flex flex-wrap gap-1 mt-1">
@@ -540,54 +372,28 @@ export default function RegisterPage() {
                     ))}
                   </div>
                 </div>
-                {bio && (
-                  <div>
-                    <span className="text-slate-500">Bio</span>
-                    <p className="mt-0.5 text-slate-700">{bio}</p>
-                  </div>
-                )}
+                {bio && <div><span className="text-slate-500">Bio</span><p className="mt-0.5 text-slate-700">{bio}</p></div>}
               </div>
             </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
               <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-[#5A7CFF]" />
-                Bank Details
+                <Building2 className="h-4 w-4 text-[#5A7CFF]" /> Bank Details
               </h3>
               <div className="grid gap-1.5 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Bank</span>
-                  <span className="font-medium text-slate-900">
-                    {INDIAN_BANKS.find(b => b.value === bankName)?.label}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Account</span>
-                  <span className="font-medium text-slate-900">
-                    {'*'.repeat(Math.max(0, accountNumber.length - 4))}{accountNumber.slice(-4)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">IFSC</span>
-                  <span className="font-medium text-slate-900">{ifscCode.toUpperCase()}</span>
-                </div>
-                {upiId && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">UPI</span>
-                    <span className="font-medium text-slate-900">{upiId}</span>
-                  </div>
-                )}
+                <div className="flex justify-between"><span className="text-slate-500">Bank</span><span className="font-medium text-slate-900">{INDIAN_BANKS.find(b => b.value === bankName)?.label}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Account</span><span className="font-medium text-slate-900">{'*'.repeat(Math.max(0, accountNumber.length - 4))}{accountNumber.slice(-4)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">IFSC</span><span className="font-medium text-slate-900">{ifscCode.toUpperCase()}</span></div>
+                {upiId && <div className="flex justify-between"><span className="text-slate-500">UPI</span><span className="font-medium text-slate-900">{upiId}</span></div>}
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 5: OTP Verification */}
         {step === 5 && (
           <div className="space-y-5">
             <div className="text-center space-y-2">
-              <div className="inline-flex w-16 h-16 rounded-full bg-gradient-to-br from-[#5A7CFF]/15 to-teal-500/15 items-center justify-center mx-auto">
-                <KeyRound className="h-7 w-7 text-[#5A7CFF]" />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EEF2FF]">
+                <KeyRound className="h-6 w-6 text-[#5A7CFF]" />
               </div>
               <h3 className="text-lg font-bold text-slate-900">Verify your email</h3>
               <p className="text-sm text-slate-500">
@@ -595,130 +401,65 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            <div className="flex justify-center gap-3" onPaste={handleOtpPaste}>
+            <div className="flex justify-center gap-2.5" onPaste={handleOtpPaste}>
               {otp.map((digit, i) => (
-                <input
-                  key={i}
-                  ref={(el) => { inputRefs.current[i] = el }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(i, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                <input key={i} ref={(el) => { inputRefs.current[i] = el }} type="text" inputMode="numeric" maxLength={1}
+                  value={digit} onChange={(e) => handleOtpChange(i, e.target.value)} onKeyDown={(e) => handleOtpKeyDown(i, e)}
                   disabled={isLoading}
-                  className="w-12 h-14 text-center text-xl font-bold rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#5A7CFF] focus:ring-4 focus:ring-[#5A7CFF]/10 focus:outline-none transition-all disabled:opacity-50"
-                />
+                  className="h-13 w-12 rounded-xl border-2 border-slate-200 bg-white text-center text-xl font-bold text-slate-900 transition-all focus:border-[#5A7CFF] focus:outline-none focus:ring-4 focus:ring-[#5A7CFF]/10 disabled:opacity-40" />
               ))}
             </div>
 
             <div className="flex justify-center items-center gap-2">
               {resendCooldown > 0 && (
-                <div className="flex items-center gap-1 text-xs text-slate-400">
-                  <Clock className="h-3.5 w-3.5" />
-                  {resendCooldown}s
-                </div>
+                <span className="flex items-center gap-1 text-xs text-slate-400">
+                  <Clock className="h-3.5 w-3.5" />{resendCooldown}s
+                </span>
               )}
-              <button
-                type="button"
-                disabled={resendCooldown > 0}
-                onClick={handleResendOtp}
-                className="text-xs font-semibold text-[#5A7CFF] hover:underline underline-offset-4 disabled:text-slate-300 disabled:no-underline"
-              >
+              <button type="button" disabled={resendCooldown > 0} onClick={handleResendOtp}
+                className="text-sm font-medium text-[#5A7CFF] hover:underline underline-offset-4 disabled:text-slate-300 disabled:no-underline">
                 Resend code
               </button>
             </div>
           </div>
         )}
 
-        {/* Error */}
         {error && (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 animate-fade-in">
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
           </div>
         )}
 
-        {/* Actions */}
         <div className="mt-5 flex gap-3">
           {step > 1 && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleBack}
-              className="h-11 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Back
+            <Button type="button" variant="outline" onClick={handleBack}
+              className="h-11 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold">
+              <ArrowLeft className="mr-1 h-4 w-4" /> Back
             </Button>
           )}
 
           {step < 4 ? (
-            <Button
-              type="button"
-              onClick={handleNext}
-              disabled={isLoading}
-              className="flex-1 h-11 text-sm font-semibold rounded-xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white border-0 shadow-[0_8px_24px_rgba(90,124,255,0.30)] hover:shadow-[0_12px_32px_rgba(90,124,255,0.40)] hover:opacity-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Checking...
-                </>
-              ) : (
-                <>
-                  Continue
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </>
-              )}
+            <Button type="button" onClick={handleNext} disabled={isLoading}
+              className="h-11 flex-1 rounded-xl bg-[#5A7CFF] text-sm font-semibold text-white shadow-md shadow-[#5A7CFF]/20 hover:bg-[#4A6AEF] disabled:cursor-not-allowed disabled:opacity-40">
+              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Checking...</> : <>Continue<ArrowRight className="ml-2 h-4 w-4" /></>}
             </Button>
           ) : step === 4 ? (
-            <Button
-              type="button"
-              onClick={handleSendOtp}
-              disabled={isLoading}
-              className="flex-1 h-11 text-sm font-semibold rounded-xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white border-0 shadow-[0_8px_24px_rgba(90,124,255,0.30)] hover:shadow-[0_12px_32px_rgba(90,124,255,0.40)] hover:opacity-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Sending code...
-                </>
-              ) : (
-                <>
-                  Send Profile for Review
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </>
-              )}
+            <Button type="button" onClick={handleSendOtp} disabled={isLoading}
+              className="h-11 flex-1 rounded-xl bg-[#5A7CFF] text-sm font-semibold text-white shadow-md shadow-[#5A7CFF]/20 hover:bg-[#4A6AEF] disabled:cursor-not-allowed disabled:opacity-40">
+              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending code...</> : <>Submit & Verify<ArrowRight className="ml-2 h-4 w-4" /></>}
             </Button>
           ) : (
-            <Button
-              type="button"
-              onClick={() => handleOtpSubmit()}
-              disabled={isLoading || otp.join('').length !== 6}
-              className="flex-1 h-11 text-sm font-semibold rounded-xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white border-0 shadow-[0_8px_24px_rgba(90,124,255,0.30)] hover:shadow-[0_12px_32px_rgba(90,124,255,0.40)] hover:opacity-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  Verify & Submit
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </>
-              )}
+            <Button type="button" onClick={() => handleOtpSubmit()} disabled={isLoading || otp.join('').length !== 6}
+              className="h-11 flex-1 rounded-xl bg-[#5A7CFF] text-sm font-semibold text-white shadow-md shadow-[#5A7CFF]/20 hover:bg-[#4A6AEF] disabled:cursor-not-allowed disabled:opacity-40">
+              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : <>Verify & Submit<ArrowRight className="ml-2 h-4 w-4" /></>}
             </Button>
           )}
         </div>
       </div>
 
-      {/* Footer link */}
       <p className="text-center text-sm text-slate-500">
         Already have an account?{' '}
-        <Link href="/login" className="font-semibold text-[#5A7CFF] hover:underline underline-offset-4">
-          Sign in
-        </Link>
+        <Link href="/login" className="font-semibold text-[#5A7CFF] hover:underline underline-offset-4">Sign in</Link>
       </p>
     </div>
   )

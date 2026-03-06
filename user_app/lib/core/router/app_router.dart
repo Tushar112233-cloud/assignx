@@ -58,15 +58,30 @@ import 'route_names.dart';
 /// Global navigator key for navigation without context.
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// A ChangeNotifier that fires when the auth state changes,
+/// so GoRouter re-runs its redirect without being recreated.
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier(Ref ref) {
+    ref.listen(authStateProvider, (_, _) {
+      notifyListeners();
+    });
+  }
+}
+
 /// App router provider with auth-based redirects.
+///
+/// Uses refreshListenable so the GoRouter instance is created ONCE
+/// and only re-evaluates its redirect when auth state changes.
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final authChangeNotifier = _AuthChangeNotifier(ref);
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: RouteNames.splash,
     debugLogDiagnostics: true,
+    refreshListenable: authChangeNotifier,
     redirect: (context, state) {
+      final authState = ref.read(authStateProvider);
       final isLoading = authState.isLoading;
       final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
       final hasProfile = authState.valueOrNull?.hasProfile ?? false;

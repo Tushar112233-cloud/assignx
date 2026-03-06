@@ -269,7 +269,7 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => context.push('${RouteNames.addProject}/new'),
+              onPressed: () => context.push(RouteNames.projectWizard),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.darkBrown,
                 foregroundColor: Colors.white,

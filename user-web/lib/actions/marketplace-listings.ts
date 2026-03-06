@@ -84,7 +84,7 @@ export async function createMarketplaceListing(data: {
       body: JSON.stringify(data),
     }, token);
 
-    revalidatePath("/marketplace");
+    revalidatePath("/campus-connect");
     return { success: true, id: result.listing?.id || result.data?.id || result.id, error: null };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -105,7 +105,7 @@ export async function toggleListingFavorite(
       method: "POST",
     }, token);
 
-    revalidatePath("/marketplace");
+    revalidatePath("/campus-connect");
     return { success: true, isFavorited: result.isFavorited ?? true, error: null };
   } catch (error: any) {
     return { success: false, isFavorited: false, error: error.message };

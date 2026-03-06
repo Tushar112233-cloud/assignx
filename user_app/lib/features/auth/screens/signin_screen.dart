@@ -123,6 +123,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       await ref.read(authStateProvider.notifier).sendOTP(
             email: _email,
             purpose: 'signup',
+            role: 'user',
           );
 
       if (mounted) {
@@ -184,6 +185,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
             email: _email,
             token: otp,
             purpose: 'signup',
+            role: 'user',
           );
 
       if (mounted) {
@@ -222,6 +224,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       await ref.read(authStateProvider.notifier).sendOTP(
             email: _email,
             purpose: 'signup',
+            role: 'user',
           );
       if (mounted) {
         setState(() => _isLoading = false);

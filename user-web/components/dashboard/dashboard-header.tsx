@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { WalletPill } from "./wallet-pill";
 import { NotificationBell } from "./notification-bell";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 /**
  * Dashboard header component
@@ -29,7 +28,6 @@ export function DashboardHeader() {
           <WalletPill />
           <div className="header-divider" />
           <NotificationBell />
-          <AnimatedThemeToggler />
         </div>
       </div>
     </header>

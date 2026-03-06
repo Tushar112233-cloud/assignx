@@ -62,8 +62,8 @@ class ProjectDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final workspaceNotifier = ref.watch(workspaceProvider(projectId));
-    final workspaceState = workspaceNotifier.state;
+    final notifier = ref.watch(workspaceProvider(projectId));
+    final workspaceState = notifier.state;
     final project = workspaceState.project;
 
     return Scaffold(

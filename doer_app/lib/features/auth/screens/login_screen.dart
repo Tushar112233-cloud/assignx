@@ -1,8 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/api/api_client.dart';
-import '../../../core/storage/token_storage.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/router/route_names.dart';
@@ -12,35 +11,9 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../core/translation/translation_extensions.dart';
 
-/// Login screen for existing users.
+/// OTP-based login screen for doers.
 ///
-/// Provides email/password authentication with form validation,
-/// error handling, and navigation to registration for new users.
-///
-/// ## Navigation
-/// - Entry: From [OnboardingScreen] via "Sign In" or when session expires
-/// - Success + Activated: Navigates to [DashboardScreen]
-/// - Success + Has Profile: Navigates to [ActivationGateScreen]
-/// - Success + No Profile: Navigates to [ProfileSetupScreen]
-/// - Register: Navigates to [RegisterScreen] via "Sign Up" link
-/// - Back: Returns to [OnboardingScreen]
-///
-/// ## Features
-/// - Email validation using [Validators.email]
-/// - Password field with obscured text
-/// - Forgot password link (placeholder)
-/// - Google OAuth sign-in option (placeholder)
-/// - Loading state during authentication
-/// - Error feedback via SnackBar
-///
-/// ## Form Fields
-/// - Email: Required, validated for email format
-/// - Password: Required
-///
-/// See also:
-/// - [RegisterScreen] for new user registration
-/// - [AuthProvider] for authentication state management
-/// - [Validators] for form validation utilities
+/// Flow: Enter email -> Send OTP -> Enter OTP -> Verify -> Navigate based on auth state.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -48,67 +21,77 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-/// State class for [LoginScreen].
-///
-/// Manages form state, text controllers, and loading state
-/// for the login process.
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  /// Form key for validating the login form.
   final _formKey = GlobalKey<FormState>();
-
-  /// Controller for the email input field.
   final _emailController = TextEditingController();
+  final _otpController = TextEditingController();
 
-  /// Controller for the password input field.
-  final _passwordController = TextEditingController();
-
-  /// Whether a login request is currently in progress.
   bool _isLoading = false;
+  bool _otpSent = false;
+  int _resendCooldown = 0;
+  Timer? _cooldownTimer;
 
-  /// Whether to show magic link mode instead of password.
-  bool _useMagicLink = false;
-
-  /// Whether magic link was sent successfully.
-  bool _magicLinkSent = false;
-
-  /// Disposes of text controllers to prevent memory leaks.
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
+    _otpController.dispose();
+    _cooldownTimer?.cancel();
     super.dispose();
   }
 
-  /// Handles the login form submission.
-  ///
-  /// Validates the form, then attempts to sign in using the
-  /// [AuthProvider]. On success, router automatically navigates
-  /// based on user activation status. On failure, displays an
-  /// error message via SnackBar.
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+  void _startCooldown() {
+    setState(() => _resendCooldown = 60);
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        _resendCooldown--;
+        if (_resendCooldown <= 0) timer.cancel();
+      });
+    });
+  }
+
+  Future<void> _handleSendOtp() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !Validators.isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter a valid email address'.tr(context)),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
-      final success = await ref.read(authProvider.notifier).signIn(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+      final success = await ref.read(authProvider.notifier).sendOtp(email);
 
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      if (!success) {
+      if (success) {
+        setState(() => _otpSent = true);
+        _startCooldown();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('OTP sent to $email'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      } else {
         final errorMessage = ref.read(authProvider).errorMessage;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage ?? 'Login failed'),
+            content: Text(errorMessage ?? 'Failed to send OTP'),
             backgroundColor: AppColors.error,
           ),
         );
       }
-      // Router will automatically navigate based on auth state
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -122,121 +105,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  /// Handles Google OAuth sign-in.
-  ///
-  /// Initiates the native Google Sign-In flow. If successful,
-  /// router automatically navigates based on activation status.
-  /// Cancellation is handled silently; only errors show notifications.
-  Future<void> _handleGoogleSignIn() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final success = await ref.read(authProvider.notifier).signInWithGoogle();
-
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-
-      if (!success) {
-        final errorMessage = ref.read(authProvider).errorMessage;
-        if (errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      }
-      // Router will automatically navigate based on auth state
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google sign in failed: $e'.tr(context)),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  /// Handles magic link sign-in.
-  ///
-  /// Sends a magic link to the user's email address for passwordless
-  /// authentication. Shows a confirmation message when successful.
-  Future<void> _handleMagicLink() async {
-    // Validate email only
+  Future<void> _handleVerifyOtp() async {
     final email = _emailController.text.trim();
-    if (email.isEmpty || !Validators.isValidEmail(email)) {
+    final otp = _otpController.text.trim();
+
+    if (otp.isEmpty || otp.length < 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please enter a valid email address'.tr(context)),
+          content: Text('Please enter a valid OTP'.tr(context)),
           backgroundColor: AppColors.error,
         ),
       );
       return;
     }
 
-    // Admin bypass: sign in with password instead of magic link
-    if (email.toLowerCase() == 'admin@gmail.com') {
-      setState(() => _isLoading = true);
-      try {
-        final response = await ApiClient.post('/auth/login', {
-          'email': 'admin@gmail.com',
-          'password': 'Admin@123',
-        });
-        if (response != null && response['accessToken'] != null) {
-          await TokenStorage.saveTokens(
-            response['accessToken'] as String,
-            response['refreshToken'] as String? ?? '',
-          );
-          // Auth state listener handles navigation
-          return;
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Login failed: ${e.toString()}'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
-      }
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
-      final success = await ref.read(authProvider.notifier).signInWithMagicLink(
-            email: email,
-          );
+      final success = await ref.read(authProvider.notifier).verifyOtp(email, otp);
 
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _magicLinkSent = success;
-      });
+      setState(() => _isLoading = false);
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Magic link sent to $email. Check your inbox!'.tr(context)),
-            backgroundColor: AppColors.success,
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        // Navigate based on auth state
+        final authState = ref.read(authProvider);
+        _navigateBasedOnAuth(authState);
       } else {
         final errorMessage = ref.read(authProvider).errorMessage;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage ?? 'Failed to send magic link'),
+            content: Text(errorMessage ?? 'Invalid OTP. Please try again.'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -246,7 +145,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to send magic link: $e'.tr(context)),
+            content: Text('An error occurred. Please try again.'.tr(context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -254,18 +153,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  /// Builds the login screen UI.
-  ///
-  /// Layout structure:
-  /// - AppBar with back navigation to onboarding
-  /// - Header with welcome message
-  /// - Email input field with validation
-  /// - Password input field with validation
-  /// - Forgot password link
-  /// - Sign In button with loading state
-  /// - Divider with "OR" text
-  /// - Google OAuth button (placeholder)
-  /// - Sign Up link for new users
+  void _navigateBasedOnAuth(AuthState authState) {
+    if (!mounted) return;
+    final user = authState.user;
+    if (user != null && user.isActivated) {
+      context.go(RouteNames.dashboard);
+    } else if (user != null && user.hasDoerProfile) {
+      context.go(RouteNames.activationGate);
+    } else {
+      context.go(RouteNames.profileSetup);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -299,7 +198,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Sign in to continue your earning journey'.tr(context),
+                  _otpSent
+                      ? 'Enter the verification code sent to your email'
+                      : 'Sign in to continue your earning journey'.tr(context),
                   style: TextStyle(
                     fontSize: 16,
                     color: AppColors.textSecondary,
@@ -316,33 +217,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: Icons.email_outlined,
                   validator: Validators.email,
+                  enabled: !_otpSent,
                 ),
 
-                const SizedBox(height: AppSpacing.lg),
+                if (_otpSent) ...[
+                  const SizedBox(height: AppSpacing.lg),
 
-                // Show password field only if not using magic link
-                if (!_useMagicLink) ...[
-                  // Password field
+                  // OTP field
                   AppTextField(
-                    label: 'Password',
-                    hint: 'Enter your password',
-                    controller: _passwordController,
-                    obscureText: true,
+                    label: 'Verification Code',
+                    hint: 'Enter OTP',
+                    controller: _otpController,
+                    keyboardType: TextInputType.number,
                     prefixIcon: Icons.lock_outline,
-                    validator: (value) => Validators.required(value, fieldName: 'Password'),
+                    maxLength: 6,
+                    validator: (value) =>
+                        Validators.required(value, fieldName: 'OTP'),
                   ),
 
                   const SizedBox(height: AppSpacing.sm),
 
-                  // Forgot password
+                  // Resend OTP
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () => context.go(RouteNames.forgotPassword),
+                      onPressed:
+                          _resendCooldown > 0 ? null : _handleSendOtp,
                       child: Text(
-                        'Forgot Password?'.tr(context),
+                        _resendCooldown > 0
+                            ? 'Resend in ${_resendCooldown}s'
+                            : 'Resend OTP',
                         style: TextStyle(
-                          color: AppColors.accent,
+                          color: _resendCooldown > 0
+                              ? AppColors.textTertiary
+                              : AppColors.accent,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -351,115 +259,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                   const SizedBox(height: AppSpacing.xl),
 
-                  // Login button
+                  // Verify button
                   AppButton(
-                    text: 'Sign In',
-                    onPressed: _handleLogin,
+                    text: 'Verify & Sign In',
+                    onPressed: _handleVerifyOtp,
                     isLoading: _isLoading,
                     isFullWidth: true,
                     size: AppButtonSize.large,
                   ),
-                ] else ...[
-                  // Magic link mode
-                  const SizedBox(height: AppSpacing.lg),
 
-                  if (_magicLinkSent) ...[
-                    // Success message
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.success.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.check_circle, color: AppColors.success),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Text(
-                              'Magic link sent! Check your email inbox.'.tr(context),
-                              style: TextStyle(
-                                color: AppColors.success,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    AppButton(
-                      text: 'Resend Magic Link',
-                      onPressed: _handleMagicLink,
-                      isLoading: _isLoading,
-                      isFullWidth: true,
-                      variant: AppButtonVariant.outline,
-                    ),
-                  ] else ...[
-                    AppButton(
-                      text: 'Send Magic Link',
-                      onPressed: _handleMagicLink,
-                      isLoading: _isLoading,
-                      isFullWidth: true,
-                      size: AppButtonSize.large,
-                    ),
-                  ],
-                ],
+                  const SizedBox(height: AppSpacing.md),
 
-                const SizedBox(height: AppSpacing.md),
-
-                // Toggle between password and magic link
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _useMagicLink = !_useMagicLink;
-                        _magicLinkSent = false;
-                      });
-                    },
-                    child: Text(
-                      _useMagicLink
-                          ? 'Sign in with password instead'
-                          : 'Sign in with magic link (passwordless)',
-                      style: const TextStyle(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: AppSpacing.xxl),
-
-                // Divider
-                const Row(
-                  children: [
-                    Expanded(child: Divider(color: AppColors.border)),
-                    Padding(
-                      padding: AppSpacing.paddingHorizontalMd,
+                  // Change email
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _otpSent = false;
+                          _otpController.clear();
+                        });
+                      },
                       child: Text(
-                        'OR',
+                        'Use a different email',
                         style: TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 12,
+                          color: AppColors.accent,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-                    Expanded(child: Divider(color: AppColors.border)),
-                  ],
-                ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: AppSpacing.xl),
 
-                const SizedBox(height: AppSpacing.xl),
-
-                // Google Sign In button
-                AppButton(
-                  text: 'Continue with Google',
-                  onPressed: _handleGoogleSignIn,
-                  variant: AppButtonVariant.outline,
-                  isFullWidth: true,
-                  icon: Icons.g_mobiledata,
-                ),
+                  // Send OTP button
+                  AppButton(
+                    text: 'Send OTP',
+                    onPressed: _handleSendOtp,
+                    isLoading: _isLoading,
+                    isFullWidth: true,
+                    size: AppButtonSize.large,
+                  ),
+                ],
 
                 const SizedBox(height: AppSpacing.xxl),
 

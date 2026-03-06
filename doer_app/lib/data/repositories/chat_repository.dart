@@ -30,13 +30,19 @@ class DoerChatRepository {
     return _currentUserId;
   }
 
-  /// Fetches the chat room for a project (doer-supervisor chat).
+  /// Gets or creates the chat room for a project (doer-supervisor chat).
+  ///
+  /// The API uses POST with upsert — it returns the existing room or creates one.
   Future<ChatRoomModel?> getProjectChatRoom(String projectId) async {
     try {
       final userId = await _getUserId();
-      final response = await ApiClient.get('/chat/rooms/project/$projectId?type=project_supervisor_doer');
+      final response = await ApiClient.post('/chat/rooms/project/$projectId');
       if (response == null) return null;
-      return ChatRoomModel.fromJson(response as Map<String, dynamic>, userId ?? '');
+      final data = response is Map<String, dynamic>
+          ? (response.containsKey('room') ? response['room'] as Map<String, dynamic> : response)
+          : null;
+      if (data == null) return null;
+      return ChatRoomModel.fromJson(data, userId ?? '');
     } catch (e) {
       if (kDebugMode) {
         debugPrint('DoerChatRepository.getProjectChatRoom error: $e');
@@ -165,7 +171,7 @@ class DoerChatRepository {
   /// Marks messages as read.
   Future<void> markMessagesAsRead(String chatRoomId) async {
     try {
-      await ApiClient.post('/chat/rooms/$chatRoomId/read');
+      await ApiClient.put('/chat/rooms/$chatRoomId/read', {});
     } catch (e) {
       if (kDebugMode) {
         debugPrint('DoerChatRepository.markMessagesAsRead error: $e');

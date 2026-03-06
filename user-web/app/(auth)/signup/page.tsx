@@ -229,7 +229,7 @@ function OTPInput({
   disabled?: boolean;
 }) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const digits = value.padEnd(6, "").split("").slice(0, 6);
+  const digits = Array.from({ length: 6 }, (_, i) => value[i] || "");
 
   const focusInput = (index: number) => {
     if (index >= 0 && index < 6) {
@@ -296,7 +296,7 @@ function OTPInput({
           onChange={(e) => handleChange(index, e.target.value.slice(-1))}
           onKeyDown={(e) => handleKeyDown(index, e)}
           onFocus={(e) => e.target.select()}
-          className="w-12 h-14 text-center text-xl font-semibold rounded-lg border-1.5 border-[var(--onboarding-border)] bg-[var(--onboarding-bg)] text-[var(--onboarding-text)] focus:outline-none focus:border-[var(--onboarding-accent)] focus:ring-2 focus:ring-[var(--onboarding-accent)]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-[var(--onboarding-bg)] text-[var(--onboarding-text)] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label={`Digit ${index + 1}`}
         />
       ))}

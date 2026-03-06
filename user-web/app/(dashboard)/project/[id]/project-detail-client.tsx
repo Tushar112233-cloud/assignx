@@ -1261,7 +1261,7 @@ function TimelineEventCard({ event, supervisorName }: { event: TimelineEvent; su
   const notes = event.data.notes;
 
   // User-initiated actions (show on right side)
-  const userActions = ["paid", "completed", "revision_requested", "submitted"];
+  const userActions = ["paid", "completed", "revision_requested"];
   const isUserAction = event.type === "status_change" && userActions.includes(event.data.to_status || "");
 
   // Comprehensive status configuration for ALL possible statuses

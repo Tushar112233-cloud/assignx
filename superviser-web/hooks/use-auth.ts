@@ -143,7 +143,7 @@ export function useAuth() {
             // Activation fetch failed
           }
 
-          setOnboardedRef.current(true)
+          setOnboardedRef.current((supervisorData as any).onboardingCompleted ?? false)
         } else {
           // No token -- redirect if on protected route
           const pathname = window.location.pathname

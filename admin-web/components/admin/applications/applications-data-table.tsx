@@ -316,7 +316,7 @@ export function ApplicationsDataTable({
                       <TableRow key={`${row.id}-detail`}>
                         <TableCell colSpan={columns.length} className="bg-muted/30 px-6 py-4">
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                            {m.qualification && (
+                            {typeof m.qualification === 'string' && m.qualification && (
                               <div>
                                 <p className="text-muted-foreground text-xs font-medium">Qualification</p>
                                 <p className="capitalize">{(m.qualification as string).replace(/_/g, " ")}</p>
@@ -340,31 +340,31 @@ export function ApplicationsDataTable({
                                 </div>
                               </div>
                             )}
-                            {m.bio && (
+                            {typeof m.bio === 'string' && m.bio && (
                               <div className="col-span-full">
                                 <p className="text-muted-foreground text-xs font-medium">Bio</p>
                                 <p>{m.bio as string}</p>
                               </div>
                             )}
-                            {m.bankName && (
+                            {typeof m.bankName === 'string' && m.bankName && (
                               <div>
                                 <p className="text-muted-foreground text-xs font-medium">Bank</p>
                                 <p className="uppercase">{m.bankName as string}</p>
                               </div>
                             )}
-                            {m.accountNumber && (
+                            {typeof m.accountNumber === 'string' && m.accountNumber && (
                               <div>
                                 <p className="text-muted-foreground text-xs font-medium">Account Number</p>
                                 <p>{"*".repeat(Math.max(0, (m.accountNumber as string).length - 4)) + (m.accountNumber as string).slice(-4)}</p>
                               </div>
                             )}
-                            {m.ifscCode && (
+                            {typeof m.ifscCode === 'string' && m.ifscCode && (
                               <div>
                                 <p className="text-muted-foreground text-xs font-medium">IFSC Code</p>
                                 <p>{m.ifscCode as string}</p>
                               </div>
                             )}
-                            {m.upiId && (
+                            {typeof m.upiId === 'string' && m.upiId && (
                               <div>
                                 <p className="text-muted-foreground text-xs font-medium">UPI ID</p>
                                 <p>{m.upiId as string}</p>

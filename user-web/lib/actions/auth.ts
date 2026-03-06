@@ -78,11 +78,12 @@ export async function createProfile(data: {
       : "/api/users/me";
 
     await serverApiClient(endpoint, {
-      method: "POST",
+      method: "PUT",
       body: JSON.stringify({
         fullName: data.fullName,
         phone: data.phone,
         userType: data.userType,
+        onboardingCompleted: true,
       }),
     }, token);
 
@@ -111,8 +112,8 @@ export async function createStudentProfile(data: {
 
   try {
     await serverApiClient("/api/users/me", {
-      method: "POST",
-      body: JSON.stringify(data),
+      method: "PUT",
+      body: JSON.stringify({ ...data, onboardingCompleted: true }),
     }, token);
 
     revalidatePath("/", "layout");
@@ -135,8 +136,8 @@ export async function createProfessionalProfile(data: {
 
   try {
     await serverApiClient("/api/users/me", {
-      method: "POST",
-      body: JSON.stringify(data),
+      method: "PUT",
+      body: JSON.stringify({ ...data, onboardingCompleted: true }),
     }, token);
 
     revalidatePath("/", "layout");

@@ -144,7 +144,7 @@ class DashboardScreen extends ConsumerWidget {
                           ? const ServicesGridSkeleton()
                           : ServicesGrid(
                               onNewProject: () =>
-                                  context.push('/add-project/new'),
+                                  context.push('/add-project/wizard'),
                               onAiPlagReport: () =>
                                   context.push('/add-project/report'),
                               onExpertSessions: () =>

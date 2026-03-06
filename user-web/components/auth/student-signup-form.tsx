@@ -262,6 +262,9 @@ export function StudentSignupForm() {
         return;
       }
 
+      // Mark onboarding as complete in cookie for middleware
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `onboardingCompleted=true; path=/; max-age=604800; SameSite=Lax${secure}`;
       setShowSuccess(true);
     } catch {
       toast.error("Something went wrong. Please try again.");

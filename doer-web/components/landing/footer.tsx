@@ -17,10 +17,10 @@ const footerLinks = {
   forDoers: {
     title: "For Doers",
     links: [
-      { label: "Browse Tasks", href: "/auth/register" },
+      { label: "Browse Tasks", href: "/register" },
       { label: "How It Works", href: "#how-it-works" },
       { label: "Benefits", href: "#benefits" },
-      { label: "Apply Now", href: "/auth/register" },
+      { label: "Apply Now", href: "/register" },
     ],
   },
   company: {
@@ -37,8 +37,8 @@ const footerLinks = {
     links: [
       { label: "Help Center", href: "#" },
       { label: "Contact Us", href: "#" },
-      { label: "Sign In", href: "/auth/login" },
-      { label: "Sign Up", href: "/auth/register" },
+      { label: "Sign In", href: "/login" },
+      { label: "Sign Up", href: "/register" },
     ],
   },
 }
@@ -72,7 +72,7 @@ export function Footer() {
                 <Briefcase className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold text-lg text-white tracking-tight">
-                DOER
+                Dolancer
               </span>
             </Link>
             <p className="text-sm text-white/50 leading-relaxed mb-6 max-w-xs">

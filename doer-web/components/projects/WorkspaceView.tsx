@@ -311,12 +311,12 @@ export function WorkspaceView({
             >
               <MessageSquare className="h-4 w-4" />
               Chat
-              {messages.filter((m) => !(m.read_by || []).includes(currentUserId) && m.sender_id !== currentUserId)
+              {messages.filter((m) => !(m.read_by || []).some(r => r.id === currentUserId) && m.sender_id !== currentUserId)
                 .length > 0 && (
                 <Badge className="ml-1 h-5 w-5 rounded-full bg-white/80 p-0 text-xs font-semibold text-[#4F6CF7]">
                   {
                     messages.filter(
-                      (m) => !(m.read_by || []).includes(currentUserId) && m.sender_id !== currentUserId
+                      (m) => !(m.read_by || []).some(r => r.id === currentUserId) && m.sender_id !== currentUserId
                     ).length
                   }
                 </Badge>

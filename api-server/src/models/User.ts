@@ -26,7 +26,7 @@ export interface IUser extends Document {
   preferredSubjects?: Types.ObjectId[];
   // Professional fields
   professionalType?: string;
-  industryId?: Types.ObjectId;
+  industryId?: string;
   jobTitle?: string;
   companyName?: string;
   linkedinUrl?: string;
@@ -69,7 +69,7 @@ const userSchema = new Schema<IUser>(
     preferredSubjects: [{ type: Schema.Types.ObjectId, ref: 'Subject' }],
     // Professional
     professionalType: { type: String },
-    industryId: { type: Schema.Types.ObjectId },
+    industryId: { type: String },
     jobTitle: { type: String },
     companyName: { type: String },
     linkedinUrl: { type: String },

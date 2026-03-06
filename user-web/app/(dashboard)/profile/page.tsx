@@ -89,6 +89,7 @@ function transformToAcademicInfo(user: User | null): AcademicInfo | null {
  */
 const defaultPreferences: UserPreferences = {
   theme: "system",
+  language: "en",
   notifications: {
     emailNotifications: true,
     pushNotifications: true,
@@ -163,6 +164,7 @@ export default function ProfilePage() {
         const prefs = await getUserPreferences();
         setPreferences({
           theme: prefs.theme,
+          language: prefs.language || "en",
           notifications: prefs.notifications,
         });
       } catch {
@@ -191,7 +193,7 @@ export default function ProfilePage() {
       });
 
       // Update profile with new avatar URL
-      await updateProfile({ avatarUrl: uploadResult.url });
+      await updateProfile({ avatar_url: uploadResult.url });
 
       toast.success("Avatar updated successfully");
       await fetchUser();
@@ -206,9 +208,8 @@ export default function ProfilePage() {
   const handleProfileSave = async (data: Partial<UserProfile>) => {
     setIsSaving(true);
     try {
-      const fullName = data.full_name || "";
       const result = await updateProfile({
-        fullName,
+        full_name: data.full_name || "",
         phone: data.phone,
       });
 

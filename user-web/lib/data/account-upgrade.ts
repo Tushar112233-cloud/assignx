@@ -3,9 +3,9 @@
  * Contains account tiers, benefits, and requirements
  */
 
+import type { AccountType } from "@/types/profile";
 import type {
   AccountTier,
-  AccountType,
   FeatureComparison,
   VerificationRequirement,
   VerificationDocType,

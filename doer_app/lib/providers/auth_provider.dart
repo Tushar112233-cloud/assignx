@@ -704,51 +704,73 @@ class AuthNotifier extends Notifier<AuthState> {
     return await _repository.getAvailableSubjects();
   }
 
-  /// Sends an OTP to the specified phone number.
-  ///
-  /// Initiates phone verification by sending a one-time password.
+  /// Sends an OTP to the specified email address.
   ///
   /// ## Parameters
   ///
-  /// - [phone]: Phone number with country code (e.g., '+919876543210')
+  /// - [email]: Email address to send OTP to
+  /// - [purpose]: Either 'login' or 'signup'
   ///
   /// ## Returns
   ///
   /// `true` if OTP was sent successfully, `false` otherwise.
-  Future<bool> sendOtp(String phone) async {
+  Future<bool> sendOtp(String email, {String purpose = 'login'}) async {
     try {
-      await _repository.sendOtp(phone);
+      await _repository.sendOtp(email, purpose: purpose);
       return true;
+    } on ApiException catch (e) {
+      state = state.copyWith(errorMessage: e.message);
+      return false;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('AuthNotifier.sendOtp error: $e');
       }
-      state = state.copyWith(errorMessage: 'Failed to send OTP. Please try again.');
+      state = state.copyWith(errorMessage: 'Connection error. Please check your network.');
       return false;
     }
   }
 
   /// Verifies the OTP entered by the user.
   ///
-  /// Completes phone verification by validating the one-time password.
-  ///
   /// ## Parameters
   ///
-  /// - [phone]: The phone number the OTP was sent to
+  /// - [email]: The email address the OTP was sent to
   /// - [otp]: The OTP entered by the user
+  /// - [purpose]: Either 'login' or 'signup'
   ///
   /// ## Returns
   ///
   /// `true` if OTP verification was successful, `false` otherwise.
-  Future<bool> verifyOtp(String phone, String otp) async {
+  Future<bool> verifyOtp(String email, String otp, {String purpose = 'login'}) async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+
     try {
-      final response = await _repository.verifyOtp(phone, otp);
-      return response.hasSession;
+      final response = await _repository.verifyOtp(email, otp, purpose: purpose);
+      if (response.hasSession && response.user != null) {
+        final userId = (response.user!['_id'] ?? response.user!['id'] ?? '').toString();
+        await _fetchUserProfile(userId);
+        return true;
+      }
+
+      state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        errorMessage: 'OTP verification failed',
+      );
+      return false;
+    } on ApiException catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.message,
+      );
+      return false;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('AuthNotifier.verifyOtp error: $e');
       }
-      state = state.copyWith(errorMessage: 'OTP verification failed. Please try again.');
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'OTP verification failed. Please try again.',
+      );
       return false;
     }
   }

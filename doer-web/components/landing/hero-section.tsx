@@ -254,7 +254,7 @@ export function HeroSection() {
             className="flex flex-col sm:flex-row gap-3 mb-10"
           >
             <Link
-              href="/auth/register"
+              href="/register"
               className="landing-btn-primary group"
             >
               Start Earning Today
@@ -321,8 +321,8 @@ export function HeroSection() {
             transition={{ delay: 0.8, type: "spring", stiffness: 200 }}
             className="absolute -bottom-8 right-8 bg-white dark:bg-[var(--landing-bg-elevated)] border border-[var(--landing-border)] rounded-2xl px-4 py-3 shadow-lg flex items-center gap-3 z-10"
           >
-            <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-              <IndianRupee className="w-4 h-4 text-green-600" />
+            <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <IndianRupee className="w-4 h-4 text-blue-600" />
             </div>
             <div>
               <div className="text-xs text-[var(--landing-text-muted)]">

@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { LanguageSelector } from "@/components/language-selector";
 
 const pathTitles: Record<string, string> = {
   "/": "Dashboard",
@@ -45,9 +44,6 @@ export function AdminHeader() {
           className="mx-2 data-[orientation=vertical]:h-4"
         />
         <h1 className="text-base font-medium">{title}</h1>
-        <div className="ml-auto">
-          <LanguageSelector />
-        </div>
       </div>
     </header>
   );

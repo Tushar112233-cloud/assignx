@@ -34,6 +34,7 @@ export interface PaidProject {
   project_number: string
   title: string
   subject: string
+  subject_id?: string | null
   service_type: string
   user_name: string
   deadline: string

@@ -31,7 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 import { UpgradeDialog } from "./upgrade-dialog";
 import { accountTiers, featureComparison } from "@/lib/data/account-upgrade";
-import type { AccountType } from "@/types/account-upgrade";
+import type { AccountType } from "@/types/profile";
 
 interface AccountUpgradeSectionProps {
   /** Current account type of the user */

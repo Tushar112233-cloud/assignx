@@ -389,9 +389,9 @@ export function DashboardPro() {
                   <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-0.5" />
                 </Link>
 
-                {/* ====== AI PLAGIARISM CHECK (Swapped to single column) ====== */}
+                {/* ====== TURNITIN CHECK ====== */}
                 <Link
-                  href="/projects/new?type=plagiarism"
+                  href="/projects/new?type=turnitin"
                   className="group relative overflow-hidden rounded-[20px] p-4 lg:p-5 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 hover:bg-white/90 dark:hover:bg-white/10"
                 >
                   {/* Subtle green tint */}
@@ -409,7 +409,7 @@ export function DashboardPro() {
                     </div>
 
                     <h3 className="font-semibold text-foreground text-[15px] mb-0.5">
-                      Plagiarism Check
+                      Turnitin Check
                     </h3>
                     <p className="text-xs text-muted-foreground/80">
                       AI-powered detection

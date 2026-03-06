@@ -8,6 +8,8 @@ library;
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// ignore: depend_on_referenced_packages
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../core/api/api_client.dart';
 import '../data/models/chat_model.dart';
@@ -135,7 +137,10 @@ class WorkSession {
 }
 
 /// Notifier class that manages workspace state and operations.
-class WorkspaceNotifier {
+///
+/// Uses a [ChangeNotifier]-style approach wrapped in a Riverpod provider
+/// so that state changes trigger UI rebuilds.
+class WorkspaceNotifier extends ChangeNotifier {
   final Ref _ref;
   final String _projectId;
 
@@ -147,7 +152,7 @@ class WorkspaceNotifier {
   StreamSubscription<ChatMessageModel>? _chatSubscription;
 
   WorkspaceState _state = const WorkspaceState(isLoading: true);
-  void Function(WorkspaceState)? _onStateChanged;
+  WorkspaceState get state => _state;
 
   WorkspaceNotifier(this._ref, this._projectId) {
     _projectRepository = _ref.read(doerProjectRepositoryProvider);
@@ -156,20 +161,16 @@ class WorkspaceNotifier {
     _loadWorkspace();
   }
 
-  WorkspaceState get state => _state;
-
-  void setOnStateChanged(void Function(WorkspaceState) callback) {
-    _onStateChanged = callback;
-  }
-
   void _updateState(WorkspaceState newState) {
     _state = newState;
-    _onStateChanged?.call(newState);
+    notifyListeners();
   }
 
+  @override
   void dispose() {
     _sessionTimer?.cancel();
     _chatSubscription?.cancel();
+    super.dispose();
   }
 
   /// Loads all workspace data.
@@ -182,7 +183,6 @@ class WorkspaceNotifier {
         _loadDeliverables(),
         _loadChatRoom(),
         _loadRevisionRequests(),
-        _loadTimeSpent(),
       ]);
 
       _updateState(_state.copyWith(isLoading: false));
@@ -259,39 +259,6 @@ class WorkspaceNotifier {
     }
   }
 
-  /// Loads total time spent from work sessions.
-  ///
-  /// Note: work_sessions endpoint may not exist yet. This method fails
-  /// gracefully and returns Duration.zero until the endpoint is created.
-  Future<void> _loadTimeSpent() async {
-    try {
-      final response = await ApiClient.get('/doer/projects/$_projectId/time-spent');
-
-      if (response is Map<String, dynamic>) {
-        final totalSeconds = response['totalSeconds'] as int? ?? 0;
-        _updateState(_state.copyWith(totalTimeSpent: Duration(seconds: totalSeconds)));
-      } else if (response is List) {
-        var total = Duration.zero;
-        for (final session in response) {
-          final startRaw = (session['start_time'] ?? session['startTime'] ?? '').toString();
-          final endRaw = (session['end_time'] ?? session['endTime'])?.toString();
-          final start = DateTime.tryParse(startRaw) ?? DateTime.now();
-          final end = endRaw != null
-              ? (DateTime.tryParse(endRaw) ?? DateTime.now())
-              : DateTime.now();
-          total += end.difference(start);
-        }
-        _updateState(_state.copyWith(totalTimeSpent: total));
-      }
-    } catch (e) {
-      // work_sessions endpoint may not exist yet - fail gracefully
-      if (kDebugMode) {
-        debugPrint('WorkspaceNotifier._loadTimeSpent: endpoint may not exist, using default. $e');
-      }
-      _updateState(_state.copyWith(totalTimeSpent: Duration.zero));
-    }
-  }
-
   /// Subscribes to real-time chat updates.
   void _subscribeToChatUpdates() {
     if (_state.chatRoom == null) return;
@@ -308,10 +275,7 @@ class WorkspaceNotifier {
     });
   }
 
-  /// Starts a work session.
-  ///
-  /// Note: work_sessions table does not exist yet. Session tracking
-  /// works locally but database persistence fails gracefully.
+  /// Starts a work session (tracked locally only — no API endpoint yet).
   Future<void> startSession() async {
     if (_state.activeSession != null) return;
 
@@ -330,44 +294,14 @@ class WorkspaceNotifier {
         ));
       }
     });
-
-    // Save session start to API (endpoint may not exist yet)
-    try {
-      await ApiClient.post('/doer/projects/$_projectId/sessions', {
-        'id': session.id,
-        'startTime': session.startTime.toIso8601String(),
-      });
-    } catch (e) {
-      // Endpoint may not exist yet - session still tracked locally
-      if (kDebugMode) {
-        debugPrint('WorkspaceNotifier.startSession: endpoint may not exist, tracking locally. $e');
-      }
-    }
   }
 
   /// Ends the current work session.
-  ///
-  /// Note: work_sessions table does not exist yet. Session end is
-  /// tracked locally but database persistence fails gracefully.
   Future<void> endSession() async {
     _sessionTimer?.cancel();
     _sessionTimer = null;
 
     if (_state.activeSession == null) return;
-
-    final endTime = DateTime.now();
-
-    // Save session end to API (endpoint may not exist yet)
-    try {
-      await ApiClient.put('/doer/projects/$_projectId/sessions/${_state.activeSession!.id}', {
-        'endTime': endTime.toIso8601String(),
-      });
-    } catch (e) {
-      // Endpoint may not exist yet - session still tracked locally
-      if (kDebugMode) {
-        debugPrint('WorkspaceNotifier.endSession: endpoint may not exist, tracking locally. $e');
-      }
-    }
 
     _updateState(_state.copyWith(clearActiveSession: true));
   }
@@ -536,9 +470,6 @@ class WorkspaceNotifier {
   }
 
   /// Submits work for QC review.
-  ///
-  /// Submits the project with existing deliverables for review.
-  /// Files should already be uploaded via addFile() before calling this.
   Future<bool> submitWork({String? notes}) async {
     if (!_state.canSubmit || _state.deliverables.isEmpty) return false;
 
@@ -631,44 +562,40 @@ class WorkspaceNotifier {
 // Providers
 // ══════════════════════════════════════════════════════════════════════════
 
-/// Internal provider for workspace notifiers.
-final _workspaceNotifiersProvider = Provider.family.autoDispose<WorkspaceNotifier, String>((ref, projectId) {
-  final notifier = WorkspaceNotifier(ref, projectId);
-  ref.onDispose(() => notifier.dispose());
-  return notifier;
-});
-
-/// Main workspace provider.
-final workspaceProvider = Provider.family.autoDispose<WorkspaceNotifier, String>((ref, projectId) {
-  return ref.watch(_workspaceNotifiersProvider(projectId));
+/// Main workspace provider using ChangeNotifierProvider for proper reactivity.
+///
+/// `ref.watch(workspaceProvider(projectId))` returns the [WorkspaceNotifier].
+/// Access state via `.state` — Riverpod detects changes via [ChangeNotifier].
+final workspaceProvider = ChangeNotifierProvider.family.autoDispose<WorkspaceNotifier, String>((ref, projectId) {
+  return WorkspaceNotifier(ref, projectId);
 });
 
 /// Convenience provider for current project.
-final currentProjectProvider = Provider.family<DoerProjectModel?, String>((ref, projectId) {
+final currentProjectProvider = Provider.family.autoDispose<DoerProjectModel?, String>((ref, projectId) {
   return ref.watch(workspaceProvider(projectId)).state.project;
 });
 
 /// Convenience provider for workspace deliverables.
-final workspaceDeliverablesProvider = Provider.family<List<DeliverableModel>, String>((ref, projectId) {
+final workspaceDeliverablesProvider = Provider.family.autoDispose<List<DeliverableModel>, String>((ref, projectId) {
   return ref.watch(workspaceProvider(projectId)).state.deliverables;
 });
 
 /// Convenience provider for chat messages.
-final chatMessagesProvider = Provider.family<List<ChatMessageModel>, String>((ref, projectId) {
+final chatMessagesProvider = Provider.family.autoDispose<List<ChatMessageModel>, String>((ref, projectId) {
   return ref.watch(workspaceProvider(projectId)).state.messages;
 });
 
 /// Convenience provider for work session status.
-final isWorkingProvider = Provider.family<bool, String>((ref, projectId) {
+final isWorkingProvider = Provider.family.autoDispose<bool, String>((ref, projectId) {
   return ref.watch(workspaceProvider(projectId)).state.isWorking;
 });
 
 /// Convenience provider for submission eligibility.
-final canSubmitProvider = Provider.family<bool, String>((ref, projectId) {
+final canSubmitProvider = Provider.family.autoDispose<bool, String>((ref, projectId) {
   return ref.watch(workspaceProvider(projectId)).state.canSubmit;
 });
 
 /// Convenience provider for revision requests.
-final revisionRequestsProvider = Provider.family<List<RevisionRequest>, String>((ref, projectId) {
+final revisionRequestsProvider = Provider.family.autoDispose<List<RevisionRequest>, String>((ref, projectId) {
   return ref.watch(workspaceProvider(projectId)).state.revisionRequests;
 });

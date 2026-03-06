@@ -12,7 +12,7 @@ enum ServiceType {
     'Full project work from scratch',
     Icons.create_new_folder_outlined,
     'Starting from ₹499',
-    '/add-project/new',
+    '/add-project/wizard',
   ),
   proofreading(
     'Proofreading',

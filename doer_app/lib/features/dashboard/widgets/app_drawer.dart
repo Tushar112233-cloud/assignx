@@ -75,16 +75,6 @@ class AppDrawer extends ConsumerWidget {
                     },
                   ),
                   _DrawerMenuItem(
-                    icon: Icons.forum_outlined,
-                    activeIcon: Icons.forum,
-                    label: 'Pro Network'.tr(context),
-                    isActive: currentRoute.startsWith('/community'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/community');
-                    },
-                  ),
-                  _DrawerMenuItem(
                     icon: Icons.library_books_outlined,
                     activeIcon: Icons.library_books,
                     label: 'Resources'.tr(context),

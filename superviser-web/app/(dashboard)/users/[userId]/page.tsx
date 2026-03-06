@@ -101,7 +101,7 @@ export default function UserDetailPage() {
 
   // Calculate user stats
   const totalSpent = projects.reduce((sum, p) => {
-    const proj = p as Record<string, unknown>
+    const proj = p as unknown as Record<string, unknown>
     const pricing = proj.pricing as Record<string, unknown> | undefined
     return sum + ((proj.userQuote as number) || p.user_quote || (pricing?.userQuote as number) || 0)
   }, 0)

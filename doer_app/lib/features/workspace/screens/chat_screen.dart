@@ -253,7 +253,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _buildMessageInput() {
     return Container(
-      padding: AppSpacing.paddingMd,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
         boxShadow: [
@@ -267,33 +267,36 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       child: SafeArea(
         top: false,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // Attachment button
-            IconButton(
-              onPressed: () {
-                // Add attachment
-              },
-              icon: const Icon(Icons.attach_file),
-              color: AppColors.textSecondary,
-            ),
-
             // Message input
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                constraints: const BoxConstraints(maxHeight: 120),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceVariant,
                   borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: TextField(
                   controller: _messageController,
                   decoration: InputDecoration(
                     hintText: 'Type a message...'.tr(context),
-                    hintStyle: const TextStyle(color: AppColors.textTertiary),
+                    hintStyle: const TextStyle(
+                      color: AppColors.textTertiary,
+                      fontSize: 14,
+                    ),
                     border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    isDense: true,
                   ),
-                  maxLines: null,
+                  maxLines: 5,
+                  minLines: 1,
                   textCapitalization: TextCapitalization.sentences,
+                  style: const TextStyle(fontSize: 14),
                 ),
               ),
             ),
@@ -302,14 +305,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
             // Send button
             Container(
+              height: 40,
+              width: 40,
               decoration: const BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,
               ),
               child: IconButton(
                 onPressed: _sendMessage,
-                icon: const Icon(Icons.send),
+                icon: const Icon(Icons.send, size: 18),
                 color: Colors.white,
+                padding: EdgeInsets.zero,
               ),
             ),
           ],

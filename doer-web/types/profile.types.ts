@@ -39,6 +39,8 @@ export interface Doer {
   availability_updated_at: string | null
   /** Maximum concurrent projects */
   max_concurrent_projects: number
+  /** Whether onboarding is completed */
+  onboardingCompleted?: boolean
   /** Activation completion status */
   is_activated: boolean
   /** Activation timestamp */

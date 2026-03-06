@@ -24,6 +24,9 @@ class ApiClient {
 
   static final http.Client _httpClient = http.Client();
 
+  /// Default timeout for API requests.
+  static const Duration _timeout = Duration(seconds: 15);
+
   /// Build headers with optional auth token.
   static Future<Map<String, String>> _headers({bool auth = true}) async {
     final headers = <String, String>{
@@ -85,7 +88,9 @@ class ApiClient {
   /// GET request.
   static Future<dynamic> get(String path, {Map<String, String>? queryParams}) async {
     final uri = Uri.parse('$baseUrl/api$path').replace(queryParameters: queryParams);
-    final response = await _withRetry((headers) => _httpClient.get(uri, headers: headers));
+    final response = await _withRetry(
+      (headers) => _httpClient.get(uri, headers: headers).timeout(_timeout),
+    );
     return _handleResponse(response);
   }
 
@@ -93,7 +98,7 @@ class ApiClient {
   static Future<dynamic> post(String path, [dynamic body]) async {
     final uri = Uri.parse('$baseUrl/api$path');
     final response = await _withRetry(
-      (headers) => _httpClient.post(uri, headers: headers, body: body != null ? jsonEncode(body) : null),
+      (headers) => _httpClient.post(uri, headers: headers, body: body != null ? jsonEncode(body) : null).timeout(_timeout),
     );
     return _handleResponse(response);
   }
@@ -102,7 +107,7 @@ class ApiClient {
   static Future<dynamic> put(String path, [dynamic body]) async {
     final uri = Uri.parse('$baseUrl/api$path');
     final response = await _withRetry(
-      (headers) => _httpClient.put(uri, headers: headers, body: body != null ? jsonEncode(body) : null),
+      (headers) => _httpClient.put(uri, headers: headers, body: body != null ? jsonEncode(body) : null).timeout(_timeout),
     );
     return _handleResponse(response);
   }
@@ -111,7 +116,7 @@ class ApiClient {
   static Future<dynamic> patch(String path, [dynamic body]) async {
     final uri = Uri.parse('$baseUrl/api$path');
     final response = await _withRetry(
-      (headers) => _httpClient.patch(uri, headers: headers, body: body != null ? jsonEncode(body) : null),
+      (headers) => _httpClient.patch(uri, headers: headers, body: body != null ? jsonEncode(body) : null).timeout(_timeout),
     );
     return _handleResponse(response);
   }
@@ -119,7 +124,9 @@ class ApiClient {
   /// DELETE request.
   static Future<dynamic> delete(String path) async {
     final uri = Uri.parse('$baseUrl/api$path');
-    final response = await _withRetry((headers) => _httpClient.delete(uri, headers: headers));
+    final response = await _withRetry(
+      (headers) => _httpClient.delete(uri, headers: headers).timeout(_timeout),
+    );
     return _handleResponse(response);
   }
 

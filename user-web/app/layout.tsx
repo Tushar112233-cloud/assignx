@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-import { ThemeProvider } from "@/components/theme-provider";
 import { MotionProvider } from "@/components/providers/motion-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/lib/i18n/context";
@@ -26,7 +25,7 @@ export const metadata: Metadata = {
 
 /**
  * Root layout component that wraps all pages
- * Includes theme provider, fonts, and toast notifications
+ * Includes fonts and toast notifications (light mode only)
  */
 export default function RootLayout({
   children,
@@ -34,20 +33,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="h-full">
+    <html lang="en" className="h-full light">
       <body className={`${inter.variable} font-sans antialiased h-full`}>
         <I18nProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <MotionProvider>
-              {children}
-            </MotionProvider>
-            <Toaster />
-          </ThemeProvider>
+          <MotionProvider>
+            {children}
+          </MotionProvider>
+          <Toaster />
         </I18nProvider>
       </body>
     </html>

@@ -5,7 +5,7 @@
 
 "use client"
 
-import { NotificationList, PushNotificationSetup } from "@/components/notifications"
+import { NotificationList } from "@/components/notifications"
 
 export default function NotificationsPage() {
   return (
@@ -17,9 +17,6 @@ export default function NotificationsPage() {
           Stay updated with project submissions, payments, and messages
         </p>
       </div>
-
-      {/* Push Notification Setup */}
-      <PushNotificationSetup />
 
       {/* Notification List */}
       <NotificationList />

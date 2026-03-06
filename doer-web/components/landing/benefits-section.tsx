@@ -3,7 +3,7 @@
  *
  * Bento-grid layout of 8 cards highlighting key Doer platform benefits.
  * Two cards span 2 columns (size: "lg") for visual variety.
- * Cards reveal a gradient background on hover.
+ * Cards reveal a blue/indigo gradient background on hover.
  */
 "use client"
 
@@ -44,9 +44,9 @@ const benefits: Benefit[] = [
     description:
       "Work when you want. Accept tasks that fit your availability — morning, evening, or weekend.",
     size: "sm",
-    gradient: "from-teal-500/10 to-teal-500/5",
-    iconBg: "bg-teal-100 dark:bg-teal-900/30",
-    iconColor: "text-teal-600 dark:text-teal-400",
+    gradient: "from-blue-500/10 to-blue-500/5",
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+    iconColor: "text-blue-600 dark:text-blue-400",
   },
   {
     id: "pay",
@@ -55,9 +55,9 @@ const benefits: Benefit[] = [
     description:
       "Transparent pricing. Know exactly what you'll earn before accepting. No hidden deductions.",
     size: "sm",
-    gradient: "from-emerald-500/10 to-emerald-500/5",
-    iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
+    gradient: "from-indigo-500/10 to-indigo-500/5",
+    iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
+    iconColor: "text-indigo-600 dark:text-indigo-400",
   },
   {
     id: "variety",
@@ -66,9 +66,9 @@ const benefits: Benefit[] = [
     description:
       "From research reports to code reviews — hundreds of fresh tasks posted daily across every academic discipline. Match tasks to your strongest subjects.",
     size: "lg",
-    gradient: "from-cyan-500/10 to-teal-500/5",
-    iconBg: "bg-cyan-100 dark:bg-cyan-900/30",
-    iconColor: "text-cyan-600 dark:text-cyan-400",
+    gradient: "from-sky-500/10 to-blue-500/5",
+    iconBg: "bg-sky-100 dark:bg-sky-900/30",
+    iconColor: "text-sky-600 dark:text-sky-400",
   },
   {
     id: "payout",
@@ -77,9 +77,9 @@ const benefits: Benefit[] = [
     description:
       "No waiting weeks. Get paid within 48 hours of task approval.",
     size: "sm",
-    gradient: "from-green-500/10 to-green-500/5",
-    iconBg: "bg-green-100 dark:bg-green-900/30",
-    iconColor: "text-green-600 dark:text-green-400",
+    gradient: "from-blue-500/10 to-blue-500/5",
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+    iconColor: "text-blue-600 dark:text-blue-400",
   },
   {
     id: "community",
@@ -88,9 +88,9 @@ const benefits: Benefit[] = [
     description:
       "Connect with thousands of skilled Doers. Share resources, tips, and grow together.",
     size: "sm",
-    gradient: "from-teal-400/10 to-emerald-400/5",
-    iconBg: "bg-teal-100 dark:bg-teal-900/30",
-    iconColor: "text-teal-600 dark:text-teal-400",
+    gradient: "from-blue-400/10 to-indigo-400/5",
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+    iconColor: "text-blue-600 dark:text-blue-400",
   },
   {
     id: "reputation",
@@ -99,9 +99,9 @@ const benefits: Benefit[] = [
     description:
       "Every successful task boosts your rating. Higher ratings unlock premium tasks with better payouts and exclusive opportunities.",
     size: "lg",
-    gradient: "from-emerald-400/10 to-teal-400/5",
-    iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
+    gradient: "from-indigo-400/10 to-blue-400/5",
+    iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
+    iconColor: "text-indigo-600 dark:text-indigo-400",
   },
   {
     id: "verified",
@@ -110,9 +110,9 @@ const benefits: Benefit[] = [
     description:
       "Every task is legitimate. Every payment is guaranteed.",
     size: "sm",
-    gradient: "from-teal-500/10 to-teal-500/5",
-    iconBg: "bg-teal-100 dark:bg-teal-900/30",
-    iconColor: "text-teal-600 dark:text-teal-400",
+    gradient: "from-blue-500/10 to-blue-500/5",
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+    iconColor: "text-blue-600 dark:text-blue-400",
   },
   {
     id: "growth",
@@ -121,9 +121,9 @@ const benefits: Benefit[] = [
     description:
       "Each task sharpens your expertise and grows your professional portfolio.",
     size: "sm",
-    gradient: "from-green-500/10 to-emerald-500/5",
-    iconBg: "bg-green-100 dark:bg-green-900/30",
-    iconColor: "text-green-600 dark:text-green-400",
+    gradient: "from-blue-500/10 to-indigo-500/5",
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+    iconColor: "text-blue-600 dark:text-blue-400",
   },
 ]
 

@@ -171,7 +171,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       // Account exists — send OTP.
       await ref
           .read(authStateProvider.notifier)
-          .sendOTP(email: _email, purpose: 'login');
+          .sendOTP(email: _email, purpose: 'login', role: 'user');
 
       if (!mounted) return;
       _startResendCooldown();
@@ -199,7 +199,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     try {
       final success = await ref
           .read(authStateProvider.notifier)
-          .verifyOtp(email: _email, token: otp, purpose: 'login');
+          .verifyOtp(email: _email, token: otp, purpose: 'login', role: 'user');
 
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -226,7 +226,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     try {
       await ref
           .read(authStateProvider.notifier)
-          .sendOTP(email: _email, purpose: 'login');
+          .sendOTP(email: _email, purpose: 'login', role: 'user');
 
       if (!mounted) return;
       _startResendCooldown();

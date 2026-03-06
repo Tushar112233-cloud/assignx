@@ -32,6 +32,7 @@ export interface ProjectRequest {
   project_number: string
   title: string
   subject: string
+  subject_id?: string
   service_type: string
   user_name: string
   deadline: string

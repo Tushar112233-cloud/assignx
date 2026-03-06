@@ -55,11 +55,11 @@ abstract class AuthRepository {
   /// Signs out the current user.
   Future<void> signOut();
 
-  /// Sends an OTP to the given phone number.
-  Future<void> sendOtp(String phone);
+  /// Sends an OTP to the given email address.
+  Future<void> sendOtp(String email, {String purpose = 'login'});
 
-  /// Verifies the OTP for the given phone number.
-  Future<AuthResponse> verifyOtp(String phone, String otp);
+  /// Verifies the OTP for the given email address.
+  Future<AuthResponse> verifyOtp(String email, String otp, {String purpose = 'login'});
 
   /// Fetches user profile from database.
   Future<UserModel?> fetchUserProfile(String userId);
@@ -188,28 +188,25 @@ class ApiAuthRepository implements AuthRepository {
     await TokenStorage.clearTokens();
   }
 
-  String _formatPhoneNumber(String phone) {
-    if (phone.startsWith('+')) {
-      return phone;
-    }
-    return '${ApiConstants.defaultCountryCode}$phone';
-  }
-
   @override
-  Future<void> sendOtp(String phone) async {
-    LoggerService.info('AuthRepository: Sending OTP', data: {'phone': phone});
-    await ApiClient.post('/auth/otp/send', {
-      'phone': _formatPhoneNumber(phone),
+  Future<void> sendOtp(String email, {String purpose = 'login'}) async {
+    LoggerService.info('AuthRepository: Sending OTP', data: {'email': email, 'purpose': purpose});
+    await ApiClient.post('/auth/send-otp', {
+      'email': email.toLowerCase().trim(),
+      'purpose': purpose,
+      'role': 'doer',
     });
   }
 
   @override
-  Future<AuthResponse> verifyOtp(String phone, String otp) async {
+  Future<AuthResponse> verifyOtp(String email, String otp, {String purpose = 'login'}) async {
     LoggerService.info('AuthRepository: Verifying OTP');
 
-    final response = await ApiClient.post('/auth/otp/verify', {
-      'phone': _formatPhoneNumber(phone),
+    final response = await ApiClient.post('/auth/verify', {
+      'email': email.toLowerCase().trim(),
       'otp': otp,
+      'purpose': purpose,
+      'role': 'doer',
     });
 
     final authResponse = AuthResponse.fromJson(response as Map<String, dynamic>);

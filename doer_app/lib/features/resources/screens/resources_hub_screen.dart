@@ -47,7 +47,6 @@ class ResourcesHubScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final resourcesState = ref.watch(resourcesProvider);
     final trainingProgress = resourcesState.trainingProgress;
-    final aiCheckCount = resourcesState.aiCheckHistory.length;
     final citationCount = resourcesState.citationHistory.length;
 
     return Scaffold(
@@ -65,7 +64,7 @@ class ResourcesHubScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Quick stats
-                  _buildQuickStats(trainingProgress, aiCheckCount, citationCount),
+                  _buildQuickStats(trainingProgress, citationCount),
 
                   const SizedBox(height: AppSpacing.lg),
 
@@ -79,16 +78,6 @@ class ResourcesHubScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-
-                  _buildToolCard(
-                    context,
-                    title: 'AI Content Checker',
-                    description: 'Check your content for AI-generated patterns and ensure originality.',
-                    icon: Icons.psychology,
-                    color: AppColors.info,
-                    badge: aiCheckCount > 0 ? '$aiCheckCount checks' : null,
-                    onTap: () => context.push('/resources/ai-checker'),
-                  ),
 
                   _buildToolCard(
                     context,
@@ -158,7 +147,7 @@ class ResourcesHubScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickStats(double trainingProgress, int aiChecks, int citations) {
+  Widget _buildQuickStats(double trainingProgress, int citations) {
     return Card(
       elevation: 2,
       shape: const RoundedRectangleBorder(
@@ -174,19 +163,6 @@ class ResourcesHubScreen extends ConsumerWidget {
                 '${(trainingProgress * 100).round()}%',
                 Icons.school,
                 AppColors.primary,
-              ),
-            ),
-            Container(
-              width: 1,
-              height: 40,
-              color: AppColors.border,
-            ),
-            Expanded(
-              child: _buildStatItem(
-                'AI Checks',
-                '$aiChecks',
-                Icons.psychology,
-                AppColors.info,
               ),
             ),
             Container(

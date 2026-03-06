@@ -1,7 +1,7 @@
 /// Statistics data provider for the Doer App.
 ///
-/// Fetches detailed statistics data from Supabase including
-/// earnings over time, project distributions, subject rankings,
+/// Computes statistics from project data and doer profile,
+/// including earnings over time, project distributions, subject rankings,
 /// and monthly performance data for the statistics screen.
 library;
 
@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api/api_client.dart';
+import '../data/models/doer_project_model.dart';
 import 'auth_provider.dart';
 
 /// Time period filter for statistics.
@@ -183,39 +184,75 @@ class StatisticsState {
 }
 
 /// Notifier managing statistics state and data fetching.
+///
+/// Computes all statistics client-side from the project list and doer profile.
 class StatisticsNotifier extends Notifier<StatisticsState> {
   @override
   StatisticsState build() {
     final user = ref.watch(currentUserProvider);
     if (user != null) {
-      Future.microtask(() => _loadStatistics(user.id));
+      Future.microtask(() => _loadStatistics());
     }
     return const StatisticsState(isLoading: true);
   }
 
-  /// Changes the selected period and reloads data.
+  /// Changes the selected period and recomputes.
   void setPeriod(StatsPeriod period) {
     state = state.copyWith(selectedPeriod: period);
-    final user = ref.read(currentUserProvider);
-    if (user != null) {
-      _loadStatistics(user.id);
-    }
+    _loadStatistics();
   }
 
-  /// Loads all statistics data from the API.
-  Future<void> _loadStatistics(String profileId) async {
+  /// Loads all statistics by fetching projects and doer profile, then computing.
+  Future<void> _loadStatistics() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      await Future.wait([
-        _loadEarningsAndProjects(),
-        _loadDistribution(),
-        _loadSubjectRankings(),
-        _loadMonthlyPerformance(),
+      // Fetch all projects and doer profile in parallel
+      final results = await Future.wait([
+        ApiClient.get('/projects', queryParams: {'limit': '200'}),
+        ApiClient.get('/doers/me'),
       ]);
 
+      final projectsResponse = results[0];
+      final doerResponse = results[1];
+
+      // Parse projects
+      final projectList = projectsResponse is List
+          ? projectsResponse
+          : (projectsResponse as Map<String, dynamic>)['projects'] as List? ?? [];
+
+      final projects = projectList
+          .map((json) => DoerProjectModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      // Parse doer profile stats
+      double averageRating = 0;
+      double totalEarningsFromProfile = 0;
+      if (doerResponse is Map<String, dynamic>) {
+        averageRating = (doerResponse['average_rating'] as num?)?.toDouble()
+            ?? (doerResponse['averageRating'] as num?)?.toDouble() ?? 0;
+        totalEarningsFromProfile = (doerResponse['total_earnings'] as num?)?.toDouble()
+            ?? (doerResponse['totalEarnings'] as num?)?.toDouble() ?? 0;
+      }
+
+      // Compute all stats from projects
+      _computeEarningsAndTimeSeries(projects, totalEarningsFromProfile);
+      _computeDistribution(projects);
+      _computeSubjectRankings(projects);
+      _computeMonthlyPerformance(projects);
+
+      state = state.copyWith(
+        averageRating: averageRating,
+        ratingBreakdown: RatingBreakdown(
+          quality: averageRating,
+          timeliness: averageRating,
+          communication: averageRating,
+          overall: averageRating,
+        ),
+        isLoading: false,
+      );
+
       _generateInsightsAndGoals();
-      state = state.copyWith(isLoading: false);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('StatisticsNotifier._loadStatistics error: $e');
@@ -227,176 +264,185 @@ class StatisticsNotifier extends Notifier<StatisticsState> {
     }
   }
 
-  /// Loads earnings time series, total earnings, rating, and velocity.
-  Future<void> _loadEarningsAndProjects() async {
-    try {
-      final period = state.selectedPeriod;
+  /// Computes earnings time series and totals from project data.
+  void _computeEarningsAndTimeSeries(List<DoerProjectModel> projects, double profileEarnings) {
+    final period = state.selectedPeriod;
+    final now = DateTime.now();
 
-      final response = await ApiClient.get(
-        '/doer/statistics/earnings?period=${period.name}',
-      );
+    DateTime startDate;
+    switch (period) {
+      case StatsPeriod.week:
+        startDate = now.subtract(const Duration(days: 7));
+      case StatsPeriod.month:
+        startDate = DateTime(now.year, now.month - 1, now.day);
+      case StatsPeriod.year:
+        startDate = DateTime(now.year - 1, now.month, now.day);
+      case StatsPeriod.all:
+        startDate = DateTime(2020);
+    }
 
-      if (response is Map<String, dynamic>) {
-        final projects = response['projects'] as List? ?? [];
-        final now = DateTime.now();
+    double totalEarnings = 0;
+    final Map<String, double> earningsMap = {};
+    final Map<String, double> projectsMap = {};
+    int periodProjectCount = 0;
 
-        DateTime startDate;
-        switch (period) {
-          case StatsPeriod.week:
-            startDate = now.subtract(const Duration(days: 7));
-          case StatsPeriod.month:
-            startDate = DateTime(now.year, now.month - 1, now.day);
-          case StatsPeriod.year:
-            startDate = DateTime(now.year - 1, now.month, now.day);
-          case StatsPeriod.all:
-            startDate = DateTime(2020);
-        }
+    for (final p in projects) {
+      final date = p.completedAt ?? p.createdAt;
+      final payout = p.doerPayout;
+      final status = p.status;
 
-        double totalEarnings = 0;
-        final earningsList = <TimeSeriesData>[];
-        final projectsList = <TimeSeriesData>[];
-        final Map<String, double> earningsMap = {};
-        final Map<String, double> projectsMap = {};
+      if (status == DoerProjectStatus.completed ||
+          status == DoerProjectStatus.autoApproved) {
+        totalEarnings += payout;
+      }
 
-        for (final p in projects) {
-          final createdAt = DateTime.tryParse((p['created_at'] ?? p['createdAt'] ?? '').toString()) ?? DateTime.now();
-          final payout = (p['doer_payout'] ?? p['doerPayout'] as num?)?.toDouble() ?? 0;
-          final status = (p['status'] ?? '').toString();
+      // Only include in time series if within period
+      if (date.isAfter(startDate)) {
+        periodProjectCount++;
+        final key = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-          if (status == 'completed' || status == 'paid') {
-            totalEarnings += payout;
-          }
-
-          final key = '${createdAt.year}-${createdAt.month.toString().padLeft(2, '0')}-${createdAt.day.toString().padLeft(2, '0')}';
+        if (status == DoerProjectStatus.completed ||
+            status == DoerProjectStatus.autoApproved) {
           earningsMap[key] = (earningsMap[key] ?? 0) + payout;
-          projectsMap[key] = (projectsMap[key] ?? 0) + 1;
         }
-
-        for (final entry in earningsMap.entries) {
-          final parts = entry.key.split('-');
-          earningsList.add(TimeSeriesData(
-            date: DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2])),
-            value: entry.value,
-          ));
-        }
-
-        for (final entry in projectsMap.entries) {
-          final parts = entry.key.split('-');
-          projectsList.add(TimeSeriesData(
-            date: DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2])),
-            value: entry.value,
-          ));
-        }
-
-        final daysInPeriod = now.difference(startDate).inDays;
-        final weeksInPeriod = daysInPeriod / 7;
-        final velocity = weeksInPeriod > 0 ? projects.length / weeksInPeriod : 0.0;
-
-        state = state.copyWith(
-          totalEarnings: (response['totalEarnings'] as num?)?.toDouble() ?? totalEarnings,
-          earningsTrend: (response['earningsTrend'] as num?)?.toDouble() ?? 0,
-          averageRating: (response['averageRating'] as num?)?.toDouble() ?? 0,
-          ratingTrend: (response['ratingTrend'] as num?)?.toDouble() ?? 0,
-          projectVelocity: velocity,
-          earningsTimeSeries: earningsList,
-          projectsTimeSeries: projectsList,
-          ratingBreakdown: const RatingBreakdown(),
-        );
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('StatisticsNotifier._loadEarningsAndProjects error: $e');
+        projectsMap[key] = (projectsMap[key] ?? 0) + 1;
       }
     }
+
+    final earningsList = <TimeSeriesData>[];
+    for (final entry in earningsMap.entries) {
+      final parts = entry.key.split('-');
+      earningsList.add(TimeSeriesData(
+        date: DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2])),
+        value: entry.value,
+      ));
+    }
+    earningsList.sort((a, b) => a.date.compareTo(b.date));
+
+    final projectsList = <TimeSeriesData>[];
+    for (final entry in projectsMap.entries) {
+      final parts = entry.key.split('-');
+      projectsList.add(TimeSeriesData(
+        date: DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2])),
+        value: entry.value,
+      ));
+    }
+    projectsList.sort((a, b) => a.date.compareTo(b.date));
+
+    final daysInPeriod = now.difference(startDate).inDays;
+    final weeksInPeriod = daysInPeriod / 7;
+    final velocity = weeksInPeriod > 0 ? periodProjectCount / weeksInPeriod : 0.0;
+
+    // Use profile earnings if higher (it's the source of truth)
+    final finalEarnings = profileEarnings > totalEarnings ? profileEarnings : totalEarnings;
+
+    state = state.copyWith(
+      totalEarnings: finalEarnings,
+      projectVelocity: velocity,
+      earningsTimeSeries: earningsList,
+      projectsTimeSeries: projectsList,
+    );
   }
 
-  /// Loads project distribution by status.
-  Future<void> _loadDistribution() async {
-    try {
-      final response = await ApiClient.get('/doer/statistics/distribution');
+  /// Computes project distribution by status.
+  void _computeDistribution(List<DoerProjectModel> projects) {
+    int completed = 0, inProgress = 0, pending = 0, revision = 0;
 
-      if (response is Map<String, dynamic>) {
-        state = state.copyWith(
-          distribution: ProjectDistribution(
-            completed: response['completed'] as int? ?? 0,
-            inProgress: response['inProgress'] as int? ?? 0,
-            pending: response['pending'] as int? ?? 0,
-            revision: response['revision'] as int? ?? 0,
-          ),
-        );
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('StatisticsNotifier._loadDistribution error: $e');
-      }
-    }
-  }
-
-  /// Loads top subjects by project count.
-  Future<void> _loadSubjectRankings() async {
-    try {
-      final response = await ApiClient.get('/doer/statistics/subjects');
-      final list = response is List
-          ? response
-          : (response as Map<String, dynamic>)['subjects'] as List? ?? [];
-
-      final rankings = list
-          .map((e) => SubjectRanking(
-                subject: (e as Map<String, dynamic>)['subject'] as String? ?? 'General',
-                projectCount: e['projectCount'] as int? ?? 0,
-                totalEarnings: (e['totalEarnings'] as num?)?.toDouble() ?? 0,
-              ))
-          .toList();
-
-      state = state.copyWith(
-        topSubjects: rankings.take(5).toList(),
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('StatisticsNotifier._loadSubjectRankings error: $e');
+    for (final p in projects) {
+      switch (p.status) {
+        case DoerProjectStatus.completed:
+        case DoerProjectStatus.autoApproved:
+          completed++;
+        case DoerProjectStatus.inProgress:
+        case DoerProjectStatus.assigned:
+          inProgress++;
+        case DoerProjectStatus.submitted:
+        case DoerProjectStatus.submittedForQc:
+        case DoerProjectStatus.qcInProgress:
+        case DoerProjectStatus.delivered:
+        case DoerProjectStatus.qcApproved:
+          pending++;
+        case DoerProjectStatus.revisionRequested:
+        case DoerProjectStatus.inRevision:
+        case DoerProjectStatus.qcRejected:
+          revision++;
+        default:
+          break;
       }
     }
+
+    state = state.copyWith(
+      distribution: ProjectDistribution(
+        completed: completed,
+        inProgress: inProgress,
+        pending: pending,
+        revision: revision,
+      ),
+    );
   }
 
-  /// Loads monthly performance data for heatmap.
-  Future<void> _loadMonthlyPerformance() async {
-    try {
-      final response = await ApiClient.get('/doer/statistics/monthly-performance');
-      final list = response is List
-          ? response
-          : (response as Map<String, dynamic>)['performance'] as List? ?? [];
+  /// Computes top subjects by project count.
+  void _computeSubjectRankings(List<DoerProjectModel> projects) {
+    final subjectMap = <String, _SubjectAccumulator>{};
 
-      if (list.isNotEmpty) {
-        final performance = list
-            .map((e) => MonthlyPerformance(
-                  year: (e as Map<String, dynamic>)['year'] as int? ?? 0,
-                  month: e['month'] as int? ?? 0,
-                  projectsCompleted: e['projectsCompleted'] as int? ?? 0,
-                ))
-            .toList();
+    for (final p in projects) {
+      final subject = p.subjectName ?? p.subject ?? 'General';
+      final acc = subjectMap.putIfAbsent(subject, () => _SubjectAccumulator());
+      acc.count++;
+      if (p.status == DoerProjectStatus.completed || p.status == DoerProjectStatus.autoApproved) {
+        acc.earnings += p.doerPayout;
+      }
+    }
 
-        state = state.copyWith(monthlyPerformance: performance);
-      } else {
-        // Generate default empty months
-        final now = DateTime.now();
-        final performance = <MonthlyPerformance>[];
-        for (int i = 0; i < 12; i++) {
-          final month = DateTime(now.year, now.month - i, 1);
-          performance.add(MonthlyPerformance(
-            year: month.year,
-            month: month.month,
-            projectsCompleted: 0,
-          ));
+    final rankings = subjectMap.entries
+        .map((e) => SubjectRanking(
+              subject: e.key,
+              projectCount: e.value.count,
+              totalEarnings: e.value.earnings,
+            ))
+        .toList()
+      ..sort((a, b) => b.projectCount.compareTo(a.projectCount));
+
+    state = state.copyWith(topSubjects: rankings.take(5).toList());
+  }
+
+  /// Computes monthly performance from completed projects.
+  void _computeMonthlyPerformance(List<DoerProjectModel> projects) {
+    final now = DateTime.now();
+    final monthMap = <String, int>{};
+
+    // Initialize last 12 months
+    for (int i = 0; i < 12; i++) {
+      final month = DateTime(now.year, now.month - i, 1);
+      monthMap['${month.year}-${month.month}'] = 0;
+    }
+
+    for (final p in projects) {
+      if (p.status == DoerProjectStatus.completed || p.status == DoerProjectStatus.autoApproved) {
+        final date = p.completedAt ?? p.createdAt;
+        final key = '${date.year}-${date.month}';
+        if (monthMap.containsKey(key)) {
+          monthMap[key] = monthMap[key]! + 1;
         }
-        state = state.copyWith(
-          monthlyPerformance: performance.reversed.toList(),
-        );
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('StatisticsNotifier._loadMonthlyPerformance error: $e');
       }
     }
+
+    final performance = monthMap.entries
+        .map((e) {
+          final parts = e.key.split('-');
+          return MonthlyPerformance(
+            year: int.parse(parts[0]),
+            month: int.parse(parts[1]),
+            projectsCompleted: e.value,
+          );
+        })
+        .toList()
+      ..sort((a, b) {
+        final cmp = a.year.compareTo(b.year);
+        return cmp != 0 ? cmp : a.month.compareTo(b.month);
+      });
+
+    state = state.copyWith(monthlyPerformance: performance);
   }
 
   /// Generates insights and goals based on current data.
@@ -404,7 +450,6 @@ class StatisticsNotifier extends Notifier<StatisticsState> {
     final insights = <InsightItem>[];
     final goals = <GoalItem>[];
 
-    // Generate insights
     if (state.averageRating >= 4.5) {
       insights.add(const InsightItem(
         message: 'Outstanding rating! You are in the top 10% of doers.',
@@ -445,7 +490,6 @@ class StatisticsNotifier extends Notifier<StatisticsState> {
       ));
     }
 
-    // Generate goals
     final totalProjects = state.distribution.total;
     goals.add(GoalItem(
       title: 'Reach 100 projects',
@@ -470,11 +514,13 @@ class StatisticsNotifier extends Notifier<StatisticsState> {
 
   /// Refreshes statistics data.
   Future<void> refresh() async {
-    final user = ref.read(currentUserProvider);
-    if (user != null) {
-      await _loadStatistics(user.id);
-    }
+    await _loadStatistics();
   }
+}
+
+class _SubjectAccumulator {
+  int count = 0;
+  double earnings = 0;
 }
 
 /// Main statistics provider.

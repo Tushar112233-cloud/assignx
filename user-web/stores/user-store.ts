@@ -16,6 +16,7 @@ export interface User {
   city: string | null;
   state: string | null;
   country: string | null;
+  onboarding_completed?: boolean;
   created_at: string;
   updated_at: string;
   user_roles: ("student" | "professional" | "business")[];

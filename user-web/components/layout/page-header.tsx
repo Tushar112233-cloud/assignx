@@ -4,9 +4,7 @@ import Link from "next/link";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { WalletPill } from "@/components/dashboard/wallet-pill";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Separator } from "@/components/ui/separator";
-import { LanguageSelector } from "@/components/language-selector";
 import { cn } from "@/lib/utils";
 
 /**
@@ -17,7 +15,7 @@ const pageTitles: Record<string, string> = {
   "/projects": "Projects",
   "/profile": "Profile",
   "/settings": "Settings",
-  "/connect": "Campus Connect",
+  "/campus-connect": "Campus Connect",
   "/support": "Help & Support",
   "/payment-methods": "Payment Methods",
   "/wallet": "Wallet",
@@ -61,12 +59,9 @@ export function PageHeader({ pathname = "/home", title, className }: PageHeaderP
 
         {/* Right: Action Icons */}
         <div className="flex items-center gap-2">
-          <LanguageSelector />
-          <Separator orientation="vertical" className="h-5 bg-border/60 mx-1" />
           <WalletPill />
           <Separator orientation="vertical" className="h-5 bg-border/60 mx-1" />
           <NotificationBell />
-          <AnimatedThemeToggler />
         </div>
       </div>
     </header>

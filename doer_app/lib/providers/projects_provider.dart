@@ -207,7 +207,11 @@ class MyProjectsNotifier extends Notifier<MyProjectsState> {
   Future<void> _loadActiveProjects() async {
     try {
       final response = await ApiClient.get(
-        '/doer/projects/assigned?statuses=in_progress,assigned,revision_requested,in_revision&sort=deadline',
+        '/projects',
+        queryParams: {
+          'status': 'in_progress,assigned,revision_requested,in_revision',
+          'limit': '50',
+        },
       );
       final list = response is List
           ? response
@@ -217,6 +221,9 @@ class MyProjectsNotifier extends Notifier<MyProjectsState> {
           .map((json) => DoerProjectModel.fromJson(json as Map<String, dynamic>))
           .toList();
 
+      // Sort by deadline (due soon first)
+      projects.sort((a, b) => a.deadline.compareTo(b.deadline));
+
       state = state.copyWith(activeProjects: projects);
     } catch (e) {
       if (kDebugMode) {
@@ -225,11 +232,15 @@ class MyProjectsNotifier extends Notifier<MyProjectsState> {
     }
   }
 
-  /// Loads projects under review (delivered, for_review).
+  /// Loads projects under review (delivered, submitted_for_qc).
   Future<void> _loadUnderReviewProjects() async {
     try {
       final response = await ApiClient.get(
-        '/doer/projects/assigned?statuses=delivered,submitted_for_qc&sort=delivered_at',
+        '/projects',
+        queryParams: {
+          'status': 'delivered,submitted_for_qc,submitted',
+          'limit': '50',
+        },
       );
       final list = response is List
           ? response

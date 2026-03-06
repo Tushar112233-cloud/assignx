@@ -97,40 +97,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       return;
     }
 
-    // DEV: Auto-login with testdoer@gmail.com for testing
-    try {
-      debugPrint('SplashScreen: DEV auto-login with testdoer@gmail.com');
-      final success = await ref.read(authProvider.notifier).signIn(
-        email: 'testdoer@gmail.com',
-        password: 'admin123',
-      );
-      debugPrint('SplashScreen: DEV auto-login result: $success');
-      if (!mounted) return;
-      if (success) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (!mounted) return;
-        // DEV: Change this route to test different pages
-        context.go(RouteNames.dashboard);
-        return;
-      }
-    } catch (e) {
-      debugPrint('SplashScreen: DEV auto-login failed: $e');
-    }
-
+    // No tokens — go to onboarding
     if (!mounted) return;
-    // Fallback - original flow
-    var authState = ref.read(authProvider);
-    int retries = 0;
-    while ((authState.status == AuthStatus.initial ||
-            authState.status == AuthStatus.loading) &&
-           retries < 10) {
-      await Future.delayed(const Duration(milliseconds: 200));
-      if (!mounted) return;
-      authState = ref.read(authProvider);
-      retries++;
-    }
-    if (!mounted) return;
-    _navigateBasedOnAuth(authState);
+    context.go(RouteNames.onboarding);
   }
 
   void _navigateBasedOnAuth(AuthState authState) {

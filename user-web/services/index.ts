@@ -44,16 +44,6 @@ export type {
   ConnectionStateCallback,
 } from './chat.service'
 
-export { marketplaceService } from './marketplace.service'
-export type {
-  MarketplaceListing,
-  MarketplaceListingInsert,
-  MarketplaceListingUpdate,
-  MarketplaceCategory,
-  ListingWithSeller,
-  ListingFilters,
-  ListingType,
-} from './marketplace.service'
 
 export { notificationService } from './notification.service'
 export type {

@@ -3,7 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/api/api_client.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/router/route_names.dart';
@@ -38,51 +37,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         // Wait for the auth provider to settle
         for (int i = 0; i < 20; i++) {
           final authState = ref.read(authStateProvider);
-          if (!authState.isLoading && authState.valueOrNull?.isAuthenticated == true) {
-            debugPrint('SplashScreen: Auth settled, navigating to home');
-            context.go(RouteNames.home);
-            return;
+          if (!authState.isLoading) {
+            final isAuthed = authState.valueOrNull?.isAuthenticated == true;
+            if (isAuthed) {
+              debugPrint('SplashScreen: Auth settled, navigating to home');
+              context.go(RouteNames.home);
+              return;
+            } else {
+              // Tokens were invalid/expired, clear and go to login
+              debugPrint('SplashScreen: Auth failed, clearing tokens');
+              await TokenStorage.clearTokens();
+              break;
+            }
           }
           await Future.delayed(const Duration(milliseconds: 250));
           if (!mounted) return;
         }
-        // If auth state didn't settle after 5s, force navigate to home anyway
-        debugPrint('SplashScreen: Auth timeout, force navigating to home');
-        if (mounted) context.go(RouteNames.home);
-        return;
       }
     } catch (e) {
       debugPrint('SplashScreen: Auth check error: $e');
     }
 
     if (!mounted) return;
-
-    // DEV: Auto-login with testuser@gmail.com for testing
-    try {
-      debugPrint('SplashScreen: DEV auto-login with testuser@gmail.com');
-      final response = await ApiClient.post('/auth/login', {
-        'email': 'testuser@gmail.com',
-        'password': 'admin123',
-      });
-      if (response != null && response['accessToken'] != null) {
-        await TokenStorage.saveTokens(
-          response['accessToken'] as String,
-          response['refreshToken'] as String,
-        );
-        debugPrint('SplashScreen: DEV auto-login successful');
-        if (!mounted) return;
-        // Trigger auth state refresh
-        ref.invalidate(authStateProvider);
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) context.go(RouteNames.home);
-        return;
-      }
-    } catch (e) {
-      debugPrint('SplashScreen: DEV auto-login failed: $e');
-    }
-
-    if (!mounted) return;
-    context.go(RouteNames.signin);
+    context.go(RouteNames.login);
   }
 
   @override

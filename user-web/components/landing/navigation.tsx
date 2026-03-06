@@ -12,7 +12,6 @@ import { Menu, X, GraduationCap, LayoutDashboard } from "lucide-react";
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { isLoggedIn as checkLoggedIn } from "@/lib/api/auth";
 import "@/app/landing.css";
 
@@ -112,13 +111,6 @@ export function Navigation() {
               transition={{ delay: 0.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="flex items-center gap-1 sm:gap-3"
             >
-              {/* Theme Toggler */}
-              <AnimatedThemeToggler
-                className={cn(
-                  scrolled && "text-white/80 hover:text-white hover:bg-white/10"
-                )}
-              />
-
               {isLoggedIn ? (
                 /* Dashboard button for logged-in users */
                 <Link

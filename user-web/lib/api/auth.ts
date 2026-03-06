@@ -101,6 +101,10 @@ function storeTokens(data: any) {
     const secure = window.location.protocol === 'https:' ? '; Secure' : '';
     document.cookie = `accessToken=${data.accessToken}; path=/; max-age=604800; SameSite=Lax${secure}`;
     document.cookie = `loggedIn=true; path=/; max-age=604800; SameSite=Lax${secure}`;
+    const user = data.user || data.profile;
+    if (user?.onboardingCompleted) {
+      document.cookie = `onboardingCompleted=true; path=/; max-age=604800; SameSite=Lax${secure}`;
+    }
   }
   if (data.refreshToken) {
     localStorage.setItem("refreshToken", data.refreshToken);
@@ -129,6 +133,7 @@ export async function logout(): Promise<void> {
     localStorage.removeItem("user");
     document.cookie = "accessToken=; path=/; max-age=0";
     document.cookie = "loggedIn=; path=/; max-age=0";
+    document.cookie = "onboardingCompleted=; path=/; max-age=0";
   }
 }
 

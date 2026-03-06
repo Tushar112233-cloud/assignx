@@ -683,7 +683,7 @@ export async function submitConnectQuestion(data: {
       }),
     }, token);
 
-    revalidatePath("/connect");
+    revalidatePath("/campus-connect");
     return { success: true, post: result.post || result.data || result };
   } catch (error: any) {
     return { error: error.message };

@@ -107,7 +107,7 @@ function OTPInput({
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={handlePaste}
-          className="h-12 w-10 rounded-lg border border-border bg-background text-center text-lg font-semibold text-foreground transition-all
+          className="h-12 w-10 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-background text-center text-lg font-semibold text-foreground transition-all
             focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20
             disabled:cursor-not-allowed disabled:opacity-50
             sm:h-14 sm:w-12"

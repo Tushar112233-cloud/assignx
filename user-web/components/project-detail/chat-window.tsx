@@ -369,7 +369,6 @@ export function ChatWindow({
   const [violationMessage, setViolationMessage] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Determine effective role
@@ -381,7 +380,6 @@ export function ChatWindow({
     isSending,
     hasMore,
     sendMessage,
-    sendMessageWithAttachment,
     loadMore,
   } = useChat(isOpen ? projectId : null, isOpen ? userId : null)
 
@@ -559,22 +557,6 @@ export function ChatWindow({
     }
   }
 
-  /**
-   * Handle file upload
-   */
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      alert("File size must be less than 10MB")
-      return
-    }
-
-    await sendMessageWithAttachment("", file)
-    e.target.value = ""
-  }
 
   /**
    * Handle message approval (refresh messages)
@@ -743,26 +725,6 @@ export function ChatWindow({
           )}
 
           <div className="flex gap-2">
-            {/* Hidden file input */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileSelect}
-              className="hidden"
-              accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
-            />
-
-            {/* Attachment button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isSending}
-            >
-              <Paperclip className="h-4 w-4" />
-              <span className="sr-only">Attach file</span>
-            </Button>
-
             {/* Text input */}
             <Input
               ref={inputRef}

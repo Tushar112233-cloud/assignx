@@ -126,7 +126,7 @@ function ProjectsPage() {
 
   // Helper to extract client name from project (handles both Supabase and MongoDB API shapes)
   const getClientName = (project: ProjectWithRelations, fallback = "Unknown User"): string => {
-    const p = project as Record<string, unknown>
+    const p = project as unknown as Record<string, unknown>
     const userId = p.userId as Record<string, unknown> | undefined
     const user = p.user as Record<string, unknown> | undefined
     return (userId?.fullName as string) || (userId?.full_name as string) || project.user?.full_name || (user?.fullName as string) || fallback
@@ -134,7 +134,7 @@ function ProjectsPage() {
 
   // Helper to extract user quote amount
   const getQuoteAmount = (project: ProjectWithRelations): number => {
-    const p = project as Record<string, unknown>
+    const p = project as unknown as Record<string, unknown>
     return (p.userQuote as number) || project.user_quote || 0
   }
 

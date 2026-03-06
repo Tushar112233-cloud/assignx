@@ -62,7 +62,7 @@ const defaultActions: QuickAction[] = [
     title: "Tutoring",
     description: "Connect with subject matter experts",
     icon: BookOpen,
-    href: "/connect",
+    href: "/campus-connect",
     color: "text-orange-600 dark:text-orange-400",
     bgColor: "bg-orange-100 dark:bg-orange-900/30",
   },

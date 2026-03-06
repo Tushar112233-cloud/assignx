@@ -22,7 +22,6 @@ export default function LoginPage() {
     return () => clearTimeout(timer)
   }, [resendCooldown])
 
-  // Auto-submit when all 6 digits are entered
   useEffect(() => {
     const code = otp.join('')
     if (code.length === 6 && otpSent) {
@@ -37,8 +36,6 @@ export default function LoginPage() {
     newOtp[index] = value.slice(-1)
     setOtp(newOtp)
     setError(null)
-
-    // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus()
     }
@@ -81,7 +78,6 @@ export default function LoginPage() {
       setError('Please enter the 6-digit code.')
       return
     }
-
     try {
       setIsLoading(true)
       setError(null)
@@ -105,36 +101,30 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      // Dev bypass: direct login without OTP
       if (isDevBypassEmail(trimmed)) {
         await devLogin(trimmed)
         window.location.href = '/dashboard'
         return
       }
 
-      // Check access status
       const accessData = await checkAccessStatus(trimmed, 'doer')
 
       if (!accessData || accessData.status === 'not_found') {
         setError("No account found for this email. Apply for access below.")
         return
       }
-
       if (accessData.status === 'pending') {
         setError("Your profile is under review. Please wait for approval.")
         return
       }
-
       if (accessData.status === 'rejected') {
         setError("Your application was not approved. Please contact support.")
         return
       }
 
-      // Send OTP
       await sendOTP(trimmed, 'login', 'doer')
       setOtpSent(true)
       setResendCooldown(30)
-      // Focus first OTP input after render
       setTimeout(() => inputRefs.current[0]?.focus(), 100)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
@@ -143,54 +133,35 @@ export default function LoginPage() {
     }
   }
 
-  // OTP entry screen
+  // ── OTP screen ──
   if (otpSent) {
     return (
-      <div className="space-y-7">
+      <div className="space-y-6">
         {/* Mobile logo */}
-        <div className="lg:hidden flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
-            <span className="text-lg font-bold text-white">AX</span>
+        <div className="lg:hidden flex items-center gap-2.5 mb-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5A7CFF]">
+            <span className="text-xs font-bold text-white">D</span>
+          </div>
+          <span className="text-base font-bold tracking-tight text-slate-900">Dolancer</span>
+        </div>
+
+        <div className="text-center space-y-3">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EEF2FF]">
+            <KeyRound className="h-6 w-6 text-[#5A7CFF]" />
           </div>
           <div>
-            <p className="text-base font-bold text-slate-900">AssignX</p>
-            <p className="text-xs text-slate-500">Doer Portal</p>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Check your email</h1>
+            <p className="mt-1 text-sm text-slate-500">Enter the 6-digit code we sent to</p>
           </div>
         </div>
 
-        {/* Header */}
-        <div className="space-y-4">
-          <div className="relative inline-flex">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#5A7CFF]/15 to-teal-500/15 flex items-center justify-center">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#5A7CFF]/25 to-teal-500/25 flex items-center justify-center">
-                <KeyRound className="h-7 w-7 text-[#5A7CFF]" />
-              </div>
-            </div>
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-              Enter verification code
-            </h1>
-            <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-              We sent a 6-digit code to your email
-            </p>
-          </div>
+        <div className="flex items-center justify-center gap-2 rounded-lg bg-slate-50 px-4 py-2.5">
+          <Mail className="h-4 w-4 text-slate-400" />
+          <span className="text-sm font-medium text-slate-700">{email}</span>
         </div>
 
-        {/* Email display */}
-        <div className="rounded-2xl border border-[#5A7CFF]/20 bg-[#F7F9FF] p-4 flex items-center gap-3 shadow-sm">
-          <div className="w-9 h-9 rounded-xl bg-[#5A7CFF]/10 flex items-center justify-center shrink-0">
-            <Mail className="h-4 w-4 text-[#5A7CFF]" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Code sent to</p>
-            <p className="text-sm font-semibold text-slate-800 truncate">{email}</p>
-          </div>
-        </div>
-
-        {/* OTP input */}
-        <div className="rounded-2xl border border-slate-200/80 bg-[#F7F9FF] p-5 shadow-[0_4px_20px_rgba(148,163,184,0.08)]">
-          <div className="flex justify-center gap-3" onPaste={handleOtpPaste}>
+        <div>
+          <div className="flex justify-center gap-2.5" onPaste={handleOtpPaste}>
             {otp.map((digit, i) => (
               <input
                 key={i}
@@ -202,13 +173,13 @@ export default function LoginPage() {
                 onChange={(e) => handleOtpChange(i, e.target.value)}
                 onKeyDown={(e) => handleOtpKeyDown(i, e)}
                 disabled={isLoading}
-                className="w-12 h-14 text-center text-xl font-bold rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-[#5A7CFF] focus:ring-4 focus:ring-[#5A7CFF]/10 focus:outline-none transition-all disabled:opacity-50"
+                className="h-13 w-12 rounded-xl border-2 border-slate-200 bg-white text-center text-xl font-bold text-slate-900 transition-all focus:border-[#5A7CFF] focus:outline-none focus:ring-4 focus:ring-[#5A7CFF]/10 disabled:opacity-40"
               />
             ))}
           </div>
 
           {error && (
-            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {error}
             </div>
           )}
@@ -218,168 +189,114 @@ export default function LoginPage() {
             size="lg"
             disabled={isLoading || otp.join('').length !== 6}
             onClick={() => handleVerify()}
-            className="w-full mt-4 h-11 text-sm font-semibold rounded-xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white border-0 shadow-[0_8px_24px_rgba(90,124,255,0.30)] hover:shadow-[0_12px_32px_rgba(90,124,255,0.40)] hover:opacity-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-5 h-11 w-full rounded-xl bg-[#5A7CFF] text-sm font-semibold text-white shadow-md shadow-[#5A7CFF]/20 hover:bg-[#4A6AEF] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Verifying...
-              </>
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Verifying...</>
             ) : (
-              <>
-                Verify & Login
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </>
+              <>Verify & Login<ArrowRight className="ml-2 h-4 w-4" /></>
             )}
           </Button>
         </div>
 
-        {/* Resend + back */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-3 pt-1">
           <div className="flex items-center gap-2">
             {resendCooldown > 0 && (
-              <div className="flex items-center gap-1 text-xs text-slate-400">
-                <Clock className="h-3.5 w-3.5" />
-                {resendCooldown}s
-              </div>
+              <span className="flex items-center gap-1 text-xs text-slate-400">
+                <Clock className="h-3.5 w-3.5" />{resendCooldown}s
+              </span>
             )}
-            <Button
+            <button
               type="button"
-              variant="outline"
-              size="sm"
               disabled={resendCooldown > 0}
               onClick={handleResend}
-              className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold"
+              className="text-sm font-medium text-[#5A7CFF] hover:underline underline-offset-4 disabled:text-slate-300 disabled:no-underline"
             >
               Resend code
-            </Button>
+            </button>
           </div>
           <button
             onClick={() => { setOtpSent(false); setOtp(['', '', '', '', '', '']); setError(null) }}
-            className="text-xs text-[#5A7CFF] font-semibold hover:underline underline-offset-4 flex items-center gap-1"
+            className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700"
           >
             <ArrowLeft className="h-3 w-3" />
-            Change email
+            Use a different email
           </button>
         </div>
       </div>
     )
   }
 
-  // Email entry screen
+  // ── Email screen ──
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
       {/* Mobile logo */}
-      <div className="lg:hidden flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
-          <span className="text-lg font-bold text-white">AX</span>
+      <div className="lg:hidden flex items-center gap-2.5 mb-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5A7CFF]">
+          <span className="text-xs font-bold text-white">D</span>
         </div>
-        <div>
-          <p className="text-base font-bold text-slate-900">AssignX</p>
-          <p className="text-xs text-slate-500">Doer Portal</p>
-        </div>
+        <span className="text-base font-bold tracking-tight text-slate-900">Dolancer</span>
       </div>
 
-      {/* Header */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-[#F3F6FF] flex items-center justify-center text-[#5A7CFF] text-xl">
-            *
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
-            <p className="text-xs text-slate-500">Sign in with your email using OTP</p>
-          </div>
-        </div>
+      <div className="space-y-1">
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">Welcome back</h1>
+        <p className="text-sm text-slate-500">Sign in with your email using OTP</p>
       </div>
 
-      {/* Form */}
-      <div className="rounded-2xl border border-slate-200/80 bg-[#F7F9FF] p-5 shadow-[0_4px_20px_rgba(148,163,184,0.08)]">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label htmlFor="email" className="text-sm font-semibold text-slate-700">
-              Email address
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[17px] w-[17px] text-slate-400 pointer-events-none" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-                className="pl-10 h-11 bg-white border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10 transition-all"
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="text-sm font-medium text-slate-700">
+            Email address
+          </label>
+          <div className="relative">
+            <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isLoading}
+              className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400 focus-visible:border-[#5A7CFF] focus-visible:ring-4 focus-visible:ring-[#5A7CFF]/10"
+            />
           </div>
+        </div>
 
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
-              {error.includes('account') && (
-                <Link href="/register" className="block mt-1.5 font-semibold text-[#5A7CFF] hover:underline underline-offset-4">
-                  Request access
-                </Link>
-              )}
-            </div>
-          )}
-
-          <Button
-            type="submit"
-            size="lg"
-            disabled={isLoading || !email.trim()}
-            className="w-full h-11 text-sm font-semibold rounded-xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white border-0 shadow-[0_8px_24px_rgba(90,124,255,0.30)] hover:shadow-[0_12px_32px_rgba(90,124,255,0.40)] hover:opacity-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Sending code...
-              </>
-            ) : (
-              <>
-                Send OTP
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </>
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+            {error.includes('account') && (
+              <Link href="/register" className="mt-1 block font-semibold text-[#5A7CFF] hover:underline underline-offset-4">
+                Request access
+              </Link>
             )}
-          </Button>
-        </form>
-      </div>
+          </div>
+        )}
 
-      {/* Feature highlights */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_10px_30px_-20px_rgba(26,46,94,0.2)]">
-        <div className="relative py-2">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-200" />
-          </div>
-          <div className="relative flex justify-center text-[11px] uppercase tracking-[0.2em] text-slate-400">
-            <span className="bg-white px-3">Why join as a Doer?</span>
-          </div>
-        </div>
-        <div className="mt-4 grid gap-3">
-          {[
-            { icon: 'z', title: 'Flexible Work', desc: 'Choose projects that fit your schedule' },
-            { icon: 'o', title: 'Fair Compensation', desc: 'Competitive rates for quality work' },
-            { icon: 'v', title: 'Secure Platform', desc: 'Protected payments and data' },
-          ].map((item) => (
-            <div key={item.title} className="flex items-center gap-3 rounded-2xl bg-[#F5F8FF] px-4 py-3">
-              <div className="h-9 w-9 rounded-full bg-[#EEF2FF] flex items-center justify-center text-base shrink-0">
-                {item.icon === 'z' ? '~' : item.icon === 'o' ? '*' : '+'}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                <p className="text-xs text-slate-600">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <Button
+          type="submit"
+          size="lg"
+          disabled={isLoading || !email.trim()}
+          className="h-11 w-full rounded-xl bg-[#5A7CFF] text-sm font-semibold text-white shadow-md shadow-[#5A7CFF]/20 hover:bg-[#4A6AEF] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {isLoading ? (
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending code...</>
+          ) : (
+            <>Continue<ArrowRight className="ml-2 h-4 w-4" /></>
+          )}
+        </Button>
+      </form>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100" /></div>
+        <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-slate-400">or</span></div>
       </div>
 
       <p className="text-center text-sm text-slate-500">
-        New to AssignX?{' '}
+        Don&apos;t have an account?{' '}
         <Link href="/register" className="font-semibold text-[#5A7CFF] hover:underline underline-offset-4">
-          Request access
+          Apply to join
         </Link>
       </p>
     </div>

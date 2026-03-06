@@ -6,32 +6,32 @@
 "use client"
 
 import { useState } from "react"
-import { Bell, Moon, Sun, Search, Command, Sparkles, TrendingUp, Zap } from "lucide-react"
-import { useTheme } from "next-themes"
+import { Bell, Search, Command, TrendingUp, Zap, CheckCheck } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { LanguageSelector } from "@/components/language-selector"
 import { cn } from "@/lib/utils"
 import { apiFetch } from "@/lib/api/client"
+import { useNotifications } from "@/hooks/use-notifications"
+import { NotificationItem } from "@/components/notifications/notification-item"
+import type { Notification as NotifType } from "@/components/notifications/types"
 
 interface HeaderProps {
   userName?: string
@@ -49,8 +49,33 @@ export function Header({
   pendingQCCount = 0,
   activeProjectsCount = 0,
 }: HeaderProps) {
-  const { theme, setTheme } = useTheme()
+  const router = useRouter()
   const [isAvailable, setIsAvailable] = useState(initialAvailability)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const {
+    notifications: rawNotifs,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+  } = useNotifications({ limit: 10 })
+
+  // Map DB notifications to the component Notification shape
+  const recentNotifs: NotifType[] = rawNotifs.slice(0, 8).map((n) => {
+    const raw = n as unknown as Record<string, unknown>
+    return {
+      id: (raw._id as string) || n.id,
+      type: (raw.type as NotifType["type"]) || (raw.notification_type as NotifType["type"]) || "system_alert",
+      title: (raw.title as string) || "Notification",
+      message: (raw.message as string) || (raw.body as string) || "",
+      project_id: undefined,
+      project_number: undefined,
+      action_url: (raw.action_url as string) || undefined,
+      is_read: (raw.isRead as boolean) || (raw.is_read as boolean) || false,
+      created_at: (raw.createdAt as string) || n.created_at || new Date().toISOString(),
+    }
+  })
+
+  const displayCount = unreadCount || notificationCount
 
   const handleAvailabilityToggle = async (checked: boolean) => {
     setIsAvailable(checked)
@@ -120,11 +145,6 @@ export function Header({
 
       {/* Right Section - Actions */}
       <div className="flex items-center gap-2 md:gap-3">
-        {/* Language Selector */}
-        <LanguageSelector />
-
-        <Separator orientation="vertical" className="h-6 hidden sm:block" />
-
         {/* Search Button */}
         <TooltipProvider>
           <Tooltip>
@@ -192,72 +212,76 @@ export function Header({
 
         <Separator orientation="vertical" className="h-6 hidden sm:block" />
 
-        {/* Theme Toggle */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-              Appearance
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => setTheme("light")}
-              className={cn(theme === "light" && "bg-accent")}
-            >
-              <Sun className="mr-2 h-4 w-4" />
-              Light
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setTheme("dark")}
-              className={cn(theme === "dark" && "bg-accent")}
-            >
-              <Moon className="mr-2 h-4 w-4" />
-              Dark
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setTheme("system")}
-              className={cn(theme === "system" && "bg-accent")}
-            >
-              <Sparkles className="mr-2 h-4 w-4" />
-              System
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         {/* Notifications */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
+        <Popover open={notifOpen} onOpenChange={setNotifOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 relative rounded-full"
+            >
+              <Bell className="h-4 w-4" />
+              {displayCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white animate-bounce-subtle">
+                  {displayCount > 9 ? "9+" : displayCount}
+                </span>
+              )}
+              <span className="sr-only">
+                {displayCount > 0 ? `${displayCount} notifications` : "No notifications"}
+              </span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-96 p-0" sideOffset={8}>
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h4 className="text-sm font-semibold">Notifications</h4>
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => markAllAsRead()}
+                >
+                  <CheckCheck className="h-3 w-3" />
+                  Mark all read
+                </Button>
+              )}
+            </div>
+            <ScrollArea className="max-h-[400px]">
+              {recentNotifs.length === 0 ? (
+                <div className="text-center py-8">
+                  <Bell className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No notifications yet</p>
+                </div>
+              ) : (
+                recentNotifs.map((notif) => (
+                  <NotificationItem
+                    key={notif.id}
+                    notification={notif}
+                    onMarkAsRead={(id) => markAsRead(id)}
+                    onClick={(n) => {
+                      if (!n.is_read) markAsRead(n.id)
+                      setNotifOpen(false)
+                      if (n.action_url) router.push(n.action_url)
+                    }}
+                  />
+                ))
+              )}
+            </ScrollArea>
+            <div className="border-t px-4 py-2">
               <Button
                 variant="ghost"
-                size="icon"
-                className="h-9 w-9 relative rounded-full"
-                asChild
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => {
+                  setNotifOpen(false)
+                  router.push("/notifications")
+                }}
               >
-                <Link href="/notifications">
-                  <Bell className="h-4 w-4" />
-                  {notificationCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white animate-bounce-subtle">
-                      {notificationCount > 9 ? "9+" : notificationCount}
-                    </span>
-                  )}
-                  <span className="sr-only">
-                    {notificationCount > 0 ? `${notificationCount} notifications` : "No notifications"}
-                  </span>
-                </Link>
+                View all notifications
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{notificationCount > 0 ? `${notificationCount} new notifications` : "No new notifications"}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </header>
   )

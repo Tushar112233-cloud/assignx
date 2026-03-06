@@ -78,28 +78,25 @@ export function Navigation() {
                     : "text-[var(--landing-text-primary)]"
                 )}
               >
-                DOER
+                Dolancer
               </span>
             </motion.div>
           </Link>
 
-          {/* Desktop nav links */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200",
-                  scrolled
-                    ? "text-white/70 hover:text-white hover:bg-white/10"
-                    : "text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] hover:bg-[var(--landing-accent-lighter)]"
-                )}
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
+          {/* Desktop nav links — hidden in capsule mode */}
+          {!scrolled && (
+            <div className="hidden md:flex items-center gap-1">
+              {navLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] hover:bg-[var(--landing-accent-lighter)]"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          )}
 
           {/* CTA buttons */}
           <div className="hidden md:flex items-center gap-2">
@@ -117,7 +114,7 @@ export function Navigation() {
             ) : (
               <>
                 <Link
-                  href="/auth/login"
+                  href="/login"
                   className={cn(
                     "px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200",
                     scrolled
@@ -128,7 +125,7 @@ export function Navigation() {
                   Sign In
                 </Link>
                 <Link
-                  href="/auth/register"
+                  href="/register"
                   className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-[var(--landing-accent-primary)] text-white hover:bg-[var(--landing-accent-primary-hover)] transition-all duration-200 shadow-sm"
                 >
                   Start Earning
@@ -179,14 +176,14 @@ export function Navigation() {
                 ))}
                 <div className="flex gap-2 mt-2 pt-2 border-t border-white/10">
                   <Link
-                    href="/auth/login"
+                    href="/login"
                     className="flex-1 text-center py-2 text-sm text-white/70 hover:text-white transition-colors duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Sign In
                   </Link>
                   <Link
-                    href="/auth/register"
+                    href="/register"
                     className="flex-1 text-center py-2 rounded-full text-sm font-semibold bg-[var(--landing-accent-primary)] text-white hover:bg-[var(--landing-accent-primary-hover)] transition-colors duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                   >

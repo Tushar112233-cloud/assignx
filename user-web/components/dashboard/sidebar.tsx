@@ -7,12 +7,8 @@ import {
   User,
   Settings,
   HelpCircle,
-  Briefcase,
-  Building2,
-  ShoppingBag,
   GraduationCap,
   Wallet,
-  UserPlus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { SidebarNavLink } from "./sidebar-nav-link";
@@ -43,26 +39,6 @@ const mainNavItems = [
     title: "Wallet",
     href: "/wallet",
     icon: Wallet,
-  },
-  {
-    title: "Connect",
-    href: "/connect",
-    icon: UserPlus,
-  },
-  {
-    title: "Pro Network",
-    href: "/pro-network",
-    icon: Briefcase,
-  },
-  {
-    title: "Business Hub",
-    href: "/business-hub",
-    icon: Building2,
-  },
-  {
-    title: "Marketplace",
-    href: "/marketplace",
-    icon: ShoppingBag,
   },
   {
     title: "Profile",

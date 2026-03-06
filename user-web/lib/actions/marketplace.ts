@@ -185,8 +185,8 @@ export async function createListing(data: CreateListingData) {
       body: JSON.stringify(data),
     }, token);
 
-    revalidatePath("/connect");
-    revalidatePath("/marketplace");
+    revalidatePath("/campus-connect");
+    revalidatePath("/campus-connect");
     return { success: true, listing: result.listing || result.data || result };
   } catch (error: any) {
     return { error: error.message };
@@ -208,8 +208,8 @@ export async function createMarketplaceListing(
       body: JSON.stringify(input),
     }, token);
 
-    revalidatePath("/connect");
-    revalidatePath("/marketplace");
+    revalidatePath("/campus-connect");
+    revalidatePath("/campus-connect");
     return { data: { id: result.listing?.id || result.data?.id || result.id }, error: null };
   } catch (error: any) {
     return { data: null, error: error.message };
@@ -232,8 +232,8 @@ export async function updateMarketplaceListing(
       body: JSON.stringify(input),
     }, token);
 
-    revalidatePath("/connect");
-    revalidatePath("/marketplace");
+    revalidatePath("/campus-connect");
+    revalidatePath("/campus-connect");
     return { success: true, error: null };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -254,8 +254,8 @@ export async function deleteMarketplaceListing(
       method: "DELETE",
     }, token);
 
-    revalidatePath("/connect");
-    revalidatePath("/marketplace");
+    revalidatePath("/campus-connect");
+    revalidatePath("/campus-connect");
     return { success: true, error: null };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -276,8 +276,8 @@ export async function toggleMarketplaceFavorite(
       method: "POST",
     }, token);
 
-    revalidatePath("/connect");
-    revalidatePath("/marketplace");
+    revalidatePath("/campus-connect");
+    revalidatePath("/campus-connect");
     return { success: true, isFavorited: result.isFavorited ?? true, error: null };
   } catch (error: any) {
     return { success: false, isFavorited: false, error: error.message };

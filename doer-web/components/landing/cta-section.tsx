@@ -91,7 +91,7 @@ export function CTASection() {
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Link
-              href="/auth/register"
+              href="/register"
               className={cn(
                 "flex items-center justify-center gap-2 px-8 py-4 rounded-2xl",
                 "bg-[var(--landing-accent-primary)] text-white font-semibold text-base",
@@ -100,11 +100,11 @@ export function CTASection() {
                 "group"
               )}
             >
-              Apply as Doer
+              Apply as Dolancer
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
-              href="/auth/login"
+              href="/login"
               className={cn(
                 "flex items-center justify-center gap-2 px-8 py-4 rounded-2xl",
                 "bg-white/10 text-white font-medium text-base",

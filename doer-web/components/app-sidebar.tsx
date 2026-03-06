@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 
 import { NavUser } from "@/components/nav-user"
-import { LanguageSelector } from "@/components/language-selector"
+
 import { useI18n } from "@/lib/i18n/context"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -286,11 +286,6 @@ export function AppSidebar({ userData, stats, className, ...props }: AppSidebarP
       </SidebarContent>
 
       <SidebarFooter className="border-t border-[#E5EDFF]/40 bg-transparent">
-        {open && (
-          <div className="px-2 pt-1 pb-0">
-            <LanguageSelector />
-          </div>
-        )}
         <NavUser user={userData} />
       </SidebarFooter>
     </Sidebar>

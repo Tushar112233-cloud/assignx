@@ -17,7 +17,7 @@ function generateOTP(): string {
 /**
  * Get the Mongoose model for a given role.
  */
-function getModelByRole(role: string) {
+function getModelByRole(role: string): any {
   switch (role) {
     case 'user': return User;
     case 'student': return User;

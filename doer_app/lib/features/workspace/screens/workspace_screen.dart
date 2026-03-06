@@ -36,6 +36,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../providers/workspace_provider.dart';
@@ -65,6 +66,14 @@ class WorkspaceScreen extends ConsumerStatefulWidget {
 
 class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   bool _showProjectInfo = false;
+  final _liveDocController = TextEditingController();
+  bool _isSavingLiveDoc = false;
+
+  @override
+  void dispose() {
+    _liveDocController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -181,6 +190,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
                           const SizedBox(height: AppSpacing.lg),
 
+                          // Live Document URL
+                          _buildLiveDocSection(project),
+
+                          const SizedBox(height: AppSpacing.lg),
+
                           // Files section
                           _buildFilesSection(workspaceState),
 
@@ -266,6 +280,113 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildLiveDocSection(dynamic project) {
+    // Initialize controller with current URL if not already set
+    if (_liveDocController.text.isEmpty && project.liveDocumentUrl != null) {
+      _liveDocController.text = project.liveDocumentUrl!;
+    }
+
+    return Card(
+      elevation: 2,
+      shape: const RoundedRectangleBorder(
+        borderRadius: AppSpacing.borderRadiusMd,
+      ),
+      child: Padding(
+        padding: AppSpacing.paddingMd,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.link, size: 18, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Google Docs Link'.tr(context),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _liveDocController,
+              decoration: InputDecoration(
+                hintText: 'https://docs.google.com/...',
+                hintStyle: TextStyle(color: AppColors.textTertiary, fontSize: 13),
+                prefixIcon: const Icon(Icons.description_outlined, size: 20),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: AppColors.border),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                isDense: true,
+              ),
+              style: const TextStyle(fontSize: 13),
+              keyboardType: TextInputType.url,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isSavingLiveDoc ? null : _saveLiveDocUrl,
+                icon: _isSavingLiveDoc
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.save, size: 18),
+                label: Text(_isSavingLiveDoc ? 'Saving...' : 'Save Link'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveLiveDocUrl() async {
+    final url = _liveDocController.text.trim();
+    if (url.isNotEmpty && !url.startsWith('https://')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('URL must start with https://'), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isSavingLiveDoc = true);
+    try {
+      await ApiClient.put('/projects/${widget.projectId}', {
+        'liveDocumentUrl': url.isEmpty ? '' : url,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(url.isEmpty ? 'Google Docs link removed' : 'Google Docs link saved'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save link'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSavingLiveDoc = false);
+    }
   }
 
   Widget _buildFilesSection(WorkspaceState workspaceState) {
@@ -359,7 +480,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '${(workspaceState.progress * 100).round()}%',
+                    '${workspaceState.progress}%',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
