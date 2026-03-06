@@ -41,6 +41,10 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (message.type == MessageType.timeline) {
+      return _TimelineEvent(message: message);
+    }
+
     if (message.isSystemMessage) {
       return _SystemMessage(message: message);
     }
@@ -389,6 +393,158 @@ class _FileAttachment extends StatelessWidget {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+}
+
+/// Timeline event widget showing project status changes.
+///
+/// Renders as a centered card with an icon, status label, and timestamp
+/// to visually represent project milestones in the chat.
+class _TimelineEvent extends StatelessWidget {
+  const _TimelineEvent({required this.message});
+
+  final MessageModel message;
+
+  @override
+  Widget build(BuildContext context) {
+    final toStatus = message.metadata?['toStatus'] as String? ?? '';
+    final icon = _statusIcon(toStatus);
+    final color = _statusColor(toStatus);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+      child: Row(
+        children: [
+          // Timeline line + dot
+          Column(
+            children: [
+              Container(
+                width: 2,
+                height: 12,
+                color: color.withValues(alpha: 0.3),
+              ),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: color, width: 1.5),
+                ),
+                child: Icon(icon, size: 16, color: color),
+              ),
+              Container(
+                width: 2,
+                height: 12,
+                color: color.withValues(alpha: 0.3),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          // Content
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: color.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message.content ?? '',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatTimelineDate(message.createdAt),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.textSecondaryLight,
+                          fontSize: 10,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _statusIcon(String status) {
+    switch (status) {
+      case 'draft':
+        return Icons.note_add_rounded;
+      case 'submitted':
+        return Icons.send_rounded;
+      case 'quoted':
+        return Icons.request_quote_rounded;
+      case 'paid':
+        return Icons.payment_rounded;
+      case 'assigned':
+        return Icons.person_add_rounded;
+      case 'in_progress':
+        return Icons.play_circle_rounded;
+      case 'under_review':
+        return Icons.rate_review_rounded;
+      case 'revision_requested':
+        return Icons.replay_rounded;
+      case 'delivered':
+        return Icons.local_shipping_rounded;
+      case 'completed':
+        return Icons.check_circle_rounded;
+      case 'cancelled':
+        return Icons.cancel_rounded;
+      case 'refunded':
+        return Icons.currency_exchange_rounded;
+      default:
+        return Icons.info_rounded;
+    }
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'draft':
+        return Colors.grey;
+      case 'submitted':
+        return Colors.blue;
+      case 'quoted':
+        return Colors.orange;
+      case 'paid':
+        return Colors.green;
+      case 'assigned':
+        return Colors.purple;
+      case 'in_progress':
+        return Colors.indigo;
+      case 'under_review':
+        return Colors.amber.shade700;
+      case 'revision_requested':
+        return Colors.deepOrange;
+      case 'delivered':
+        return Colors.teal;
+      case 'completed':
+        return Colors.green.shade700;
+      case 'cancelled':
+        return Colors.red;
+      case 'refunded':
+        return Colors.red.shade300;
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
+  String _formatTimelineDate(DateTime date) {
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '${months[date.month - 1]} ${date.day}, ${date.year} at $hour:$minute';
   }
 }
 

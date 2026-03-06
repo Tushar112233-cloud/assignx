@@ -186,6 +186,9 @@ class ActiveChatNotifier extends StateNotifier<ActiveChatState> {
   StreamSubscription? _messagesSubscription;
 
   /// Opens a chat room.
+  ///
+  /// Fetches the room, messages, and project timeline, then merges
+  /// timeline events with messages sorted by timestamp.
   Future<void> openRoom(String roomId) async {
     state = state.copyWith(isLoading: true, error: null, messages: []);
 
@@ -193,9 +196,21 @@ class ActiveChatNotifier extends StateNotifier<ActiveChatState> {
       final room = await _repository.getChatRoom(roomId);
       final messages = await _repository.getMessages(roomId);
 
+      // Fetch project timeline and merge with messages
+      List<MessageModel> allMessages = [...messages];
+      if (room != null) {
+        final timeline = await _repository.getProjectTimeline(
+          room.projectId,
+          roomId,
+        );
+        allMessages.addAll(timeline);
+        // Sort by createdAt so timeline events appear in chronological order
+        allMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      }
+
       state = state.copyWith(
         room: room,
-        messages: messages,
+        messages: allMessages,
         isLoading: false,
         hasMore: messages.length >= 50,
       );

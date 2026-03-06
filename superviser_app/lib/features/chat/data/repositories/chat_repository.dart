@@ -185,6 +185,64 @@ class ChatRepository {
     }
   }
 
+  /// Fetches the project status history for timeline display in chat.
+  ///
+  /// Returns a list of timeline pseudo-messages created from the project's
+  /// `statusHistory` array, sorted by creation date.
+  Future<List<MessageModel>> getProjectTimeline(String projectId, String chatRoomId) async {
+    try {
+      final response = await ApiClient.get('/projects/$projectId');
+      if (response == null) return [];
+
+      final data = response as Map<String, dynamic>;
+      final project = data['project'] ?? data;
+
+      final historyRaw = (project['statusHistory'] ?? project['status_history']) as List?;
+      if (historyRaw == null || historyRaw.isEmpty) return [];
+
+      final timeline = <MessageModel>[];
+      for (final entry in historyRaw) {
+        if (entry is! Map<String, dynamic>) continue;
+        final from = (entry['fromStatus'] ?? entry['from_status'] ?? '').toString();
+        final to = (entry['toStatus'] ?? entry['to_status'] ?? '').toString();
+        final notes = (entry['notes'] ?? entry['reason']) as String?;
+        final createdAtRaw = entry['createdAt'] ?? entry['created_at'];
+        final createdAt = createdAtRaw != null
+            ? DateTime.tryParse(createdAtRaw.toString()) ?? DateTime.now()
+            : DateTime.now();
+
+        timeline.add(createTimelineMessage(
+          chatRoomId: chatRoomId,
+          fromStatus: from,
+          toStatus: to,
+          notes: notes,
+          createdAt: createdAt,
+        ));
+      }
+
+      // Also add project creation as the first timeline entry
+      final createdAtRaw = project['createdAt'] ?? project['created_at'];
+      if (createdAtRaw != null) {
+        final createdAt = DateTime.tryParse(createdAtRaw.toString());
+        if (createdAt != null) {
+          timeline.insert(0, createTimelineMessage(
+            chatRoomId: chatRoomId,
+            fromStatus: '',
+            toStatus: 'draft',
+            createdAt: createdAt,
+          ));
+        }
+      }
+
+      return timeline;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('ChatRepository.getProjectTimeline error: $e');
+      }
+      return [];
+    }
+  }
+
   // ==========================================================================
   // Socket.IO real-time methods
   // ==========================================================================

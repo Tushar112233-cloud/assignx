@@ -301,7 +301,10 @@ enum MessageType {
   system('system'),
 
   /// Status update message
-  status('status');
+  status('status'),
+
+  /// Project timeline event (client-side only, not from API)
+  timeline('timeline');
 
   const MessageType(this.value);
 
@@ -313,5 +316,69 @@ enum MessageType {
       (t) => t.value == value,
       orElse: () => MessageType.text,
     );
+  }
+}
+
+/// Creates a timeline pseudo-message from a project status history entry.
+MessageModel createTimelineMessage({
+  required String chatRoomId,
+  required String fromStatus,
+  required String toStatus,
+  String? notes,
+  required DateTime createdAt,
+}) {
+  return MessageModel(
+    id: 'timeline_${createdAt.millisecondsSinceEpoch}',
+    chatRoomId: chatRoomId,
+    senderId: 'system',
+    senderName: 'Project Update',
+    senderRole: 'system',
+    content: _statusChangeLabel(fromStatus, toStatus, notes),
+    type: MessageType.timeline,
+    metadata: {
+      'fromStatus': fromStatus,
+      'toStatus': toStatus,
+      if (notes != null) 'notes': notes,
+    },
+    createdAt: createdAt,
+  );
+}
+
+String _statusChangeLabel(String from, String to, String? notes) {
+  final label = _statusLabel(to);
+  if (notes != null && notes.isNotEmpty) {
+    return '$label — $notes';
+  }
+  return label;
+}
+
+String _statusLabel(String status) {
+  switch (status) {
+    case 'draft':
+      return 'Project created';
+    case 'submitted':
+      return 'Project submitted for review';
+    case 'quoted':
+      return 'Quote sent to client';
+    case 'paid':
+      return 'Payment received';
+    case 'assigned':
+      return 'Doer assigned to project';
+    case 'in_progress':
+      return 'Work started on project';
+    case 'under_review':
+      return 'Project submitted for review';
+    case 'revision_requested':
+      return 'Revision requested';
+    case 'delivered':
+      return 'Project delivered';
+    case 'completed':
+      return 'Project completed';
+    case 'cancelled':
+      return 'Project cancelled';
+    case 'refunded':
+      return 'Payment refunded';
+    default:
+      return 'Status changed to ${status.replaceAll('_', ' ')}';
   }
 }
