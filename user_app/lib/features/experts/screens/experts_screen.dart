@@ -256,16 +256,7 @@ class _ExpertsHero extends StatefulWidget {
 }
 
 class _ExpertsHeroState extends State<_ExpertsHero> {
-  bool _isFocused = false;
   final _focusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      setState(() => _isFocused = _focusNode.hasFocus);
-    });
-  }
 
   @override
   void dispose() {
@@ -277,219 +268,183 @@ class _ExpertsHeroState extends State<_ExpertsHero> {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-      padding: const EdgeInsets.all(20),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFFFDF8F3), // warm cream
-            Colors.white,
-            const Color(0xFFF5F0EB), // light coffee tint
-          ],
-          stops: const [0.0, 0.5, 1.0],
-        ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.08),
-          width: 1,
-        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF0D9488).withAlpha(30),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Title row with Lottie
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Left: Text content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Background gradient
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0D9488), // teal-600
+                  Color(0xFF14B8A6), // teal-500
+                  Color(0xFF0F766E), // teal-700
+                ],
+                stops: [0.0, 0.5, 1.0],
+              ),
+            ),
+          ),
+          // Decorative circle
+          Positioned(
+            top: -30,
+            right: -20,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title row with icon
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Main title
-                    Text(
-                      'Expert Consultations'.tr(context),
-                      style: AppTextStyles.displayMedium.copyWith(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                        height: 1.2,
-                        letterSpacing: -0.5,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Expert Consultations'.tr(context),
+                            style: AppTextStyles.displayMedium.copyWith(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              height: 1.2,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Get guidance from verified professionals'.tr(context),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.85),
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    // Subtitle
-                    Text(
-                      'Get guidance from verified professionals'.tr(context),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.textSecondary,
-                        height: 1.5,
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 64,
+                      height: 64,
+                      child: Lottie.asset(
+                        'assets/animations/computer.json',
+                        fit: BoxFit.contain,
+                        repeat: true,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(
+                              LucideIcons.stethoscope,
+                              size: 30,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
                 ),
-              ),
-
-              // Right: Lottie animation in styled container
-              const SizedBox(width: 12),
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(20),
+                const SizedBox(height: 18),
+                // Stats pills
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _StatPill(icon: LucideIcons.users, label: 'Verified'.tr(context), value: '500+'),
+                    _StatPill(icon: LucideIcons.star, label: 'Rating'.tr(context), value: '4.9'),
+                    _StatPill(icon: LucideIcons.zap, label: 'Sessions'.tr(context), value: '10K+'),
+                  ],
                 ),
-                child: Lottie.asset(
-                  'assets/animations/computer.json',
-                  fit: BoxFit.contain,
-                  repeat: true,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Icon(
-                        LucideIcons.stethoscope,
-                        size: 36,
-                        color: AppColors.primary,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // Quick stats row - capsule pills
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _StatPill(
-                icon: LucideIcons.users,
-                label: 'Verified'.tr(context),
-                value: '500+',
-                highlight: true,
-              ),
-              _StatPill(
-                icon: LucideIcons.star,
-                label: 'Rating'.tr(context),
-                value: '4.9',
-                highlight: false,
-              ),
-              _StatPill(
-                icon: LucideIcons.zap,
-                label: 'Sessions'.tr(context),
-                value: '10K+',
-                highlight: false,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 18),
-
-          // Polished search bar
-          Container(
-            decoration: BoxDecoration(
-              color: _isFocused ? Colors.white : Colors.white.withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _isFocused
-                    ? AppColors.primary.withValues(alpha: 0.3)
-                    : AppColors.border.withValues(alpha: 0.3),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: _isFocused
-                      ? AppColors.primary.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.04),
-                  blurRadius: _isFocused ? 12 : 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Search icon
-                Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: Icon(
-                    LucideIcons.search,
-                    size: 20,
-                    color: _isFocused
-                        ? AppColors.primary
-                        : AppColors.textTertiary,
+                const SizedBox(height: 18),
+                // Search bar
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                ),
-
-                // Text input
-                Expanded(
-                  child: TextField(
-                    controller: widget.searchController,
-                    focusNode: _focusNode,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Search experts, specializations...'.tr(context),
-                      hintStyle: AppTextStyles.bodyMedium.copyWith(
-                        fontSize: 15,
-                        color: AppColors.textTertiary,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 14,
-                      ),
-                      isDense: true,
-                    ),
-                    onChanged: (value) {
-                      widget.onSearch(value);
-                      setState(() {});
-                    },
-                  ),
-                ),
-
-                // Clear button
-                if (widget.searchController.text.isNotEmpty)
-                  GestureDetector(
-                    onTap: () {
-                      widget.searchController.clear();
-                      widget.onSearch('');
-                      setState(() {});
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: AppColors.textTertiary.withValues(alpha: 0.12),
-                          shape: BoxShape.circle,
-                        ),
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 14),
                         child: Icon(
-                          LucideIcons.x,
-                          size: 14,
-                          color: AppColors.textSecondary,
+                          LucideIcons.search,
+                          size: 20,
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                       ),
-                    ),
+                      Expanded(
+                        child: TextField(
+                          controller: widget.searchController,
+                          focusNode: _focusNode,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            fontSize: 15,
+                            color: Colors.white,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Search experts, specializations...'.tr(context),
+                            hintStyle: AppTextStyles.bodyMedium.copyWith(
+                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.6),
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                            isDense: true,
+                          ),
+                          onChanged: (value) {
+                            widget.onSearch(value);
+                            setState(() {});
+                          },
+                        ),
+                      ),
+                      if (widget.searchController.text.isNotEmpty)
+                        GestureDetector(
+                          onTap: () {
+                            widget.searchController.clear();
+                            widget.onSearch('');
+                            setState(() {});
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                LucideIcons.x,
+                                size: 14,
+                                color: Colors.white.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                ),
               ],
             ),
           ),
@@ -499,70 +454,45 @@ class _ExpertsHeroState extends State<_ExpertsHero> {
   }
 }
 
-/// Stat pill component matching QuickStatsRow style.
+/// Stat pill for the teal hero section.
 class _StatPill extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  final bool highlight;
 
   const _StatPill({
     required this.icon,
     required this.label,
     required this.value,
-    this.highlight = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = highlight
-        ? AppColors.primary.withValues(alpha: 0.1)
-        : Colors.white.withValues(alpha: 0.85);
-    final iconColor = highlight ? AppColors.primary : AppColors.textTertiary;
-    final valueColor = highlight ? AppColors.primary : AppColors.textPrimary;
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: highlight
-              ? AppColors.primary.withValues(alpha: 0.2)
-              : AppColors.border.withValues(alpha: 0.3),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 14,
-            color: iconColor,
-          ),
+          Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.9)),
           const SizedBox(width: 6),
           Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(
-              fontSize: 11,
-              color: AppColors.textTertiary,
+            value,
+            style: AppTextStyles.labelSmall.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
             ),
           ),
           const SizedBox(width: 4),
           Text(
-            value,
-            style: AppTextStyles.labelMedium.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: valueColor,
+            label,
+            style: AppTextStyles.labelSmall.copyWith(
+              fontSize: 11,
+              color: Colors.white.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -625,12 +555,12 @@ class _MainTabs extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 13),
                   decoration: BoxDecoration(
                     gradient: isSelected
-                        ? LinearGradient(
+                        ? const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              AppColors.primary,
-                              AppColors.primaryDark,
+                              Color(0xFF0D9488), // teal-600
+                              Color(0xFF0F766E), // teal-700
                             ],
                           )
                         : null,
@@ -639,7 +569,7 @@ class _MainTabs extends StatelessWidget {
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.3),
+                              color: const Color(0xFF0D9488).withValues(alpha: 0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 3),
                             ),

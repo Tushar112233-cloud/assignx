@@ -141,7 +141,7 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
     _scrollController.dispose();
     _animationController.dispose();
     _typingTimer?.cancel();
-    _socket?.emit('leave-room', _roomId);
+    if (_roomId != null) _socket?.emit('chat:leave', _roomId);
     _presenceStreamController.close();
     super.dispose();
   }
@@ -174,13 +174,10 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
   void _broadcastTyping(bool isTyping) {
     // Broadcast typing status via Socket.IO
     if (_roomId != null && _socket != null) {
-      _socket!.emit('typing', {
-        'roomId': _roomId,
-        'userId': _currentUserId,
-        'name': _currentUserName ?? 'User',
-        'isTyping': isTyping,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
+      _socket!.emit(
+        isTyping ? 'typing:start' : 'typing:stop',
+        _roomId,
+      );
     }
   }
 
@@ -241,70 +238,69 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
       _currentUserName = profile?.fullName ?? user?.email?.split('@').first ?? 'User';
 
       // Join the chat room
-      _socket!.emit('join-room', {
-        'roomId': roomId,
-        'userId': _currentUserId,
-        'name': _currentUserName,
-      });
+      _socket!.emit('chat:join', roomId);
 
-      // Listen for presence updates (users online in room)
-      _socket!.on('presence-sync', (data) {
-        if (!mounted) return;
-        final users = <OnlineUser>[];
-        final list = data is List ? data : [];
-        for (final item in list) {
-          final userData = item as Map<String, dynamic>;
-          if (!users.any((u) => u.id == userData['id'])) {
-            users.add(OnlineUser.fromJson(userData));
-          }
-        }
-        setState(() {
-          _onlineUsers.clear();
-          _onlineUsers.addAll(users);
-        });
-      });
-
-      // Listen for user joined events
-      _socket!.on('user-joined', (data) {
+      // Listen for presence online events
+      _socket!.on('presence:online', (data) {
         if (!mounted) return;
         final userData = data as Map<String, dynamic>;
-        if (userData['id'] != _currentUserId) {
+        final userId = userData['userId'] as String?;
+        if (userId != null && userId != _currentUserId) {
+          // Add to online users if not already present
+          if (!_onlineUsers.any((u) => u.id == userId)) {
+            setState(() {
+              _onlineUsers.add(OnlineUser(id: userId, name: userId));
+            });
+          }
           _presenceStreamController.add(PresenceEvent(
             id: PresenceEvent.generateId(),
             type: PresenceEventType.joined,
-            userName: userData['name'] as String? ?? 'Unknown',
-            userRole: userData['role'] as String?,
+            userName: userId,
+            userRole: null,
             timestamp: DateTime.now().millisecondsSinceEpoch,
           ));
         }
       });
 
-      // Listen for user left events
-      _socket!.on('user-left', (data) {
+      // Listen for presence offline events
+      _socket!.on('presence:offline', (data) {
         if (!mounted) return;
         final userData = data as Map<String, dynamic>;
-        if (userData['id'] != _currentUserId) {
+        final userId = userData['userId'] as String?;
+        if (userId != null && userId != _currentUserId) {
+          setState(() {
+            _onlineUsers.removeWhere((u) => u.id == userId);
+          });
           _presenceStreamController.add(PresenceEvent(
             id: PresenceEvent.generateId(),
             type: PresenceEventType.left,
-            userName: userData['name'] as String? ?? 'Unknown',
-            userRole: userData['role'] as String?,
+            userName: userId,
+            userRole: null,
             timestamp: DateTime.now().millisecondsSinceEpoch,
           ));
         }
       });
 
-      // Listen for typing events
-      _socket!.on('typing', (data) {
+      // Listen for typing start events
+      _socket!.on('typing:start', (data) {
         if (!mounted) return;
         final typingData = data as Map<String, dynamic>;
-        if (typingData['userId'] != _currentUserId) {
+        final userId = typingData['userId'] as String?;
+        if (userId != null && userId != _currentUserId) {
           setState(() {
-            if (typingData['isTyping'] == true) {
-              _typingUserName = typingData['name'] as String?;
-            } else {
-              _typingUserName = null;
-            }
+            _typingUserName = userId;
+          });
+        }
+      });
+
+      // Listen for typing stop events
+      _socket!.on('typing:stop', (data) {
+        if (!mounted) return;
+        final typingData = data as Map<String, dynamic>;
+        final userId = typingData['userId'] as String?;
+        if (userId != null && userId != _currentUserId) {
+          setState(() {
+            _typingUserName = null;
           });
         }
       });

@@ -19,6 +19,10 @@ class ActivationScreen extends ConsumerWidget {
     final state = ref.watch(activationProvider);
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Complete Your Training'.tr(context)),
+        automaticallyImplyLeading: false,
+      ),
       body: SafeArea(
         child: state.isLoading && state.modules.isEmpty
             ? const Center(child: CircularProgressIndicator())
@@ -82,15 +86,6 @@ class ActivationScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            'Complete Your Training'.tr(context),
-            style: AppTypography.headlineSmall.copyWith(
-              color: AppColors.textPrimaryLight,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
           Text(
             'Complete all training modules to unlock your supervisor dashboard.'.tr(context),
             style: AppTypography.bodyMedium.copyWith(

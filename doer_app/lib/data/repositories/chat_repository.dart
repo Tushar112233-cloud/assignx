@@ -184,9 +184,9 @@ class DoerChatRepository {
         final userId = await _getUserId();
         _socket = await SocketClient.getSocket();
 
-        _socket!.emit('join-room', {'roomId': chatRoomId});
+        _socket!.emit('chat:join', chatRoomId);
 
-        _socket!.on('new-message', (data) {
+        _socket!.on('chat:message', (data) {
           if (data is Map<String, dynamic> && data['chatRoomId'] == chatRoomId) {
             try {
               controller.add(ChatMessageModel.fromJson(data, userId ?? ''));
@@ -201,7 +201,7 @@ class DoerChatRepository {
     }();
 
     controller.onCancel = () {
-      _socket?.emit('leave-room', {'roomId': chatRoomId});
+      _socket?.emit('chat:leave', chatRoomId);
     };
 
     return controller.stream;
@@ -209,7 +209,7 @@ class DoerChatRepository {
 
   /// Unsubscribes from message updates.
   void unsubscribe() {
-    _socket?.off('new-message');
+    _socket?.off('chat:message');
     _socket = null;
   }
 }

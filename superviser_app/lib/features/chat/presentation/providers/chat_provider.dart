@@ -48,9 +48,11 @@ class ChatRoomsState {
 class ChatRoomsNotifier extends StateNotifier<ChatRoomsState> {
   ChatRoomsNotifier(this._repository) : super(const ChatRoomsState()) {
     loadChatRooms();
+    _subscribeToRoomUpdates();
   }
 
   final ChatRepository _repository;
+  StreamSubscription? _roomUpdateSubscription;
 
   /// Loads all chat rooms.
   Future<void> loadChatRooms() async {
@@ -75,9 +77,32 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState> {
     await loadChatRooms();
   }
 
+  /// Subscribes to real-time room updates via Socket.IO.
+  ///
+  /// When a `chat:message` arrives for any room, refreshes the room list
+  /// so that last-message previews and unread counts stay current.
+  void _subscribeToRoomUpdates() {
+    _roomUpdateSubscription?.cancel();
+    _roomUpdateSubscription = _repository.watchChatRooms().listen(
+      (_) {
+        // Debounce: only refresh if not already loading
+        if (!state.isLoading) {
+          loadChatRooms();
+        }
+      },
+      onError: (_) {},
+    );
+  }
+
   /// Clears error message.
   void clearError() {
     state = state.copyWith(error: null);
+  }
+
+  @override
+  void dispose() {
+    _roomUpdateSubscription?.cancel();
+    super.dispose();
   }
 }
 
@@ -178,7 +203,8 @@ class ActiveChatNotifier extends StateNotifier<ActiveChatState> {
       // Mark as read
       await _repository.markAsRead(roomId);
 
-      // Subscribe to real-time updates
+      // Join the socket room and subscribe to real-time updates
+      await _repository.joinRoom(roomId);
       _subscribeToMessages(roomId);
     } catch (e) {
       state = state.copyWith(
@@ -210,12 +236,18 @@ class ActiveChatNotifier extends StateNotifier<ActiveChatState> {
     }
   }
 
-  /// Subscribes to real-time message updates.
+  /// Subscribes to real-time message updates via Socket.IO.
   void _subscribeToMessages(String roomId) {
     _messagesSubscription?.cancel();
     _messagesSubscription = _repository.watchMessages(roomId).listen(
-      (messages) {
-        state = state.copyWith(messages: messages);
+      (message) {
+        // Avoid duplicates (e.g. own message already added optimistically)
+        final isDuplicate = state.messages.any((m) => m.id == message.id);
+        if (!isDuplicate) {
+          state = state.copyWith(
+            messages: [...state.messages, message],
+          );
+        }
       },
       onError: (e) {
         // Handle stream error silently
@@ -499,10 +531,14 @@ class ActiveChatNotifier extends StateNotifier<ActiveChatState> {
     }
   }
 
-  /// Closes the current chat room.
+  /// Closes the current chat room and leaves the socket room.
   void closeRoom() {
     _messagesSubscription?.cancel();
     _messagesSubscription = null;
+    // Leave the socket room
+    if (state.room != null) {
+      _repository.leaveRoom(state.room!.id);
+    }
     state = const ActiveChatState();
   }
 

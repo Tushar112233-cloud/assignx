@@ -105,8 +105,8 @@ class ChatRepository {
           } catch (_) {}
         }
 
-        socket.on('chat:$roomId', listener);
-        _socketListeners['chat:$roomId'] = listener;
+        socket.on('chat:message', listener);
+        _socketListeners['chat:message'] = listener;
       } catch (e) {
         controller.addError(e);
       }
@@ -142,9 +142,14 @@ class ChatRepository {
     () async {
       try {
         final socket = await SocketClient.getSocket();
-        socket.on('typing:$roomId', (data) {
+        socket.on('typing:start', (data) {
           if (data is Map<String, dynamic>) {
-            controller.add(data);
+            controller.add({...data, 'isTyping': true});
+          }
+        });
+        socket.on('typing:stop', (data) {
+          if (data is Map<String, dynamic>) {
+            controller.add({...data, 'isTyping': false});
           }
         });
       } catch (_) {}
@@ -154,7 +159,7 @@ class ChatRepository {
   }
 
   void _unsubscribeFromRoom(String roomId) {
-    _socketListeners.remove('chat:$roomId');
+    _socketListeners.remove('chat:message');
   }
 
   /// Approves a pending message (supervisor action).

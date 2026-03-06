@@ -231,15 +231,26 @@ class ProfileHero extends StatelessWidget {
     );
   }
 
+  /// Builds a warm gradient avatar with a person icon as the default.
   Widget _buildInitialsAvatar() {
-    return CircleAvatar(
-      radius: 50,
-      backgroundColor: Colors.white,
-      child: Text(
-        profile.initials,
-        style: AppTextStyles.headingLarge.copyWith(
-          color: AppColors.primary,
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFF5EDE4), // warm cream
+            Color(0xFFE8DDD1), // light peach
+          ],
         ),
+      ),
+      child: const Icon(
+        Icons.person_rounded,
+        size: 44,
+        color: Color(0xFF8B7355), // warm brown
       ),
     );
   }

@@ -66,6 +66,13 @@ class _ActivationCompleteScreenState
     final user = ref.watch(authProvider).user;
 
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/activation'),
+        ),
+        title: Text('Activation Complete'.tr(context)),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),

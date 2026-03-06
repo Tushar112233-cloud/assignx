@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -33,16 +31,9 @@ class CampusConnectHero extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF6B35).withValues(alpha: 0.3),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-            spreadRadius: -4,
-          ),
-          BoxShadow(
-            color: const Color(0xFFE91E63).withValues(alpha: 0.15),
-            blurRadius: 40,
-            offset: const Offset(0, 16),
-            spreadRadius: -8,
+            color: const Color(0xFFFF6B35).withAlpha(30),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -90,59 +81,6 @@ class CampusConnectHero extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            top: 40,
-            left: -10,
-            child: Transform.rotate(
-              angle: math.pi / 6,
-              child: Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: Colors.white.withValues(alpha: 0.06),
-                ),
-              ),
-            ),
-          ),
-
-          // Small sparkle dots
-          Positioned(
-            top: 20,
-            right: 60,
-            child: Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 60,
-            right: 30,
-            child: Container(
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.4),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 70,
-            right: 100,
-            child: Container(
-              width: 5,
-              height: 5,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.35),
-              ),
-            ),
-          ),
 
           // Content
           Padding(
@@ -150,7 +88,7 @@ class CampusConnectHero extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // "Campus Connect" badge with glass effect
+                // "Campus Connect" badge
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -159,10 +97,6 @@ class CampusConnectHero extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -170,17 +104,9 @@ class CampusConnectHero extends StatelessWidget {
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFF4ADE80),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF4ADE80)
-                                  .withValues(alpha: 0.6),
-                              blurRadius: 6,
-                              spreadRadius: 1,
-                            ),
-                          ],
+                          color: Color(0xFF4ADE80),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -275,21 +201,10 @@ class CampusConnectHero extends StatelessWidget {
                     .fadeIn(duration: 500.ms, delay: 500.ms),
                 const SizedBox(height: 20),
 
-                // CTA Button with glass morphism style
+                // CTA Button
                 SizedBox(
                   width: double.infinity,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
+                  child: ElevatedButton(
                       onPressed: onVerifyCollege,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -328,7 +243,6 @@ class CampusConnectHero extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ),
                   ),
                 )
                     .animate()

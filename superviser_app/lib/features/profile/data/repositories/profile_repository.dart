@@ -28,7 +28,7 @@ class ProfileRepository {
   Future<SupervisorProfile?> updateProfile(SupervisorProfile profile) async {
     try {
       final response = await ApiClient.put(
-        '/supervisors/me',
+        '/supervisor/profile',
         profile.toJson(),
       );
       if (response == null) return null;
@@ -62,7 +62,7 @@ class ProfileRepository {
   /// Update availability status.
   Future<bool> updateAvailability(bool isAvailable) async {
     try {
-      await ApiClient.put('/supervisors/me/availability', {
+      await ApiClient.put('/supervisor/profile/availability', {
         'is_available': isAvailable,
       });
       return true;
@@ -95,7 +95,7 @@ class ProfileRepository {
       }
       final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
 
-      final response = await ApiClient.get('/supervisors/me/reviews?$query');
+      final response = await ApiClient.get('/supervisor/reviews?$query');
       final list = response is List
           ? response
           : (response as Map<String, dynamic>)['reviews'] as List? ?? [];
@@ -114,7 +114,7 @@ class ProfileRepository {
   /// Get reviews summary.
   Future<ReviewsSummary> getReviewsSummary() async {
     try {
-      final response = await ApiClient.get('/supervisors/me/reviews/summary');
+      final response = await ApiClient.get('/supervisor/reviews/summary');
 
       if (response == null) {
         return const ReviewsSummary(

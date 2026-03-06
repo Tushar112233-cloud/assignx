@@ -92,14 +92,30 @@ class MenuDrawer extends ConsumerWidget {
                     ],
                   ),
                   _MenuSection(
-                    title: 'Community'.tr(context),
+                    title: 'Management'.tr(context),
                     children: [
                       _MenuItem(
-                        icon: Icons.business_center_outlined,
-                        title: 'Business Hub'.tr(context),
+                        icon: Icons.group_outlined,
+                        title: 'Users'.tr(context),
                         onTap: () {
                           Navigator.pop(context);
-                          context.go(RoutePaths.businessHub);
+                          context.go(RoutePaths.users);
+                        },
+                      ),
+                      _MenuItem(
+                        icon: Icons.build_outlined,
+                        title: 'Resources'.tr(context),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.go(RoutePaths.resources);
+                        },
+                      ),
+                      _MenuItem(
+                        icon: Icons.notifications_outlined,
+                        title: 'Notifications'.tr(context),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.go(RoutePaths.notifications);
                         },
                       ),
                     ],

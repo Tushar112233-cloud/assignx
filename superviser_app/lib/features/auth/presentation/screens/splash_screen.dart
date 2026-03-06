@@ -101,26 +101,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       return;
     }
 
-    // DEV: Auto-login with testsupervisor@gmail.com for testing
-    try {
-      debugPrint('SplashScreen: DEV auto-login with testsupervisor@gmail.com');
-      final success = await ref.read(authProvider.notifier).signIn(
-        email: 'testsupervisor@gmail.com',
-        password: 'admin123',
-      );
-      debugPrint('SplashScreen: DEV auto-login result: $success');
-      if (!mounted) return;
-      if (success) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (!mounted) return;
-        // DEV: Go straight to dashboard — activated supervisor
-        context.go('/dashboard');
-        return;
-      }
-    } catch (e) {
-      debugPrint('SplashScreen: DEV auto-login failed: $e');
-    }
-
     if (!mounted) return;
     _navigate();
   }

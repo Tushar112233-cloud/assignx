@@ -28,22 +28,16 @@ class SearchBarWidget extends StatefulWidget {
 
 class _SearchBarWidgetState extends State<SearchBarWidget> {
   late final TextEditingController _controller;
-  final _focusNode = FocusNode();
-  bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialValue);
-    _focusNode.addListener(() {
-      setState(() => _isFocused = _focusNode.hasFocus);
-    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    _focusNode.dispose();
     super.dispose();
   }
 
@@ -51,151 +45,82 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search input row
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutCubic,
-            decoration: BoxDecoration(
-              color: _isFocused
-                  ? Colors.white
-                  : AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _isFocused
-                    ? AppColors.primary.withValues(alpha: 0.3)
-                    : AppColors.border.withValues(alpha: 0.4),
-                width: _isFocused ? 1.5 : 1,
-              ),
-              boxShadow: _isFocused
-                  ? [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                        spreadRadius: -2,
-                      ),
-                    ]
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(6),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-            ),
-            child: Row(
-              children: [
-                // Search icon with animated color
-                Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      Icons.search_rounded,
-                      key: ValueKey(_isFocused),
-                      size: 22,
-                      color: _isFocused
-                          ? AppColors.primary
-                          : AppColors.textTertiary,
-                    ),
-                  ),
-                ),
-
-                // Text input
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: widget.placeholder ?? 'Search events, housing, resources...'.tr(context),
-                      hintStyle: AppTextStyles.bodyMedium.copyWith(
-                        fontSize: 14,
-                        color: AppColors.textTertiary,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 14,
-                      ),
-                      isDense: true,
-                    ),
-                    onChanged: (value) {
-                      widget.onChanged?.call(value);
-                      setState(() {});
-                    },
-                  ),
-                ),
-
-                // Clear button
-                if (_controller.text.isNotEmpty)
-                  GestureDetector(
-                    onTap: () {
-                      _controller.clear();
-                      widget.onChanged?.call('');
-                      setState(() {});
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: AppColors.textTertiary.withValues(alpha: 0.12),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.close_rounded,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // Filter button with styled container
-                GestureDetector(
-                  onTap: widget.onFilterTap,
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 6),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.tune_rounded,
-                          size: 18,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Filter'.tr(context),
-                          style: AppTextStyles.labelMedium.copyWith(
-                            fontSize: 12,
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F6F8),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.border.withValues(alpha: 0.3),
+            width: 1,
           ),
-        ],
+        ),
+        child: Row(
+          children: [
+            // Search icon
+            Padding(
+              padding: const EdgeInsets.only(left: 14),
+              child: Icon(
+                Icons.search_rounded,
+                size: 20,
+                color: AppColors.textTertiary,
+              ),
+            ),
+
+            // Text input
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  hintText: widget.placeholder ??
+                      'Search events, housing, resources...'.tr(context),
+                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                    fontSize: 14,
+                    color: AppColors.textTertiary,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
+                  isDense: true,
+                ),
+                onChanged: (value) {
+                  widget.onChanged?.call(value);
+                  setState(() {});
+                },
+              ),
+            ),
+
+            // Clear button (only visible when typing)
+            if (_controller.text.isNotEmpty)
+              GestureDetector(
+                onTap: () {
+                  _controller.clear();
+                  widget.onChanged?.call('');
+                  setState(() {});
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColors.textTertiary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

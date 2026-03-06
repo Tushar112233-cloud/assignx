@@ -158,7 +158,7 @@ class DashboardRepository {
   /// Updates the supervisor's availability status.
   Future<void> updateAvailability(bool isAvailable) async {
     try {
-      await ApiClient.put('/supervisors/me/availability', {
+      await ApiClient.put('/supervisor/profile/availability', {
         'is_available': isAvailable,
       });
     } on ApiException {
@@ -171,7 +171,7 @@ class DashboardRepository {
   /// Gets the supervisor's current availability status.
   Future<bool> getAvailability() async {
     try {
-      final response = await ApiClient.get('/supervisors/me/availability');
+      final response = await ApiClient.get('/supervisor/profile/availability');
       if (response is Map<String, dynamic>) {
         return (response['isAvailable'] ?? response['is_available']) as bool? ?? true;
       }

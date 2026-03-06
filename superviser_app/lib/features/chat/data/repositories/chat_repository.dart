@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/api/api_client.dart';
+import '../../../../core/socket/socket_client.dart';
 import '../models/chat_room_model.dart';
 import '../models/message_model.dart';
 
@@ -47,8 +50,9 @@ class ChatRepository {
   /// Fetches chat room by project ID.
   Future<ChatRoomModel?> getChatRoomByProject(String projectId) async {
     try {
-      final response = await ApiClient.get(
-        '/chat/rooms/by-project/$projectId',
+      final response = await ApiClient.post(
+        '/chat/rooms/project/$projectId',
+        {},
       );
       if (response == null) return null;
       return ChatRoomModel.fromJson(response as Map<String, dynamic>);
@@ -172,16 +176,160 @@ class ChatRepository {
     }
   }
 
-  /// Watches messages for real-time updates.
-  /// Note: Real-time handled via Socket.IO at the provider level.
-  Stream<List<MessageModel>> watchMessages(String roomId) {
-    return Stream.value([]);
+  // ==========================================================================
+  // Socket.IO real-time methods
+  // ==========================================================================
+
+  /// Joins a chat room via Socket.IO for real-time updates.
+  Future<void> joinRoom(String roomId) async {
+    try {
+      final socket = await SocketClient.getInstance();
+      socket.emit('chat:join', roomId);
+      if (kDebugMode) debugPrint('ChatRepository.joinRoom: $roomId');
+    } catch (e) {
+      if (kDebugMode) debugPrint('ChatRepository.joinRoom error: $e');
+    }
   }
 
-  /// Watches chat rooms for real-time updates.
-  /// Note: Real-time handled via Socket.IO at the provider level.
-  Stream<List<ChatRoomModel>> watchChatRooms() {
-    return Stream.value([]);
+  /// Leaves a chat room via Socket.IO.
+  Future<void> leaveRoom(String roomId) async {
+    try {
+      final socket = await SocketClient.getInstance();
+      socket.emit('chat:leave', roomId);
+      if (kDebugMode) debugPrint('ChatRepository.leaveRoom: $roomId');
+    } catch (e) {
+      if (kDebugMode) debugPrint('ChatRepository.leaveRoom error: $e');
+    }
+  }
+
+  /// Returns a stream of new messages for a specific room.
+  ///
+  /// Listens to the `chat:message` socket event and filters by [roomId].
+  Stream<MessageModel> onNewMessage(String roomId) {
+    final controller = StreamController<MessageModel>.broadcast();
+
+    () async {
+      try {
+        final socket = await SocketClient.getInstance();
+        void handler(dynamic data) {
+          try {
+            final json = data as Map<String, dynamic>;
+            final message = MessageModel.fromJson(json);
+            if (message.chatRoomId == roomId) {
+              controller.add(message);
+            }
+          } catch (e) {
+            if (kDebugMode) debugPrint('onNewMessage parse error: $e');
+          }
+        }
+
+        socket.on('chat:message', handler);
+
+        controller.onCancel = () {
+          socket.off('chat:message', handler);
+          controller.close();
+        };
+      } catch (e) {
+        controller.addError(e);
+        await controller.close();
+      }
+    }();
+
+    return controller.stream;
+  }
+
+  /// Emits typing start or stop for a room.
+  Future<void> sendTyping(String roomId, bool isTyping) async {
+    try {
+      final socket = await SocketClient.getInstance();
+      socket.emit(isTyping ? 'typing:start' : 'typing:stop', roomId);
+    } catch (e) {
+      if (kDebugMode) debugPrint('ChatRepository.sendTyping error: $e');
+    }
+  }
+
+  /// Returns a stream of typing events for a specific room.
+  ///
+  /// Emits a map with `userId` and `isTyping` keys.
+  Stream<Map<String, dynamic>> onTyping(String roomId) {
+    final controller = StreamController<Map<String, dynamic>>.broadcast();
+
+    () async {
+      try {
+        final socket = await SocketClient.getInstance();
+
+        void startHandler(dynamic data) {
+          try {
+            final json = data as Map<String, dynamic>;
+            controller.add({'userId': json['userId'], 'isTyping': true});
+          } catch (_) {}
+        }
+
+        void stopHandler(dynamic data) {
+          try {
+            final json = data as Map<String, dynamic>;
+            controller.add({'userId': json['userId'], 'isTyping': false});
+          } catch (_) {}
+        }
+
+        socket.on('typing:start', startHandler);
+        socket.on('typing:stop', stopHandler);
+
+        controller.onCancel = () {
+          socket.off('typing:start', startHandler);
+          socket.off('typing:stop', stopHandler);
+          controller.close();
+        };
+      } catch (e) {
+        controller.addError(e);
+        await controller.close();
+      }
+    }();
+
+    return controller.stream;
+  }
+
+  /// Watches messages for real-time updates via Socket.IO.
+  ///
+  /// Returns a stream that emits individual new [MessageModel] objects
+  /// received from the `chat:message` event for the given [roomId].
+  Stream<MessageModel> watchMessages(String roomId) {
+    return onNewMessage(roomId);
+  }
+
+  /// Watches chat rooms for real-time updates via Socket.IO.
+  ///
+  /// Listens for any `chat:message` event (all rooms) and emits the
+  /// associated room ID so callers can refresh their room list.
+  Stream<String> watchChatRooms() {
+    final controller = StreamController<String>.broadcast();
+
+    () async {
+      try {
+        final socket = await SocketClient.getInstance();
+        void handler(dynamic data) {
+          try {
+            final json = data as Map<String, dynamic>;
+            final roomId = (json['chatRoomId'] ?? json['chat_room_id'] ?? '').toString();
+            if (roomId.isNotEmpty) {
+              controller.add(roomId);
+            }
+          } catch (_) {}
+        }
+
+        socket.on('chat:message', handler);
+
+        controller.onCancel = () {
+          socket.off('chat:message', handler);
+          controller.close();
+        };
+      } catch (e) {
+        controller.addError(e);
+        await controller.close();
+      }
+    }();
+
+    return controller.stream;
   }
 
 }

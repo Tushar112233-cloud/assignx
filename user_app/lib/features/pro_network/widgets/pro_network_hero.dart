@@ -1,7 +1,5 @@
 library;
 
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -30,16 +28,9 @@ class ProNetworkHero extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E1B4B).withValues(alpha: 0.35),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-            spreadRadius: -4,
-          ),
-          BoxShadow(
-            color: const Color(0xFF6366F1).withValues(alpha: 0.15),
-            blurRadius: 40,
-            offset: const Offset(0, 16),
-            spreadRadius: -8,
+            color: const Color(0xFF1E1B4B).withAlpha(30),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -88,60 +79,6 @@ class ProNetworkHero extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            top: 30,
-            left: -5,
-            child: Transform.rotate(
-              angle: math.pi / 4,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.08),
-                ),
-              ),
-            ),
-          ),
-
-          // Subtle grid/dot pattern
-          Positioned(
-            top: 15,
-            right: 50,
-            child: Container(
-              width: 5,
-              height: 5,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF818CF8).withValues(alpha: 0.4),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 50,
-            right: 25,
-            child: Container(
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF818CF8).withValues(alpha: 0.3),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 60,
-            right: 90,
-            child: Container(
-              width: 3,
-              height: 3,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFFA78BFA).withValues(alpha: 0.4),
-              ),
-            ),
-          ),
-
           // Content
           Padding(
             padding: const EdgeInsets.all(24),
@@ -160,13 +97,8 @@ class ProNetworkHero extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF6366F1)
-                              .withValues(alpha: 0.2),
+                              .withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0xFF818CF8)
-                                .withValues(alpha: 0.3),
-                            width: 1,
-                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -174,17 +106,9 @@ class ProNetworkHero extends StatelessWidget {
                             Container(
                               width: 7,
                               height: 7,
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: const Color(0xFF818CF8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF818CF8)
-                                        .withValues(alpha: 0.6),
-                                    blurRadius: 4,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
+                                color: Color(0xFF818CF8),
                               ),
                             ),
                             const SizedBox(width: 6),
@@ -260,11 +184,6 @@ class ProNetworkHero extends StatelessWidget {
                             color: const Color(0xFF6366F1)
                                 .withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: const Color(0xFF818CF8)
-                                  .withValues(alpha: 0.2),
-                              width: 1,
-                            ),
                           ),
                           child: const Icon(
                             Icons.hub_rounded,
@@ -311,7 +230,7 @@ class _QuickActionChips extends StatelessWidget {
   }
 }
 
-/// Individual action chip with glass-morphism styling on dark background.
+/// Individual action chip on dark background.
 class _ActionChip extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -326,20 +245,13 @@ class _ActionChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.1),
+      color: Colors.white.withValues(alpha: 0.12),
       borderRadius: BorderRadius.circular(22),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(22),
-        child: Container(
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
-              width: 1,
-            ),
-          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

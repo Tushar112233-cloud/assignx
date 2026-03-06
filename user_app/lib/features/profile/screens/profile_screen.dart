@@ -227,7 +227,7 @@ class ProfileScreen extends ConsumerWidget {
                   width: 110,
                   height: 110,
                   decoration: BoxDecoration(
-                    color: _ProfileColors.avatarBackground,
+                    color: profile.avatarUrl != null ? _ProfileColors.avatarBackground : null,
                     shape: BoxShape.circle,
                   ),
                   child: profile.avatarUrl != null
@@ -403,15 +403,28 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds initials avatar widget.
+  /// Builds initials avatar widget with a warm gradient background
+  /// and a person icon for a polished default look.
   Widget _buildInitials(String initials) {
     return Center(
-      child: Text(
-        initials,
-        style: AppTextStyles.displayMedium.copyWith(
-          fontSize: 32,
-          fontWeight: FontWeight.w500,
-          color: _ProfileColors.avatarInitials,
+      child: Container(
+        width: 110,
+        height: 110,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFF5EDE4), // warm cream
+              Color(0xFFE8DDD1), // light peach
+            ],
+          ),
+        ),
+        child: const Icon(
+          Icons.person_rounded,
+          size: 48,
+          color: Color(0xFF8B7355), // warm brown
         ),
       ),
     );
