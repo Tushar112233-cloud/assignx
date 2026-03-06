@@ -177,12 +177,16 @@ class _ProgressOverview extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.9),
               ),
               const SizedBox(width: 8),
-              Text(
-                'Training Progress'.tr(context),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+              Expanded(
+                child: Text(
+                  'Training Progress'.tr(context),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -391,11 +395,15 @@ class _CategorySection extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                category.displayName,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+              Flexible(
+                child: Text(
+                  category.displayName,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const SizedBox(width: 8),
               Container(
@@ -472,11 +480,15 @@ class ContinueWatching extends StatelessWidget {
             children: [
               Icon(Icons.play_circle, color: AppColors.primary),
               const SizedBox(width: 8),
-              Text(
-                'Continue Watching'.tr(context),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+              Expanded(
+                child: Text(
+                  'Continue Watching'.tr(context),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

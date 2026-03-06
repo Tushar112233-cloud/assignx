@@ -44,15 +44,16 @@ class ToolCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Icon and badge row
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: tool.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -60,7 +61,7 @@ class ToolCard extends StatelessWidget {
                     child: Icon(
                       tool.icon,
                       color: tool.color,
-                      size: 24,
+                      size: 22,
                     ),
                   ),
                   const Spacer(),
@@ -102,11 +103,11 @@ class ToolCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               // Name
               Text(
                 tool.name,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                 maxLines: 1,
@@ -114,15 +115,17 @@ class ToolCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               // Description
-              Text(
-                tool.description,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondaryLight,
-                    ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              Flexible(
+                child: Text(
+                  tool.description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               // Usage count
               Row(
                 children: [
@@ -132,11 +135,15 @@ class ToolCard extends StatelessWidget {
                     color: AppColors.textSecondaryLight,
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    '${tool.usageCount} ${'uses'.tr(context)}',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.textSecondaryLight,
-                        ),
+                  Expanded(
+                    child: Text(
+                      '${tool.usageCount} ${'uses'.tr(context)}',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondaryLight,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -212,7 +219,7 @@ class ToolGrid extends StatelessWidget {
         crossAxisCount: crossAxisCount,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 0.9,
+        childAspectRatio: 0.85,
       ),
       itemCount: tools.length,
       itemBuilder: (context, index) {

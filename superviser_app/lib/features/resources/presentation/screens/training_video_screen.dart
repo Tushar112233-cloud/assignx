@@ -62,6 +62,8 @@ class _TrainingVideoPlayerScreenState
         title: Text(
           video.title,
           style: const TextStyle(fontSize: 16),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
       body: Column(
@@ -173,7 +175,10 @@ class _TrainingVideoPlayerScreenState
                     ),
                     const SizedBox(height: 8),
                     // Meta info
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -204,7 +209,6 @@ class _TrainingVideoPlayerScreenState
                             ],
                           ),
                         ),
-                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -223,18 +227,22 @@ class _TrainingVideoPlayerScreenState
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.schedule,
-                          size: 14,
-                          color: AppColors.textSecondaryLight,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          video.formattedDuration,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondaryLight,
-                              ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.schedule,
+                              size: 14,
+                              color: AppColors.textSecondaryLight,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              video.formattedDuration,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondaryLight,
+                                  ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -259,25 +267,29 @@ class _TrainingVideoPlayerScreenState
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Instructor'.tr(context),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      color: AppColors.textSecondaryLight,
-                                    ),
-                              ),
-                              Text(
-                                video.instructor!,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Instructor'.tr(context),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: AppColors.textSecondaryLight,
+                                      ),
                                 ),
-                              ),
-                            ],
+                                Text(
+                                  video.instructor!,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -326,10 +338,14 @@ class _TrainingVideoPlayerScreenState
                         child: ElevatedButton.icon(
                           onPressed: _progress >= 0.9 ? _markAsComplete : null,
                           icon: const Icon(Icons.check_circle),
-                          label: Text(
-                            _progress >= 0.9
-                                ? 'Mark as Complete'.tr(context)
-                                : '${'Watch'.tr(context)} ${((0.9 - _progress) * 100).round()}% ${'more to complete'.tr(context)}',
+                          label: Flexible(
+                            child: Text(
+                              _progress >= 0.9
+                                  ? 'Mark as Complete'.tr(context)
+                                  : '${'Watch'.tr(context)} ${((0.9 - _progress) * 100).round()}% ${'more to complete'.tr(context)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.success,

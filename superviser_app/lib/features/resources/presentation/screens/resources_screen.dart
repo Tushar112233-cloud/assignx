@@ -42,10 +42,12 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen>
         title: Text('Resources'.tr(context)),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: false,
+          labelPadding: const EdgeInsets.symmetric(horizontal: 8),
           tabs: [
-            Tab(icon: const Icon(Icons.build_outlined), text: 'Tools'.tr(context)),
-            Tab(icon: const Icon(Icons.school_outlined), text: 'Training'.tr(context)),
-            Tab(icon: const Icon(Icons.monetization_on_outlined), text: 'Pricing'.tr(context)),
+            Tab(icon: const Icon(Icons.build_outlined, size: 20), text: 'Tools'.tr(context)),
+            Tab(icon: const Icon(Icons.school_outlined, size: 20), text: 'Training'.tr(context)),
+            Tab(icon: const Icon(Icons.monetization_on_outlined, size: 20), text: 'Pricing'.tr(context)),
           ],
         ),
       ),

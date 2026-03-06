@@ -37,20 +37,29 @@ class PricingGuideTable extends StatelessWidget {
             children: [
               Icon(Icons.monetization_on, color: AppColors.primary),
               const SizedBox(width: 8),
-              Text(
-                'Pricing Guide'.tr(context),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const Spacer(),
-              if (guide.lastUpdated != null)
-                Text(
-                  '${'Updated'.tr(context)} ${_formatDate(guide.lastUpdated!)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondaryLight,
+              Expanded(
+                child: Text(
+                  'Pricing Guide'.tr(context),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              if (guide.lastUpdated != null) ...[
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    '${'Updated'.tr(context)} ${_formatDate(guide.lastUpdated!)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondaryLight,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -369,7 +378,13 @@ class PricingCalculator extends StatelessWidget {
                     children: [
                       Icon(type.icon, size: 20),
                       const SizedBox(width: 8),
-                      Text(type.displayName),
+                      Expanded(
+                        child: Text(
+                          type.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -407,7 +422,13 @@ class PricingCalculator extends StatelessWidget {
                   value: urgency,
                   child: Row(
                     children: [
-                      Text(urgency.displayName),
+                      Flexible(
+                        child: Text(
+                          urgency.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         '(×${urgency.multiplier})',

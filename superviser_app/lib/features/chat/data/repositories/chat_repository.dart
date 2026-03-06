@@ -38,7 +38,9 @@ class ChatRepository {
     try {
       final response = await ApiClient.get('/chat/rooms/$roomId');
       if (response == null) return null;
-      return ChatRoomModel.fromJson(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final room = data['room'] ?? data;
+      return ChatRoomModel.fromJson(room as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ChatRepository.getChatRoom error: $e');
@@ -55,7 +57,9 @@ class ChatRepository {
         {},
       );
       if (response == null) return null;
-      return ChatRoomModel.fromJson(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final room = data['room'] ?? data;
+      return ChatRoomModel.fromJson(room as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ChatRepository.getChatRoomByProject error: $e');
@@ -109,15 +113,20 @@ class ChatRepository {
     try {
       final response = await ApiClient.post('/chat/rooms/$roomId/messages', {
         'content': content,
-        'message_type': type.value,
-        if (fileUrl != null) 'file_url': fileUrl,
-        if (fileName != null) 'file_name': fileName,
-        if (fileType != null) 'file_type': fileType,
-        if (fileSize != null) 'file_size_bytes': fileSize,
-        if (replyToId != null) 'reply_to_id': replyToId,
+        'messageType': type.value,
+        if (fileUrl != null || fileName != null || fileType != null || fileSize != null)
+          'file': {
+            if (fileUrl != null) 'url': fileUrl,
+            if (fileName != null) 'name': fileName,
+            if (fileType != null) 'type': fileType,
+            if (fileSize != null) 'sizeBytes': fileSize,
+          },
+        if (replyToId != null) 'replyToId': replyToId,
       });
 
-      return MessageModel.fromJson(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final msg = data['message'] ?? data;
+      return MessageModel.fromJson(msg as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ChatRepository.sendMessage error: $e');
