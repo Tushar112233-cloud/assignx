@@ -175,9 +175,9 @@ function NotificationContent({ notification }: { notification: Notification }) {
       </div>
       <p className="text-sm text-muted-foreground">{message}</p>
       <span className="text-xs text-muted-foreground">
-        {formatDistanceToNow(new Date(createdAt), {
-          addSuffix: true,
-        })}
+        {createdAt && !isNaN(new Date(createdAt).getTime())
+          ? formatDistanceToNow(new Date(createdAt), { addSuffix: true })
+          : ""}
       </span>
     </>
   );
