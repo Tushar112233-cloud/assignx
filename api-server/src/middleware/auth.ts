@@ -1,4 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
+import { Request } from 'express-serve-static-core';
 import { verifyToken } from '../services/jwt.service';
 import { AppError } from './errorHandler';
 
