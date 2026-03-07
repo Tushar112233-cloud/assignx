@@ -80,7 +80,7 @@ export async function verifyOTP(
     const res = await fetch(`${API_URL}/api/auth/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.toLowerCase().trim(), otp }),
+      body: JSON.stringify({ email: email.toLowerCase().trim(), otp, purpose: 'login', role: 'admin' }),
     });
 
     const data = await res.json();

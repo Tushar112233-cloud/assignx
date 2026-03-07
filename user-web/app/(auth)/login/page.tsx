@@ -209,7 +209,7 @@ function LoginContent() {
       }
 
       // Send OTP
-      const otpResult = await sendOTP(trimmed, "login");
+      const otpResult = await sendOTP(trimmed, "login", "user");
       if (!otpResult.success) {
         setError(otpResult.error || "Failed to send verification code");
         return;
@@ -238,7 +238,7 @@ function LoginContent() {
     setLoading(true);
 
     try {
-      const result = await verifyOTP(email.trim(), otp, "login");
+      const result = await verifyOTP(email.trim(), otp, "login", "user");
       if (!result.success) {
         setError(result.error || "Verification failed");
         return;
@@ -261,7 +261,7 @@ function LoginContent() {
     setLoading(true);
 
     try {
-      const result = await sendOTP(email.trim(), "login");
+      const result = await sendOTP(email.trim(), "login", "user");
       if (!result.success) {
         setError(result.error || "Failed to resend code");
         return;

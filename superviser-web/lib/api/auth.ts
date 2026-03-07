@@ -89,7 +89,7 @@ export async function verifyOTP(
 ): Promise<AuthTokens> {
   const data = await apiFetch<{ accessToken: string; refreshToken: string; user?: AuthUser; profile?: AuthUser }>("/api/auth/verify", {
     method: "POST",
-    body: JSON.stringify({ email, otp }),
+    body: JSON.stringify({ email, otp, purpose: 'login', role: 'supervisor' }),
   })
 
   // Store tokens
