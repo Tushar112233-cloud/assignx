@@ -692,7 +692,7 @@ router.put('/:id/assign-doer', authenticate, requireRole('supervisor', 'admin'),
     }
 
     // Auto-add doer to project chat room
-    await autoJoinProjectChat(req.params.id, doerId, 'doer');
+    await autoJoinProjectChat(req.params.id as string, doerId, 'doer');
 
     res.json({ project });
   } catch (err) {
@@ -997,7 +997,7 @@ router.post('/:id/claim', authenticate, async (req: Request, res: Response, next
     }
 
     // Auto-add supervisor to project chat room
-    await autoJoinProjectChat(req.params.id, req.user!.id, 'supervisor');
+    await autoJoinProjectChat(req.params.id as string, req.user!.id, 'supervisor');
 
     res.json({ success: true, project });
   } catch (err) {

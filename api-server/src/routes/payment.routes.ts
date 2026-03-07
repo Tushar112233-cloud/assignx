@@ -6,7 +6,7 @@ import { paymentLimiter } from '../middleware/rateLimiter';
 import { Project, UserWallet, DoerWallet, SupervisorWallet, WalletTransaction } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
-function getWalletModel(role: string) {
+function getWalletModel(role: string): { model: any; field: string } {
   switch (role) {
     case 'user': case 'student': case 'professional': case 'business':
       return { model: UserWallet, field: 'userId' };
@@ -61,7 +61,7 @@ router.post('/create-order', authenticate, paymentLimiter, async (req: Request, 
       throw new AppError('Failed to create payment order', 500);
     }
 
-    const order = await rzpRes.json();
+    const order = await rzpRes.json() as { id: string; amount: number; currency: string; notes: any };
 
     res.json({
       orderId: order.id,
@@ -107,6 +107,7 @@ router.post('/verify', authenticate, paymentLimiter, async (req: Request, res: R
           project.statusHistory.push({
             fromStatus: 'quoted',
             toStatus: 'paid',
+            changedBy: req.user!.id as any,
             notes: 'Payment completed via Razorpay',
             createdAt: new Date(),
           });

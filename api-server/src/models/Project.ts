@@ -107,6 +107,7 @@ export interface IProject extends Document {
   liveDocumentUrl: string;
   cancelledAt: Date;
   doerAssignedAt: Date;
+  isOpenPool: boolean;
   source: string;
   createdAt: Date;
   updatedAt: Date;
@@ -228,6 +229,7 @@ const projectSchema = new Schema<IProject>(
     liveDocumentUrl: { type: String },
     cancelledAt: { type: Date },
     doerAssignedAt: { type: Date },
+    isOpenPool: { type: Boolean, default: false },
     source: { type: String },
   },
   { timestamps: true }

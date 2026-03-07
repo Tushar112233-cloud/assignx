@@ -7,7 +7,7 @@ import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 
-function getWalletModel(role: string) {
+function getWalletModel(role: string): { model: any; field: string } {
   switch (role) {
     case 'user': case 'student': case 'professional': case 'business':
       return { model: UserWallet, field: 'userId' };

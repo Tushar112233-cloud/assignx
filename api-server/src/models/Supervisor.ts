@@ -37,6 +37,7 @@ export interface ISupervisor extends Document {
   };
   blacklistedDoers: Array<{ id: string; reason: string; addedAt: Date }>;
   expertise: string[];
+  subjects: Array<{ subjectId: mongoose.Types.ObjectId | string; isPrimary: boolean }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -74,6 +75,10 @@ const supervisorSchema = new Schema<ISupervisor>(
     activatedAt: { type: Date },
     blacklistedDoers: { type: [{ id: String, reason: String, addedAt: Date }], default: [] },
     expertise: { type: [String], default: [] },
+    subjects: {
+      type: [{ subjectId: { type: Schema.Types.ObjectId, ref: 'Subject' }, isPrimary: { type: Boolean, default: false } }],
+      default: [],
+    },
     bankDetails: {
       accountName: { type: String, default: '' },
       accountNumber: { type: String, default: '' },

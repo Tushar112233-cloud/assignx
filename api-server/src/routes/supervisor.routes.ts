@@ -684,7 +684,7 @@ router.post('/projects/:id/assign-doer', authenticate, async (req: Request, res:
     }
 
     // Auto-add doer to project chat room
-    if (doer_id) await autoJoinProjectChat(req.params.id, doer_id, 'doer');
+    if (doer_id) await autoJoinProjectChat(req.params.id as string, doer_id, 'doer');
 
     res.json({ success: true, project });
   } catch (err) {

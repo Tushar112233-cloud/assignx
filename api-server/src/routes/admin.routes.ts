@@ -13,7 +13,8 @@ import { AppError } from '../middleware/errorHandler';
 const router = Router();
 
 // Helper: find wallet across all three wallet collections
-async function findAnyWallet(id: string, session?: mongoose.ClientSession) {
+async function findAnyWallet(id: string | string[], session?: mongoose.ClientSession) {
+  if (Array.isArray(id)) id = id[0];
   const opts = session ? { session } : {};
   const uw = await UserWallet.findOne({ userId: id }, null, opts);
   if (uw) return { wallet: uw, walletType: 'user' as const };
