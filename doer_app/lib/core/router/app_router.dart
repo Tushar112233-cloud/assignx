@@ -30,6 +30,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'route_names.dart';
+import '../../shared/animations/page_transitions.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/onboarding/screens/profile_setup_screen.dart';
@@ -183,12 +184,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.login,
         name: 'login',
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) => FadeScalePage(
+          key: state.pageKey,
+          child: const LoginScreen(),
+        ),
       ),
       GoRoute(
         path: RouteNames.register,
         name: 'register',
-        builder: (context, state) => const RegisterScreen(),
+        pageBuilder: (context, state) => FadeScalePage(
+          key: state.pageKey,
+          child: const RegisterScreen(),
+        ),
       ),
       // Profile Setup
       GoRoute(
@@ -267,41 +274,56 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.projectDetail,
         name: 'projectDetail',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final projectId = state.pathParameters['id']!;
-          return ProjectDetailScreen(projectId: projectId);
+          return SlideRightPage(
+            key: state.pageKey,
+            child: ProjectDetailScreen(projectId: projectId),
+          );
         },
       ),
       GoRoute(
         path: RouteNames.workspace,
         name: 'workspace',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final projectId = state.pathParameters['id']!;
-          return WorkspaceScreen(projectId: projectId);
+          return SlideRightPage(
+            key: state.pageKey,
+            child: WorkspaceScreen(projectId: projectId),
+          );
         },
       ),
       GoRoute(
         path: RouteNames.submitWork,
         name: 'submitWork',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final projectId = state.pathParameters['id']!;
-          return SubmitWorkScreen(projectId: projectId);
+          return SlideUpPage(
+            key: state.pageKey,
+            child: SubmitWorkScreen(projectId: projectId),
+          );
         },
       ),
       GoRoute(
         path: RouteNames.revision,
         name: 'revision',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final projectId = state.pathParameters['id']!;
-          return RevisionScreen(projectId: projectId);
+          return SlideUpPage(
+            key: state.pageKey,
+            child: RevisionScreen(projectId: projectId),
+          );
         },
       ),
       GoRoute(
         path: RouteNames.projectChat,
         name: 'projectChat',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final projectId = state.pathParameters['id']!;
-          return ChatScreen(projectId: projectId);
+          return SlideRightPage(
+            key: state.pageKey,
+            child: ChatScreen(projectId: projectId),
+          );
         },
       ),
       // Resources Routes
