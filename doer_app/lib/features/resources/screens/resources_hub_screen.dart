@@ -14,7 +14,7 @@ import '../../../core/translation/translation_extensions.dart';
 /// resources, and additional documentation for doers.
 ///
 /// ## Navigation
-/// - Entry: From [AppDrawer] or dashboard
+/// - Entry: From bottom nav or dashboard
 /// - AI Checker: Opens [AICheckerScreen]
 /// - Citation Builder: Opens [CitationBuilderScreen]
 /// - Training Center: Opens [TrainingCenterScreen]
@@ -50,7 +50,7 @@ class ResourcesHubScreen extends ConsumerWidget {
     final citationCount = resourcesState.citationHistory.length;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           InnerHeader(
@@ -137,7 +137,8 @@ class ResourcesHubScreen extends ConsumerWidget {
 
                   _buildResourceLinks(),
 
-                  const SizedBox(height: AppSpacing.xl),
+                  // Bottom padding for floating nav bar
+                  const SizedBox(height: 100),
                 ],
               ),
             ),

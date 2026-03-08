@@ -4,7 +4,7 @@
 /// heatmaps, and insights for the authenticated doer user.
 ///
 /// ## Navigation
-/// - Entry: From [AppDrawer] or dashboard stats tap
+/// - Entry: From bottom nav or dashboard stats tap
 /// - Back: Returns to previous screen
 ///
 /// ## Sections

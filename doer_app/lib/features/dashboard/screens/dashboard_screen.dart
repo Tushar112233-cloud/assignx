@@ -9,7 +9,6 @@ import '../../../data/models/doer_project_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/dashboard_provider.dart';
 import '../../../shared/widgets/loading_overlay.dart';
-import '../widgets/app_drawer.dart';
 import '../widgets/assigned_task_card.dart';
 import '../widgets/task_pool_card.dart';
 import '../../../core/translation/translation_extensions.dart';
@@ -26,17 +25,13 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
     final stats = ref.watch(doerStatsProvider);
 
     return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: AppColors.background,
-      drawer: const AppDrawer(),
+      backgroundColor: Colors.transparent,
       body: LoadingOverlay(
         isLoading: dashboardState.isLoading,
         child: RefreshIndicator(
@@ -125,9 +120,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ),
 
-              // Bottom padding
+              // Bottom padding for floating nav bar
               const SliverToBoxAdapter(
-                child: SizedBox(height: AppSpacing.xxl),
+                child: SizedBox(height: 100),
               ),
             ],
           ),
@@ -157,15 +152,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           child: Column(
             children: [
-              // Top bar with menu + notifications
+              // Top bar with notifications
               Row(
                 children: [
-                  IconButton(
-                    onPressed: () =>
-                        _scaffoldKey.currentState?.openDrawer(),
-                    icon: const Icon(Icons.menu, color: Colors.white),
-                    tooltip: 'Menu'.tr(context),
-                  ),
                   const Spacer(),
                   _buildNotificationButton(context),
                 ],

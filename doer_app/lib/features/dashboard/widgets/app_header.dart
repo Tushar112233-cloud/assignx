@@ -4,7 +4,7 @@
 /// including the main app header, logo, notification bell, and inner screen headers.
 ///
 /// ## Features
-/// - Main app header with menu, logo, and notifications
+/// - Main app header with logo and notifications
 /// - App logo with gradient styling
 /// - Notification bell with badge count
 /// - Inner screen header with back navigation
@@ -12,14 +12,12 @@
 /// ## Example
 /// ```dart
 /// AppHeader(
-///   onMenuTap: () => Scaffold.of(context).openDrawer(),
 ///   onNotificationTap: () => navigateToNotifications(),
 ///   notificationCount: 5,
 /// )
 /// ```
 ///
 /// See also:
-/// - [AppDrawer] for the navigation drawer
 /// - [AppColors] for the color scheme
 /// - [AppSpacing] for spacing constants
 library;
@@ -33,21 +31,19 @@ import '../../../core/translation/translation_extensions.dart';
 
 /// Main application header widget with navigation controls.
 ///
-/// Displays the app logo, menu button, and notification bell in a
+/// Displays the app logo and notification bell in a
 /// consistent header bar with shadow styling.
 ///
 /// ## Usage
 /// ```dart
 /// AppHeader(
-///   onMenuTap: () => Scaffold.of(context).openDrawer(),
 ///   onNotificationTap: () => navigateToNotifications(),
 ///   notificationCount: 5,
 /// )
 /// ```
 ///
 /// ## Layout
-/// - Left: Menu hamburger button
-/// - Center: App logo
+/// - Left: App logo
 /// - Right: Notification bell with badge
 ///
 /// See also:
@@ -57,15 +53,9 @@ class AppHeader extends ConsumerWidget {
   /// Creates an app header with the specified properties.
   const AppHeader({
     super.key,
-    this.onMenuTap,
     this.onNotificationTap,
     this.notificationCount = 0,
   });
-
-  /// Callback invoked when the menu button is tapped.
-  ///
-  /// Typically opens the navigation drawer.
-  final VoidCallback? onMenuTap;
 
   /// Callback invoked when the notification bell is tapped.
   ///
@@ -99,16 +89,6 @@ class AppHeader extends ConsumerWidget {
         bottom: false,
         child: Row(
           children: [
-            // Menu button
-            IconButton(
-              onPressed: onMenuTap,
-              icon: const Icon(Icons.menu),
-              color: AppColors.textPrimary,
-              tooltip: 'Menu'.tr(context),
-            ),
-
-            const SizedBox(width: AppSpacing.sm),
-
             // Logo
             const AppLogo(),
 

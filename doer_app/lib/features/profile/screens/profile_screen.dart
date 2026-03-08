@@ -19,7 +19,7 @@ import '../../../core/translation/translation_extensions.dart';
 /// - Tabbed content (Overview, Skills, Payments)
 ///
 /// ## Navigation
-/// - Entry: From [AppDrawer] or dashboard
+/// - Entry: From bottom nav or dashboard
 /// - Settings: Navigates to [SettingsScreen]
 /// - Edit Profile: Navigates to [EditProfileScreen]
 /// - Payment History: Navigates to [PaymentHistoryScreen]
@@ -65,7 +65,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final profile = profileState.profile;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: LoadingOverlay(
         isLoading: profileState.isLoading,
         child: profile == null
@@ -101,7 +101,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         ),
                       ),
 
-                      const SizedBox(height: AppSpacing.xl),
+                      // Bottom padding for floating nav bar
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
