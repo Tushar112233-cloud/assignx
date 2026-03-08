@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/notification_model.dart';
 import '../providers/notifications_provider.dart';
 import '../widgets/notification_card.dart';
@@ -31,7 +32,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final state = ref.watch(notificationsProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text('Notifications'.tr(context)),
         actions: [
           if (state.unreadCount > 0)
@@ -67,10 +71,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Filter chips
-          NotificationFilterChips(
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.coolColors,
+        opacity: 0.4,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Filter chips
+              NotificationFilterChips(
             selectedFilter: state.selectedFilter,
             onFilterChanged: (filter) {
               ref.read(notificationsProvider.notifier).setFilter(filter);
@@ -120,6 +129,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

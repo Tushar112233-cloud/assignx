@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/review_model.dart';
 import '../providers/profile_provider.dart';
 
@@ -16,6 +18,8 @@ class ReviewsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('My Reviews'.tr(context)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -23,53 +27,61 @@ class ReviewsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: reviewsState.isLoading && reviewsState.reviews.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: () => ref.read(reviewsProvider.notifier).refresh(),
-              child: CustomScrollView(
-                slivers: [
-                  // Summary card
-                  if (reviewsState.summary != null)
-                    SliverToBoxAdapter(
-                      child: _ReviewsSummaryCard(summary: reviewsState.summary!),
-                    ),
-
-                  // Reviews list
-                  if (reviewsState.reviews.isEmpty)
-                    const SliverFillRemaining(
-                      child: _EmptyReviews(),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.all(16),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index >= reviewsState.reviews.length) {
-                              return const Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            }
-
-                            final review = reviewsState.reviews[index];
-                            return _ReviewCard(
-                              review: review,
-                              onRespond: () =>
-                                  _showRespondDialog(context, ref, review),
-                            );
-                          },
-                          childCount: reviewsState.reviews.length +
-                              (reviewsState.isLoading ? 1 : 0),
+      extendBodyBehindAppBar: true,
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.defaultColors,
+        opacity: 0.5,
+        child: SafeArea(
+          child: reviewsState.isLoading && reviewsState.reviews.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: () => ref.read(reviewsProvider.notifier).refresh(),
+                  child: CustomScrollView(
+                    slivers: [
+                      // Summary card
+                      if (reviewsState.summary != null)
+                        SliverToBoxAdapter(
+                          child: _ReviewsSummaryCard(summary: reviewsState.summary!),
                         ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+
+                      // Reviews list
+                      if (reviewsState.reviews.isEmpty)
+                        const SliverFillRemaining(
+                          child: _EmptyReviews(),
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.all(16),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                if (index >= reviewsState.reviews.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
+
+                                final review = reviewsState.reviews[index];
+                                return _ReviewCard(
+                                  review: review,
+                                  onRespond: () =>
+                                      _showRespondDialog(context, ref, review),
+                                );
+                              },
+                              childCount: reviewsState.reviews.length +
+                                  (reviewsState.isLoading ? 1 : 0),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+        ),
+      ),
     );
   }
 
@@ -123,19 +135,20 @@ class _ReviewsSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withValues(alpha: 0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
+      blur: 20,
+      opacity: 0.85,
+      elevation: 3,
+      borderRadius: BorderRadius.circular(20),
+      gradient: LinearGradient(
+        colors: [
+          AppColors.primary.withValues(alpha: 0.15),
+          AppColors.accent.withValues(alpha: 0.08),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
       child: Column(
         children: [
@@ -146,8 +159,8 @@ class _ReviewsSummaryCard extends StatelessWidget {
                 children: [
                   Text(
                     summary.averageRating.toStringAsFixed(1),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.textPrimaryLight,
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
                     ),
@@ -158,7 +171,7 @@ class _ReviewsSummaryCard extends StatelessWidget {
                         index < summary.averageRating.round()
                             ? Icons.star
                             : Icons.star_border,
-                        color: Colors.amber,
+                        color: AppColors.accent,
                         size: 18,
                       );
                     }),
@@ -167,7 +180,7 @@ class _ReviewsSummaryCard extends StatelessWidget {
                   Text(
                     '${summary.totalReviews} ${'reviews'.tr(context)}',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: AppColors.textSecondaryLight,
                       fontSize: 12,
                     ),
                   ),
@@ -189,13 +202,13 @@ class _ReviewsSummaryCard extends StatelessWidget {
                           Text(
                             '$rating',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.8),
+                              color: AppColors.textSecondaryLight,
                               fontSize: 12,
                             ),
                           ),
                           const Icon(
                             Icons.star,
-                            color: Colors.amber,
+                            color: AppColors.accent,
                             size: 12,
                           ),
                           const SizedBox(width: 8),
@@ -205,9 +218,9 @@ class _ReviewsSummaryCard extends StatelessWidget {
                               child: LinearProgressIndicator(
                                 value: percentage,
                                 backgroundColor:
-                                    Colors.white.withValues(alpha: 0.2),
-                                valueColor: const AlwaysStoppedAnimation(
-                                  Colors.amber,
+                                    AppColors.textSecondaryLight.withValues(alpha: 0.2),
+                                valueColor: AlwaysStoppedAnimation(
+                                  AppColors.accent,
                                 ),
                                 minHeight: 8,
                               ),
@@ -219,7 +232,7 @@ class _ReviewsSummaryCard extends StatelessWidget {
                             child: Text(
                               count.toString(),
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
+                                color: AppColors.textSecondaryLight,
                                 fontSize: 12,
                               ),
                             ),
@@ -250,22 +263,18 @@ class _ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
+    return GlassCard(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
+      padding: const EdgeInsets.all(16),
+      blur: 12,
+      opacity: 0.75,
+      elevation: 1,
+      borderRadius: BorderRadius.circular(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
               children: [
                 CircleAvatar(
                   radius: 20,
@@ -431,8 +440,7 @@ class _ReviewCard extends StatelessWidget {
             ],
           ],
         ),
-      ),
-    );
+      );
   }
 
   String _formatDate(DateTime date) {
@@ -701,7 +709,7 @@ class _RespondDialogState extends State<_RespondDialog> {
                           index < widget.review.rating.round()
                               ? Icons.star
                               : Icons.star_border,
-                          color: Colors.amber,
+                          color: AppColors.accent,
                           size: 12,
                         );
                       }),

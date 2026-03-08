@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/community_post_model.dart';
 import '../providers/community_provider.dart';
 import '../widgets/campus_connect_hero.dart';
@@ -37,7 +38,11 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      body: Stack(
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.defaultColors,
+        opacity: 0.3,
+        child: Stack(
         children: [
           RefreshIndicator(
             onRefresh: () async {
@@ -158,6 +163,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

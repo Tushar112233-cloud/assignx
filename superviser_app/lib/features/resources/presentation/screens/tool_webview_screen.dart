@@ -3,6 +3,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../core/services/external_actions_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 
 /// WebView screen for external tools.
 ///
@@ -122,8 +123,12 @@ class _ToolWebViewScreenState extends State<ToolWebViewScreen> {
               )
             : null,
       ),
-      body: _error != null
-          ? _ErrorView(
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.defaultColors,
+        opacity: 0.3,
+        child: _error != null
+            ? _ErrorView(
               error: _error!,
               onRetry: () {
                 setState(() => _error = null);
@@ -131,6 +136,7 @@ class _ToolWebViewScreenState extends State<ToolWebViewScreen> {
               },
             )
           : WebViewWidget(controller: _controller),
+      ),
     );
   }
 

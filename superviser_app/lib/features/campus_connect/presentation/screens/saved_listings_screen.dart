@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/community_post_model.dart';
 import '../providers/community_provider.dart';
 
@@ -61,7 +62,11 @@ class _SavedListingsScreenState extends ConsumerState<SavedListingsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      body: CustomScrollView(
+      body: MeshGradientBackground(
+        position: MeshPosition.topLeft,
+        colors: MeshColors.coolColors,
+        opacity: 0.3,
+        child: CustomScrollView(
         slivers: [
           // Safe area
           SliverToBoxAdapter(
@@ -218,6 +223,7 @@ class _SavedListingsScreenState extends ConsumerState<SavedListingsScreen> {
             child: SizedBox(height: 100),
           ),
         ],
+      ),
       ),
     );
   }

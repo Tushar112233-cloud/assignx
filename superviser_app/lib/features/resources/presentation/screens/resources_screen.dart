@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../providers/resources_provider.dart';
 import '../widgets/tool_card.dart';
 import '../widgets/training_library.dart';
@@ -38,7 +39,10 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text('Resources'.tr(context)),
         bottom: TabBar(
           controller: _tabController,
@@ -51,13 +55,20 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          _ToolsTab(),
-          _TrainingTab(),
-          _PricingTab(),
-        ],
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        colors: MeshColors.coolColors,
+        opacity: 0.4,
+        child: SafeArea(
+          child: TabBarView(
+            controller: _tabController,
+            children: const [
+              _ToolsTab(),
+              _TrainingTab(),
+              _PricingTab(),
+            ],
+          ),
+        ),
       ),
     );
   }

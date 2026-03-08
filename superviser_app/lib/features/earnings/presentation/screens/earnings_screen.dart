@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/earnings_model.dart';
 import '../../data/models/transaction_model.dart';
 import '../providers/earnings_provider.dart';
@@ -39,7 +41,10 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
     final transactionsState = ref.watch(transactionsProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text('Earnings'.tr(context)),
         bottom: TabBar(
           controller: _tabController,
@@ -59,9 +64,14 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
           ),
         ],
       ),
-      body: earningsState.isLoading && earningsState.summary == null
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        colors: MeshColors.warmColors,
+        opacity: 0.4,
+        child: SafeArea(
+          child: earningsState.isLoading && earningsState.summary == null
+              ? const Center(child: CircularProgressIndicator())
+              : TabBarView(
               controller: _tabController,
               children: [
                 // Overview Tab
@@ -95,6 +105,8 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
                 ),
               ],
             ),
+        ),
+      ),
     );
   }
 
@@ -421,17 +433,13 @@ class _CommissionTab extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Total earnings card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
+          GlassCard(
+            blur: 15,
+            opacity: 0.75,
+            elevation: 2,
+            borderRadius: BorderRadius.circular(16),
+            padding: const EdgeInsets.all(20),
+            child: Column(
                 children: [
                   Text(
                     'Total Commission'.tr(context),
@@ -457,7 +465,6 @@ class _CommissionTab extends StatelessWidget {
                 ],
               ),
             ),
-          ),
           const SizedBox(height: 24),
 
           // Pie chart
@@ -513,18 +520,14 @@ class _CommissionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
+    return GlassCard(
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
+      padding: const EdgeInsets.all(12),
+      blur: 10,
+      opacity: 0.7,
+      elevation: 1,
+      borderRadius: BorderRadius.circular(12),
+      child: Row(
           children: [
             Container(
               width: 40,
@@ -572,8 +575,7 @@ class _CommissionItem extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -622,23 +624,13 @@ class _PerformanceInsightsCard extends StatelessWidget {
     final isPositiveTrend = (growthPercentage ?? 0) >= 0;
     final progressColor = _getProgressColor(percentage);
 
-    return Container(
+    return GlassCard(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      blur: 15,
+      opacity: 0.75,
+      elevation: 2,
+      borderRadius: BorderRadius.circular(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -889,22 +881,13 @@ class _SnapshotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withValues(alpha: 0.15),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.08),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      blur: 10,
+      opacity: 0.7,
+      elevation: 1,
+      borderRadius: BorderRadius.circular(16),
+      borderColor: color.withValues(alpha: 0.15),
       child: Column(
         children: [
           Icon(icon, size: 20, color: color),

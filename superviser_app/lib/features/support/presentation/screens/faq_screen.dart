@@ -5,6 +5,8 @@ import '../../../../core/router/routes.dart';
 import '../../../../core/services/external_actions_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../providers/support_provider.dart';
 import '../widgets/faq_accordion.dart';
 
@@ -39,7 +41,10 @@ class _FAQScreenState extends ConsumerState<FAQScreen> {
     final state = ref.watch(faqProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: _isSearching
             ? TextField(
                 controller: _searchController,
@@ -68,18 +73,25 @@ class _FAQScreenState extends ConsumerState<FAQScreen> {
           ),
         ],
       ),
-      body: state.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : state.searchQuery.isNotEmpty
-              ? _SearchResults(
-                  results: state.searchResults,
-                  query: state.searchQuery,
-                  isSearching: state.isSearching,
-                )
-              : _FAQContent(
-                  items: state.items,
-                  categories: state.categories,
-                ),
+      body: MeshGradientBackground(
+        position: MeshPosition.topLeft,
+        colors: MeshColors.coolColors,
+        opacity: 0.35,
+        child: SafeArea(
+          child: state.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : state.searchQuery.isNotEmpty
+                  ? _SearchResults(
+                      results: state.searchResults,
+                      query: state.searchQuery,
+                      isSearching: state.isSearching,
+                    )
+                  : _FAQContent(
+                      items: state.items,
+                      categories: state.categories,
+                    ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.pushNamed(RouteNames.support),
         icon: const Icon(Icons.support_agent),
@@ -262,17 +274,14 @@ class _QuickLinkCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-        ),
-      ),
+    return GlassCard(
+      blur: 10,
+      opacity: 0.7,
+      elevation: 1,
+      padding: EdgeInsets.zero,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(

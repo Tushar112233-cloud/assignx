@@ -5,6 +5,8 @@ import '../../../../core/router/routes.dart';
 import '../../../../core/services/external_actions_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/ticket_model.dart';
 import '../providers/support_provider.dart';
 import '../widgets/faq_accordion.dart';
@@ -43,7 +45,10 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text('Support'.tr(context)),
         bottom: TabBar(
           controller: _tabController,
@@ -54,18 +59,25 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _TicketsTab(),
-          _NewTicketTab(
-            onSuccess: () {
-              _tabController.animateTo(0);
-              ref.read(ticketsProvider.notifier).refresh();
-            },
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        colors: MeshColors.coolColors,
+        opacity: 0.4,
+        child: SafeArea(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _TicketsTab(),
+              _NewTicketTab(
+                onSuccess: () {
+                  _tabController.animateTo(0);
+                  ref.read(ticketsProvider.notifier).refresh();
+                },
+              ),
+              const _FAQTab(),
+            ],
           ),
-          const _FAQTab(),
-        ],
+        ),
       ),
     );
   }
@@ -275,18 +287,13 @@ class QuickSupportActions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      elevation: 0,
+    return GlassCard(
+      blur: 12,
+      opacity: 0.75,
+      elevation: 2,
       margin: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      padding: const EdgeInsets.all(16),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -346,7 +353,6 @@ class QuickSupportActions extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

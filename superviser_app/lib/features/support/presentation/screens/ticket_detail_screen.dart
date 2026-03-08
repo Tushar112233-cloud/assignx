@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/ticket_model.dart';
 import '../providers/support_provider.dart';
 import '../widgets/ticket_form.dart';
@@ -58,7 +60,10 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
     });
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: state.ticket != null
             ? Text('#${state.ticket!.ticketNumber ?? state.ticket!.id.substring(0, 8)}')
             : Text('Ticket'.tr(context)),
@@ -95,13 +100,18 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
           ],
         ],
       ),
-      body: state.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : state.error != null
-              ? _ErrorState(error: state.error!)
-              : state.ticket == null
-                  ? const _NotFoundState()
-                  : Column(
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.coolColors,
+        opacity: 0.3,
+        child: SafeArea(
+          child: state.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : state.error != null
+                  ? _ErrorState(error: state.error!)
+                  : state.ticket == null
+                      ? const _NotFoundState()
+                      : Column(
                       children: [
                         // Ticket header
                         _TicketHeader(ticket: state.ticket!),
@@ -146,6 +156,8 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
                           ),
                       ],
                     ),
+        ),
+      ),
     );
   }
 
@@ -209,18 +221,12 @@ class _TicketHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
+      blur: 12,
+      opacity: 0.75,
+      elevation: 2,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            offset: const Offset(0, 2),
-            blurRadius: 4,
-          ),
-        ],
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

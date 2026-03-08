@@ -8,6 +8,8 @@ import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/translation/translation_provider.dart';
 import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/router/routes.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../../shared/widgets/misc/language_picker.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
@@ -20,7 +22,10 @@ class SettingsScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
+        extendBodyBehindAppBar: true,
         appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           title: Text('Settings'.tr(context)),
           bottom: TabBar(
             isScrollable: true,
@@ -36,13 +41,20 @@ class SettingsScreen extends ConsumerWidget {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [
-            _NotificationsTab(),
-            _AppearanceTab(),
-            _PrivacyTab(),
-            _LanguageTab(),
-          ],
+        body: MeshGradientBackground(
+          position: MeshPosition.topRight,
+          colors: MeshColors.modernColors,
+          opacity: 0.4,
+          child: SafeArea(
+            child: const TabBarView(
+              children: [
+                _NotificationsTab(),
+                _AppearanceTab(),
+                _PrivacyTab(),
+                _LanguageTab(),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -453,14 +465,11 @@ class _SettingsCard extends StatelessWidget {
                 ),
           ),
         ),
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: Theme.of(context).colorScheme.outlineVariant,
-            ),
-          ),
+        GlassCard(
+          blur: 12,
+          opacity: 0.75,
+          elevation: 1,
+          padding: EdgeInsets.zero,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Column(

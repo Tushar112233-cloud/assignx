@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/profile_model.dart';
 import '../providers/profile_provider.dart';
 
@@ -16,8 +18,16 @@ class BlacklistScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Doer Blacklist'.tr(context)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: blacklistState.isLoading && blacklistState.blacklistedDoers.isEmpty
+      extendBodyBehindAppBar: true,
+      body: MeshGradientBackground(
+        position: MeshPosition.topLeft,
+        colors: MeshColors.warmColors,
+        opacity: 0.4,
+        child: SafeArea(
+          child: blacklistState.isLoading && blacklistState.blacklistedDoers.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: () =>
@@ -36,6 +46,8 @@ class BlacklistScreen extends ConsumerWidget {
                       },
                     ),
             ),
+        ),
+      ),
     );
   }
 
@@ -89,20 +101,17 @@ class _BlacklistCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
+    return GlassCard(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: AppColors.error.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      padding: const EdgeInsets.all(16),
+      blur: 12,
+      opacity: 0.75,
+      elevation: 1,
+      borderRadius: BorderRadius.circular(16),
+      borderColor: AppColors.error.withValues(alpha: 0.2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             Row(
               children: [
                 // Avatar
@@ -245,8 +254,7 @@ class _BlacklistCard extends StatelessWidget {
             ],
           ],
         ),
-      ),
-    );
+      );
   }
 
   String _formatDate(DateTime date) {

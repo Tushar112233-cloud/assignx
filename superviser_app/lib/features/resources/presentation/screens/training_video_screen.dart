@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/training_video_model.dart';
 import '../providers/resources_provider.dart';
 
@@ -159,177 +161,204 @@ class _TrainingVideoPlayerScreenState
           ),
           // Video info
           Expanded(
-            child: Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
+            child: MeshGradientBackground(
+              position: MeshPosition.bottomRight,
+              colors: MeshColors.coolColors,
+              opacity: 0.3,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title
-                    Text(
-                      video.title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Meta info
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: video.category.color.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                video.category.icon,
-                                size: 14,
-                                color: video.category.color,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                video.category.displayName,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: video.category.color,
-                                  fontWeight: FontWeight.w600,
+                    // Title & meta in glass card
+                    GlassCard(
+                      blur: 12,
+                      opacity: 0.75,
+                      elevation: 1,
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            video.title,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
                                 ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: video.category.color.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      video.category.icon,
+                                      size: 14,
+                                      color: video.category.color,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      video.category.displayName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: video.category.color,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: video.difficulty.color.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  video.difficulty.displayName,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: video.difficulty.color,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.schedule,
+                                    size: 14,
+                                    color: AppColors.textSecondaryLight,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    video.formattedDuration,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: AppColors.textSecondaryLight,
+                                        ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: video.difficulty.color.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            video.difficulty.displayName,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: video.difficulty.color,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.schedule,
-                              size: 14,
-                              color: AppColors.textSecondaryLight,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              video.formattedDuration,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.textSecondaryLight,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Description
-                    Text(
-                      video.description,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    // Instructor
-                    if (video.instructor != null)
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                            child: Icon(
-                              Icons.person,
-                              size: 18,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Instructor'.tr(context),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.copyWith(
-                                        color: AppColors.textSecondaryLight,
-                                      ),
-                                ),
-                                Text(
-                                  video.instructor!,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
+                          const SizedBox(height: 16),
+                          Text(
+                            video.description,
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],
                       ),
-                    const SizedBox(height: 24),
-                    // Tags
-                    if (video.tags.isNotEmpty) ...[
-                      Text(
-                        'Topics'.tr(context),
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
+                    ),
+                    const SizedBox(height: 16),
+                    // Instructor glass card
+                    if (video.instructor != null)
+                      GlassCard(
+                        blur: 10,
+                        opacity: 0.7,
+                        elevation: 1,
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                              child: Icon(
+                                Icons.person,
+                                size: 18,
+                                color: AppColors.primary,
+                              ),
                             ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Instructor'.tr(context),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: AppColors.textSecondaryLight,
+                                        ),
+                                  ),
+                                  Text(
+                                    video.instructor!,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: video.tags.map((tag) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  AppColors.textSecondaryLight.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Text(
-                              tag,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    color: AppColors.textSecondaryLight,
+                    const SizedBox(height: 16),
+                    // Tags glass card
+                    if (video.tags.isNotEmpty)
+                      GlassCard(
+                        blur: 10,
+                        opacity: 0.7,
+                        elevation: 1,
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Topics'.tr(context),
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
                                   ),
                             ),
-                          );
-                        }).toList(),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: video.tags.map((tag) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        AppColors.textSecondaryLight.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    tag,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: AppColors.textSecondaryLight,
+                                        ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
                     const SizedBox(height: 24),
                     // Mark as complete button
                     if (!_isCompleted)

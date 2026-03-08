@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/community_post_model.dart';
 import '../providers/community_provider.dart';
 import '../widgets/comment_section.dart';
@@ -139,7 +140,11 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      body: postAsync.when(
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        colors: MeshColors.defaultColors,
+        opacity: 0.25,
+        child: postAsync.when(
         data: (post) {
           if (post == null) {
             return _buildNotFound(context);
@@ -230,6 +235,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _buildError(context, e.toString()),
+      ),
       ),
     );
   }

@@ -6,11 +6,13 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/profile_model.dart';
 import '../providers/profile_provider.dart';
 
 /// Profile screen showing user profile with edit functionality.
+/// This is a TAB screen: transparent background, bottom padding 100.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -35,7 +37,10 @@ class ProfileScreen extends ConsumerWidget {
             : null);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text('My Profile'.tr(context)),
         actions: [
           if (effectiveProfile != null)
@@ -103,18 +108,21 @@ class _ProfileContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Header with avatar
-        Container(
+        // Glass hero card with avatar/name/stats
+        GlassCard(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.primary,
-                AppColors.primary.withValues(alpha: 0.8),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+          blur: 20,
+          opacity: 0.85,
+          elevation: 3,
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primary.withValues(alpha: 0.08),
+              AppColors.accent.withValues(alpha: 0.04),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
           child: Column(
             children: [
@@ -124,7 +132,7 @@ class _ProfileContent extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundColor: Colors.white,
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                       backgroundImage: profile.avatarUrl != null
                           ? NetworkImage(profile.avatarUrl!)
                           : null,
@@ -167,19 +175,17 @@ class _ProfileContent extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 profile.fullName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimaryLight,
+                    ),
               ),
               const SizedBox(height: 4),
               Text(
                 profile.email,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 14,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondaryLight,
+                    ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -192,7 +198,7 @@ class _ProfileContent extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: AppColors.success.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -201,14 +207,15 @@ class _ProfileContent extends StatelessWidget {
                           Icon(
                             Icons.verified,
                             size: 14,
-                            color: Colors.greenAccent.shade200,
+                            color: AppColors.success,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             'Verified'.tr(context),
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.success,
                               fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -221,7 +228,7 @@ class _ProfileContent extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: Colors.amber.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -236,7 +243,7 @@ class _ProfileContent extends StatelessWidget {
                         Text(
                           (profile.rating ?? 0).toStringAsFixed(1),
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Colors.amber,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
@@ -253,10 +260,10 @@ class _ProfileContent extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.2),
+                  color: AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppColors.accent.withValues(alpha: 0.4),
+                    color: AppColors.accent.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -283,10 +290,13 @@ class _ProfileContent extends StatelessWidget {
           ),
         ),
 
-        // Stats row
-        Container(
+        // Glass stat row
+        GlassCard(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           padding: const EdgeInsets.all(16),
-          color: AppColors.surface,
+          blur: 15,
+          opacity: 0.7,
+          elevation: 2,
           child: Row(
             children: [
               Expanded(
@@ -325,7 +335,7 @@ class _ProfileContent extends StatelessWidget {
 
         // Bio
         if (profile.bio != null && profile.bio!.isNotEmpty)
-          _ProfileSection(
+          _GlassProfileSection(
             title: 'About'.tr(context),
             child: Text(
               profile.bio!,
@@ -335,7 +345,7 @@ class _ProfileContent extends StatelessWidget {
 
         // Specializations
         if (profile.specializations.isNotEmpty)
-          _ProfileSection(
+          _GlassProfileSection(
             title: 'Specializations'.tr(context),
             child: Wrap(
               spacing: 8,
@@ -355,7 +365,7 @@ class _ProfileContent extends StatelessWidget {
 
         // Qualifications
         if (profile.qualifications.isNotEmpty)
-          _ProfileSection(
+          _GlassProfileSection(
             title: 'Qualifications'.tr(context),
             child: Column(
               children: profile.qualifications.map((qual) {
@@ -366,7 +376,7 @@ class _ProfileContent extends StatelessWidget {
 
         // Languages
         if (profile.languages.isNotEmpty)
-          _ProfileSection(
+          _GlassProfileSection(
             title: 'Languages'.tr(context),
             child: Wrap(
               spacing: 8,
@@ -381,7 +391,7 @@ class _ProfileContent extends StatelessWidget {
           ),
 
         // Contact Info
-        _ProfileSection(
+        _GlassProfileSection(
           title: 'Contact Information'.tr(context),
           child: Column(
             children: [
@@ -407,7 +417,7 @@ class _ProfileContent extends StatelessWidget {
         ),
 
         // Availability
-        _ProfileSection(
+        _GlassProfileSection(
           title: 'Availability'.tr(context),
           child: Row(
             children: [
@@ -457,8 +467,45 @@ class _ProfileContent extends StatelessWidget {
         // Profile Menu
         const _ProfileMenu(),
 
-        const SizedBox(height: 32),
+        // Bottom padding for tab screen
+        const SizedBox(height: 100),
       ],
+    );
+  }
+}
+
+/// Glass profile section card.
+class _GlassProfileSection extends StatelessWidget {
+  const _GlassProfileSection({
+    required this.title,
+    required this.child,
+  });
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.all(16),
+      blur: 12,
+      opacity: 0.7,
+      elevation: 1,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimaryLight,
+                ),
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
     );
   }
 }
@@ -469,15 +516,12 @@ class _ProfileMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
+    return GlassCard(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-        ),
-      ),
+      padding: EdgeInsets.zero,
+      blur: 12,
+      opacity: 0.7,
+      elevation: 1,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -593,6 +637,7 @@ class _StatItem extends StatelessWidget {
           value,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
+                color: AppColors.primary,
               ),
         ),
         const SizedBox(height: 4),
@@ -603,44 +648,6 @@ class _StatItem extends StatelessWidget {
               ),
         ),
       ],
-    );
-  }
-}
-
-class _ProfileSection extends StatelessWidget {
-  const _ProfileSection({
-    required this.title,
-    required this.child,
-  });
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
     );
   }
 }
@@ -922,76 +929,69 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 24),
 
             // Availability
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: AppColors.textSecondaryLight.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Availability Settings'.tr(context),
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                    SwitchListTile(
-                      title: Text('Available for Projects'.tr(context)),
-                      subtitle: Text('Allow new project assignments'.tr(context)),
-                      value: _isAvailable,
-                      onChanged: (value) {
-                        setState(() => _isAvailable = value);
-                      },
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    const Divider(),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Max Concurrent Projects'.tr(context)),
-                              Text(
-                                '$_maxProjects ${'projects'.tr(context)}',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppColors.textSecondaryLight,
-                                    ),
-                              ),
-                            ],
-                          ),
+            GlassCard(
+              blur: 12,
+              opacity: 0.7,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Availability Settings'.tr(context),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                        Row(
+                  ),
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    title: Text('Available for Projects'.tr(context)),
+                    subtitle: Text('Allow new project assignments'.tr(context)),
+                    value: _isAvailable,
+                    onChanged: (value) {
+                      setState(() => _isAvailable = value);
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  const Divider(),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            IconButton(
-                              onPressed: _maxProjects > 1
-                                  ? () => setState(() => _maxProjects--)
-                                  : null,
-                              icon: const Icon(Icons.remove_circle_outline),
-                            ),
+                            Text('Max Concurrent Projects'.tr(context)),
                             Text(
-                              _maxProjects.toString(),
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            IconButton(
-                              onPressed: _maxProjects < 20
-                                  ? () => setState(() => _maxProjects++)
-                                  : null,
-                              icon: const Icon(Icons.add_circle_outline),
+                              '$_maxProjects ${'projects'.tr(context)}',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondaryLight,
+                                  ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: _maxProjects > 1
+                                ? () => setState(() => _maxProjects--)
+                                : null,
+                            icon: const Icon(Icons.remove_circle_outline),
+                          ),
+                          Text(
+                            _maxProjects.toString(),
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          IconButton(
+                            onPressed: _maxProjects < 20
+                                ? () => setState(() => _maxProjects++)
+                                : null,
+                            icon: const Icon(Icons.add_circle_outline),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
