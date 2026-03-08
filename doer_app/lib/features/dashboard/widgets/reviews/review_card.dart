@@ -226,7 +226,7 @@ class ReviewCard extends StatelessWidget {
               const Color(0xFF22C55E)),
         if (review.timelinessRating != null)
           _buildCategoryChip('Timeliness', review.timelinessRating!,
-              const Color(0xFF3B82F6)),
+              AppColors.accent),
         if (review.communicationRating != null)
           _buildCategoryChip('Communication', review.communicationRating!,
               const Color(0xFF8B5CF6)),

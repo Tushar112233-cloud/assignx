@@ -72,7 +72,7 @@ class AchievementCards extends StatelessWidget {
           description: 'Receive 25+ reviews',
           icon: Icons.military_tech_rounded,
           requiredCount: 25,
-          color: const Color(0xFF3B82F6),
+          color: AppColors.accent,
           isUnlocked: (r, _) => r.length >= 25,
           progress: (r, _) => (r.length / 25).clamp(0.0, 1.0),
         ),

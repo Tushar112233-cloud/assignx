@@ -517,14 +517,14 @@ class ProfileTabs extends ConsumerWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1E3A5F),
-            Color(0xFF3B6CB5),
+            AppColors.primary,
+            AppColors.accent,
           ],
         ),
         borderRadius: AppSpacing.borderRadiusLg,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E3A5F).withValues(alpha: 0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -840,12 +840,12 @@ class ProfileTabs extends ConsumerWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF1E3A5F), Color(0xFF5A7CFF)],
+            colors: [AppColors.primary, AppColors.accent],
           ),
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF5A7CFF).withValues(alpha: 0.3),
+              color: AppColors.accent.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

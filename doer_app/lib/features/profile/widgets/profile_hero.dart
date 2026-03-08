@@ -30,9 +30,9 @@ class ProfileHero extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1E3A5F),
-            Color(0xFF3B6CB5),
-            Color(0xFF5A7CFF),
+            AppColors.primaryDark,
+            AppColors.primary,
+            AppColors.accent,
           ],
         ),
       ),

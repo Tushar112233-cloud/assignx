@@ -26,8 +26,8 @@ class WelcomeSection extends ConsumerWidget {
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFF1E3A5F),
-            Color(0xFF2D4A6F),
+            AppColors.primary,
+            AppColors.primaryLight,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,

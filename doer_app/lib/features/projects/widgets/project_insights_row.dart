@@ -94,7 +94,7 @@ class _ProjectInsightsRowState extends State<ProjectInsightsRow>
               icon: Icons.folder_rounded,
               label: 'Total Projects'.tr(context),
               value: widget.stats.totalCount.toString(),
-              gradient: const [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+              gradient: const [AppColors.accent, AppColors.accentLight],
             ),
             const SizedBox(width: AppSpacing.sm),
             _InsightCard(

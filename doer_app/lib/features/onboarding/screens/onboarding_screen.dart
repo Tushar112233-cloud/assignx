@@ -70,7 +70,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.work_outline,
       title: 'Countless Opportunities',
       subtitle: 'Find endless opportunities in your field of expertise',
-      color: Color(0xFF3B82F6),
+      color: AppColors.accent,
     ),
     OnboardingSlide(
       icon: Icons.monetization_on_outlined,

@@ -195,7 +195,7 @@ class RatingAnalyticsDashboard extends StatelessWidget {
         _buildCategoryBar(
           'Timeliness',
           timelinessAvg,
-          const Color(0xFF3B82F6),
+          AppColors.accent,
           Icons.schedule_rounded,
         ),
         const SizedBox(height: AppSpacing.sm),
