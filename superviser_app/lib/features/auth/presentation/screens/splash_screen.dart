@@ -22,9 +22,8 @@
 /// - Not Authenticated -> `/login`
 ///
 /// ## Animations
-/// Uses `flutter_animate` for smooth entrance animations:
-/// - Logo: Fade in + scale with ease-out-back curve
-/// - App name: Fade in + slide up
+/// - Logo: Spring scale-in animation (~800ms)
+/// - App name: Shimmer/fade effect
 /// - Tagline: Delayed fade in
 /// - Loading indicator: Delayed fade in
 ///
@@ -60,6 +59,7 @@ import '../../../../core/config/constants.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../providers/auth_provider.dart';
 
 /// {@macro splash_screen}
@@ -72,11 +72,35 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 /// State for [SplashScreen] managing navigation timing.
-class _SplashScreenState extends ConsumerState<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _logoController;
+  late Animation<double> _logoScale;
+
   @override
   void initState() {
     super.initState();
+
+    // Spring scale-in animation for the logo (~800ms)
+    _logoController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _logoController,
+        curve: Curves.elasticOut,
+      ),
+    );
+    _logoController.forward();
+
     _navigateAfterDelay();
+  }
+
+  @override
+  void dispose() {
+    _logoController.dispose();
+    super.dispose();
   }
 
   /// Initiates navigation after the splash duration.
@@ -143,77 +167,88 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.primary,
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo/Icon container with animation
-              _buildAnimatedLogo(),
-              const SizedBox(height: 32),
+      backgroundColor: AppColors.primary,
+      body: MeshGradientBackground(
+        position: MeshPosition.center,
+        colors: const [
+          AppColors.meshAmber,
+          AppColors.meshGold,
+          AppColors.meshOrange,
+          AppColors.meshPeach,
+        ],
+        opacity: 0.7,
+        animated: true,
+        animationDuration: const Duration(seconds: 20),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo with spring scale-in animation
+                _buildAnimatedLogo(),
+                const SizedBox(height: 32),
 
-              // App Name with slide-up animation
-              _buildAnimatedAppName(),
+                // App name with shimmer/fade effect
+                _buildShimmerAppName(),
 
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
 
-              // Tagline with fade animation
-              _buildAnimatedTagline(),
+                // Tagline with fade animation
+                _buildAnimatedTagline(),
 
-              const SizedBox(height: 64),
+                const SizedBox(height: 64),
 
-              // Loading indicator with delayed fade
-              _buildAnimatedLoadingIndicator(),
-            ],
+                // Loading indicator with delayed fade
+                _buildAnimatedLoadingIndicator(),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  /// Builds the animated logo container.
-  ///
-  /// The logo fades in and scales from 80% to 100% with an
-  /// ease-out-back curve for a subtle bounce effect.
+  /// Builds the animated logo container with spring scale-in.
   Widget _buildAnimatedLogo() {
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: const Icon(
-        Icons.admin_panel_settings,
-        size: 64,
-        color: AppColors.primary,
-      ),
-    )
-        .animate()
-        .fadeIn(duration: 600.ms)
-        .scale(
-          begin: const Offset(0.8, 0.8),
-          end: const Offset(1, 1),
-          duration: 600.ms,
-          curve: Curves.easeOutBack,
+    return AnimatedBuilder(
+      animation: _logoScale,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _logoScale.value,
+          child: child,
         );
+      },
+      child: Container(
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.accent.withValues(alpha: 0.3),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.admin_panel_settings,
+          size: 64,
+          color: AppColors.primary,
+        ),
+      ),
+    );
   }
 
-  /// Builds the animated app name text.
-  ///
-  /// Fades in and slides up with a 300ms delay after the logo.
-  Widget _buildAnimatedAppName() {
+  /// Builds the app name with a shimmer/fade effect.
+  Widget _buildShimmerAppName() {
     return Text(
       AppConstants.appName,
       style: AppTypography.headlineLarge.copyWith(
@@ -221,14 +256,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         fontWeight: FontWeight.bold,
       ),
     )
-        .animate(delay: 300.ms)
-        .fadeIn(duration: 500.ms)
-        .slideY(begin: 0.3, end: 0);
+        .animate(delay: 400.ms)
+        .fadeIn(duration: 600.ms)
+        .shimmer(
+          duration: 1500.ms,
+          delay: 600.ms,
+          color: AppColors.accent.withValues(alpha: 0.4),
+        );
   }
 
   /// Builds the animated tagline text.
-  ///
-  /// Simple fade in with 500ms delay for staggered appearance.
   Widget _buildAnimatedTagline() {
     return Text(
       AppConstants.tagline,
@@ -241,9 +278,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   /// Builds the animated loading indicator.
-  ///
-  /// Fades in with 700ms delay, appearing after the branding
-  /// is fully visible to indicate ongoing background activity.
   Widget _buildAnimatedLoadingIndicator() {
     return SizedBox(
       width: 32,

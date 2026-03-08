@@ -10,7 +10,9 @@ import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/extensions/context_extensions.dart';
 import '../../../../shared/widgets/buttons/primary_button.dart';
+import '../../../../shared/widgets/glass_container.dart';
 import '../../../../shared/widgets/inputs/app_text_field.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -148,124 +150,147 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = authState.isLoading;
 
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 48),
-                _buildLogo(),
-                const SizedBox(height: 48),
-                _buildWelcomeText(),
-                const SizedBox(height: 32),
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: const [
+          AppColors.meshAmber,
+          AppColors.meshOrange,
+          AppColors.meshPeach,
+          AppColors.meshGold,
+        ],
+        opacity: 0.6,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 48),
+                  _buildLogo(),
+                  const SizedBox(height: 48),
+                  _buildWelcomeText(),
+                  const SizedBox(height: 32),
 
-                if (!_otpSent) ...[
-                  EmailTextField(
-                    controller: _emailController,
-                    focusNode: _emailFocusNode,
-                    validator: Validators.email,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _handleContinue(),
-                  ),
-                  const SizedBox(height: 24),
-                  PrimaryButton(
-                    text: 'Continue'.tr(context),
-                    onPressed: _handleContinue,
-                    isLoading: isLoading,
-                  ),
-                ] else ...[
-                  // Show email being verified
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                    ),
-                    child: Row(
+                  // Glass container wrapping the form area
+                  GlassContainer(
+                    blur: 15,
+                    opacity: 0.85,
+                    borderRadius: BorderRadius.circular(20),
+                    borderColor: Colors.white.withValues(alpha: 0.3),
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Icon(Icons.email_outlined, color: AppColors.primary, size: 20),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _email,
-                            style: AppTypography.bodyMedium.copyWith(color: AppColors.primary),
+                        if (!_otpSent) ...[
+                          EmailTextField(
+                            controller: _emailController,
+                            focusNode: _emailFocusNode,
+                            validator: Validators.email,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _handleContinue(),
                           ),
-                        ),
-                        GestureDetector(
-                          onTap: () => setState(() {
-                            _otpSent = false;
-                            _otpController.clear();
-                            _cooldownTimer?.cancel();
-                            _resendCooldown = 0;
-                          }),
-                          child: Icon(Icons.edit, size: 18, color: AppColors.primary),
-                        ),
+                          const SizedBox(height: 24),
+                          PrimaryButton(
+                            text: 'Continue'.tr(context),
+                            onPressed: _handleContinue,
+                            isLoading: isLoading,
+                          ),
+                        ] else ...[
+                          // Show email being verified
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.email_outlined, color: AppColors.accent, size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _email,
+                                    style: AppTypography.bodyMedium.copyWith(color: AppColors.accent),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => setState(() {
+                                    _otpSent = false;
+                                    _otpController.clear();
+                                    _cooldownTimer?.cancel();
+                                    _resendCooldown = 0;
+                                  }),
+                                  child: Icon(Icons.edit, size: 18, color: AppColors.accent),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          Text(
+                            'Enter the 6-digit code sent to your email'.tr(context),
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          AppTextField(
+                            controller: _otpController,
+                            focusNode: _otpFocusNode,
+                            label: 'Verification Code'.tr(context),
+                            hint: '000000',
+                            prefixIcon: Icons.lock_outline,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _handleVerify(),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Resend row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Didn't receive the code? ".tr(context),
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              if (_resendCooldown > 0)
+                                Text(
+                                  'Resend in ${_resendCooldown}s',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppColors.textSecondaryLight,
+                                  ),
+                                )
+                              else
+                                TertiaryButton(
+                                  text: 'Resend'.tr(context),
+                                  onPressed: _handleResendOTP,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          PrimaryButton(
+                            text: 'Verify'.tr(context),
+                            onPressed: _handleVerify,
+                            isLoading: isLoading,
+                          ),
+                        ],
                       ],
                     ),
                   ),
+
                   const SizedBox(height: 24),
-
-                  Text(
-                    'Enter the 6-digit code sent to your email'.tr(context),
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  AppTextField(
-                    controller: _otpController,
-                    focusNode: _otpFocusNode,
-                    label: 'Verification Code'.tr(context),
-                    hint: '000000',
-                    prefixIcon: Icons.lock_outline,
-                    keyboardType: TextInputType.number,
-                    maxLength: 6,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _handleVerify(),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Resend row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Didn't receive the code? ".tr(context),
-                        style: AppTypography.bodySmall.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      if (_resendCooldown > 0)
-                        Text(
-                          'Resend in ${_resendCooldown}s',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.textSecondaryLight,
-                          ),
-                        )
-                      else
-                        TertiaryButton(
-                          text: 'Resend'.tr(context),
-                          onPressed: _handleResendOTP,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  PrimaryButton(
-                    text: 'Verify'.tr(context),
-                    onPressed: _handleVerify,
-                    isLoading: isLoading,
-                  ),
+                  _buildRegisterLink(),
                 ],
-
-                const SizedBox(height: 24),
-                _buildRegisterLink(),
-              ],
+              ),
             ),
           ),
         ),
@@ -281,6 +306,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         decoration: BoxDecoration(
           color: AppColors.primary,
           borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.accent.withValues(alpha: 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: const Icon(
           Icons.admin_panel_settings,
@@ -299,6 +331,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           'Welcome Back'.tr(context),
           style: AppTypography.headlineLarge.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 8),

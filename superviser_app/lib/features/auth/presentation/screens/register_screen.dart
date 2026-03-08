@@ -10,7 +10,9 @@ import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/extensions/context_extensions.dart';
 import '../../../../shared/widgets/buttons/primary_button.dart';
+import '../../../../shared/widgets/glass_container.dart';
 import '../../../../shared/widgets/inputs/app_text_field.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -232,27 +234,56 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 onPressed: () => _goToStep(_currentStep - 1),
               )
             : null,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Step indicator
-            _buildStepIndicator(),
+      extendBodyBehindAppBar: true,
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: const [
+          AppColors.meshAmber,
+          AppColors.meshOrange,
+          AppColors.meshPeach,
+          AppColors.meshGold,
+        ],
+        opacity: 0.6,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Step indicator
+              _buildStepIndicator(),
 
-            // Pages
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildStep1(),
-                  _buildStep2(),
-                  _buildStep3(),
-                  _buildStep4(isLoading),
-                ],
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Become a Supervisor'.tr(context),
+                    style: AppTypography.headlineLarge.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+
+              // Pages
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildStep1(),
+                    _buildStep2(),
+                    _buildStep3(),
+                    _buildStep4(isLoading),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -269,7 +300,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               margin: EdgeInsets.only(right: index < 3 ? 8 : 0),
               height: 4,
               decoration: BoxDecoration(
-                color: isActive ? AppColors.primary : AppColors.textSecondaryLight.withOpacity(0.2),
+                color: isActive ? AppColors.accent : AppColors.textSecondaryLight.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -282,47 +313,54 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget _buildStep1() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Personal Information'.tr(context),
-            style: AppTypography.headlineMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
+      child: GlassContainer(
+        blur: 15,
+        opacity: 0.85,
+        borderRadius: BorderRadius.circular(20),
+        borderColor: Colors.white.withValues(alpha: 0.3),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Personal Information'.tr(context),
+              style: AppTypography.headlineMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Enter your name and email to get started'.tr(context),
-            style: AppTypography.bodyLarge.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            const SizedBox(height: 8),
+            Text(
+              'Enter your name and email to get started'.tr(context),
+              style: AppTypography.bodyLarge.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
-          AppTextField(
-            controller: _nameController,
-            label: 'Full Name'.tr(context),
-            hint: 'Enter your full name'.tr(context),
-            prefixIcon: Icons.person_outlined,
-            validator: Validators.name,
-            textInputAction: TextInputAction.next,
-            textCapitalization: TextCapitalization.words,
-          ),
-          const SizedBox(height: 16),
-          EmailTextField(
-            controller: _emailController,
-            validator: Validators.email,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _handleNext(),
-          ),
-          const SizedBox(height: 32),
-          PrimaryButton(
-            text: 'Next'.tr(context),
-            onPressed: _handleNext,
-          ),
-          const SizedBox(height: 24),
-          _buildLoginLink(),
-        ],
+            const SizedBox(height: 32),
+            AppTextField(
+              controller: _nameController,
+              label: 'Full Name'.tr(context),
+              hint: 'Enter your full name'.tr(context),
+              prefixIcon: Icons.person_outlined,
+              validator: Validators.name,
+              textInputAction: TextInputAction.next,
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
+            EmailTextField(
+              controller: _emailController,
+              validator: Validators.email,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _handleNext(),
+            ),
+            const SizedBox(height: 32),
+            PrimaryButton(
+              text: 'Next'.tr(context),
+              onPressed: _handleNext,
+            ),
+            const SizedBox(height: 24),
+            _buildLoginLink(),
+          ],
+        ),
       ),
     );
   }
@@ -330,71 +368,78 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget _buildStep2() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Professional Profile'.tr(context),
-            style: AppTypography.headlineMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
+      child: GlassContainer(
+        blur: 15,
+        opacity: 0.85,
+        borderRadius: BorderRadius.circular(20),
+        borderColor: Colors.white.withValues(alpha: 0.3),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Professional Profile'.tr(context),
+              style: AppTypography.headlineMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tell us about your qualifications and expertise'.tr(context),
-            style: AppTypography.bodyLarge.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            const SizedBox(height: 8),
+            Text(
+              'Tell us about your qualifications and expertise'.tr(context),
+              style: AppTypography.bodyLarge.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-          // Qualification dropdown
-          DropdownButtonFormField<String>(
-            value: _qualification,
-            decoration: InputDecoration(
-              labelText: 'Qualification'.tr(context),
-              prefixIcon: const Icon(Icons.school_outlined),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            // Qualification dropdown
+            DropdownButtonFormField<String>(
+              value: _qualification,
+              decoration: InputDecoration(
+                labelText: 'Qualification'.tr(context),
+                prefixIcon: const Icon(Icons.school_outlined),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              items: _qualifications.map((q) => DropdownMenuItem(value: q, child: Text(q))).toList(),
+              onChanged: (v) => setState(() => _qualification = v ?? 'Masters'),
             ),
-            items: _qualifications.map((q) => DropdownMenuItem(value: q, child: Text(q))).toList(),
-            onChanged: (v) => setState(() => _qualification = v ?? 'Masters'),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          AppTextField(
-            controller: _yearsController,
-            label: 'Years of Experience'.tr(context),
-            hint: 'e.g. 5'.tr(context),
-            prefixIcon: Icons.work_outline,
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.next,
-          ),
-          const SizedBox(height: 16),
+            AppTextField(
+              controller: _yearsController,
+              label: 'Years of Experience'.tr(context),
+              hint: 'e.g. 5'.tr(context),
+              prefixIcon: Icons.work_outline,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 16),
 
-          AppTextField(
-            controller: _expertiseController,
-            label: 'Expertise Areas'.tr(context),
-            hint: 'e.g. Machine Learning, NLP, Computer Vision'.tr(context),
-            prefixIcon: Icons.category_outlined,
-            textInputAction: TextInputAction.next,
-          ),
-          const SizedBox(height: 16),
+            AppTextField(
+              controller: _expertiseController,
+              label: 'Expertise Areas'.tr(context),
+              hint: 'e.g. Machine Learning, NLP, Computer Vision'.tr(context),
+              prefixIcon: Icons.category_outlined,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 16),
 
-          AppTextField(
-            controller: _bioController,
-            label: '${'Bio'.tr(context)} (${'optional'.tr(context)})',
-            hint: 'Brief professional summary'.tr(context),
-            prefixIcon: Icons.description_outlined,
-            maxLines: 3,
-            textInputAction: TextInputAction.done,
-          ),
-          const SizedBox(height: 32),
+            AppTextField(
+              controller: _bioController,
+              label: '${'Bio'.tr(context)} (${'optional'.tr(context)})',
+              hint: 'Brief professional summary'.tr(context),
+              prefixIcon: Icons.description_outlined,
+              maxLines: 3,
+              textInputAction: TextInputAction.done,
+            ),
+            const SizedBox(height: 32),
 
-          PrimaryButton(
-            text: 'Next'.tr(context),
-            onPressed: _handleNext,
-          ),
-        ],
+            PrimaryButton(
+              text: 'Next'.tr(context),
+              onPressed: _handleNext,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -402,70 +447,77 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget _buildStep3() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Bank Details'.tr(context),
-            style: AppTypography.headlineMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
+      child: GlassContainer(
+        blur: 15,
+        opacity: 0.85,
+        borderRadius: BorderRadius.circular(20),
+        borderColor: Colors.white.withValues(alpha: 0.3),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Bank Details'.tr(context),
+              style: AppTypography.headlineMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Required for payment processing'.tr(context),
-            style: AppTypography.bodyLarge.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            const SizedBox(height: 8),
+            Text(
+              'Required for payment processing'.tr(context),
+              style: AppTypography.bodyLarge.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-          AppTextField(
-            controller: _bankNameController,
-            label: 'Bank Name'.tr(context),
-            hint: 'Enter your bank name'.tr(context),
-            prefixIcon: Icons.account_balance_outlined,
-            textInputAction: TextInputAction.next,
-          ),
-          const SizedBox(height: 16),
+            AppTextField(
+              controller: _bankNameController,
+              label: 'Bank Name'.tr(context),
+              hint: 'Enter your bank name'.tr(context),
+              prefixIcon: Icons.account_balance_outlined,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 16),
 
-          AppTextField(
-            controller: _accountNumberController,
-            label: 'Account Number'.tr(context),
-            hint: 'Enter your account number'.tr(context),
-            prefixIcon: Icons.numbers_outlined,
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.next,
-          ),
-          const SizedBox(height: 16),
+            AppTextField(
+              controller: _accountNumberController,
+              label: 'Account Number'.tr(context),
+              hint: 'Enter your account number'.tr(context),
+              prefixIcon: Icons.numbers_outlined,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 16),
 
-          AppTextField(
-            controller: _ifscController,
-            label: 'IFSC Code'.tr(context),
-            hint: 'e.g. SBIN0001234'.tr(context),
-            prefixIcon: Icons.code_outlined,
-            textCapitalization: TextCapitalization.characters,
-            textInputAction: TextInputAction.next,
-          ),
-          const SizedBox(height: 16),
+            AppTextField(
+              controller: _ifscController,
+              label: 'IFSC Code'.tr(context),
+              hint: 'e.g. SBIN0001234'.tr(context),
+              prefixIcon: Icons.code_outlined,
+              textCapitalization: TextCapitalization.characters,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 16),
 
-          AppTextField(
-            controller: _upiController,
-            label: '${'UPI ID'.tr(context)} (${'optional'.tr(context)})',
-            hint: 'e.g. name@upi'.tr(context),
-            prefixIcon: Icons.payment_outlined,
-            textInputAction: TextInputAction.done,
-          ),
-          const SizedBox(height: 24),
+            AppTextField(
+              controller: _upiController,
+              label: '${'UPI ID'.tr(context)} (${'optional'.tr(context)})',
+              hint: 'e.g. name@upi'.tr(context),
+              prefixIcon: Icons.payment_outlined,
+              textInputAction: TextInputAction.done,
+            ),
+            const SizedBox(height: 24),
 
-          _buildTermsCheckbox(),
-          const SizedBox(height: 24),
+            _buildTermsCheckbox(),
+            const SizedBox(height: 24),
 
-          PrimaryButton(
-            text: 'Next'.tr(context),
-            onPressed: _handleNext,
-          ),
-        ],
+            PrimaryButton(
+              text: 'Next'.tr(context),
+              onPressed: _handleNext,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -473,104 +525,111 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget _buildStep4(bool isLoading) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Verify Email'.tr(context),
-            style: AppTypography.headlineMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'We need to verify your email before submitting'.tr(context),
-            style: AppTypography.bodyLarge.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Email display
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.email_outlined, color: AppColors.primary, size: 20),
-                const SizedBox(width: 12),
-                Text(
-                  _emailController.text.trim(),
-                  style: AppTypography.bodyMedium.copyWith(color: AppColors.primary),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          if (!_otpSent) ...[
-            PrimaryButton(
-              text: 'Send Verification Code'.tr(context),
-              onPressed: _handleSendOTP,
-              isLoading: isLoading,
-            ),
-          ] else ...[
+      child: GlassContainer(
+        blur: 15,
+        opacity: 0.85,
+        borderRadius: BorderRadius.circular(20),
+        borderColor: Colors.white.withValues(alpha: 0.3),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             Text(
-              'Enter the 6-digit code sent to your email'.tr(context),
-              style: AppTypography.bodyMedium.copyWith(
+              'Verify Email'.tr(context),
+              style: AppTypography.headlineMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'We need to verify your email before submitting'.tr(context),
+              style: AppTypography.bodyLarge.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
 
-            AppTextField(
-              controller: _otpController,
-              label: 'Verification Code'.tr(context),
-              hint: '000000',
-              prefixIcon: Icons.lock_outline,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _handleVerifyAndSubmit(),
-            ),
-            const SizedBox(height: 16),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "Didn't receive the code? ".tr(context),
-                  style: AppTypography.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                if (_resendCooldown > 0)
+            // Email display
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.email_outlined, color: AppColors.accent, size: 20),
+                  const SizedBox(width: 12),
                   Text(
-                    'Resend in ${_resendCooldown}s',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.textSecondaryLight,
-                    ),
-                  )
-                else
-                  TertiaryButton(
-                    text: 'Resend'.tr(context),
-                    onPressed: _handleResendOTP,
+                    _emailController.text.trim(),
+                    style: AppTypography.bodyMedium.copyWith(color: AppColors.accent),
                   ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
-            PrimaryButton(
-              text: 'Verify & Submit'.tr(context),
-              onPressed: _handleVerifyAndSubmit,
-              isLoading: isLoading,
-            ),
+            if (!_otpSent) ...[
+              PrimaryButton(
+                text: 'Send Verification Code'.tr(context),
+                onPressed: _handleSendOTP,
+                isLoading: isLoading,
+              ),
+            ] else ...[
+              Text(
+                'Enter the 6-digit code sent to your email'.tr(context),
+                style: AppTypography.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              AppTextField(
+                controller: _otpController,
+                label: 'Verification Code'.tr(context),
+                hint: '000000',
+                prefixIcon: Icons.lock_outline,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _handleVerifyAndSubmit(),
+              ),
+              const SizedBox(height: 16),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Didn't receive the code? ".tr(context),
+                    style: AppTypography.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (_resendCooldown > 0)
+                    Text(
+                      'Resend in ${_resendCooldown}s',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
+                    )
+                  else
+                    TertiaryButton(
+                      text: 'Resend'.tr(context),
+                      onPressed: _handleResendOTP,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              PrimaryButton(
+                text: 'Verify & Submit'.tr(context),
+                onPressed: _handleVerifyAndSubmit,
+                isLoading: isLoading,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -603,7 +662,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   TextSpan(
                     text: 'Terms of Service'.tr(context),
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: AppColors.accent,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -611,7 +670,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   TextSpan(
                     text: 'Privacy Policy'.tr(context),
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: AppColors.accent,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
