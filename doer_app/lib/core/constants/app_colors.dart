@@ -1,12 +1,14 @@
 /// Application color palette constants.
 ///
 /// This file defines the complete color system for the DOER app,
-/// following a professional, authority-driven design theme.
+/// following a warm-professional teal design theme.
 ///
 /// ## Color Categories
-/// - **Primary Colors**: Main brand colors (navy blue tones)
-/// - **Accent Colors**: Interactive element highlights (bright blue)
+/// - **Primary Colors**: Main brand colors (deep teal tones)
+/// - **Accent Colors**: Interactive element highlights (vivid cyan)
 /// - **Background Colors**: Surface and container colors
+/// - **Gradient Colors**: Teal-to-cyan gradient stops
+/// - **Mesh Gradient Colors**: Soft pastels for corner gradients
 /// - **Text Colors**: Typography hierarchy colors
 /// - **Status Colors**: Success, warning, error, and info states
 /// - **Urgency Colors**: Time-sensitive task indicators
@@ -14,15 +16,15 @@
 /// - **Dark Theme Colors**: Alternative palette for dark mode
 ///
 /// ## Design Principles
-/// - Uses a cohesive navy blue primary palette for authority
-/// - Bright blue accents for actionable elements
+/// - Uses a cohesive deep teal primary palette for warmth and authority
+/// - Vivid cyan accents for actionable, earning-focused elements
 /// - Semantic colors for status feedback
 /// - Consistent opacity levels for shadows and overlays
 library;
 
 import 'package:flutter/material.dart';
 
-/// App color palette following the professional, authority-driven theme.
+/// App color palette following the warm-professional teal theme.
 ///
 /// All colors are defined as static constants for compile-time optimization
 /// and consistent usage across the application.
@@ -47,59 +49,59 @@ class AppColors {
   AppColors._();
 
   // ---------------------------------------------------------------------------
-  // Primary Colors
+  // Primary Colors - Deep Teal (warmer than navy)
   // ---------------------------------------------------------------------------
 
-  /// Primary brand color - deep navy blue.
+  /// Primary brand color - deep teal.
   ///
   /// Used for primary buttons, app bars, and key branding elements.
-  /// Hex: #1E3A5F
-  static const Color primary = Color(0xFF1E3A5F);
+  /// Hex: #1A4B5F
+  static const Color primary = Color(0xFF1A4B5F);
 
   /// Lighter shade of primary for hover states and secondary emphasis.
   ///
-  /// Hex: #2D4A6F
-  static const Color primaryLight = Color(0xFF2D4A6F);
+  /// Hex: #2A5B6F
+  static const Color primaryLight = Color(0xFF2A5B6F);
 
   /// Darker shade of primary for pressed states and emphasis.
   ///
-  /// Hex: #0F2A4F
-  static const Color primaryDark = Color(0xFF0F2A4F);
+  /// Hex: #0A3B4F
+  static const Color primaryDark = Color(0xFF0A3B4F);
 
   // ---------------------------------------------------------------------------
-  // Accent Colors
+  // Accent Colors - Vivid Cyan (energetic, earning-focused)
   // ---------------------------------------------------------------------------
 
-  /// Accent color - bright blue for interactive elements.
+  /// Accent color - vivid cyan for interactive elements.
   ///
   /// Used for links, secondary buttons, and call-to-action elements.
-  /// Hex: #3B82F6
-  static const Color accent = Color(0xFF3B82F6);
+  /// Hex: #06B6D4
+  static const Color accent = Color(0xFF06B6D4);
 
   /// Lighter shade of accent for hover states.
   ///
-  /// Hex: #60A5FA
-  static const Color accentLight = Color(0xFF60A5FA);
+  /// Hex: #22D3EE
+  static const Color accentLight = Color(0xFF22D3EE);
 
   /// Darker shade of accent for pressed states.
   ///
-  /// Hex: #2563EB
-  static const Color accentDark = Color(0xFF2563EB);
+  /// Hex: #0891B2
+  static const Color accentDark = Color(0xFF0891B2);
 
   // ---------------------------------------------------------------------------
-  // Background Colors
+  // Background Colors - Warmer off-whites
   // ---------------------------------------------------------------------------
 
-  /// Main background color - light gray-blue.
+  /// Main background color - warm off-white.
   ///
   /// Used for screen backgrounds and main content areas.
-  /// Hex: #F8FAFC
-  static const Color background = Color(0xFFF8FAFC);
+  /// Hex: #FAFBFC
+  static const Color background = Color(0xFFFAFBFC);
 
   /// Surface color for cards and elevated containers.
   ///
   /// Pure white for maximum contrast with background.
-  static const Color surface = Colors.white;
+  static const Color surface = Color(0xFFFFFFFF);
 
   /// Variant surface for subtle differentiation.
   ///
@@ -108,26 +110,45 @@ class AppColors {
   static const Color surfaceVariant = Color(0xFFF1F5F9);
 
   // ---------------------------------------------------------------------------
+  // Gradient Colors - Teal to Cyan
+  // ---------------------------------------------------------------------------
+
+  /// Gradient start color - darkest teal.
+  ///
+  /// Hex: #0A3B4F
+  static const Color gradientStart = Color(0xFF0A3B4F);
+
+  /// Gradient middle color - primary teal.
+  ///
+  /// Hex: #1A4B5F
+  static const Color gradientMiddle = Color(0xFF1A4B5F);
+
+  /// Gradient end color - vivid cyan.
+  ///
+  /// Hex: #06B6D4
+  static const Color gradientEnd = Color(0xFF06B6D4);
+
+  // ---------------------------------------------------------------------------
   // Text Colors
   // ---------------------------------------------------------------------------
 
   /// Primary text color for headings and body text.
   ///
-  /// Near-black for maximum readability.
-  /// Hex: #1E293B
-  static const Color textPrimary = Color(0xFF1E293B);
+  /// Deep teal-gray for warm readability.
+  /// Hex: #1A2B3B
+  static const Color textPrimary = Color(0xFF1A2B3B);
 
   /// Secondary text color for supporting content.
   ///
-  /// Medium gray for less prominent text.
-  /// Hex: #64748B
-  static const Color textSecondary = Color(0xFF64748B);
+  /// Teal-tinted gray for less prominent text.
+  /// Hex: #5A7A8A
+  static const Color textSecondary = Color(0xFF5A7A8A);
 
   /// Tertiary text color for captions and hints.
   ///
-  /// Light gray for minimal emphasis text.
-  /// Hex: #94A3B8
-  static const Color textTertiary = Color(0xFF94A3B8);
+  /// Light teal-gray for minimal emphasis text.
+  /// Hex: #8AA3B0
+  static const Color textTertiary = Color(0xFF8AA3B0);
 
   /// Text color for content on primary-colored backgrounds.
   ///
@@ -171,16 +192,16 @@ class AppColors {
   /// Hex: #FEE2E2
   static const Color errorLight = Color(0xFFFEE2E2);
 
-  /// Info state color - cyan/sky blue.
+  /// Info state color - teal-cyan.
   ///
   /// Used for informational messages and tips.
-  /// Hex: #0EA5E9
-  static const Color info = Color(0xFF0EA5E9);
+  /// Hex: #06B6D4
+  static const Color info = Color(0xFF06B6D4);
 
   /// Light info background for info banners.
   ///
-  /// Hex: #E0F2FE
-  static const Color infoLight = Color(0xFFE0F2FE);
+  /// Hex: #CFFAFE
+  static const Color infoLight = Color(0xFFCFFAFE);
 
   // ---------------------------------------------------------------------------
   // Urgency Colors
@@ -220,18 +241,18 @@ class AppColors {
 
   /// Default border color for containers.
   ///
-  /// Hex: #E2E8F0
-  static const Color border = Color(0xFFE2E8F0);
+  /// Hex: #D5E0E5
+  static const Color border = Color(0xFFD5E0E5);
 
   /// Light border for subtle separation.
   ///
-  /// Hex: #F1F5F9
-  static const Color borderLight = Color(0xFFF1F5F9);
+  /// Hex: #E8F0F3
+  static const Color borderLight = Color(0xFFE8F0F3);
 
   /// Dark border for emphasis.
   ///
-  /// Hex: #CBD5E1
-  static const Color borderDark = Color(0xFFCBD5E1);
+  /// Hex: #B0C4CE
+  static const Color borderDark = Color(0xFFB0C4CE);
 
   // ---------------------------------------------------------------------------
   // Divider
@@ -239,8 +260,8 @@ class AppColors {
 
   /// Standard divider color.
   ///
-  /// Hex: #E2E8F0
-  static const Color divider = Color(0xFFE2E8F0);
+  /// Hex: #D5E0E5
+  static const Color divider = Color(0xFFD5E0E5);
 
   // ---------------------------------------------------------------------------
   // Shadow
@@ -268,24 +289,45 @@ class AppColors {
   static Color get glassBorderDark => Colors.white.withValues(alpha: 0.1);
 
   // ---------------------------------------------------------------------------
-  // Mesh Gradient Colors
+  // Mesh Gradient Colors - Soft pastels for corner gradients
   // ---------------------------------------------------------------------------
 
+  /// Mesh Teal - Soft pastel teal.
+  ///
+  /// Hex: #CCFBF1
+  static const Color meshTeal = Color(0xFFCCFBF1);
+
+  /// Mesh Cyan - Soft pastel cyan.
+  ///
+  /// Hex: #CFFAFE
+  static const Color meshCyan = Color(0xFFCFFAFE);
+
+  /// Mesh Mint - Soft pastel mint green.
+  ///
+  /// Hex: #D1FAE5
+  static const Color meshMint = Color(0xFFD1FAE5);
+
+  /// Mesh Lavender - Soft pastel lavender.
+  ///
+  /// Hex: #E0E7FF
+  static const Color meshLavender = Color(0xFFE0E7FF);
+
+  /// Mesh Peach - Soft pastel peach.
+  ///
+  /// Hex: #FFEDD5
+  static const Color meshPeach = Color(0xFFFFEDD5);
+
   /// Mesh Pink - Soft pastel pink.
-  static const Color meshPink = Color(0xFFE8EEF8);
-
-  /// Mesh Peach - Soft pastel blue-gray.
-  static const Color meshPeach = Color(0xFFECF0F8);
-
-  /// Mesh Orange - Soft pastel slate.
-  static const Color meshOrange = Color(0xFFF0F3F8);
+  ///
+  /// Hex: #FFE4E6
+  static const Color meshPink = Color(0xFFFFE4E6);
 
   // ---------------------------------------------------------------------------
   // Shimmer Colors
   // ---------------------------------------------------------------------------
 
   /// Shimmer base color.
-  static const Color shimmerBase = Color(0xFFE2E8F0);
+  static const Color shimmerBase = Color(0xFFD5E0E5);
 
   /// Shimmer highlight color.
   static const Color shimmerHighlight = Color(0xFFF1F5F9);
@@ -328,8 +370,8 @@ class AppColors {
   /// Light gray for avatar backgrounds.
   static const Color avatarGray = Color(0xFFE0E0E0);
 
-  /// Warm avatar background.
-  static const Color avatarWarm = Color(0xFFD6E4F0);
+  /// Warm avatar background - teal-tinted.
+  static const Color avatarWarm = Color(0xFFCCE5E8);
 
   // ---------------------------------------------------------------------------
   // Dark Theme Colors
@@ -337,19 +379,19 @@ class AppColors {
 
   /// Dark theme background color.
   ///
-  /// Deep navy for dark mode screens.
-  /// Hex: #0F172A
-  static const Color darkBackground = Color(0xFF0F172A);
+  /// Deep teal-navy for dark mode screens.
+  /// Hex: #0B1E28
+  static const Color darkBackground = Color(0xFF0B1E28);
 
   /// Dark theme surface color.
   ///
   /// Slightly lighter than background for cards.
-  /// Hex: #1E293B
-  static const Color darkSurface = Color(0xFF1E293B);
+  /// Hex: #142E3A
+  static const Color darkSurface = Color(0xFF142E3A);
 
   /// Dark theme surface variant.
   ///
   /// For nested containers in dark mode.
-  /// Hex: #334155
-  static const Color darkSurfaceVariant = Color(0xFF334155);
+  /// Hex: #1E3E4D
+  static const Color darkSurfaceVariant = Color(0xFF1E3E4D);
 }
