@@ -80,7 +80,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         position: MeshPosition.topLeft,
         opacity: 0.4,
         colors: const [
-          AppColors.meshPink,
+          AppColors.meshAmber,
           AppColors.meshPeach,
           AppColors.meshOrange,
         ],
