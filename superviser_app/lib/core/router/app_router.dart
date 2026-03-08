@@ -85,6 +85,8 @@ import '../../features/profile/presentation/screens/blacklist_screen.dart';
 import '../../features/earnings/presentation/screens/earnings_screen.dart';
 import '../../features/notifications/presentation/providers/notifications_provider.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
+import '../../shared/widgets/subtle_gradient_scaffold.dart';
+import '../../shared/widgets/bottom_nav_bar.dart';
 import '../../features/support/presentation/screens/support_screen.dart';
 import '../../features/support/presentation/screens/ticket_detail_screen.dart';
 import '../../features/support/presentation/screens/faq_screen.dart';
@@ -514,11 +516,49 @@ class AppShell extends ConsumerWidget {
   /// The current screen content to display above the navigation bar.
   final Widget child;
 
+  /// Calculates the selected index based on the current route location.
+  int _calculateSelectedIndex(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    if (location.startsWith(RoutePaths.dashboard)) return 0;
+    if (location.startsWith(RoutePaths.projects)) return 1;
+    if (location.startsWith(RoutePaths.chat)) return 2;
+    if (location.startsWith(RoutePaths.profile)) return 3;
+    return 0;
+  }
+
+  /// Handles navigation when a bar item is tapped.
+  void _onItemTapped(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        context.go(RoutePaths.dashboard);
+        break;
+      case 1:
+        context.go(RoutePaths.projects);
+        break;
+      case 2:
+        context.go(RoutePaths.chat);
+        break;
+      case 3:
+        context.go(RoutePaths.profile);
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: const AppBottomNavigationBar(),
+    final unreadCount = ref.watch(unreadNotificationCountProvider);
+
+    return SubtleGradientScaffold.standard(
+      body: Stack(
+        children: [
+          child,
+          BottomNavBar(
+            currentIndex: _calculateSelectedIndex(context),
+            onTap: (index) => _onItemTapped(context, index),
+            dashboardBadgeCount: unreadCount,
+          ),
+        ],
+      ),
     );
   }
 }
