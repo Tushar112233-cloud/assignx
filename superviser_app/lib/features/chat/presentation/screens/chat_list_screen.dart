@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/router/routes.dart';
+import '../../../../shared/widgets/glass_container.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/chat_room_tile.dart';
 
@@ -11,6 +12,7 @@ import '../widgets/chat_room_tile.dart';
 ///
 /// Shows all active conversations grouped by project with hero section,
 /// category filters, and mark-all-as-read functionality.
+/// This is a TAB screen — transparent background, no gradient.
 class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});
 
@@ -20,6 +22,13 @@ class ChatListScreen extends ConsumerStatefulWidget {
 
 class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   String _selectedCategory = 'all';
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   /// Filters chat rooms based on the selected category.
   List _filterRooms(List rooms) {
@@ -47,8 +56,14 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final filteredRooms = _filterRooms(state.chatRooms);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text('Messages'.tr(context)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Messages'.tr(context),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           // Mark all as read button
           if (state.totalUnread > 0)
@@ -79,11 +94,48 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                 ? const ChatListEmptyState()
                 : ListView(
                     children: [
-                      // Hero section
-                      _ChatHeroSection(
-                        totalUnread: state.totalUnread,
-                        totalChats: state.chatRooms.length,
+                      const SizedBox(height: 8),
+
+                      // Glass search bar
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GlassContainer(
+                          blur: 12,
+                          opacity: 0.6,
+                          borderRadius: BorderRadius.circular(14),
+                          borderColor: Colors.white.withAlpha(60),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search,
+                                color: AppColors.textSecondaryLight,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  controller: _searchController,
+                                  decoration: InputDecoration(
+                                    hintText: 'Search conversations...'.tr(context),
+                                    hintStyle: TextStyle(
+                                      color: AppColors.textTertiaryLight,
+                                      fontSize: 14,
+                                    ),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                                  ),
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
+
+                      const SizedBox(height: 12),
+
                       // Category filter chips
                       _CategoryChips(
                         selected: _selectedCategory,
@@ -92,6 +144,37 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                           setState(() => _selectedCategory = category);
                         },
                       ),
+
+                      const SizedBox(height: 8),
+
+                      // Unread count badge
+                      if (state.totalUnread > 0)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          child: GlassContainer(
+                            blur: 10,
+                            opacity: 0.15,
+                            borderRadius: BorderRadius.circular(12),
+                            borderColor: AppColors.accent.withAlpha(40),
+                            backgroundColor: AppColors.accent,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            child: Row(
+                              children: [
+                                Icon(Icons.mark_email_unread_outlined, color: AppColors.accent, size: 18),
+                                const SizedBox(width: 10),
+                                Text(
+                                  '${state.totalUnread} ${'unread messages'.tr(context)}',
+                                  style: TextStyle(
+                                    color: AppColors.accent,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
                       // Filtered chat list
                       ..._buildFilteredList(filteredRooms),
                       const SizedBox(height: 100),
@@ -111,7 +194,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             child: Text(
               'No chats in this category'.tr(context),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: AppColors.textSecondaryLight,
                   ),
             ),
           ),
@@ -127,7 +210,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         _SectionHeader(
           title: 'Unread'.tr(context),
           count: unreadRooms.length,
-          color: AppColors.primary,
+          color: AppColors.accent,
         ),
         ...unreadRooms.map((room) => ChatRoomTile(
               room: room,
@@ -150,91 +233,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   }
 }
 
-/// Hero section with gradient background showing greeting and unread count.
-class _ChatHeroSection extends StatelessWidget {
-  const _ChatHeroSection({
-    required this.totalUnread,
-    required this.totalChats,
-  });
-
-  final int totalUnread;
-  final int totalChats;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryLight],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Your Messages'.tr(context),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$totalChats ${'conversations'.tr(context)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white70,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          if (totalUnread > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    totalUnread.toString(),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  Text(
-                    'unread'.tr(context),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white70,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Horizontal scrolling category filter chips.
+/// Horizontal scrolling category filter chips using glass style.
 class _CategoryChips extends StatelessWidget {
   const _CategoryChips({
     required this.selected,
@@ -269,28 +268,15 @@ class _CategoryChips extends StatelessWidget {
 
           return GestureDetector(
             onTap: () => onSelected(value),
-            child: Container(
+            child: GlassContainer(
+              blur: isSelected ? 15 : 8,
+              opacity: isSelected ? 0.9 : 0.5,
+              borderRadius: BorderRadius.circular(20),
+              borderColor: isSelected
+                  ? AppColors.accent.withAlpha(120)
+                  : Colors.white.withAlpha(50),
+              backgroundColor: isSelected ? AppColors.accent : Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.accent
-                    : Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.accent
-                      : Theme.of(context).colorScheme.outline,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppColors.accent.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
-              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -299,18 +285,18 @@ class _CategoryChips extends StatelessWidget {
                     size: 16,
                     color: isSelected
                         ? Colors.white
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                        : AppColors.textSecondaryLight,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     label,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: isSelected
-                              ? Colors.white
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.w500,
-                        ),
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.textSecondaryLight,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),

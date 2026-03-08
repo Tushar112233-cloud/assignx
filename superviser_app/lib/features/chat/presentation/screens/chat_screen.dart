@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
@@ -10,6 +12,7 @@ import '../widgets/message_input.dart';
 /// Screen for viewing and sending messages in a chat room.
 ///
 /// Supports real-time messaging, file attachments, and replies.
+/// Standalone route — uses MeshGradientBackground.
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({
     super.key,
@@ -80,123 +83,142 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              state.room?.displayTitle ?? 'Chat'.tr(context),
-              style: const TextStyle(fontSize: 16),
-            ),
-            if (state.room?.projectNumber != null)
+    return MeshGradientBackground(
+      position: MeshPosition.bottomRight,
+      opacity: 0.3,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                state.room!.projectNumber!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondaryLight,
-                    ),
+                state.room?.displayTitle ?? 'Chat'.tr(context),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
-          ],
-        ),
-        actions: [
-          // Suspension toggle
-          if (state.room != null)
-            PopupMenuButton<String>(
-              onSelected: _handleMenuAction,
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: state.room!.isSuspended ? 'unsuspend' : 'suspend',
-                  child: Row(
-                    children: [
-                      Icon(
-                        state.room!.isSuspended ? Icons.check : Icons.block,
-                        size: 20,
-                        color: state.room!.isSuspended
-                            ? AppColors.success
-                            : AppColors.error,
+              if (state.room?.projectNumber != null)
+                Text(
+                  state.room!.projectNumber!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondaryLight,
                       ),
-                      const SizedBox(width: 12),
-                      Text(state.room!.isSuspended
-                          ? 'Unsuspend Chat'.tr(context)
-                          : 'Suspend Chat'.tr(context)),
-                    ],
-                  ),
                 ),
-                PopupMenuItem(
-                  value: 'info',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline, size: 20),
-                      const SizedBox(width: 12),
-                      Text('Chat Info'.tr(context)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Error banner
-          if (state.error != null)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              color: AppColors.error.withValues(alpha: 0.1),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline, color: AppColors.error, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      state.error!,
-                      style: TextStyle(color: AppColors.error, fontSize: 13),
+            ],
+          ),
+          actions: [
+            // Suspension toggle
+            if (state.room != null)
+              PopupMenuButton<String>(
+                onSelected: _handleMenuAction,
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: state.room!.isSuspended ? 'unsuspend' : 'suspend',
+                    child: Row(
+                      children: [
+                        Icon(
+                          state.room!.isSuspended ? Icons.check : Icons.block,
+                          size: 20,
+                          color: state.room!.isSuspended
+                              ? AppColors.success
+                              : AppColors.error,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(state.room!.isSuspended
+                            ? 'Unsuspend Chat'.tr(context)
+                            : 'Suspend Chat'.tr(context)),
+                      ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () =>
-                        ref.read(activeChatProvider.notifier).clearError(),
-                    icon: Icon(Icons.close, color: AppColors.error, size: 18),
-                    constraints: const BoxConstraints(),
-                    padding: EdgeInsets.zero,
+                  PopupMenuItem(
+                    value: 'info',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, size: 20),
+                        const SizedBox(width: 12),
+                        Text('Chat Info'.tr(context)),
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ),
-          // Messages list
-          Expanded(
-            child: state.isLoading && state.messages.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : state.messages.isEmpty
-                    ? _EmptyChat()
-                    : _MessagesList(
-                        messages: state.messages,
-                        currentUserId: _currentUserId,
-                        scrollController: _scrollController,
-                        isLoadingMore: state.isLoading,
-                        hasMore: state.hasMore,
-                        onReply: (message) {
-                          ref
-                              .read(activeChatProvider.notifier)
-                              .setReplyTo(message);
-                        },
+          ],
+        ),
+        body: Column(
+          children: [
+            // Error banner
+            if (state.error != null)
+              GlassContainer(
+                blur: 10,
+                opacity: 0.15,
+                borderRadius: BorderRadius.circular(0),
+                borderColor: AppColors.error.withAlpha(40),
+                backgroundColor: AppColors.error,
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: AppColors.error, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        state.error!,
+                        style: TextStyle(color: AppColors.error, fontSize: 13),
                       ),
-          ),
-          // Message input
-          MessageInput(
-            onSend: (message) async {
-              await ref.read(activeChatProvider.notifier).sendMessage(message);
-            },
-            replyTo: state.replyTo,
-            onCancelReply: () =>
-                ref.read(activeChatProvider.notifier).clearReplyTo(),
-            enabled: !state.isSuspended,
-            isSending: state.isSending,
-            disabledMessage:
-                state.isSuspended ? 'Chat is suspended'.tr(context) : null,
-          ),
-        ],
+                    ),
+                    IconButton(
+                      onPressed: () =>
+                          ref.read(activeChatProvider.notifier).clearError(),
+                      icon: Icon(Icons.close, color: AppColors.error, size: 18),
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+              ),
+            // Messages list
+            Expanded(
+              child: state.isLoading && state.messages.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : state.messages.isEmpty
+                      ? _EmptyChat()
+                      : _MessagesList(
+                          messages: state.messages,
+                          currentUserId: _currentUserId,
+                          scrollController: _scrollController,
+                          isLoadingMore: state.isLoading,
+                          hasMore: state.hasMore,
+                          onReply: (message) {
+                            ref
+                                .read(activeChatProvider.notifier)
+                                .setReplyTo(message);
+                          },
+                        ),
+            ),
+            // Glass message input bar
+            GlassContainer(
+              blur: 20,
+              opacity: 0.75,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+              borderColor: Colors.white.withAlpha(60),
+              child: MessageInput(
+                onSend: (message) async {
+                  await ref.read(activeChatProvider.notifier).sendMessage(message);
+                },
+                replyTo: state.replyTo,
+                onCancelReply: () =>
+                    ref.read(activeChatProvider.notifier).clearReplyTo(),
+                enabled: !state.isSuspended,
+                isSending: state.isSending,
+                disabledMessage:
+                    state.isSuspended ? 'Chat is suspended'.tr(context) : null,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../dashboard/data/models/doer_model.dart';
 import '../providers/doers_provider.dart';
 
-/// Doers list screen.
+/// Doers list screen — standalone route with MeshGradientBackground.
 class DoersScreen extends ConsumerStatefulWidget {
   const DoersScreen({super.key});
 
@@ -37,82 +39,101 @@ class _DoersScreenState extends ConsumerState<DoersScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(doersProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Search doers...'.tr(context),
-                  border: InputBorder.none,
+    return MeshGradientBackground(
+      position: MeshPosition.bottomRight,
+      opacity: 0.4,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: _isSearching
+              ? GlassContainer(
+                  blur: 12,
+                  opacity: 0.6,
+                  borderRadius: BorderRadius.circular(12),
+                  borderColor: Colors.white.withAlpha(60),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Search doers...'.tr(context),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    onChanged: (query) {
+                      ref.read(doersProvider.notifier).search(query);
+                    },
+                  ),
+                )
+              : Text(
+                  'Doers'.tr(context),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                onChanged: (query) {
-                  ref.read(doersProvider.notifier).search(query);
-                },
-              )
-            : Text('Doers'.tr(context)),
-        actions: [
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _isSearching = !_isSearching;
-                if (!_isSearching) {
-                  _searchController.clear();
-                  ref.read(doersProvider.notifier).search('');
-                }
-              });
-            },
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-          ),
-          IconButton(
-            onPressed: () => _showFiltersSheet(context, ref),
-            icon: const Icon(Icons.filter_list),
-            tooltip: 'Filters'.tr(context),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Active filters bar
-          if (_hasActiveFilters(state)) _ActiveFiltersBar(state: state),
+          actions: [
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _isSearching = !_isSearching;
+                  if (!_isSearching) {
+                    _searchController.clear();
+                    ref.read(doersProvider.notifier).search('');
+                  }
+                });
+              },
+              icon: Icon(_isSearching ? Icons.close : Icons.search),
+            ),
+            IconButton(
+              onPressed: () => _showFiltersSheet(context, ref),
+              icon: const Icon(Icons.filter_list),
+              tooltip: 'Filters'.tr(context),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // Active filters bar
+            if (_hasActiveFilters(state)) _ActiveFiltersBar(state: state),
 
-          // Doers list
-          Expanded(
-            child: state.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : state.doers.isEmpty
-                    ? const _EmptyDoers()
-                    : RefreshIndicator(
-                        onRefresh: () =>
-                            ref.read(doersProvider.notifier).refresh(),
-                        child: _DoersList(
-                          doers: state.doers,
-                          heroSection: _DoersHeroSection(doers: state.doers),
-                          topPerformers: _TopPerformers(
+            // Doers list
+            Expanded(
+              child: state.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : state.doers.isEmpty
+                      ? const _EmptyDoers()
+                      : RefreshIndicator(
+                          onRefresh: () =>
+                              ref.read(doersProvider.notifier).refresh(),
+                          child: _DoersList(
                             doers: state.doers,
+                            heroSection: _DoersHeroSection(doers: state.doers),
+                            topPerformers: _TopPerformers(
+                              doers: state.doers,
+                              onDoerTap: (doer) {
+                                context.pushNamed(
+                                  RouteNames.doerDetail,
+                                  pathParameters: {'doerId': doer.id},
+                                );
+                              },
+                            ),
                             onDoerTap: (doer) {
                               context.pushNamed(
                                 RouteNames.doerDetail,
                                 pathParameters: {'doerId': doer.id},
                               );
                             },
+                            onLoadMore: () {
+                              ref.read(doersProvider.notifier).loadMore();
+                            },
+                            isLoadingMore: state.isLoadingMore,
+                            hasMore: state.hasMore,
                           ),
-                          onDoerTap: (doer) {
-                            context.pushNamed(
-                              RouteNames.doerDetail,
-                              pathParameters: {'doerId': doer.id},
-                            );
-                          },
-                          onLoadMore: () {
-                            ref.read(doersProvider.notifier).loadMore();
-                          },
-                          isLoadingMore: state.isLoadingMore,
-                          hasMore: state.hasMore,
                         ),
-                      ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -143,61 +164,61 @@ class _ActiveFiltersBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.05),
-        border: Border(
-          bottom: BorderSide(
-            color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.filter_alt,
-            size: 16,
-            color: AppColors.primary,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  if (state.selectedExpertise != null)
-                    _FilterChip(
-                      label: state.selectedExpertise!,
-                      onRemove: () {
-                        ref.read(doersProvider.notifier).setExpertiseFilter(null);
-                      },
-                    ),
-                  if (state.isAvailableOnly)
-                    _FilterChip(
-                      label: 'Available only'.tr(context),
-                      onRemove: () {
-                        ref.read(doersProvider.notifier).setAvailableOnly(false);
-                      },
-                    ),
-                  if (state.minRating != null)
-                    _FilterChip(
-                      label: '${state.minRating}+ stars',
-                      onRemove: () {
-                        ref.read(doersProvider.notifier).setMinRating(null);
-                      },
-                    ),
-                ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: GlassContainer(
+        blur: 10,
+        opacity: 0.12,
+        borderRadius: BorderRadius.circular(12),
+        borderColor: AppColors.accent.withAlpha(40),
+        backgroundColor: AppColors.accent,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.filter_alt,
+              size: 16,
+              color: AppColors.accent,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    if (state.selectedExpertise != null)
+                      _FilterChip(
+                        label: state.selectedExpertise!,
+                        onRemove: () {
+                          ref.read(doersProvider.notifier).setExpertiseFilter(null);
+                        },
+                      ),
+                    if (state.isAvailableOnly)
+                      _FilterChip(
+                        label: 'Available only'.tr(context),
+                        onRemove: () {
+                          ref.read(doersProvider.notifier).setAvailableOnly(false);
+                        },
+                      ),
+                    if (state.minRating != null)
+                      _FilterChip(
+                        label: '${state.minRating}+ stars',
+                        onRemove: () {
+                          ref.read(doersProvider.notifier).setMinRating(null);
+                        },
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-          TextButton(
-            onPressed: () {
-              ref.read(doersProvider.notifier).clearFilters();
-            },
-            child: Text('Clear'.tr(context)),
-          ),
-        ],
+            TextButton(
+              onPressed: () {
+                ref.read(doersProvider.notifier).clearFilters();
+              },
+              child: Text('Clear'.tr(context)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -470,7 +491,7 @@ class _DoersList extends StatelessWidget {
   }
 }
 
-/// Doer card widget with action buttons and success rate.
+/// Doer card widget with glass styling, avatar, status badge, and rating.
 class DoerCard extends StatelessWidget {
   const DoerCard({
     super.key,
@@ -483,253 +504,277 @@ class DoerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-        ),
-      ),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: GlassCard(
+        blur: 12,
+        opacity: 0.7,
+        borderRadius: BorderRadius.circular(16),
+        borderColor: Colors.white.withAlpha(50),
+        padding: const EdgeInsets.all(16),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  // Avatar with availability indicator
-                  Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                        backgroundImage: doer.avatarUrl != null
-                            ? NetworkImage(doer.avatarUrl!)
-                            : null,
-                        child: doer.avatarUrl == null
-                            ? Text(
-                                doer.initials,
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )
-                            : null,
-                      ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: doer.isAvailable ? AppColors.success : AppColors.textSecondaryLight,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2,
-                            ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                // Avatar with availability indicator
+                Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: AppColors.accent.withValues(alpha: 0.12),
+                      backgroundImage: doer.avatarUrl != null
+                          ? NetworkImage(doer.avatarUrl!)
+                          : null,
+                      child: doer.avatarUrl == null
+                          ? Text(
+                              doer.initials,
+                              style: const TextStyle(
+                                color: AppColors.accent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : null,
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: doer.isAvailable ? AppColors.success : AppColors.textSecondaryLight,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 2,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 12),
 
-                  // Doer info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                doer.name,
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
+                // Doer info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              doer.name,
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
-                            // Rating
-                            Row(
+                          ),
+                          // Rating badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(
-                                  Icons.star,
-                                  size: 16,
+                                  Icons.star_rounded,
+                                  size: 14,
                                   color: Colors.amber,
                                 ),
                                 const SizedBox(width: 2),
                                 Text(
                                   doer.rating.toStringAsFixed(1),
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
                                       ),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-
-                        // Expertise tags
-                        if (doer.expertise.isNotEmpty)
-                          Wrap(
-                            spacing: 4,
-                            runSpacing: 4,
-                            children: doer.expertise.take(3).map((exp) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  exp,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: AppColors.primary,
-                                        fontSize: 10,
-                                      ),
-                                ),
-                              );
-                            }).toList(),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
 
-                        const SizedBox(height: 8),
+                      // Status badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: doer.isAvailable
+                              ? AppColors.success.withValues(alpha: 0.1)
+                              : AppColors.textSecondaryLight.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          doer.isAvailable ? 'Available'.tr(context) : 'Busy'.tr(context),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: doer.isAvailable ? AppColors.success : AppColors.textSecondaryLight,
+                          ),
+                        ),
+                      ),
 
-                        // Stats row with success rate
-                        Row(
-                          children: [
+                      const SizedBox(height: 6),
+
+                      // Expertise tags
+                      if (doer.expertise.isNotEmpty)
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: doer.expertise.take(3).map((exp) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                exp,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.primary,
+                                      fontSize: 10,
+                                    ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+
+                      const SizedBox(height: 8),
+
+                      // Stats row with success rate
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.folder_outlined,
+                            size: 14,
+                            color: AppColors.textSecondaryLight,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${doer.completedProjects} ${'completed'.tr(context)}',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondaryLight,
+                                  fontSize: 11,
+                                ),
+                          ),
+                          const SizedBox(width: 12),
+                          if (doer.activeProjects > 0) ...[
                             Icon(
-                              Icons.folder_outlined,
+                              Icons.play_circle_outline,
                               size: 14,
-                              color: AppColors.textSecondaryLight,
+                              color: AppColors.warning,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '${doer.completedProjects} ${'completed'.tr(context)}',
+                              '${doer.activeProjects} ${'active'.tr(context)}',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.textSecondaryLight,
+                                    color: AppColors.warning,
                                     fontSize: 11,
                                   ),
                             ),
                             const SizedBox(width: 12),
-                            if (doer.activeProjects > 0) ...[
-                              Icon(
-                                Icons.play_circle_outline,
-                                size: 14,
-                                color: AppColors.warning,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${doer.activeProjects} ${'active'.tr(context)}',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppColors.warning,
-                                      fontSize: 11,
-                                    ),
-                              ),
-                              const SizedBox(width: 12),
-                            ],
-                            // Success rate
-                            Icon(
-                              Icons.check_circle_outline,
-                              size: 14,
-                              color: doer.successRate >= 90
-                                  ? AppColors.success
-                                  : doer.successRate >= 70
-                                      ? AppColors.warning
-                                      : AppColors.error,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${doer.successRate.toStringAsFixed(0)}%',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: doer.successRate >= 90
-                                        ? AppColors.success
-                                        : doer.successRate >= 70
-                                            ? AppColors.warning
-                                            : AppColors.error,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
                           ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: AppColors.textSecondaryLight,
-                  ),
-                ],
-              ),
-
-              // Action buttons
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        // TODO: Navigate to assign doer flow
-                      },
-                      icon: const Icon(Icons.assignment_ind, size: 16),
-                      label: Text('Assign'.tr(context)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.accent,
-                        side: const BorderSide(color: AppColors.accent),
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        visualDensity: VisualDensity.compact,
+                          // Success rate
+                          Icon(
+                            Icons.check_circle_outline,
+                            size: 14,
+                            color: doer.successRate >= 90
+                                ? AppColors.success
+                                : doer.successRate >= 70
+                                    ? AppColors.warning
+                                    : AppColors.error,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${doer.successRate.toStringAsFixed(0)}%',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: doer.successRate >= 90
+                                      ? AppColors.success
+                                      : doer.successRate >= 70
+                                          ? AppColors.warning
+                                          : AppColors.error,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ],
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        // TODO: Navigate to chat with doer
-                      },
-                      icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                      label: Text('Chat'.tr(context)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: BorderSide(
-                          color: AppColors.textSecondaryLight.withValues(alpha: 0.3),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        visualDensity: VisualDensity.compact,
+                ),
+
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textSecondaryLight,
+                ),
+              ],
+            ),
+
+            // Action buttons
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      // TODO: Navigate to assign doer flow
+                    },
+                    icon: const Icon(Icons.assignment_ind, size: 16),
+                    label: Text('Assign'.tr(context)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.accent,
+                      side: const BorderSide(color: AppColors.accent),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
+                      visualDensity: VisualDensity.compact,
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      // TODO: Navigate to chat with doer
+                    },
+                    icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                    label: Text('Chat'.tr(context)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: BorderSide(
+                        color: AppColors.textSecondaryLight.withValues(alpha: 0.3),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Hero section showing doer network statistics.
+/// Hero section showing doer network statistics as a glass card.
 class _DoersHeroSection extends StatelessWidget {
   const _DoersHeroSection({required this.doers});
 
@@ -742,57 +787,53 @@ class _DoersHeroSection extends StatelessWidget {
     final busy = doers.where((d) => !d.isAvailable).length;
     final topRated = doers.where((d) => d.rating >= 4.0).length;
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: GlassContainer(
+        blur: 15,
+        opacity: 0.85,
+        borderRadius: BorderRadius.circular(16),
+        borderColor: AppColors.accent.withAlpha(40),
         gradient: LinearGradient(
           colors: [
-            AppColors.accent,
-            AppColors.accentDark,
+            AppColors.accent.withValues(alpha: 0.85),
+            AppColors.accentDark.withValues(alpha: 0.9),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accent.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.people_alt_rounded,
-                color: Colors.white,
-                size: 22,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Doer Network'.tr(context),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _HeroStat(label: 'Total Doers'.tr(context), value: '$totalDoers'),
-              _HeroStat(label: 'Available'.tr(context), value: '$available'),
-              _HeroStat(label: 'Busy'.tr(context), value: '$busy'),
-              _HeroStat(label: 'Top Rated'.tr(context), value: '$topRated'),
-            ],
-          ),
-        ],
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.people_alt_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Doer Network'.tr(context),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _HeroStat(label: 'Total Doers'.tr(context), value: '$totalDoers'),
+                _HeroStat(label: 'Available'.tr(context), value: '$available'),
+                _HeroStat(label: 'Busy'.tr(context), value: '$busy'),
+                _HeroStat(label: 'Top Rated'.tr(context), value: '$topRated'),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -832,7 +873,7 @@ class _HeroStat extends StatelessWidget {
   }
 }
 
-/// Top performers horizontal scroll section.
+/// Top performers horizontal scroll section with glass cards.
 class _TopPerformers extends StatelessWidget {
   const _TopPerformers({
     required this.doers,
@@ -873,66 +914,61 @@ class _TopPerformers extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final doer = performers[index];
-              return GestureDetector(
+              return GlassContainer(
+                blur: 10,
+                opacity: 0.65,
+                borderRadius: BorderRadius.circular(14),
+                borderColor: Colors.white.withAlpha(50),
                 onTap: () => onDoerTap(doer),
-                child: Container(
-                  width: 90,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
+                width: 90,
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: AppColors.accent.withValues(alpha: 0.15),
+                      backgroundImage: doer.avatarUrl != null
+                          ? NetworkImage(doer.avatarUrl!)
+                          : null,
+                      child: doer.avatarUrl == null
+                          ? Text(
+                              doer.initials,
+                              style: const TextStyle(
+                                color: AppColors.accent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            )
+                          : null,
                     ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: AppColors.accent.withValues(alpha: 0.15),
-                        backgroundImage: doer.avatarUrl != null
-                            ? NetworkImage(doer.avatarUrl!)
-                            : null,
-                        child: doer.avatarUrl == null
-                            ? Text(
-                                doer.initials,
-                                style: const TextStyle(
-                                  color: AppColors.accent,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              )
-                            : null,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        doer.name.split(' ').first,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 11,
-                            ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.star, size: 12, color: Colors.amber),
-                          const SizedBox(width: 2),
-                          Text(
-                            doer.rating.toStringAsFixed(1),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                    const SizedBox(height: 6),
+                    Text(
+                      doer.name.split(' ').first,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.star, size: 12, color: Colors.amber),
+                        const SizedBox(width: 2),
+                        Text(
+                          doer.rating.toStringAsFixed(1),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               );
             },
