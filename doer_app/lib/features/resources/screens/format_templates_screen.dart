@@ -27,7 +27,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../dashboard/widgets/app_header.dart';
 import '../../../core/translation/translation_extensions.dart';
 
@@ -286,34 +288,39 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: LoadingOverlay(
-        isLoading: _isLoading,
-        child: Column(
-          children: [
-            InnerHeader(
-              title: 'Format Templates',
-              onBack: () => Navigator.pop(context),
-            ),
-
-            // Popular templates section
-            _buildPopularSection(),
-
-            // Tab bar
-            _buildTabBar(),
-
-            // Tab content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildTemplateList(null), // All
-                  _buildTemplateList(TemplateFormat.word),
-                  _buildTemplateList(TemplateFormat.powerpoint),
-                  _buildTemplateList(TemplateFormat.excel),
-                ],
+      body: MeshGradientBackground(
+        position: MeshPosition.topLeft,
+        colors: MeshColors.defaultColors,
+        opacity: 0.45,
+        child: LoadingOverlay(
+          isLoading: _isLoading,
+          child: Column(
+            children: [
+              InnerHeader(
+                title: 'Format Templates',
+                onBack: () => Navigator.pop(context),
               ),
-            ),
-          ],
+
+              // Popular templates section
+              _buildPopularSection(),
+
+              // Tab bar
+              _buildTabBar(),
+
+              // Tab content
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildTemplateGrid(null), // All
+                    _buildTemplateGrid(TemplateFormat.word),
+                    _buildTemplateGrid(TemplateFormat.powerpoint),
+                    _buildTemplateGrid(TemplateFormat.excel),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -330,33 +337,49 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.star,
-                size: 18,
-                color: AppColors.warning,
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.star,
+                  size: 16,
+                  color: AppColors.warning,
+                ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Text(
                 'Popular Templates'.tr(context),
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
               ),
               const Spacer(),
-              Text(
-                '${popularTemplates.length} templates',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${popularTemplates.length} templates',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accent,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
           SizedBox(
-            height: 100,
+            height: 110,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: popularTemplates.length,
@@ -372,110 +395,103 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
     );
   }
 
-  /// Builds a popular template card.
+  /// Builds a popular template card with glass effect.
   Widget _buildPopularCard(DocumentTemplate template) {
     final isDownloading = _downloadingId == template.id;
 
-    return InkWell(
+    return GlassCard(
       onTap: isDownloading ? null : () => _downloadTemplate(template),
-      borderRadius: AppSpacing.borderRadiusMd,
-      child: Container(
-        width: 200,
-        padding: AppSpacing.paddingMd,
-        decoration: BoxDecoration(
-          color: template.format.color.withValues(alpha: 0.1),
-          borderRadius: AppSpacing.borderRadiusMd,
-          border: Border.all(
-            color: template.format.color.withValues(alpha: 0.3),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
+      blur: 10,
+      opacity: 0.7,
+      width: 200,
+      padding: AppSpacing.paddingMd,
+      borderColor: template.format.color.withValues(alpha: 0.2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                template.format.icon,
+                size: 24,
+                color: template.format.color,
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: template.format.color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  template.format.displayName,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: template.format.color,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              if (isDownloading)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      template.format.color,
+                    ),
+                  ),
+                )
+              else
                 Icon(
-                  template.format.icon,
-                  size: 24,
+                  Icons.download,
+                  size: 18,
                   color: template.format.color,
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: template.format.color,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    template.format.displayName,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                if (isDownloading)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
-                  )
-                else
-                  Icon(
-                    Icons.download,
-                    size: 18,
-                    color: template.format.color,
-                  ),
-              ],
+            ],
+          ),
+          const Spacer(),
+          Text(
+            template.name,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
-            const Spacer(),
-            Text(
-              template.name,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${template.downloadCount} downloads',
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
             ),
-            const SizedBox(height: 2),
-            Text(
-              '${template.downloadCount} downloads',
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  /// Builds the tab bar.
+  /// Builds the tab bar with glass styling.
   Widget _buildTabBar() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(
-          bottom: BorderSide(color: AppColors.border),
-        ),
-      ),
+    return GlassContainer(
+      blur: 10,
+      opacity: 0.8,
+      borderRadius: BorderRadius.zero,
       child: TabBar(
         controller: _tabController,
         isScrollable: true,
         tabAlignment: TabAlignment.start,
-        labelColor: AppColors.primary,
+        labelColor: AppColors.accent,
         unselectedLabelColor: AppColors.textSecondary,
-        indicatorColor: AppColors.primary,
+        indicatorColor: AppColors.accent,
         indicatorWeight: 3,
         labelStyle: const TextStyle(
           fontSize: 14,
@@ -518,8 +534,8 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
     );
   }
 
-  /// Builds the template list for a specific format.
-  Widget _buildTemplateList(TemplateFormat? format) {
+  /// Builds the template grid for a specific format.
+  Widget _buildTemplateGrid(TemplateFormat? format) {
     final templates = _getTemplatesByFormat(format);
 
     if (templates.isEmpty) {
@@ -545,183 +561,147 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
       );
     }
 
-    return ListView.separated(
+    return GridView.builder(
       padding: AppSpacing.paddingMd,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: AppSpacing.sm,
+        mainAxisSpacing: AppSpacing.sm,
+        childAspectRatio: 0.78,
+      ),
       itemCount: templates.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) {
-        return _buildTemplateCard(templates[index]);
+        return _buildTemplateGridCard(templates[index]);
       },
     );
   }
 
-  /// Builds a template card.
-  Widget _buildTemplateCard(DocumentTemplate template) {
+  /// Builds a template grid card with glass effect and category badge.
+  Widget _buildTemplateGridCard(DocumentTemplate template) {
     final isDownloading = _downloadingId == template.id;
 
-    return Card(
-      elevation: 2,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
-      ),
-      child: InkWell(
-        onTap: isDownloading ? null : () => _downloadTemplate(template),
-        borderRadius: AppSpacing.borderRadiusMd,
-        child: Padding(
-          padding: AppSpacing.paddingMd,
-          child: Row(
+    return GlassCard(
+      onTap: isDownloading ? null : () => _downloadTemplate(template),
+      blur: 10,
+      opacity: 0.72,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Format icon and badge row
+          Row(
             children: [
-              // Format icon
               Container(
-                width: 48,
-                height: 48,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: template.format.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   template.format.icon,
-                  size: 24,
+                  size: 22,
                   color: template.format.color,
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
-
-              // Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            template.name,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        if (template.isPopular)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.warning.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.star,
-                                  size: 10,
-                                  color: AppColors.warning,
-                                ),
-                                SizedBox(width: 2),
-                                Text(
-                                  'Popular'.tr(context),
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.warning,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      template.description,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: template.format.color.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            template.format.displayName,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: template.format.color,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatFileSize(template.fileSize),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.download,
-                          size: 12,
-                          color: AppColors.textTertiary,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${template.downloadCount}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+              const Spacer(),
+              // Category badge
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: template.format.color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  template.format.displayName,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: template.format.color,
+                  ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
 
-              // Download button
+          // Template name
+          Text(
+            template.name,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+
+          // Description
+          Expanded(
+            child: Text(
+              template.description,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+
+          // Footer row with meta and download
+          Row(
+            children: [
+              Text(
+                _formatFileSize(template.fileSize),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              const SizedBox(width: 6),
+              if (template.isPopular) ...[
+                Icon(
+                  Icons.star,
+                  size: 12,
+                  color: AppColors.warning,
+                ),
+                const SizedBox(width: 2),
+              ],
+              const Spacer(),
               if (isDownloading)
-                const SizedBox(
-                  width: 32,
-                  height: 32,
+                SizedBox(
+                  width: 24,
+                  height: 24,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      template.format.color,
+                    ),
                   ),
                 )
               else
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 30,
+                  height: 30,
                   decoration: BoxDecoration(
                     color: template.format.color.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.download,
-                    size: 20,
+                    size: 16,
                     color: template.format.color,
                   ),
                 ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

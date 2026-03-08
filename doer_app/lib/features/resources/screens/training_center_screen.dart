@@ -5,7 +5,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../providers/resources_provider.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../dashboard/widgets/app_header.dart';
 import '../../../core/translation/translation_extensions.dart';
 
@@ -58,41 +60,46 @@ class TrainingCenterScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: LoadingOverlay(
-        isLoading: resourcesState.isLoading,
-        child: Column(
-          children: [
-            InnerHeader(
-              title: 'Training Center',
-              onBack: () => Navigator.pop(context),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: AppSpacing.paddingMd,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Progress overview
-                    _buildProgressCard(context, progress, resourcesState),
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.freshColors,
+        opacity: 0.5,
+        child: LoadingOverlay(
+          isLoading: resourcesState.isLoading,
+          child: Column(
+            children: [
+              InnerHeader(
+                title: 'Training Center',
+                onBack: () => Navigator.pop(context),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: AppSpacing.paddingMd,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Progress overview
+                      _buildProgressCard(context, progress, resourcesState),
 
-                    const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.lg),
 
-                    // Modules by category
-                    ...modulesByCategory.entries.map((entry) {
-                      return _buildCategorySection(
-                        context,
-                        ref,
-                        entry.key,
-                        entry.value,
-                      );
-                    }),
+                      // Modules by category
+                      ...modulesByCategory.entries.map((entry) {
+                        return _buildCategorySection(
+                          context,
+                          ref,
+                          entry.key,
+                          entry.value,
+                        );
+                      }),
 
-                    const SizedBox(height: AppSpacing.xl),
-                  ],
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -110,155 +117,161 @@ class TrainingCenterScreen extends ConsumerWidget {
         .length;
     final totalRequired = state.trainingModules.where((m) => m.isRequired).length;
 
-    return Card(
-      elevation: 2,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
+    return GlassCard(
+      blur: 15,
+      opacity: 0.65,
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          AppColors.primary.withValues(alpha: 0.9),
+          AppColors.accent.withValues(alpha: 0.7),
+        ],
       ),
-      child: Container(
-        padding: AppSpacing.paddingMd,
-        decoration: BoxDecoration(
-          borderRadius: AppSpacing.borderRadiusMd,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary,
-              AppColors.primary.withValues(alpha: 0.8),
+      padding: AppSpacing.paddingMd,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.school,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Your Progress'.tr(context),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      '$completedCount of $totalCount modules completed',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Progress ring
+              SizedBox(
+                width: 56,
+                height: 56,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: CircularProgressIndicator(
+                        value: progress,
+                        strokeWidth: 5,
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Colors.white,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${(progress * 100).round()}%',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.school,
+          const SizedBox(height: AppSpacing.md),
+          // Teal gradient progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              minHeight: 8,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (requiredCompleted < totalRequired)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    size: 14,
                     color: Colors.white,
-                    size: 28,
                   ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Your Progress'.tr(context),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        '$completedCount of $totalCount modules completed',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${(progress * 100).round()}%',
+                  const SizedBox(width: 6),
+                  Text(
+                    '$requiredCompleted/$totalRequired required modules completed',
                     style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
                       color: Colors.white,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.white.withValues(alpha: 0.3),
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                minHeight: 8,
+                ],
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            if (requiredCompleted < totalRequired)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      size: 14,
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'All required modules completed!'.tr(context),
+                    style: const TextStyle(
+                      fontSize: 12,
                       color: Colors.white,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$requiredCompleted/$totalRequired required modules completed',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      size: 14,
-                      color: Colors.white,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'All required modules completed!'.tr(context),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -278,10 +291,18 @@ class TrainingCenterScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: Row(
             children: [
-              Icon(
-                _getCategoryIcon(category),
-                size: 20,
-                color: AppColors.primary,
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  _getCategoryIcon(category),
+                  size: 16,
+                  color: AppColors.accent,
+                ),
               ),
               const SizedBox(width: 8),
               Text(
@@ -293,11 +314,19 @@ class TrainingCenterScreen extends ConsumerWidget {
                 ),
               ),
               const Spacer(),
-              Text(
-                '$completedInCategory/${modules.length}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$completedInCategory/${modules.length}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accent,
+                  ),
                 ),
               ),
             ],
@@ -331,167 +360,162 @@ class TrainingCenterScreen extends ConsumerWidget {
     WidgetRef ref,
     TrainingModule module,
   ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      elevation: 1,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusSm,
-      ),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: GlassCard(
         onTap: () => _openModuleDetail(context, ref, module),
-        borderRadius: AppSpacing.borderRadiusSm,
-        child: Padding(
-          padding: AppSpacing.paddingMd,
-          child: Row(
-            children: [
-              // Status indicator
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: module.isCompleted
-                      ? AppColors.success.withValues(alpha: 0.1)
-                      : module.progress != null && module.progress! > 0
-                          ? AppColors.primary.withValues(alpha: 0.1)
-                          : AppColors.surfaceVariant,
-                  shape: BoxShape.circle,
-                ),
-                child: module.isCompleted
-                    ? const Icon(
-                        Icons.check_circle,
-                        color: AppColors.success,
-                        size: 24,
-                      )
+        blur: 10,
+        opacity: 0.75,
+        padding: AppSpacing.paddingMd,
+        child: Row(
+          children: [
+            // Status indicator
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: module.isCompleted
+                    ? AppColors.success.withValues(alpha: 0.1)
                     : module.progress != null && module.progress! > 0
-                        ? Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              SizedBox(
-                                width: 32,
-                                height: 32,
-                                child: CircularProgressIndicator(
-                                  value: module.progress,
-                                  strokeWidth: 3,
-                                  backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                                  valueColor: const AlwaysStoppedAnimation<Color>(
-                                    AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                '${(module.progress! * 100).round()}',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ],
-                          )
-                        : const Icon(
-                            Icons.play_circle_outline,
-                            color: AppColors.textTertiary,
-                            size: 24,
-                          ),
+                        ? AppColors.accent.withValues(alpha: 0.1)
+                        : AppColors.surfaceVariant,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: AppSpacing.md),
+              child: module.isCompleted
+                  ? const Icon(
+                      Icons.check_circle,
+                      color: AppColors.success,
+                      size: 24,
+                    )
+                  : module.progress != null && module.progress! > 0
+                      ? Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: CircularProgressIndicator(
+                                value: module.progress,
+                                strokeWidth: 3,
+                                backgroundColor: AppColors.accent.withValues(alpha: 0.2),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  AppColors.accent,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${(module.progress! * 100).round()}',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ],
+                        )
+                      : const Icon(
+                          Icons.play_circle_outline,
+                          color: AppColors.textTertiary,
+                          size: 24,
+                        ),
+            ),
+            const SizedBox(width: AppSpacing.md),
 
-              // Module info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
+            // Module info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          module.title,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: module.isCompleted
+                                ? AppColors.textSecondary
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      if (module.isRequired)
+                        Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                           child: Text(
-                            module.title,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: module.isCompleted
-                                  ? AppColors.textSecondary
-                                  : AppColors.textPrimary,
+                            'Required'.tr(context),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.error,
                             ),
                           ),
                         ),
-                        if (module.isRequired)
-                          Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'Required'.tr(context),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.error,
-                              ),
-                            ),
-                          ),
-                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    module.description,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      module.description,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.schedule,
+                        size: 14,
+                        color: AppColors.textTertiary,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
+                      const SizedBox(width: 4),
+                      Text(
+                        module.formattedDuration,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                      if (module.videoUrl != null) ...[
+                        const SizedBox(width: 12),
                         const Icon(
-                          Icons.schedule,
+                          Icons.play_circle_filled,
                           size: 14,
                           color: AppColors.textTertiary,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          module.formattedDuration,
+                          'Video'.tr(context),
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textTertiary,
                           ),
                         ),
-                        if (module.videoUrl != null) ...[
-                          const SizedBox(width: 12),
-                          const Icon(
-                            Icons.play_circle_filled,
-                            size: 14,
-                            color: AppColors.textTertiary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Video'.tr(context),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                        ],
                       ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
+            ),
 
-              // Arrow
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textTertiary,
-              ),
-            ],
-          ),
+            // Arrow
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textTertiary,
+            ),
+          ],
         ),
       ),
     );
@@ -588,7 +612,7 @@ class _ModuleDetailSheetState extends ConsumerState<_ModuleDetailSheet> {
                                 ),
                                 child: Text(
                                   'Required Module'.tr(context),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.error,
@@ -642,7 +666,7 @@ class _ModuleDetailSheetState extends ConsumerState<_ModuleDetailSheet> {
                   if (widget.module.videoUrl != null)
                     Container(
                       height: 200,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.surfaceVariant,
                         borderRadius: AppSpacing.borderRadiusMd,
                       ),
@@ -653,19 +677,19 @@ class _ModuleDetailSheetState extends ConsumerState<_ModuleDetailSheet> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
+                                color: AppColors.accent.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
                                 Icons.play_arrow,
                                 size: 48,
-                                color: AppColors.primary,
+                                color: AppColors.accent,
                               ),
                             ),
                             const SizedBox(height: 12),
                             Text(
                               'Video content'.tr(context),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 14,
                                 color: AppColors.textSecondary,
                               ),
@@ -680,7 +704,7 @@ class _ModuleDetailSheetState extends ConsumerState<_ModuleDetailSheet> {
                   // Description
                   Text(
                     'About this module'.tr(context),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
@@ -716,7 +740,7 @@ class _ModuleDetailSheetState extends ConsumerState<_ModuleDetailSheet> {
                   if (widget.module.contentMarkdown != null) ...[
                     Text(
                       'Module Content'.tr(context),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
@@ -814,7 +838,7 @@ class _ModuleDetailSheetState extends ConsumerState<_ModuleDetailSheet> {
       children: [
         Row(
           children: [
-            Icon(icon, size: 18, color: AppColors.primary),
+            Icon(icon, size: 18, color: AppColors.accent),
             const SizedBox(width: 8),
             Text(
               title,
@@ -837,7 +861,7 @@ class _ModuleDetailSheetState extends ConsumerState<_ModuleDetailSheet> {
                     height: 6,
                     margin: const EdgeInsets.only(top: 6, right: 10),
                     decoration: const BoxDecoration(
-                      color: AppColors.primary,
+                      color: AppColors.accent,
                       shape: BoxShape.circle,
                     ),
                   ),

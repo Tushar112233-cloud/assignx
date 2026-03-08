@@ -7,7 +7,8 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../providers/resources_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
-import '../../../shared/widgets/section_card.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../dashboard/widgets/app_header.dart';
 import '../../../core/translation/translation_extensions.dart';
 
@@ -125,41 +126,49 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          InnerHeader(
-            title: 'Citation Builder',
-            onBack: () => Navigator.pop(context),
-          ),
-
-          // Tab bar
-          Container(
-            color: AppColors.surface,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: AppColors.primary,
-              unselectedLabelColor: AppColors.textSecondary,
-              indicatorColor: AppColors.primary,
-              tabs: const [
-                Tab(text: 'Create Citation'),
-                Tab(text: 'History'),
-              ],
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        colors: MeshColors.coolColors,
+        opacity: 0.4,
+        child: Column(
+          children: [
+            InnerHeader(
+              title: 'Citation Builder',
+              onBack: () => Navigator.pop(context),
             ),
-          ),
 
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Create citation tab
-                _buildCreateTab(),
-
-                // History tab
-                _buildHistoryTab(history),
-              ],
+            // Tab bar in glass container
+            GlassContainer(
+              blur: 10,
+              opacity: 0.8,
+              borderRadius: BorderRadius.zero,
+              child: TabBar(
+                controller: _tabController,
+                labelColor: AppColors.accent,
+                unselectedLabelColor: AppColors.textSecondary,
+                indicatorColor: AppColors.accent,
+                indicatorWeight: 3,
+                tabs: const [
+                  Tab(text: 'Create Citation'),
+                  Tab(text: 'History'),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // Create citation tab
+                  _buildCreateTab(),
+
+                  // History tab
+                  _buildHistoryTab(history),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -180,7 +189,7 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
 
           const SizedBox(height: AppSpacing.lg),
 
-          // Citation form
+          // Citation form in glass container
           _buildCitationForm(),
 
           const SizedBox(height: AppSpacing.lg),
@@ -195,7 +204,7 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
 
           const SizedBox(height: AppSpacing.lg),
 
-          // Generated citation result
+          // Generated citation result as a glass preview card
           if (_generatedCitation != null) _buildGeneratedCitation(),
 
           const SizedBox(height: AppSpacing.xl),
@@ -205,12 +214,36 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
   }
 
   Widget _buildStyleSelector() {
-    return SectionCard(
-      icon: Icons.style,
-      title: 'Citation Style',
+    return GlassCard(
+      blur: 10,
+      opacity: 0.7,
+      padding: AppSpacing.paddingMd,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.style, size: 16, color: AppColors.accent),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Citation Style',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
           Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
@@ -225,9 +258,9 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
                     _generatedCitation = null;
                   });
                 },
-                selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                selectedColor: AppColors.accent.withValues(alpha: 0.2),
                 labelStyle: TextStyle(
-                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                  color: isSelected ? AppColors.accent : AppColors.textSecondary,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
               );
@@ -247,43 +280,76 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
   }
 
   Widget _buildSourceTypeSelector() {
-    return SectionCard(
-      icon: Icons.source,
-      title: 'Source Type',
-      child: DropdownButtonFormField<SourceType>(
-        value: _selectedSourceType,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(
-            borderRadius: AppSpacing.borderRadiusSm,
-            borderSide: BorderSide(color: AppColors.border),
-          ),
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 12,
-          ),
-        ),
-        items: SourceType.values.map((type) {
-          return DropdownMenuItem(
-            value: type,
-            child: Row(
-              children: [
-                Icon(
-                  _getSourceIcon(type),
-                  size: 18,
-                  color: AppColors.textSecondary,
+    return GlassCard(
+      blur: 10,
+      opacity: 0.7,
+      padding: AppSpacing.paddingMd,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 8),
-                Text(type.displayName),
-              ],
+                child: const Icon(Icons.source, size: 16, color: AppColors.accent),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Source Type',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          DropdownButtonFormField<SourceType>(
+            value: _selectedSourceType,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: AppSpacing.borderRadiusSm,
+                borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: AppSpacing.borderRadiusSm,
+                borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
             ),
-          );
-        }).toList(),
-        onChanged: (value) {
-          setState(() {
-            _selectedSourceType = value!;
-            _generatedCitation = null;
-          });
-        },
+            items: SourceType.values.map((type) {
+              return DropdownMenuItem(
+                value: type,
+                child: Row(
+                  children: [
+                    Icon(
+                      _getSourceIcon(type),
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(type.displayName),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedSourceType = value!;
+                _generatedCitation = null;
+              });
+            },
+          ),
+        ],
       ),
     );
   }
@@ -308,12 +374,36 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
   }
 
   Widget _buildCitationForm() {
-    return SectionCard(
-      icon: Icons.edit,
-      title: 'Source Details',
+    return GlassCard(
+      blur: 10,
+      opacity: 0.7,
+      padding: AppSpacing.paddingMd,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.edit, size: 16, color: AppColors.accent),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Source Details',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
           // Authors
           _buildFormField(
             'Author(s)',
@@ -450,99 +540,105 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
     );
   }
 
+  /// Builds the generated citation preview in a glass card.
   Widget _buildGeneratedCitation() {
-    return Card(
-      elevation: 2,
-      color: AppColors.success.withValues(alpha: 0.05),
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
-        side: BorderSide(
-          color: AppColors.success.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Padding(
-        padding: AppSpacing.paddingMd,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
+    return GlassCard(
+      blur: 12,
+      opacity: 0.75,
+      borderColor: AppColors.success.withValues(alpha: 0.3),
+      padding: AppSpacing.paddingMd,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
                   Icons.check_circle,
-                  size: 18,
+                  size: 16,
                   color: AppColors.success,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Generated Citation'.tr(context),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.success,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    _generatedCitation!.style.name,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: AppSpacing.lg),
-            Container(
-              width: double.infinity,
-              padding: AppSpacing.paddingMd,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: AppSpacing.borderRadiusSm,
               ),
-              child: SelectableText(
-                _generatedCitation!.formattedCitation,
+              const SizedBox(width: 8),
+              Text(
+                'Generated Citation'.tr(context),
                 style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textPrimary,
-                  height: 1.6,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.success,
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    text: 'Copy',
-                    onPressed: _copyCitation,
-                    variant: AppButtonVariant.secondary,
-                    icon: Icons.copy,
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  _generatedCitation!.style.name,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.accent,
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: AppButton(
-                    text: 'Clear Form',
-                    onPressed: _clearForm,
-                    variant: AppButtonVariant.outline,
-                    icon: Icons.clear,
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          const Divider(height: AppSpacing.lg),
+          // Citation preview card
+          Container(
+            width: double.infinity,
+            padding: AppSpacing.paddingMd,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant.withValues(alpha: 0.6),
+              borderRadius: AppSpacing.borderRadiusSm,
+              border: Border.all(
+                color: AppColors.border.withValues(alpha: 0.3),
+              ),
             ),
-          ],
-        ),
+            child: SelectableText(
+              _generatedCitation!.formattedCitation,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textPrimary,
+                height: 1.6,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  text: 'Copy',
+                  onPressed: _copyCitation,
+                  variant: AppButtonVariant.secondary,
+                  icon: Icons.copy,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: AppButton(
+                  text: 'Clear Form',
+                  onPressed: _clearForm,
+                  variant: AppButtonVariant.outline,
+                  icon: Icons.clear,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -555,8 +651,8 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
           children: [
             Container(
               padding: AppSpacing.paddingLg,
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceVariant,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -568,7 +664,7 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
             const SizedBox(height: AppSpacing.lg),
             Text(
               'No citations yet'.tr(context),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
@@ -577,7 +673,7 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Your generated citations will appear here'.tr(context),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
               ),
@@ -598,106 +694,101 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
   }
 
   Widget _buildHistoryItem(Citation citation) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      elevation: 1,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusSm,
-      ),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: GlassCard(
         onTap: () => _showCitationDetail(citation),
-        borderRadius: AppSpacing.borderRadiusSm,
-        child: Padding(
-          padding: AppSpacing.paddingMd,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    _getSourceIcon(citation.sourceType),
-                    size: 16,
-                    color: AppColors.primary,
+        blur: 10,
+        opacity: 0.7,
+        padding: AppSpacing.paddingMd,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _getSourceIcon(citation.sourceType),
+                  size: 16,
+                  color: AppColors.accent,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    citation.title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(width: 8),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    citation.style.name,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              citation.formattedCitation,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (citation.authors != null) ...[
+                  const Icon(
+                    Icons.person,
+                    size: 12,
+                    color: AppColors.textTertiary,
+                  ),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      citation.title,
+                      citation.authors!,
                       style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      citation.style.name,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.accent,
-                      ),
+                ],
+                if (citation.year != null) ...[
+                  const SizedBox(width: 12),
+                  Text(
+                    citation.year.toString(),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                citation.formattedCitation,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  if (citation.authors != null) ...[
-                    const Icon(
-                      Icons.person,
-                      size: 12,
-                      color: AppColors.textTertiary,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        citation.authors!,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textTertiary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                  if (citation.year != null) ...[
-                    const SizedBox(width: 12),
-                    Text(
-                      citation.year.toString(),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -743,8 +834,8 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
             Text('Citation generated!'.tr(context)),
           ],
         ),
@@ -810,7 +901,7 @@ class _CitationBuilderScreenState extends ConsumerState<CitationBuilderScreen>
               children: [
                 Icon(
                   _getSourceIcon(citation.sourceType),
-                  color: AppColors.primary,
+                  color: AppColors.accent,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
