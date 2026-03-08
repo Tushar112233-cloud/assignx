@@ -7,6 +7,7 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../core/services/app_info_service.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/profile_provider.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/settings/account_settings.dart';
 import '../widgets/settings/display_settings.dart';
 import '../widgets/settings/notification_settings.dart';
@@ -47,7 +48,11 @@ class SettingsScreen extends ConsumerWidget {
       length: 4,
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: Column(
+        body: MeshGradientBackground(
+          position: MeshPosition.bottomRight,
+          colors: MeshColors.defaultColors,
+          opacity: 0.5,
+          child: Column(
           children: [
             // Hero section
             if (profile != null) SettingsHero(profile: profile),
@@ -216,6 +221,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
         ),
         bottomNavigationBar: _buildBottomBar(context, ref, appInfo),
       ),

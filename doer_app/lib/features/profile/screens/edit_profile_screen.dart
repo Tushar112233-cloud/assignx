@@ -11,6 +11,8 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../core/utils/validators.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../dashboard/widgets/app_header.dart';
 import '../../../core/translation/translation_extensions.dart';
 
@@ -86,112 +88,144 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          InnerHeader(
-            title: 'Edit Profile',
-            onBack: () => Navigator.pop(context),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: AppSpacing.paddingMd,
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Avatar section
-                    _buildAvatarSection(profile),
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.defaultColors,
+        opacity: 0.5,
+        child: Column(
+          children: [
+            InnerHeader(
+              title: 'Edit Profile',
+              onBack: () => Navigator.pop(context),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: AppSpacing.paddingMd,
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Avatar section in glass container
+                      GlassCard(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: _buildAvatarSection(profile),
+                      ),
 
-                    const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.lg),
 
-                    // Personal info section
-                    _buildSectionTitle('Personal Information'),
-                    const SizedBox(height: AppSpacing.md),
+                      // Personal info section in glass container
+                      GlassCard(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionTitle('Personal Information'),
+                            const SizedBox(height: AppSpacing.md),
 
-                    _buildFormField(
-                      label: 'Full Name',
-                      controller: _nameController,
-                      hint: 'Enter your full name',
-                      prefixIcon: Icons.person_outline,
-                      validator: Validators.name,
-                      maxLength: 100,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s\-\.]')),
-                      ],
-                    ),
+                            _buildFormField(
+                              label: 'Full Name',
+                              controller: _nameController,
+                              hint: 'Enter your full name',
+                              prefixIcon: Icons.person_outline,
+                              validator: Validators.name,
+                              maxLength: 100,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s\-\.]')),
+                              ],
+                            ),
 
-                    const SizedBox(height: AppSpacing.md),
+                            const SizedBox(height: AppSpacing.md),
 
-                    _buildFormField(
-                      label: 'Phone Number',
-                      controller: _phoneController,
-                      hint: 'Enter your phone number',
-                      prefixIcon: Icons.phone_outlined,
-                      keyboardType: TextInputType.phone,
-                      validator: Validators.optionalPhone,
-                      maxLength: 15,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s]')),
-                      ],
-                    ),
+                            _buildFormField(
+                              label: 'Phone Number',
+                              controller: _phoneController,
+                              hint: 'Enter your phone number',
+                              prefixIcon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              validator: Validators.optionalPhone,
+                              maxLength: 15,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s]')),
+                              ],
+                            ),
 
-                    const SizedBox(height: AppSpacing.md),
+                            const SizedBox(height: AppSpacing.md),
 
-                    _buildFormField(
-                      label: 'Education',
-                      controller: _educationController,
-                      hint: 'e.g., M.A. in English Literature',
-                      prefixIcon: Icons.school_outlined,
-                      validator: Validators.education,
-                      maxLength: 200,
-                    ),
+                            _buildFormField(
+                              label: 'Education',
+                              controller: _educationController,
+                              hint: 'e.g., M.A. in English Literature',
+                              prefixIcon: Icons.school_outlined,
+                              validator: Validators.education,
+                              maxLength: 200,
+                            ),
+                          ],
+                        ),
+                      ),
 
-                    const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.lg),
 
-                    // Bio section
-                    _buildSectionTitle('About You'),
-                    const SizedBox(height: AppSpacing.md),
+                      // Bio section in glass container
+                      GlassCard(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionTitle('About You'),
+                            const SizedBox(height: AppSpacing.md),
 
-                    _buildFormField(
-                      label: 'Bio',
-                      controller: _bioController,
-                      hint: 'Tell us about yourself and your expertise...',
-                      maxLines: 4,
-                      validator: Validators.bio,
-                      maxLength: 500,
-                    ),
+                            _buildFormField(
+                              label: 'Bio',
+                              controller: _bioController,
+                              hint: 'Tell us about yourself and your expertise...',
+                              maxLines: 4,
+                              validator: Validators.bio,
+                              maxLength: 500,
+                            ),
+                          ],
+                        ),
+                      ),
 
-                    const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.lg),
 
-                    // Skills section
-                    _buildSectionTitle('Skills & Expertise'),
-                    const SizedBox(height: AppSpacing.md),
+                      // Skills section in glass container
+                      GlassCard(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionTitle('Skills & Expertise'),
+                            const SizedBox(height: AppSpacing.md),
 
-                    _buildFormField(
-                      label: 'Skills',
-                      controller: _skillsController,
-                      hint: 'Enter skills separated by commas',
-                      prefixIcon: Icons.psychology_outlined,
-                      helperText: 'e.g., Research Papers, Essays, APA Format'.tr(context),
-                      validator: Validators.skills,
-                    ),
+                            _buildFormField(
+                              label: 'Skills',
+                              controller: _skillsController,
+                              hint: 'Enter skills separated by commas',
+                              prefixIcon: Icons.psychology_outlined,
+                              helperText: 'e.g., Research Papers, Essays, APA Format'.tr(context),
+                              validator: Validators.skills,
+                            ),
 
-                    const SizedBox(height: AppSpacing.md),
+                            const SizedBox(height: AppSpacing.md),
 
-                    // Skill suggestions
-                    _buildSkillSuggestions(),
+                            // Skill suggestions
+                            _buildSkillSuggestions(),
+                          ],
+                        ),
+                      ),
 
-                    const SizedBox(height: AppSpacing.xl),
-                  ],
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Save button
-          _buildBottomBar(profileState.isSaving),
-        ],
+            // Save button
+            _buildBottomBar(profileState.isSaving),
+          ],
+        ),
       ),
     );
   }

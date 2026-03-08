@@ -5,8 +5,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/utils/formatters.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_overlay.dart';
-import '../../dashboard/widgets/app_header.dart';
 import '../../../core/translation/translation_extensions.dart';
 
 /// Payment history screen displaying all financial transactions.
@@ -58,67 +58,63 @@ class PaymentHistoryScreen extends ConsumerWidget {
     final isLoading = profileState.isLoading;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: LoadingOverlay(
         isLoading: isLoading,
-        child: Column(
-          children: [
-            InnerHeader(
-              title: 'Payment History',
-              onBack: () => Navigator.pop(context),
-            ),
-            Expanded(
-              child: RefreshIndicator(
-              onRefresh: () => ref.read(profileProvider.notifier).refresh(),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: AppSpacing.paddingMd,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Summary card
-                    _buildSummaryCard(context, profileState, profile),
+        child: RefreshIndicator(
+          onRefresh: () => ref.read(profileProvider.notifier).refresh(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: AppSpacing.paddingMd,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: AppSpacing.md),
 
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Transactions header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Recent Transactions'.tr(context),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: () => _showFilterSheet(context),
-                          icon: const Icon(Icons.filter_list, size: 18),
-                          label: Text('Filter'.tr(context)),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: AppSpacing.sm),
-
-                    // Transactions list
-                    if (payments.isEmpty)
-                      _buildEmptyState(context)
-                    else
-                      ...payments.map((payment) => _buildTransactionCard(payment)),
-
-                    const SizedBox(height: AppSpacing.xl),
-                    ],
-                  ),
+                // Summary card in glass container
+                GlassCard(
+                  padding: EdgeInsets.zero,
+                  child: _buildSummaryCard(context, profileState, profile),
                 ),
-              ),
+
+                const SizedBox(height: AppSpacing.lg),
+
+                // Transactions header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Recent Transactions'.tr(context),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _showFilterSheet(context),
+                      icon: const Icon(Icons.filter_list, size: 18),
+                      label: Text('Filter'.tr(context)),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                // Transactions list
+                if (payments.isEmpty)
+                  _buildEmptyState(context)
+                else
+                  ...payments.map((payment) => _buildTransactionCard(payment)),
+
+                // Bottom padding for floating nav bar
+                const SizedBox(height: 100),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -233,18 +229,11 @@ class PaymentHistoryScreen extends ConsumerWidget {
   }
 
   Widget _buildTransactionCard(PaymentTransaction payment) {
-    return Card(
+    return GlassCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      elevation: 1,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusSm,
-      ),
-      child: InkWell(
-        onTap: () => _showTransactionDetail(payment),
-        borderRadius: AppSpacing.borderRadiusSm,
-        child: Padding(
-          padding: AppSpacing.paddingMd,
-          child: Row(
+      onTap: () => _showTransactionDetail(payment),
+      padding: AppSpacing.paddingMd,
+      child: Row(
             children: [
               // Type icon
               Container(
@@ -320,8 +309,6 @@ class PaymentHistoryScreen extends ConsumerWidget {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 

@@ -32,7 +32,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/statistics_provider.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/app_header.dart';
 import '../widgets/statistics/enhanced_stat_card.dart';
 import '../widgets/statistics/insights_panel.dart';
@@ -54,60 +56,83 @@ class StatisticsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: LoadingOverlay(
-        isLoading: isLoading,
-        child: Column(
-          children: [
-            InnerHeader(
-              title: 'Statistics'.tr(context),
-              onBack: () => Navigator.pop(context),
-            ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(statisticsProvider.notifier).refresh(),
-                color: AppColors.primary,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 1. Performance Hero Banner
-                      const PerformanceHeroBanner(),
-                      const SizedBox(height: 20),
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.defaultColors,
+        opacity: 0.5,
+        child: LoadingOverlay(
+          isLoading: isLoading,
+          child: Column(
+            children: [
+              InnerHeader(
+                title: 'Statistics'.tr(context),
+                onBack: () => Navigator.pop(context),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () =>
+                      ref.read(statisticsProvider.notifier).refresh(),
+                  color: AppColors.primary,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 1. Performance Hero Banner
+                        const PerformanceHeroBanner(),
+                        const SizedBox(height: 20),
 
-                      // 2. Quick Stats Grid
-                      _buildQuickStatsGrid(context, stats),
-                      const SizedBox(height: 20),
+                        // 2. Quick Stats Grid
+                        _buildQuickStatsGrid(context, stats),
+                        const SizedBox(height: 20),
 
-                      // 3. Interactive Earnings Chart
-                      const InteractiveEarningsChart(),
-                      const SizedBox(height: 20),
+                        // 3. Interactive Earnings Chart
+                        GlassContainer(
+                          padding: const EdgeInsets.all(16),
+                          child: const InteractiveEarningsChart(),
+                        ),
+                        const SizedBox(height: 20),
 
-                      // 4. Rating Breakdown + Distribution row
-                      const RatingBreakdownCard(),
-                      const SizedBox(height: 16),
-                      const ProjectDistributionChart(),
-                      const SizedBox(height: 20),
+                        // 4. Rating Breakdown + Distribution row
+                        GlassContainer(
+                          padding: const EdgeInsets.all(16),
+                          child: const RatingBreakdownCard(),
+                        ),
+                        const SizedBox(height: 16),
+                        GlassContainer(
+                          padding: const EdgeInsets.all(16),
+                          child: const ProjectDistributionChart(),
+                        ),
+                        const SizedBox(height: 20),
 
-                      // 5. Top Subjects Ranking
-                      const TopSubjectsRanking(),
-                      const SizedBox(height: 20),
+                        // 5. Top Subjects Ranking
+                        GlassContainer(
+                          padding: const EdgeInsets.all(16),
+                          child: const TopSubjectsRanking(),
+                        ),
+                        const SizedBox(height: 20),
 
-                      // 6. Monthly Performance Heatmap
-                      const MonthlyPerformanceHeatmap(),
-                      const SizedBox(height: 20),
+                        // 6. Monthly Performance Heatmap
+                        GlassContainer(
+                          padding: const EdgeInsets.all(16),
+                          child: const MonthlyPerformanceHeatmap(),
+                        ),
+                        const SizedBox(height: 20),
 
-                      // 7. Insights & Goals
-                      const InsightsPanel(),
-                      const SizedBox(height: 24),
-                    ],
+                        // 7. Insights & Goals
+                        GlassContainer(
+                          padding: const EdgeInsets.all(16),
+                          child: const InsightsPanel(),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

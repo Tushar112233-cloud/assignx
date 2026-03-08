@@ -9,6 +9,8 @@ import '../../../data/models/deliverable_model.dart';
 import '../../../providers/workspace_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../dashboard/widgets/app_header.dart';
 import '../widgets/file_upload.dart';
 import '../../../core/translation/translation_extensions.dart';
@@ -91,35 +93,33 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          InnerHeader(
-            title: 'Submit Work',
-            onBack: () => Navigator.pop(context),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: AppSpacing.paddingMd,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Submission summary
-                  _buildSummaryCard(project, workspaceState),
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        opacity: 0.4,
+        child: Column(
+          children: [
+            InnerHeader(
+              title: 'Submit Work',
+              onBack: () => Navigator.pop(context),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: AppSpacing.paddingMd,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Submission summary
+                    _buildSummaryCard(project, workspaceState),
 
-                  const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.lg),
 
-                  // Primary file selection
-                  _buildFileSection(files, primaryFile),
+                    // Primary file selection
+                    _buildFileSection(files, primaryFile),
 
-                  const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.lg),
 
-                  // Submission notes
-                  Card(
-                    elevation: 2,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: AppSpacing.borderRadiusMd,
-                    ),
-                    child: Padding(
+                    // Submission notes in glass
+                    GlassCard(
                       padding: AppSpacing.paddingMd,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,121 +151,123 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
                         ],
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.lg),
 
-                  // Confirmation checklist
-                  _buildConfirmationSection(),
+                    // Confirmation checklist in glass
+                    _buildConfirmationSection(),
 
-                  const SizedBox(height: AppSpacing.xl),
-                ],
+                    const SizedBox(height: AppSpacing.xl),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // Submit button
-          _buildBottomBar(workspaceState),
-        ],
+            // Submit button
+            _buildBottomBar(workspaceState),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSummaryCard(DoerProjectModel? project, WorkspaceState workspaceState) {
-    return Card(
-      elevation: 2,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
+    return GlassCard(
+      padding: AppSpacing.paddingMd,
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withValues(alpha: 0.9),
+          Colors.white.withValues(alpha: 0.7),
+        ],
       ),
-      child: Padding(
-        padding: AppSpacing.paddingMd,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.summarize,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'Submission Summary'.tr(context),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: AppSpacing.lg),
-
-            // Project title
-            if (project != null) ...[
-              _buildSummaryRow('Project', project.title),
-              const SizedBox(height: AppSpacing.sm),
-            ],
-
-            // Progress
-            _buildSummaryRow(
-              'Progress',
-              '${(workspaceState.progress * 100).round()}%',
-              valueColor: workspaceState.progress >= 0.75
-                  ? AppColors.success
-                  : AppColors.warning,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-
-            // Time spent
-            _buildSummaryRow(
-              'Time Spent',
-              _formatDuration(workspaceState.totalTimeSpent),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-
-            // Files count
-            _buildSummaryRow(
-              'Files',
-              '${workspaceState.deliverables.length} file${workspaceState.deliverables.length != 1 ? 's' : ''}',
-            ),
-
-            // Warning if progress is low
-            if (workspaceState.progress < 0.5) ...[
-              const SizedBox(height: AppSpacing.md),
-              Container(
-                padding: AppSpacing.paddingSm,
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.1),
-                  borderRadius: AppSpacing.borderRadiusSm,
-                  border: Border.all(
-                    color: AppColors.warning.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.warning_amber,
-                      size: 18,
-                      color: AppColors.warning,
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Progress is below 50%. Consider adding more work before submitting.'.tr(context),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.warning,
-                        ),
-                      ),
-                    ),
-                  ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.summarize,
+                size: 18,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Submission Summary'.tr(context),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
+          ),
+          const Divider(height: AppSpacing.lg),
+
+          // Project title
+          if (project != null) ...[
+            _buildSummaryRow('Project', project.title),
+            const SizedBox(height: AppSpacing.sm),
           ],
-        ),
+
+          // Progress
+          _buildSummaryRow(
+            'Progress',
+            '${(workspaceState.progress * 100).round()}%',
+            valueColor: workspaceState.progress >= 0.75
+                ? AppColors.success
+                : AppColors.warning,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+
+          // Time spent
+          _buildSummaryRow(
+            'Time Spent',
+            _formatDuration(workspaceState.totalTimeSpent),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+
+          // Files count
+          _buildSummaryRow(
+            'Files',
+            '${workspaceState.deliverables.length} file${workspaceState.deliverables.length != 1 ? 's' : ''}',
+          ),
+
+          // Warning if progress is low
+          if (workspaceState.progress < 0.5) ...[
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: AppSpacing.paddingSm,
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: AppSpacing.borderRadiusSm,
+                border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber,
+                    size: 18,
+                    color: AppColors.warning,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Progress is below 50%. Consider adding more work before submitting.'.tr(context),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -294,163 +296,151 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
   }
 
   Widget _buildFileSection(List<DeliverableModel> files, DeliverableModel? primaryFile) {
-    return Card(
-      elevation: 2,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
-      ),
-      child: Padding(
-        padding: AppSpacing.paddingMd,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.attach_file,
-                  size: 18,
-                  color: AppColors.primary,
+    return GlassCard(
+      padding: AppSpacing.paddingMd,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.attach_file,
+                size: 18,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Submission Files'.tr(context),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Submission Files'.tr(context),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+              ),
+              const Spacer(),
+              if (primaryFile != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
                   ),
-                ),
-                const Spacer(),
-                if (primaryFile != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.1),
-                      borderRadius: AppSpacing.borderRadiusSm,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.check_circle,
-                          size: 14,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.1),
+                    borderRadius: AppSpacing.borderRadiusSm,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        size: 14,
+                        color: AppColors.success,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Primary set'.tr(context),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.success,
                         ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Primary set'.tr(context),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.success,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            if (files.isEmpty)
-              Container(
-                padding: AppSpacing.paddingMd,
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.1),
-                  borderRadius: AppSpacing.borderRadiusSm,
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 18,
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          if (files.isEmpty)
+            Container(
+              padding: AppSpacing.paddingMd,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: AppSpacing.borderRadiusSm,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 18,
+                    color: AppColors.error,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'No files uploaded. Please add files before submitting.'.tr(context),
+                    style: TextStyle(
+                      fontSize: 13,
                       color: AppColors.error,
                     ),
-                    SizedBox(width: 8),
-                    Text(
-                      'No files uploaded. Please add files before submitting.'.tr(context),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.error,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              FileList(
-                files: files,
-                editable: false,
+                  ),
+                ],
               ),
-          ],
-        ),
+            )
+          else
+            FileList(
+              files: files,
+              editable: false,
+            ),
+        ],
       ),
     );
   }
 
   Widget _buildConfirmationSection() {
-    return Card(
-      elevation: 2,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
-      ),
-      child: Padding(
-        padding: AppSpacing.paddingMd,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.checklist,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'Confirmation'.tr(context),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            CheckboxListTile(
-              value: _confirmChecklist,
-              onChanged: (value) => setState(() {
-                _confirmChecklist = value ?? false;
-              }),
-              title: Text(
-                'I have completed all requirements'.tr(context),
-                style: TextStyle(fontSize: 14),
+    return GlassCard(
+      padding: AppSpacing.paddingMd,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.checklist,
+                size: 18,
+                color: AppColors.primary,
               ),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-              activeColor: AppColors.primary,
-            ),
-
-            CheckboxListTile(
-              value: _confirmOriginal,
-              onChanged: (value) => setState(() {
-                _confirmOriginal = value ?? false;
-              }),
-              title: Text(
-                'This is my original work and plagiarism-free'.tr(context),
-                style: TextStyle(fontSize: 14),
+              SizedBox(width: 8),
+              Text(
+                'Confirmation'.tr(context),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
               ),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-              activeColor: AppColors.primary,
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          CheckboxListTile(
+            value: _confirmChecklist,
+            onChanged: (value) => setState(() {
+              _confirmChecklist = value ?? false;
+            }),
+            title: Text(
+              'I have completed all requirements'.tr(context),
+              style: TextStyle(fontSize: 14),
             ),
-          ],
-        ),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            activeColor: AppColors.primary,
+          ),
+
+          CheckboxListTile(
+            value: _confirmOriginal,
+            onChanged: (value) => setState(() {
+              _confirmOriginal = value ?? false;
+            }),
+            title: Text(
+              'This is my original work and plagiarism-free'.tr(context),
+              style: TextStyle(fontSize: 14),
+            ),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            activeColor: AppColors.primary,
+          ),
+        ],
       ),
     );
   }
@@ -461,18 +451,12 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
         _confirmOriginal &&
         !_isSubmitting;
 
-    return Container(
+    return GlassContainer(
+      blur: 20,
+      opacity: 0.9,
+      borderRadius: BorderRadius.zero,
       padding: AppSpacing.paddingMd,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      borderColor: AppColors.border.withValues(alpha: 0.2),
       child: SafeArea(
         top: false,
         child: Column(

@@ -5,6 +5,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/chat_model.dart';
 import '../../../providers/workspace_provider.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../core/translation/translation_extensions.dart';
 
 /// Chat screen for real-time project communication with supervisor.
@@ -32,8 +34,8 @@ import '../../../core/translation/translation_extensions.dart';
 /// - system: System notifications (centered, gray style)
 ///
 /// ## Visual Design
-/// - Doer messages: Primary color, right-aligned
-/// - Supervisor messages: White background, left-aligned with avatar
+/// - Doer messages: Teal gradient, right-aligned
+/// - Supervisor messages: White glass background, left-aligned with avatar
 /// - System messages: Centered with info icon
 ///
 /// ## State Variables
@@ -80,60 +82,58 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          // Header
-          _buildHeader(context, project),
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        opacity: 0.3,
+        child: Column(
+          children: [
+            // Header
+            _buildHeader(context, project),
 
-          // Messages list
-          Expanded(
-            child: messages.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: AppSpacing.paddingMd,
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
-                      final showDate = index == 0 ||
-                          !_isSameDay(
-                            messages[index - 1].sentAt,
-                            message.sentAt,
-                          );
+            // Messages list
+            Expanded(
+              child: messages.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: AppSpacing.paddingMd,
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final message = messages[index];
+                        final showDate = index == 0 ||
+                            !_isSameDay(
+                              messages[index - 1].sentAt,
+                              message.sentAt,
+                            );
 
-                      return Column(
-                        children: [
-                          if (showDate)
-                            _buildDateDivider(message.sentAt),
-                          _ChatBubble(message: message),
-                        ],
-                      );
-                    },
-                  ),
-          ),
+                        return Column(
+                          children: [
+                            if (showDate)
+                              _buildDateDivider(message.sentAt),
+                            _ChatBubble(message: message),
+                          ],
+                        );
+                      },
+                    ),
+            ),
 
-          // Message input
-          _buildMessageInput(),
-        ],
+            // Message input
+            _buildMessageInput(),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context, project) {
-    return Container(
+    return GlassContainer(
+      blur: 20,
+      opacity: 0.9,
+      borderRadius: BorderRadius.zero,
+      borderColor: AppColors.border.withValues(alpha: 0.2),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
         vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: SafeArea(
         bottom: false,
@@ -195,12 +195,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
+          GlassContainer(
+            blur: 15,
+            opacity: 0.6,
+            borderRadius: BorderRadius.circular(40),
             padding: AppSpacing.paddingLg,
-            decoration: const BoxDecoration(
-              color: AppColors.surfaceVariant,
-              shape: BoxShape.circle,
-            ),
+            enableHoverEffect: false,
             child: const Icon(
               Icons.chat_bubble_outline,
               size: 48,
@@ -234,36 +234,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       child: Row(
         children: [
-          const Expanded(child: Divider()),
+          Expanded(child: Divider(color: AppColors.border.withValues(alpha: 0.5))),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: Text(
-              _formatDateLabel(date),
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textTertiary,
+            child: GlassContainer(
+              blur: 8,
+              opacity: 0.7,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              borderRadius: BorderRadius.circular(12),
+              enableHoverEffect: false,
+              child: Text(
+                _formatDateLabel(date),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textTertiary,
+                ),
               ),
             ),
           ),
-          const Expanded(child: Divider()),
+          Expanded(child: Divider(color: AppColors.border.withValues(alpha: 0.5))),
         ],
       ),
     );
   }
 
   Widget _buildMessageInput() {
-    return Container(
+    return GlassContainer(
+      blur: 20,
+      opacity: 0.9,
+      borderRadius: BorderRadius.zero,
+      borderColor: AppColors.border.withValues(alpha: 0.2),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
       child: SafeArea(
         top: false,
         child: Row(
@@ -275,10 +276,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 constraints: const BoxConstraints(maxHeight: 120),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: AppColors.surfaceVariant.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: AppColors.border.withValues(alpha: 0.3),
                   ),
                 ),
                 child: TextField(
@@ -303,13 +304,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
             const SizedBox(width: 8),
 
-            // Send button
+            // Send button with gradient
             Container(
               height: 40,
               width: 40,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primary,
+                    AppColors.accent,
+                  ],
+                ),
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: IconButton(
                 onPressed: _sendMessage,
@@ -376,17 +391,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 /// and metadata based on sender type. Supports text and system messages.
 ///
 /// ## Doer Messages (right-aligned)
-/// - Primary color background
+/// - Teal gradient background
 /// - White text
 /// - Read status indicator (double check)
 ///
 /// ## Supervisor Messages (left-aligned)
-/// - White background with avatar
+/// - White glass background with avatar
 /// - Sender name header
 /// - Gray timestamp
 ///
 /// ## System Messages (centered)
-/// - Gray background
+/// - Glass background
 /// - Info icon
 /// - Muted styling
 class _ChatBubble extends StatelessWidget {
@@ -434,19 +449,35 @@ class _ChatBubble extends StatelessWidget {
                 vertical: 10,
               ),
               decoration: BoxDecoration(
-                color: isFromDoer
-                    ? AppColors.primary
-                    : AppColors.surface,
+                // Doer: teal gradient, Receiver: white glass
+                gradient: isFromDoer
+                    ? const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.primary,
+                          AppColors.primaryLight,
+                        ],
+                      )
+                    : null,
+                color: isFromDoer ? null : Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
                   bottomLeft: Radius.circular(isFromDoer ? 16 : 4),
                   bottomRight: Radius.circular(isFromDoer ? 4 : 16),
                 ),
+                border: isFromDoer
+                    ? null
+                    : Border.all(
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
+                    color: isFromDoer
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
@@ -492,7 +523,7 @@ class _ChatBubble extends StatelessWidget {
             const Icon(
               Icons.done_all,
               size: 16,
-              color: AppColors.primary,
+              color: AppColors.accent,
             ),
           ],
         ],
@@ -504,15 +535,15 @@ class _ChatBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Center(
-        child: Container(
+        child: GlassContainer(
+          blur: 8,
+          opacity: 0.7,
           padding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 6,
           ),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(12),
-          ),
+          borderRadius: BorderRadius.circular(12),
+          enableHoverEffect: false,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

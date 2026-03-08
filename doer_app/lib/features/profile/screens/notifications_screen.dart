@@ -5,7 +5,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/utils/formatters.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../dashboard/widgets/app_header.dart';
 import '../../../core/translation/translation_extensions.dart';
 
@@ -54,48 +56,53 @@ class NotificationsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: LoadingOverlay(
-        isLoading: isLoading,
-        child: Column(
-          children: [
-            InnerHeader(
-              title: 'Notifications',
-              onBack: () => Navigator.pop(context),
-              actions: [
-                if (unreadCount > 0)
-                  TextButton(
-                    onPressed: () =>
-                        ref.read(profileProvider.notifier).markAllNotificationsRead(),
-                    child: Text('Mark all read'.tr(context)),
-                  ),
-              ],
-            ),
-            Expanded(
-              child: notifications.isEmpty && !isLoading
-                  ? _buildEmptyState(context)
-                  : RefreshIndicator(
-                      onRefresh: () => ref.read(profileProvider.notifier).refresh(),
-                      child: ListView.builder(
-                        padding: AppSpacing.paddingMd,
-                        itemCount: notifications.length,
-                        itemBuilder: (context, index) {
-                          final notification = notifications[index];
-                          return _NotificationCard(
-                            notification: notification,
-                            onTap: () {
-                              if (!notification.isRead) {
-                                ref
-                                    .read(profileProvider.notifier)
-                                    .markNotificationRead(notification.id);
-                              }
-                              _handleNotificationTap(context, notification);
-                            },
-                          );
-                        },
-                      ),
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.defaultColors,
+        opacity: 0.5,
+        child: LoadingOverlay(
+          isLoading: isLoading,
+          child: Column(
+            children: [
+              InnerHeader(
+                title: 'Notifications',
+                onBack: () => Navigator.pop(context),
+                actions: [
+                  if (unreadCount > 0)
+                    TextButton(
+                      onPressed: () =>
+                          ref.read(profileProvider.notifier).markAllNotificationsRead(),
+                      child: Text('Mark all read'.tr(context)),
                     ),
-            ),
-          ],
+                ],
+              ),
+              Expanded(
+                child: notifications.isEmpty && !isLoading
+                    ? _buildEmptyState(context)
+                    : RefreshIndicator(
+                        onRefresh: () => ref.read(profileProvider.notifier).refresh(),
+                        child: ListView.builder(
+                          padding: AppSpacing.paddingMd,
+                          itemCount: notifications.length,
+                          itemBuilder: (context, index) {
+                            final notification = notifications[index];
+                            return _NotificationCard(
+                              notification: notification,
+                              onTap: () {
+                                if (!notification.isRead) {
+                                  ref
+                                      .read(profileProvider.notifier)
+                                      .markNotificationRead(notification.id);
+                                }
+                                _handleNotificationTap(context, notification);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -171,24 +178,16 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return GlassCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      elevation: notification.isRead ? 0 : 2,
-      color: notification.isRead ? AppColors.surface : Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusSm,
-        side: notification.isRead
-            ? BorderSide.none
-            : BorderSide(
-                color: AppColors.primary.withValues(alpha: 0.2),
-              ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppSpacing.borderRadiusSm,
-        child: Padding(
-          padding: AppSpacing.paddingMd,
-          child: Row(
+      elevation: notification.isRead ? 1 : 3,
+      opacity: notification.isRead ? 0.65 : 0.85,
+      borderColor: notification.isRead
+          ? null
+          : AppColors.primary.withValues(alpha: 0.2),
+      onTap: onTap,
+      padding: AppSpacing.paddingMd,
+      child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Icon
@@ -288,8 +287,6 @@ class _NotificationCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 

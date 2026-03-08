@@ -26,6 +26,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../providers/support_provider.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../dashboard/widgets/app_header.dart';
 import '../widgets/quick_help_card.dart';
 import '../widgets/contact_form.dart';
@@ -46,49 +48,56 @@ class SupportScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          InnerHeader(
-            title: 'Help & Support',
-            onBack: () => Navigator.pop(context),
-          ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () => ref.read(supportProvider.notifier).refresh(),
-              color: AppColors.accent,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: AppSpacing.paddingMd,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Hero section
-                    _buildHeroSection(context)
-                        .animate()
-                        .fadeIn(duration: 400.ms)
-                        .slideY(begin: -0.1, end: 0, duration: 400.ms),
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        colors: MeshColors.defaultColors,
+        opacity: 0.5,
+        child: Column(
+          children: [
+            InnerHeader(
+              title: 'Help & Support',
+              onBack: () => Navigator.pop(context),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => ref.read(supportProvider.notifier).refresh(),
+                color: AppColors.accent,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: AppSpacing.paddingMd,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Hero section in glass container
+                      GlassCard(
+                        padding: EdgeInsets.zero,
+                        child: _buildHeroSection(context),
+                      )
+                          .animate()
+                          .fadeIn(duration: 400.ms)
+                          .slideY(begin: -0.1, end: 0, duration: 400.ms),
 
-                    const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.lg),
 
-                    // Quick help section
-                    Text(
-                      'Quick Help'.tr(context),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                      // Quick help section
+                      Text(
+                        'Quick Help'.tr(context),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _buildQuickHelpGrid()
-                        .animate()
-                        .fadeIn(duration: 400.ms, delay: 100.ms)
-                        .slideY(begin: 0.05, end: 0, duration: 400.ms),
+                      const SizedBox(height: AppSpacing.sm),
+                      _buildQuickHelpGrid()
+                          .animate()
+                          .fadeIn(duration: 400.ms, delay: 100.ms)
+                          .slideY(begin: 0.05, end: 0, duration: 400.ms),
 
-                    const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.lg),
 
-                    // Contact form section
-                    ContactForm(
+                      // Contact form section
+                      ContactForm(
                       onSubmitted: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -119,47 +128,54 @@ class SupportScreen extends ConsumerWidget {
 
                     const SizedBox(height: AppSpacing.lg),
 
-                    // Contact information
-                    _buildContactInfo(context)
-                        .animate()
-                        .fadeIn(duration: 400.ms, delay: 300.ms)
-                        .slideY(begin: 0.05, end: 0, duration: 400.ms),
-
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // FAQ section
-                    Text(
-                      'Frequently Asked Questions'.tr(context),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-
-                    if (supportState.isLoadingFaqs)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(AppSpacing.xl),
-                          child: CircularProgressIndicator(
-                            color: AppColors.accent,
-                          ),
-                        ),
+                      // Contact information in glass container
+                      GlassCard(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: _buildContactInfoContent(context),
                       )
-                    else
-                      FaqList(faqs: supportState.faqs)
                           .animate()
-                          .fadeIn(duration: 400.ms, delay: 400.ms)
+                          .fadeIn(duration: 400.ms, delay: 300.ms)
                           .slideY(begin: 0.05, end: 0, duration: 400.ms),
 
-                    const SizedBox(height: AppSpacing.xl),
-                  ],
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // FAQ section
+                      Text(
+                        'Frequently Asked Questions'.tr(context),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+
+                      if (supportState.isLoadingFaqs)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(AppSpacing.xl),
+                            child: CircularProgressIndicator(
+                              color: AppColors.accent,
+                            ),
+                          ),
+                        )
+                      else
+                        GlassCard(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: FaqList(faqs: supportState.faqs),
+                        )
+                            .animate()
+                            .fadeIn(duration: 400.ms, delay: 400.ms)
+                            .slideY(begin: 0.05, end: 0, duration: 400.ms),
+
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -261,71 +277,56 @@ class SupportScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds the contact information card.
-  Widget _buildContactInfo(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppSpacing.borderRadiusMd,
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: AppSpacing.borderRadiusSm,
-                ),
-                child: const Icon(
-                  Icons.info_outline,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
+  /// Builds the contact information content (without outer container).
+  Widget _buildContactInfoContent(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: AppSpacing.borderRadiusSm,
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                'Contact Information'.tr(context),
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+              child: const Icon(
+                Icons.info_outline,
+                color: AppColors.primary,
+                size: 20,
               ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _buildContactRow(
-            Icons.email_outlined,
-            'Email',
-            'support@assignx.com',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _buildContactRow(
-            Icons.schedule,
-            'Response Time',
-            'Within 24 hours',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _buildContactRow(
-            Icons.access_time,
-            'Availability',
-            'Mon - Sat, 9:00 AM - 6:00 PM IST',
-          ),
-        ],
-      ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              'Contact Information'.tr(context),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _buildContactRow(
+          Icons.email_outlined,
+          'Email',
+          'support@assignx.com',
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _buildContactRow(
+          Icons.schedule,
+          'Response Time',
+          'Within 24 hours',
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _buildContactRow(
+          Icons.access_time,
+          'Availability',
+          'Mon - Sat, 9:00 AM - 6:00 PM IST',
+        ),
+      ],
     );
   }
 

@@ -41,7 +41,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../providers/workspace_provider.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../dashboard/widgets/deadline_countdown.dart';
 import '../widgets/file_upload.dart';
 import '../widgets/progress_tracker.dart';
@@ -83,79 +85,73 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: LoadingOverlay(
-        isLoading: workspaceState.isLoading,
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(context, project),
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        opacity: 0.4,
+        child: LoadingOverlay(
+          isLoading: workspaceState.isLoading,
+          child: Column(
+            children: [
+              // Header
+              _buildHeader(context, project),
 
-            // Content
-            Expanded(
-              child: project == null
-                  ? Center(child: Text('Project not found'.tr(context)))
-                  : SingleChildScrollView(
-                      padding: AppSpacing.paddingMd,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Timer and deadline
-                          Row(
-                            children: [
-                              Expanded(
-                                child: WorkSessionTimer(
-                                  totalTime: workspaceState.totalTimeSpent,
-                                  isActive: workspaceState.isWorking,
-                                  onStart: () => ref
-                                      .read(workspaceProvider(widget.projectId))
-                                      .startSession(),
-                                  onStop: () => ref
-                                      .read(workspaceProvider(widget.projectId))
-                                      .endSession(),
+              // Content
+              Expanded(
+                child: project == null
+                    ? Center(child: Text('Project not found'.tr(context)))
+                    : SingleChildScrollView(
+                        padding: AppSpacing.paddingMd,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Timer and deadline
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: WorkSessionTimer(
+                                    totalTime: workspaceState.totalTimeSpent,
+                                    isActive: workspaceState.isWorking,
+                                    onStart: () => ref
+                                        .read(workspaceProvider(widget.projectId))
+                                        .startSession(),
+                                    onStop: () => ref
+                                        .read(workspaceProvider(widget.projectId))
+                                        .endSession(),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: AppSpacing.md),
-
-                          // Deadline timer
-                          Card(
-                            elevation: 2,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: AppSpacing.borderRadiusMd,
+                              ],
                             ),
-                            child: Padding(
+
+                            const SizedBox(height: AppSpacing.md),
+
+                            // Deadline timer in glass
+                            GlassCard(
                               padding: AppSpacing.paddingMd,
                               child: LargeDeadlineTimer(
                                 deadline: project.deadline,
                               ),
                             ),
-                          ),
 
-                          const SizedBox(height: AppSpacing.lg),
+                            const SizedBox(height: AppSpacing.lg),
 
-                          // Project info (collapsible)
-                          if (_showProjectInfo)
-                            ProjectInfoCard(
-                              project: project,
-                              expanded: true,
-                              onToggleExpand: () => setState(() {
-                                _showProjectInfo = false;
-                              }),
-                            )
-                          else
-                            InkWell(
-                              onTap: () => setState(() {
-                                _showProjectInfo = true;
-                              }),
-                              borderRadius: AppSpacing.borderRadiusMd,
-                              child: Container(
+                            // Project info (collapsible) in glass
+                            if (_showProjectInfo)
+                              ProjectInfoCard(
+                                project: project,
+                                expanded: true,
+                                onToggleExpand: () => setState(() {
+                                  _showProjectInfo = false;
+                                }),
+                              )
+                            else
+                              GlassContainer(
+                                opacity: 0.7,
+                                blur: 10,
                                 padding: AppSpacing.paddingMd,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.surfaceVariant,
-                                  borderRadius: AppSpacing.borderRadiusMd,
-                                ),
+                                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                                onTap: () => setState(() {
+                                  _showProjectInfo = true;
+                                }),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -176,58 +172,55 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                                   ],
                                 ),
                               ),
+
+                            const SizedBox(height: AppSpacing.lg),
+
+                            // Progress tracker in glass
+                            GlassCard(
+                              padding: AppSpacing.paddingMd,
+                              child: ProgressTracker(
+                                progress: workspaceState.progress / 100.0,
+                                onChanged: (value) => ref
+                                    .read(workspaceProvider(widget.projectId))
+                                    .updateProgress((value * 100).round()),
+                              ),
                             ),
 
-                          const SizedBox(height: AppSpacing.lg),
+                            const SizedBox(height: AppSpacing.lg),
 
-                          // Progress tracker
-                          ProgressTracker(
-                            progress: workspaceState.progress / 100.0,
-                            onChanged: (value) => ref
-                                .read(workspaceProvider(widget.projectId))
-                                .updateProgress((value * 100).round()),
-                          ),
+                            // Live Document URL in glass
+                            _buildLiveDocSection(project),
 
-                          const SizedBox(height: AppSpacing.lg),
+                            const SizedBox(height: AppSpacing.lg),
 
-                          // Live Document URL
-                          _buildLiveDocSection(project),
+                            // Files section in glass
+                            _buildFilesSection(workspaceState),
 
-                          const SizedBox(height: AppSpacing.lg),
-
-                          // Files section
-                          _buildFilesSection(workspaceState),
-
-                          const SizedBox(height: AppSpacing.xl),
-                        ],
+                            const SizedBox(height: AppSpacing.xl),
+                          ],
+                        ),
                       ),
-                    ),
-            ),
+              ),
 
-            // Bottom action bar
-            if (project != null)
-              _buildBottomBar(context, workspaceState),
-          ],
+              // Bottom action bar
+              if (project != null)
+                _buildBottomBar(context, workspaceState),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context, project) {
-    return Container(
+    return GlassContainer(
+      blur: 20,
+      opacity: 0.9,
+      borderRadius: BorderRadius.zero,
+      borderColor: AppColors.border.withValues(alpha: 0.2),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
         vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: SafeArea(
         bottom: false,
@@ -288,68 +281,53 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       _liveDocController.text = project.liveDocumentUrl!;
     }
 
-    return Card(
-      elevation: 2,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
-      ),
-      child: Padding(
-        padding: AppSpacing.paddingMd,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.link, size: 18, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'Google Docs Link'.tr(context),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: _liveDocController,
-              decoration: InputDecoration(
-                hintText: 'https://docs.google.com/...',
-                hintStyle: TextStyle(color: AppColors.textTertiary, fontSize: 13),
-                prefixIcon: const Icon(Icons.description_outlined, size: 20),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: AppColors.border),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                isDense: true,
-              ),
-              style: const TextStyle(fontSize: 13),
-              keyboardType: TextInputType.url,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isSavingLiveDoc ? null : _saveLiveDocUrl,
-                icon: _isSavingLiveDoc
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.save, size: 18),
-                label: Text(_isSavingLiveDoc ? 'Saving...' : 'Save Link'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
+    return GlassCard(
+      padding: AppSpacing.paddingMd,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.link, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Google Docs Link'.tr(context),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _liveDocController,
+            decoration: InputDecoration(
+              hintText: 'https://docs.google.com/...',
+              hintStyle: TextStyle(color: AppColors.textTertiary, fontSize: 13),
+              prefixIcon: const Icon(Icons.description_outlined, size: 20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: AppColors.border),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              isDense: true,
             ),
-          ],
-        ),
+            style: const TextStyle(fontSize: 13),
+            keyboardType: TextInputType.url,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            child: AppButton(
+              text: _isSavingLiveDoc ? 'Saving...' : 'Save Link',
+              onPressed: _isSavingLiveDoc ? null : _saveLiveDocUrl,
+              icon: _isSavingLiveDoc ? null : Icons.save,
+              isLoading: _isSavingLiveDoc,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -390,73 +368,61 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 
   Widget _buildFilesSection(WorkspaceState workspaceState) {
-    return Card(
-      elevation: 2,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
-      ),
-      child: Padding(
-        padding: AppSpacing.paddingMd,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.folder_outlined,
-                  size: 18,
-                  color: AppColors.primary,
+    return GlassCard(
+      padding: AppSpacing.paddingMd,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.folder_outlined,
+                size: 18,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Work Files'.tr(context),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
-                SizedBox(width: 8),
-                Text(
-                  'Work Files'.tr(context),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
 
-            const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
 
-            // File upload area
-            FileUploadArea(
-              onTap: _showFilePickerDialog,
-            ),
+          // File upload area
+          FileUploadArea(
+            onTap: _showFilePickerDialog,
+          ),
 
-            const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
 
-            // File list
-            FileList(
-              files: workspaceState.deliverables,
-              onRemove: (fileId) => ref
-                  .read(workspaceProvider(widget.projectId))
-                  .removeFile(fileId),
-              onSetPrimary: (fileId) => ref
-                  .read(workspaceProvider(widget.projectId))
-                  .setPrimaryFile(fileId),
-            ),
-          ],
-        ),
+          // File list
+          FileList(
+            files: workspaceState.deliverables,
+            onRemove: (fileId) => ref
+                .read(workspaceProvider(widget.projectId))
+                .removeFile(fileId),
+            onSetPrimary: (fileId) => ref
+                .read(workspaceProvider(widget.projectId))
+                .setPrimaryFile(fileId),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildBottomBar(BuildContext context, WorkspaceState workspaceState) {
-    return Container(
+    return GlassContainer(
+      blur: 20,
+      opacity: 0.9,
+      borderRadius: BorderRadius.zero,
       padding: AppSpacing.paddingMd,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      borderColor: AppColors.border.withValues(alpha: 0.2),
       child: SafeArea(
         top: false,
         child: Row(
@@ -467,9 +433,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 horizontal: 12,
                 vertical: 8,
               ),
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceVariant,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: AppSpacing.borderRadiusSm,
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                ),
               ),
               child: Row(
                 children: [

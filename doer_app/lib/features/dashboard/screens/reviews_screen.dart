@@ -7,6 +7,7 @@ import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/dashboard_provider.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/app_header.dart';
 import '../widgets/reviews/reviews_hero_banner.dart';
 import '../widgets/reviews/rating_analytics_dashboard.dart';
@@ -27,65 +28,70 @@ class ReviewsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: LoadingOverlay(
-        isLoading: isLoading,
-        child: Column(
-          children: [
-            InnerHeader(
-              title: 'Reviews'.tr(context),
-              onBack: () => Navigator.pop(context),
-            ),
-            Expanded(
-              child: reviews.isEmpty && !isLoading
-                  ? EmptyState(
-                      icon: Icons.rate_review_outlined,
-                      title: 'No Reviews Yet'.tr(context),
-                      description:
-                          'Complete projects to receive reviews from clients.'.tr(context),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () async {
-                        ref.read(dashboardProvider.notifier).refresh();
-                      },
-                      color: AppColors.accent,
-                      child: ListView(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.md,
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        colors: MeshColors.defaultColors,
+        opacity: 0.5,
+        child: LoadingOverlay(
+          isLoading: isLoading,
+          child: Column(
+            children: [
+              InnerHeader(
+                title: 'Reviews'.tr(context),
+                onBack: () => Navigator.pop(context),
+              ),
+              Expanded(
+                child: reviews.isEmpty && !isLoading
+                    ? EmptyState(
+                        icon: Icons.rate_review_outlined,
+                        title: 'No Reviews Yet'.tr(context),
+                        description:
+                            'Complete projects to receive reviews from clients.'.tr(context),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          ref.read(dashboardProvider.notifier).refresh();
+                        },
+                        color: AppColors.accent,
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.md,
+                          ),
+                          children: [
+                            // Hero banner with overall rating
+                            ReviewsHeroBanner(
+                              stats: stats,
+                              reviews: reviews,
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+
+                            // Rating analytics dashboard
+                            RatingAnalyticsDashboard(reviews: reviews),
+                            const SizedBox(height: AppSpacing.lg),
+
+                            // Review highlights (bento grid)
+                            ReviewHighlightsSection(reviews: reviews),
+                            const SizedBox(height: AppSpacing.lg),
+
+                            // Achievements
+                            AchievementCards(
+                              reviews: reviews,
+                              stats: stats,
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+
+                            // Full reviews list with tabs and search
+                            ReviewsListSection(reviews: reviews),
+
+                            // Bottom padding
+                            const SizedBox(height: AppSpacing.xxl),
+                          ],
                         ),
-                        children: [
-                          // Hero banner with overall rating
-                          ReviewsHeroBanner(
-                            stats: stats,
-                            reviews: reviews,
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-
-                          // Rating analytics dashboard
-                          RatingAnalyticsDashboard(reviews: reviews),
-                          const SizedBox(height: AppSpacing.lg),
-
-                          // Review highlights (bento grid)
-                          ReviewHighlightsSection(reviews: reviews),
-                          const SizedBox(height: AppSpacing.lg),
-
-                          // Achievements
-                          AchievementCards(
-                            reviews: reviews,
-                            stats: stats,
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-
-                          // Full reviews list with tabs and search
-                          ReviewsListSection(reviews: reviews),
-
-                          // Bottom padding
-                          const SizedBox(height: AppSpacing.xxl),
-                        ],
                       ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
