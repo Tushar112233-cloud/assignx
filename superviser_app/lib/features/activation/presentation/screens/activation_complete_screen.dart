@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 /// Activation Complete Screen (S17)
@@ -66,116 +68,164 @@ class _ActivationCompleteScreenState
     final user = ref.watch(authProvider).user;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/activation'),
         ),
         title: Text('Activation Complete'.tr(context)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(),
+      body: MeshGradientBackground(
+        position: MeshPosition.center,
+        colors: const [
+          MeshColors.meshOrange,
+          MeshColors.meshYellow,
+          MeshColors.meshGreen,
+        ],
+        opacity: 0.6,
+        animated: true,
+        animationDuration: const Duration(seconds: 25),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Spacer(),
 
-              // Animated success icon
-              ScaleTransition(
-                scale: _scaleAnimation,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+                // Animated success icon with celebratory glow
+                ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.accent.withValues(alpha: 0.2),
+                          AppColors.success.withValues(alpha: 0.2),
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.accent.withValues(alpha: 0.3),
+                          blurRadius: 30,
+                          spreadRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.celebration_outlined,
+                      size: 64,
+                      color: AppColors.accent,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.celebration_outlined,
-                    size: 64,
-                    color: AppColors.success,
+                ),
+                const SizedBox(height: 32),
+
+                // Welcome text in glass card
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: GlassCard(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 28,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    elevation: 3,
+                    child: Column(
+                      children: [
+                        Text(
+                          'Welcome aboard,'.tr(context),
+                          style: AppTypography.titleLarge.copyWith(
+                            color: AppColors.textSecondaryLight,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          user?.fullName ?? 'Supervisor'.tr(context),
+                          style: AppTypography.headlineMedium.copyWith(
+                            color: AppColors.accent,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'You have successfully completed all training modules and are now an activated supervisor.'
+                              .tr(context),
+                          style: AppTypography.bodyLarge.copyWith(
+                            color: AppColors.textSecondaryLight,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
-              // Welcome text
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Column(
-                  children: [
-                    Text(
-                      'Welcome aboard,'.tr(context),
-                      style: AppTypography.titleLarge.copyWith(
-                        color: AppColors.textSecondaryLight,
+                // Features cards
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Column(
+                    children: [
+                      _buildFeatureCard(
+                        icon: Icons.dashboard_outlined,
+                        title: 'Access Dashboard'.tr(context),
+                        description:
+                            'View and manage your assignments'.tr(context),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      user?.fullName ?? 'Supervisor'.tr(context),
-                      style: AppTypography.headlineMedium.copyWith(
-                        color: AppColors.textPrimaryLight,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(height: 12),
+                      _buildFeatureCard(
+                        icon: Icons.chat_outlined,
+                        title: 'Chat with Clients'.tr(context),
+                        description:
+                            'Communicate directly with clients'.tr(context),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'You have successfully completed all training modules and are now an activated supervisor.'.tr(context),
-                      style: AppTypography.bodyLarge.copyWith(
-                        color: AppColors.textSecondaryLight,
+                      const SizedBox(height: 12),
+                      _buildFeatureCard(
+                        icon: Icons.payments_outlined,
+                        title: 'Earn Money'.tr(context),
+                        description:
+                            'Complete tasks and receive payments'.tr(context),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 48),
 
-              // Features cards
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Column(
-                  children: [
-                    _buildFeatureCard(
-                      icon: Icons.dashboard_outlined,
-                      title: 'Access Dashboard'.tr(context),
-                      description: 'View and manage your assignments'.tr(context),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildFeatureCard(
-                      icon: Icons.chat_outlined,
-                      title: 'Chat with Clients'.tr(context),
-                      description: 'Communicate directly with clients'.tr(context),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildFeatureCard(
-                      icon: Icons.payments_outlined,
-                      title: 'Earn Money'.tr(context),
-                      description: 'Complete tasks and receive payments'.tr(context),
-                    ),
-                  ],
-                ),
-              ),
+                const Spacer(),
 
-              const Spacer(),
-
-              // Continue button
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
+                // Gradient CTA button
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: GlassButton(
+                    label: 'Go to Dashboard'.tr(context),
+                    icon: Icons.arrow_forward_rounded,
                     onPressed: _goToDashboard,
-                    child: Text('Go to Dashboard'.tr(context)),
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                    borderColor: AppColors.accentLight.withValues(alpha: 0.5),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.accent,
+                        AppColors.accentDark,
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),
@@ -187,24 +237,22 @@ class _ActivationCompleteScreenState
     required String title,
     required String description,
   }) {
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariantLight,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      borderRadius: BorderRadius.circular(14),
+      elevation: 1,
       child: Row(
         children: [
           Container(
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: AppColors.accent.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               icon,
-              color: AppColors.primary,
+              color: AppColors.accent,
               size: 24,
             ),
           ),

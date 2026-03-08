@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/training_module.dart';
 import '../providers/activation_provider.dart';
 import '../widgets/training_module_card.dart';
@@ -19,50 +21,62 @@ class ActivationScreen extends ConsumerWidget {
     final state = ref.watch(activationProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text('Complete Your Training'.tr(context)),
         automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: SafeArea(
-        child: state.isLoading && state.modules.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  // Header
-                  _buildHeader(context, state),
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.warmColors,
+        opacity: 0.5,
+        child: SafeArea(
+          child: state.isLoading && state.modules.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    // Header
+                    _buildHeader(context, state),
 
-                  // Progress
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TrainingProgressBar(
-                      completed: state.completedCount,
-                      total: state.totalCount,
-                    ),
-                  ),
-
-                  // Modules list
-                  Expanded(
-                    child: ListView.separated(
+                    // Progress in glass card
+                    Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: state.modules.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final module = state.modules[index];
-                        return TrainingModuleCard(
-                          module: module,
-                          index: index,
-                          isActive: index == state.currentModuleIndex,
-                          onTap: () => _openModule(context, ref, module, index),
-                        );
-                      },
+                      child: GlassCard(
+                        padding: const EdgeInsets.all(16),
+                        borderRadius: BorderRadius.circular(16),
+                        elevation: 1,
+                        child: _buildProgressSection(context, state),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
 
-                  // Bottom actions
-                  if (state.isAllComplete)
-                    _buildCompleteActions(context, ref, state),
-                ],
-              ),
+                    // Modules list with glass step cards
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: state.modules.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final module = state.modules[index];
+                          return TrainingModuleCard(
+                            module: module,
+                            index: index,
+                            isActive: index == state.currentModuleIndex,
+                            onTap: () =>
+                                _openModule(context, ref, module, index),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // Bottom actions
+                    if (state.isAllComplete)
+                      _buildCompleteActions(context, ref, state),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -76,18 +90,26 @@ class ActivationScreen extends ConsumerWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: AppColors.accent.withValues(alpha: 0.15),
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.accent.withValues(alpha: 0.2),
+                  blurRadius: 16,
+                  spreadRadius: 2,
+                ),
+              ],
             ),
             child: const Icon(
               Icons.school_outlined,
               size: 32,
-              color: AppColors.primary,
+              color: AppColors.accent,
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            'Complete all training modules to unlock your supervisor dashboard.'.tr(context),
+            'Complete all training modules to unlock your supervisor dashboard.'
+                .tr(context),
             style: AppTypography.bodyMedium.copyWith(
               color: AppColors.textSecondaryLight,
             ),
@@ -98,31 +120,66 @@ class ActivationScreen extends ConsumerWidget {
     );
   }
 
+  /// Builds the progress section with orange accent progress bar.
+  Widget _buildProgressSection(BuildContext context, ActivationState state) {
+    final progress =
+        state.totalCount > 0 ? state.completedCount / state.totalCount : 0.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Training Progress'.tr(context),
+              style: AppTypography.titleSmall.copyWith(
+                color: AppColors.textPrimaryLight,
+              ),
+            ),
+            Text(
+              '${state.completedCount} ${'of'.tr(context)} ${state.totalCount} ${'completed'.tr(context)}',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textSecondaryLight,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: AppColors.borderLight,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              progress >= 1.0 ? AppColors.success : AppColors.accent,
+            ),
+            minHeight: 10,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildCompleteActions(
     BuildContext context,
     WidgetRef ref,
     ActivationState state,
   ) {
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -4),
-          ),
-        ],
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(20),
+        topRight: Radius.circular(20),
       ),
+      opacity: 0.9,
       child: Column(
         children: [
-          Container(
+          GlassCard(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
+            borderRadius: BorderRadius.circular(12),
+            borderColor: AppColors.success.withValues(alpha: 0.3),
+            elevation: 1,
             child: Row(
               children: [
                 const Icon(
@@ -148,6 +205,13 @@ class ActivationScreen extends ConsumerWidget {
             height: 52,
             child: ElevatedButton(
               onPressed: () => context.go('/activation/complete'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
               child: Text('Continue to Dashboard'.tr(context)),
             ),
           ),

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../providers/activation_provider.dart';
 import '../widgets/video_player_widget.dart';
 
@@ -27,21 +29,25 @@ class TrainingVideoScreen extends ConsumerWidget {
     );
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(module.title),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.pop(),
         ),
         actions: [
           if (module.isCompleted)
-            Container(
+            GlassContainer(
               margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              borderRadius: BorderRadius.circular(16),
+              backgroundColor: AppColors.success,
+              opacity: 0.15,
+              borderColor: AppColors.success.withValues(alpha: 0.3),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -62,75 +68,96 @@ class TrainingVideoScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: Column(
-        children: [
-          // Video player
-          Expanded(
-            child: TrainingVideoPlayer(
-              videoUrl: module.contentUrl,
-              title: module.title,
-              onComplete: () async {
-                await ref
-                    .read(activationProvider.notifier)
-                    .markCurrentModuleComplete();
-                if (context.mounted) {
-                  _showCompletionSnackbar(context);
-                }
-              },
-            ),
-          ),
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        colors: MeshColors.warmColors,
+        opacity: 0.35,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Video player
+              Expanded(
+                child: TrainingVideoPlayer(
+                  videoUrl: module.contentUrl,
+                  title: module.title,
+                  onComplete: () async {
+                    await ref
+                        .read(activationProvider.notifier)
+                        .markCurrentModuleComplete();
+                    if (context.mounted) {
+                      _showCompletionSnackbar(context);
+                    }
+                  },
+                ),
+              ),
 
-          // Module info
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -4),
+              // Module info in glass container with orange accent progress
+              GlassContainer(
+                padding: const EdgeInsets.all(16),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  module.title,
-                  style: AppTypography.titleMedium.copyWith(
-                    color: AppColors.textPrimaryLight,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  module.description,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.textSecondaryLight,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
+                opacity: 0.9,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.schedule,
-                      size: 16,
-                      color: AppColors.textTertiaryLight,
-                    ),
-                    const SizedBox(width: 4),
                     Text(
-                      '${module.durationMinutes} ${'minutes'.tr(context)}',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.textTertiaryLight,
+                      module.title,
+                      style: AppTypography.titleMedium.copyWith(
+                        color: AppColors.textPrimaryLight,
+                        fontWeight: FontWeight.w600,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      module.description,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          size: 16,
+                          color: AppColors.accent,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${module.durationMinutes} ${'minutes'.tr(context)}',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.textSecondaryLight,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (!module.isCompleted)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'In Progress'.tr(context),
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.accent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -147,6 +174,7 @@ class TrainingVideoScreen extends ConsumerWidget {
         ),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
       ),
     );

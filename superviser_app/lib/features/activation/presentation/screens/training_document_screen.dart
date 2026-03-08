@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../providers/activation_provider.dart';
 import '../widgets/video_player_widget.dart';
 
@@ -27,21 +29,25 @@ class TrainingDocumentScreen extends ConsumerWidget {
     );
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(module.title),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.pop(),
         ),
         actions: [
           if (module.isCompleted)
-            Container(
+            GlassContainer(
               margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              borderRadius: BorderRadius.circular(16),
+              backgroundColor: AppColors.success,
+              opacity: 0.15,
+              borderColor: AppColors.success.withValues(alpha: 0.3),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -62,17 +68,29 @@ class TrainingDocumentScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: PDFDocumentViewer(
-        pdfUrl: module.contentUrl,
-        title: module.title,
-        onComplete: () async {
-          await ref
-              .read(activationProvider.notifier)
-              .markCurrentModuleComplete();
-          if (context.mounted) {
-            _showCompletionSnackbar(context);
-          }
-        },
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.warmColors,
+        opacity: 0.35,
+        child: SafeArea(
+          child: GlassContainer(
+            margin: const EdgeInsets.all(0),
+            borderRadius: BorderRadius.zero,
+            opacity: 0.7,
+            child: PDFDocumentViewer(
+              pdfUrl: module.contentUrl,
+              title: module.title,
+              onComplete: () async {
+                await ref
+                    .read(activationProvider.notifier)
+                    .markCurrentModuleComplete();
+                if (context.mounted) {
+                  _showCompletionSnackbar(context);
+                }
+              },
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -89,6 +107,7 @@ class TrainingDocumentScreen extends ConsumerWidget {
         ),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
       ),
     );

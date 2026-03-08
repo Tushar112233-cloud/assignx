@@ -5,6 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/translation/translation_extensions.dart';
 import '../../../../shared/widgets/dialogs/confirm_dialog.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../providers/activation_provider.dart';
 import '../widgets/quiz_widgets.dart';
 
@@ -119,20 +121,26 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         }
       },
       child: Scaffold(
+        extendBodyBehindAppBar: true,
         appBar: _hasStarted && state.result == null
             ? AppBar(
                 title: Text(state.quiz?.title ?? 'Quiz'.tr(context)),
                 centerTitle: true,
                 automaticallyImplyLeading: false,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
                 actions: [
                   Padding(
                     padding: const EdgeInsets.only(right: 16),
-                    child: QuizTimer(remainingSeconds: state.remainingSeconds),
+                    child:
+                        QuizTimer(remainingSeconds: state.remainingSeconds),
                   ),
                 ],
               )
             : AppBar(
                 title: Text('Supervisor Assessment'.tr(context)),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
                 leading: IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () async {
@@ -143,13 +151,20 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                   },
                 ),
               ),
-        body: state.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : state.result != null
-                ? _buildResult(state)
-                : !_hasStarted
-                    ? _buildStartScreen(state)
-                    : _buildQuiz(state),
+        body: MeshGradientBackground(
+          position: MeshPosition.topRight,
+          colors: MeshColors.warmColors,
+          opacity: 0.4,
+          child: SafeArea(
+            child: state.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : state.result != null
+                    ? _buildResult(state)
+                    : !_hasStarted
+                        ? _buildStartScreen(state)
+                        : _buildQuiz(state),
+          ),
+        ),
       ),
     );
   }
@@ -170,13 +185,20 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: AppColors.accent.withValues(alpha: 0.15),
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.accent.withValues(alpha: 0.2),
+                  blurRadius: 16,
+                  spreadRadius: 2,
+                ),
+              ],
             ),
             child: const Icon(
               Icons.quiz_outlined,
               size: 40,
-              color: AppColors.primary,
+              color: AppColors.accent,
             ),
           ),
           const SizedBox(height: 24),
@@ -202,7 +224,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           ),
           const SizedBox(height: 32),
 
-          // Quiz info cards
+          // Quiz info cards in glass containers
           _buildInfoCard(
             icon: Icons.help_outline,
             title: '${quiz.totalQuestions} ${'Questions'.tr(context)}',
@@ -228,12 +250,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           ),
           const SizedBox(height: 32),
 
-          // Start button
+          // Start button with orange accent
           SizedBox(
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
               onPressed: _startQuiz,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
               child: Text('Start Quiz'.tr(context)),
             ),
           ),
@@ -249,20 +278,27 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     );
   }
 
+  /// Glass info card for quiz metadata.
   Widget _buildInfoCard({
     required IconData icon,
     required String title,
     required String subtitle,
   }) {
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariantLight,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      borderRadius: BorderRadius.circular(14),
+      elevation: 1,
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary, size: 24),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.accent, size: 22),
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -295,14 +331,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
     return Column(
       children: [
-        // Progress indicator
+        // Progress indicator with orange accent
         Padding(
           padding: const EdgeInsets.all(16),
-          child: QuizProgressIndicator(
-            totalQuestions: state.totalQuestions,
-            currentQuestion: state.currentQuestionIndex,
-            answeredQuestions: state.answers.keys.toSet(),
-            onQuestionTap: ref.read(quizProvider.notifier).goToQuestion,
+          child: GlassCard(
+            padding: const EdgeInsets.all(12),
+            borderRadius: BorderRadius.circular(14),
+            elevation: 1,
+            child: QuizProgressIndicator(
+              totalQuestions: state.totalQuestions,
+              currentQuestion: state.currentQuestionIndex,
+              answeredQuestions: state.answers.keys.toSet(),
+              onQuestionTap: ref.read(quizProvider.notifier).goToQuestion,
+            ),
           ),
         ),
 
@@ -327,24 +368,26 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     final isFirst = state.currentQuestionIndex == 0;
     final isLast = state.currentQuestionIndex == state.totalQuestions - 1;
 
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -4),
-          ),
-        ],
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(20),
+        topRight: Radius.circular(20),
       ),
+      opacity: 0.9,
       child: Row(
         children: [
           if (!isFirst)
             Expanded(
               child: OutlinedButton(
                 onPressed: ref.read(quizProvider.notifier).previousQuestion,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.accent),
+                  foregroundColor: AppColors.accent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 child: Text('Previous'.tr(context)),
               ),
             ),
@@ -355,6 +398,13 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               onPressed: isLast
                   ? _confirmSubmit
                   : ref.read(quizProvider.notifier).nextQuestion,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               child: Text(isLast ? 'Submit'.tr(context) : 'Next'.tr(context)),
             ),
           ),

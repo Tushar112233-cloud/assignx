@@ -5,6 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/translation/translation_extensions.dart';
 import '../../../../shared/widgets/buttons/primary_button.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../providers/registration_provider.dart';
 
 /// Application Pending Screen (S09)
@@ -19,10 +21,23 @@ class ApplicationPendingScreen extends ConsumerStatefulWidget {
 }
 
 class _ApplicationPendingScreenState
-    extends ConsumerState<ApplicationPendingScreen> {
+    extends ConsumerState<ApplicationPendingScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
   @override
   void initState() {
     super.initState();
+    // Animated waiting icon pulse
+    _pulseController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
     // Check current application status
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(registrationProvider.notifier).checkApplicationStatus();
@@ -30,21 +45,32 @@ class _ApplicationPendingScreenState
   }
 
   @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = ref.watch(registrationProvider);
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const Spacer(),
-              _buildStatusContent(state.applicationStatus),
-              const Spacer(),
-              _buildActionButton(context, state.applicationStatus),
-              const SizedBox(height: 16),
-            ],
+      body: MeshGradientBackground(
+        position: MeshPosition.center,
+        colors: MeshColors.warmColors,
+        opacity: 0.5,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const Spacer(),
+                _buildStatusContent(state.applicationStatus),
+                const Spacer(),
+                _buildActionButton(context, state.applicationStatus),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),
@@ -72,17 +98,28 @@ class _ApplicationPendingScreenState
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.hourglass_top_rounded,
-            size: 64,
-            color: AppColors.primary,
+        // Animated waiting icon
+        ScaleTransition(
+          scale: _pulseAnimation,
+          child: Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.accent.withValues(alpha: 0.2),
+                  blurRadius: 24,
+                  spreadRadius: 4,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.hourglass_top_rounded,
+              size: 64,
+              color: AppColors.accent,
+            ),
           ),
         ),
         const SizedBox(height: 32),
@@ -96,19 +133,55 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 16),
         Text(
-          'Thank you for applying to become a supervisor at AssignX.'.tr(context),
+          'Thank you for applying to become a supervisor at AssignX.'
+              .tr(context),
           style: AppTypography.bodyLarge.copyWith(
             color: AppColors.textSecondaryLight,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
-        _buildStatusCard(
-          icon: Icons.schedule,
-          title: 'Under Review'.tr(context),
-          description:
-              'Your application is in the queue. Our team reviews applications within 2-3 business days.'.tr(context),
-          color: AppColors.info,
+        // Glass hero card
+        GlassCard(
+          padding: const EdgeInsets.all(20),
+          borderRadius: BorderRadius.circular(16),
+          elevation: 2,
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.schedule, color: AppColors.info, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Under Review'.tr(context),
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppColors.info,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Your application is in the queue. Our team reviews applications within 2-3 business days.'
+                          .tr(context),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
         _buildInfoRow(
@@ -128,17 +201,27 @@ class _ApplicationPendingScreenState
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            color: AppColors.info.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.rate_review_outlined,
-            size: 64,
-            color: AppColors.info,
+        ScaleTransition(
+          scale: _pulseAnimation,
+          child: Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.info.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.info.withValues(alpha: 0.2),
+                  blurRadius: 24,
+                  spreadRadius: 4,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.rate_review_outlined,
+              size: 64,
+              color: AppColors.info,
+            ),
           ),
         ),
         const SizedBox(height: 32),
@@ -159,12 +242,47 @@ class _ApplicationPendingScreenState
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
-        _buildStatusCard(
-          icon: Icons.person_search_outlined,
-          title: 'Being Reviewed'.tr(context),
-          description:
-              'A team member is actively reviewing your qualifications and experience.'.tr(context),
-          color: AppColors.info,
+        GlassCard(
+          padding: const EdgeInsets.all(20),
+          borderRadius: BorderRadius.circular(16),
+          elevation: 2,
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.person_search_outlined,
+                    color: AppColors.info, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Being Reviewed'.tr(context),
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppColors.info,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'A team member is actively reviewing your qualifications and experience.'
+                          .tr(context),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -178,8 +296,15 @@ class _ApplicationPendingScreenState
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: AppColors.success.withValues(alpha: 0.1),
+            color: AppColors.success.withValues(alpha: 0.15),
             shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.success.withValues(alpha: 0.2),
+                blurRadius: 24,
+                spreadRadius: 4,
+              ),
+            ],
           ),
           child: const Icon(
             Icons.check_circle_outline,
@@ -198,19 +323,55 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 16),
         Text(
-          'Your application has been approved. Welcome to the AssignX supervisor team!'.tr(context),
+          'Your application has been approved. Welcome to the AssignX supervisor team!'
+              .tr(context),
           style: AppTypography.bodyLarge.copyWith(
             color: AppColors.textSecondaryLight,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
-        _buildStatusCard(
-          icon: Icons.celebration_outlined,
-          title: 'You\'re In!'.tr(context),
-          description:
-              'You can now access the supervisor dashboard and start accepting assignments.'.tr(context),
-          color: AppColors.success,
+        GlassCard(
+          padding: const EdgeInsets.all(20),
+          borderRadius: BorderRadius.circular(16),
+          elevation: 2,
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.celebration_outlined,
+                    color: AppColors.success, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'You\'re In!'.tr(context),
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'You can now access the supervisor dashboard and start accepting assignments.'
+                          .tr(context),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -224,7 +385,7 @@ class _ApplicationPendingScreenState
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: AppColors.error.withValues(alpha: 0.1),
+            color: AppColors.error.withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -244,19 +405,55 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 16),
         Text(
-          'Unfortunately, your application was not approved at this time.'.tr(context),
+          'Unfortunately, your application was not approved at this time.'
+              .tr(context),
           style: AppTypography.bodyLarge.copyWith(
             color: AppColors.textSecondaryLight,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
-        _buildStatusCard(
-          icon: Icons.info_outline,
-          title: 'What\'s Next?'.tr(context),
-          description:
-              'You may reapply after 30 days. Consider enhancing your qualifications or expertise areas.'.tr(context),
-          color: AppColors.error,
+        GlassCard(
+          padding: const EdgeInsets.all(20),
+          borderRadius: BorderRadius.circular(16),
+          elevation: 2,
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.info_outline,
+                    color: AppColors.error, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'What\'s Next?'.tr(context),
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'You may reapply after 30 days. Consider enhancing your qualifications or expertise areas.'
+                          .tr(context),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -270,7 +467,7 @@ class _ApplicationPendingScreenState
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: AppColors.warning.withValues(alpha: 0.1),
+            color: AppColors.warning.withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -290,64 +487,57 @@ class _ApplicationPendingScreenState
         ),
         const SizedBox(height: 16),
         Text(
-          'Your application needs some updates before we can proceed.'.tr(context),
+          'Your application needs some updates before we can proceed.'
+              .tr(context),
           style: AppTypography.bodyLarge.copyWith(
             color: AppColors.textSecondaryLight,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
-        _buildStatusCard(
-          icon: Icons.assignment_outlined,
-          title: 'Action Required'.tr(context),
-          description:
-              'Please review the feedback and update your application accordingly.'.tr(context),
-          color: AppColors.warning,
+        GlassCard(
+          padding: const EdgeInsets.all(20),
+          borderRadius: BorderRadius.circular(16),
+          elevation: 2,
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.assignment_outlined,
+                    color: AppColors.warning, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Action Required'.tr(context),
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Please review the feedback and update your application accordingly.'
+                          .tr(context),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ],
-    );
-  }
-
-  Widget _buildStatusCard({
-    required IconData icon,
-    required String title,
-    required String description,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTypography.titleSmall.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.textSecondaryLight,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -404,7 +594,9 @@ class _ApplicationPendingScreenState
             SecondaryButton(
               text: 'Refresh Status'.tr(context),
               onPressed: () {
-                ref.read(registrationProvider.notifier).checkApplicationStatus();
+                ref
+                    .read(registrationProvider.notifier)
+                    .checkApplicationStatus();
               },
               icon: Icons.refresh,
             ),
