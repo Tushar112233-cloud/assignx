@@ -94,6 +94,7 @@ import '../../features/users/presentation/screens/users_screen.dart';
 import '../../features/doers/presentation/screens/doers_screen.dart';
 import '../../features/doers/presentation/screens/doer_detail_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../shared/animations/page_transitions.dart';
 import 'routes.dart';
 
 /// Riverpod provider for the application router.
@@ -198,16 +199,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SplashScreen(),
       ),
 
-      // Auth Routes
+      // Auth Routes (FadeScale transition)
       GoRoute(
         path: RoutePaths.login,
         name: RouteNames.login,
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) => FadeScalePage(
+          key: state.pageKey,
+          child: const LoginScreen(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.register,
         name: RouteNames.register,
-        builder: (context, state) => const RegisterScreen(),
+        pageBuilder: (context, state) => FadeScalePage(
+          key: state.pageKey,
+          child: const RegisterScreen(),
+        ),
       ),
       // Onboarding Route
       GoRoute(
@@ -264,13 +271,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ActivationCompleteScreen(),
       ),
 
-      // Chat Room (outside shell to hide bottom nav)
+      // Chat Room (outside shell to hide bottom nav, SlideRight transition)
       GoRoute(
         path: '/chat/:roomId',
         name: RouteNames.chatRoom,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final roomId = state.pathParameters['roomId']!;
-          return ChatScreen(projectId: roomId);
+          return SlideRightPage(
+            key: state.pageKey,
+            child: ChatScreen(projectId: roomId),
+          );
         },
       ),
 
@@ -291,9 +301,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 name: RouteNames.projectDetail,
-                builder: (context, state) {
+                pageBuilder: (context, state) {
                   final id = state.pathParameters['id']!;
-                  return ProjectDetailScreen(projectId: id);
+                  return SlideRightPage(
+                    key: state.pageKey,
+                    child: ProjectDetailScreen(projectId: id),
+                  );
                 },
               ),
             ],
@@ -373,9 +386,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'ticket/:ticketId',
                 name: RouteNames.ticketDetail,
-                builder: (context, state) {
+                pageBuilder: (context, state) {
                   final ticketId = state.pathParameters['ticketId']!;
-                  return TicketDetailScreen(ticketId: ticketId);
+                  return SlideUpPage(
+                    key: state.pageKey,
+                    child: TicketDetailScreen(ticketId: ticketId),
+                  );
                 },
               ),
             ],
@@ -405,9 +421,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':clientId',
                 name: RouteNames.clientDetail,
-                builder: (context, state) {
+                pageBuilder: (context, state) {
                   final clientId = state.pathParameters['clientId']!;
-                  return ClientDetailScreen(clientId: clientId);
+                  return SlideRightPage(
+                    key: state.pageKey,
+                    child: ClientDetailScreen(clientId: clientId),
+                  );
                 },
               ),
             ],
@@ -420,9 +439,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':doerId',
                 name: RouteNames.doerDetail,
-                builder: (context, state) {
+                pageBuilder: (context, state) {
                   final doerId = state.pathParameters['doerId']!;
-                  return DoerDetailScreen(doerId: doerId);
+                  return SlideRightPage(
+                    key: state.pageKey,
+                    child: DoerDetailScreen(doerId: doerId),
+                  );
                 },
               ),
             ],
