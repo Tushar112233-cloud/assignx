@@ -211,7 +211,7 @@ abstract class AppColors {
   /// Main background color for light theme.
   ///
   /// Use for scaffold and page backgrounds.
-  static const backgroundLight = Color(0xFFF8FAFC);
+  static const backgroundLight = Color(0xFFFAFAF8);
 
   /// Surface color for light theme.
   ///
@@ -221,7 +221,7 @@ abstract class AppColors {
   /// Surface variant for light theme.
   ///
   /// Use for input fields, chips, and subtle containers.
-  static const surfaceVariantLight = Color(0xFFF1F5F9);
+  static const surfaceVariantLight = Color(0xFFF5F3EF);
 
   /// Card background color for light theme.
   static const cardLight = Color(0xFFFFFFFF);
@@ -366,14 +366,34 @@ abstract class AppColors {
 
   // ============ Mesh Gradient Colors ============
 
-  /// Mesh Pink - Soft pastel pink.
-  static const meshPink = Color(0xFFFBE8E8);
+  /// Mesh Amber - Warm amber glow for corner gradients.
+  static const meshAmber = Color(0xFFFEF3C7);
 
-  /// Mesh Peach - Soft pastel peach.
-  static const meshPeach = Color(0xFFFCEDE8);
+  /// Mesh Orange - Soft orange for corner gradients.
+  static const meshOrange = Color(0xFFFFEDD5);
 
-  /// Mesh Orange - Soft pastel orange.
-  static const meshOrange = Color(0xFFFEF3E8);
+  /// Mesh Gold - Golden tint for corner gradients.
+  static const meshGold = Color(0xFFFEF9C3);
+
+  /// Mesh Peach - Soft peach for corner gradients.
+  static const meshPeach = Color(0xFFFFE4E6);
+
+  /// Mesh Lavender - Cool contrast accent.
+  static const meshLavender = Color(0xFFE0E7FF);
+
+  /// Mesh Mint - Fresh accent for corner gradients.
+  static const meshMint = Color(0xFFD1FAE5);
+
+  // ============ Gradient Colors ============
+
+  /// Gradient start - Charcoal.
+  static const gradientStart = Color(0xFF1C1C1C);
+
+  /// Gradient middle - Dark amber-brown.
+  static const gradientMiddle = Color(0xFF3D2E1F);
+
+  /// Gradient end - Vibrant orange.
+  static const gradientEnd = Color(0xFFF97316);
 
   // ============ Shimmer Colors (Convenience) ============
 

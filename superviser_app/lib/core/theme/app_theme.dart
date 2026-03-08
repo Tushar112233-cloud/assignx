@@ -124,12 +124,20 @@ abstract class AppTheme {
       // Scaffold
       scaffoldBackgroundColor: AppColors.backgroundLight,
 
+      // Page transitions - Cupertino style for both platforms
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+
       // AppBar
       appBarTheme: const AppBarTheme(
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
         centerTitle: true,
-        backgroundColor: AppColors.surfaceLight,
+        backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textPrimaryLight,
         surfaceTintColor: Colors.transparent,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
@@ -148,11 +156,10 @@ abstract class AppTheme {
       // Card
       cardTheme: CardThemeData(
         elevation: 0,
-        color: AppColors.cardLight,
+        color: AppColors.cardLight.withValues(alpha: 0.85),
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.borderLight, width: 1),
+          borderRadius: BorderRadius.circular(20),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
@@ -167,7 +174,7 @@ abstract class AppTheme {
           disabledForegroundColor: AppColors.textDisabledLight,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: AppTypography.buttonMedium,
         ),
@@ -216,7 +223,7 @@ abstract class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(color: AppColors.accent, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -240,12 +247,36 @@ abstract class AppTheme {
       // Bottom Navigation Bar
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         elevation: 0,
-        backgroundColor: AppColors.surfaceLight,
+        backgroundColor: Colors.transparent,
         selectedItemColor: AppColors.accent,
         unselectedItemColor: AppColors.textTertiaryLight,
         type: BottomNavigationBarType.fixed,
         selectedLabelStyle: AppTypography.labelSmall,
         unselectedLabelStyle: AppTypography.labelSmall,
+      ),
+
+      // Navigation Bar (Material 3)
+      navigationBarTheme: NavigationBarThemeData(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        indicatorColor: AppColors.accent.withValues(alpha: 0.15),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppTypography.labelSmall.copyWith(color: AppColors.accent);
+          }
+          return AppTypography.labelSmall.copyWith(
+            color: AppColors.textTertiaryLight,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.accent, size: 24);
+          }
+          return const IconThemeData(
+            color: AppColors.textTertiaryLight,
+            size: 24,
+          );
+        }),
       ),
 
       // Floating Action Button
@@ -420,12 +451,20 @@ abstract class AppTheme {
       // Scaffold
       scaffoldBackgroundColor: AppColors.backgroundDark,
 
+      // Page transitions - Cupertino style for both platforms
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+
       // AppBar
       appBarTheme: const AppBarTheme(
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
         centerTitle: true,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textPrimaryDark,
         surfaceTintColor: Colors.transparent,
         systemOverlayStyle: SystemUiOverlayStyle.light,
@@ -444,11 +483,10 @@ abstract class AppTheme {
       // Card
       cardTheme: CardThemeData(
         elevation: 0,
-        color: AppColors.cardDark,
+        color: AppColors.cardDark.withValues(alpha: 0.85),
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.borderDark, width: 1),
+          borderRadius: BorderRadius.circular(20),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
@@ -463,7 +501,7 @@ abstract class AppTheme {
           disabledForegroundColor: AppColors.textDisabledDark,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: AppTypography.buttonMedium,
         ),
@@ -536,12 +574,36 @@ abstract class AppTheme {
       // Bottom Navigation Bar
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         elevation: 0,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Colors.transparent,
         selectedItemColor: AppColors.accent,
         unselectedItemColor: AppColors.textTertiaryDark,
         type: BottomNavigationBarType.fixed,
         selectedLabelStyle: AppTypography.labelSmall,
         unselectedLabelStyle: AppTypography.labelSmall,
+      ),
+
+      // Navigation Bar (Material 3)
+      navigationBarTheme: NavigationBarThemeData(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        indicatorColor: AppColors.accent.withValues(alpha: 0.2),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppTypography.labelSmall.copyWith(color: AppColors.accent);
+          }
+          return AppTypography.labelSmall.copyWith(
+            color: AppColors.textTertiaryDark,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.accent, size: 24);
+          }
+          return const IconThemeData(
+            color: AppColors.textTertiaryDark,
+            size: 24,
+          );
+        }),
       ),
 
       // Floating Action Button
