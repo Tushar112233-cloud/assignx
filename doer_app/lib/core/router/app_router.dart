@@ -39,7 +39,7 @@ import '../../features/activation/screens/activation_gate_screen.dart';
 import '../../features/activation/screens/training_screen.dart';
 import '../../features/activation/screens/quiz_screen.dart';
 import '../../features/activation/screens/bank_details_screen.dart';
-import '../../features/dashboard/screens/dashboard_screen.dart';
+import '../../features/home/screens/main_shell.dart';
 import '../../features/dashboard/screens/statistics_screen.dart';
 import '../../features/dashboard/screens/reviews_screen.dart';
 import '../../features/workspace/screens/project_detail_screen.dart';
@@ -47,14 +47,10 @@ import '../../features/workspace/screens/workspace_screen.dart';
 import '../../features/workspace/screens/submit_work_screen.dart';
 import '../../features/workspace/screens/revision_screen.dart';
 import '../../features/workspace/screens/chat_screen.dart';
-import '../../features/projects/screens/my_projects_screen.dart';
-import '../../features/resources/screens/resources_hub_screen.dart';
 import '../../features/resources/screens/training_center_screen.dart';
 import '../../features/resources/screens/citation_builder_screen.dart';
 import '../../features/resources/screens/format_templates_screen.dart';
-import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
-import '../../features/profile/screens/payment_history_screen.dart';
 import '../../features/profile/screens/settings_screen.dart';
 import '../../features/profile/screens/notifications_screen.dart';
 import '../../features/support/screens/support_screen.dart';
@@ -227,7 +223,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.dashboard,
         name: 'dashboard',
-        builder: (context, state) => const DashboardScreen(),
+        builder: (context, state) => const MainShell(),
       ),
       GoRoute(
         path: RouteNames.statistics,
@@ -247,19 +243,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
-        path: RouteNames.profile,
-        name: 'profile',
-        builder: (context, state) => const ProfileScreen(),
-      ),
-      GoRoute(
         path: RouteNames.editProfile,
         name: 'editProfile',
         builder: (context, state) => const EditProfileScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.paymentHistory,
-        name: 'paymentHistory',
-        builder: (context, state) => const PaymentHistoryScreen(),
       ),
       GoRoute(
         path: RouteNames.bankDetailsEdit,
@@ -318,18 +304,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return ChatScreen(projectId: projectId);
         },
       ),
-      GoRoute(
-        path: RouteNames.myProjects,
-        name: 'myProjects',
-        builder: (context, state) => const MyProjectsScreen(),
-      ),
-
       // Resources Routes
-      GoRoute(
-        path: RouteNames.resources,
-        name: 'resources',
-        builder: (context, state) => const ResourcesHubScreen(),
-      ),
       GoRoute(
         path: RouteNames.trainingCenter,
         name: 'trainingCenter',
