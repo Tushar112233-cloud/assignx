@@ -8,6 +8,8 @@ import '../../../core/router/route_names.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/step_progress_bar.dart';
 import '../widgets/chip_selector.dart';
 import '../widgets/experience_slider.dart';
@@ -71,6 +73,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   /// Whether profile submission is in progress.
   bool _isLoading = false;
+
+  /// Mesh gradient position per step for visual variety.
+  static const List<MeshPosition> _meshPositions = [
+    MeshPosition.topRight,
+    MeshPosition.bottomLeft,
+    MeshPosition.center,
+  ];
 
   // ===== Step 1: Qualification =====
 
@@ -268,6 +277,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   /// Builds the profile setup wizard UI.
   ///
   /// Layout structure:
+  /// - MeshGradientBackground with per-step position
   /// - AppBar with back button (visible after step 1)
   /// - Progress bar with step labels
   /// - Page view with 3 step screens (non-swipeable)
@@ -287,48 +297,54 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             : null,
         title: Text('Complete Your Profile'.tr(context)),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Progress bar
-            Padding(
-              padding: AppSpacing.paddingHorizontalMd,
-              child: StepProgressBar(
-                totalSteps: _totalSteps,
-                currentStep: _currentStep,
-                labels: const ['Education', 'Skills', 'Experience'],
-                showPercentage: true,
+      body: MeshGradientBackground(
+        position: _meshPositions[_currentStep - 1],
+        colors: MeshColors.defaultColors,
+        opacity: 0.5,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Progress bar
+              Padding(
+                padding: AppSpacing.paddingHorizontalMd,
+                child: StepProgressBar(
+                  totalSteps: _totalSteps,
+                  currentStep: _currentStep,
+                  labels: const ['Education', 'Skills', 'Experience'],
+                  showPercentage: true,
+                ),
               ),
-            ),
 
-            const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.lg),
 
-            // Page content
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildQualificationStep(),
-                  _buildSkillsStep(),
-                  _buildExperienceStep(),
-                ],
+              // Page content
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildQualificationStep(),
+                    _buildSkillsStep(),
+                    _buildExperienceStep(),
+                  ],
+                ),
               ),
-            ),
 
-            // Bottom button
-            Padding(
-              padding: AppSpacing.paddingLg,
-              child: AppButton(
-                text: _currentStep == _totalSteps ? 'Complete Setup' : 'Continue',
-                onPressed: _canProceed() ? _nextStep : null,
-                isLoading: _isLoading,
-                isFullWidth: true,
-                size: AppButtonSize.large,
-                suffixIcon: _currentStep == _totalSteps ? Icons.check : Icons.arrow_forward,
+              // Bottom button - gradient-filled primary
+              Padding(
+                padding: AppSpacing.paddingLg,
+                child: AppButton(
+                  text: _currentStep == _totalSteps ? 'Complete Setup' : 'Continue',
+                  onPressed: _canProceed() ? _nextStep : null,
+                  isLoading: _isLoading,
+                  isFullWidth: true,
+                  variant: AppButtonVariant.primary,
+                  size: AppButtonSize.large,
+                  suffixIcon: _currentStep == _totalSteps ? Icons.check : Icons.arrow_forward,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -365,42 +381,53 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
           const SizedBox(height: AppSpacing.xl),
 
-          // Qualification dropdown
-          DropdownButtonFormField<String>(
-            value: _selectedQualification,
-            decoration: InputDecoration(
-              labelText: 'Qualification'.tr(context),
-              hintText: 'Select your qualification'.tr(context),
-              prefixIcon: const Icon(Icons.school_outlined),
+          // Form fields in a glass card
+          GlassContainer(
+            blur: 12,
+            opacity: 0.7,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            padding: AppSpacing.cardPadding,
+            child: Column(
+              children: [
+                // Qualification dropdown
+                DropdownButtonFormField<String>(
+                  value: _selectedQualification,
+                  decoration: InputDecoration(
+                    labelText: 'Qualification'.tr(context),
+                    hintText: 'Select your qualification'.tr(context),
+                    prefixIcon: const Icon(Icons.school_outlined),
+                  ),
+                  items: _qualifications.map((q) {
+                    return DropdownMenuItem(value: q, child: Text(q));
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() => _selectedQualification = value);
+                  },
+                ),
+
+                const SizedBox(height: AppSpacing.lg),
+
+                // University field
+                AppTextField(
+                  label: 'University/Institution',
+                  hint: 'Enter your university name',
+                  controller: _universityController,
+                  prefixIcon: Icons.apartment,
+                  textCapitalization: TextCapitalization.words,
+                ),
+              ],
             ),
-            items: _qualifications.map((q) {
-              return DropdownMenuItem(value: q, child: Text(q));
-            }).toList(),
-            onChanged: (value) {
-              setState(() => _selectedQualification = value);
-            },
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          // University field
-          AppTextField(
-            label: 'University/Institution',
-            hint: 'Enter your university name',
-            controller: _universityController,
-            prefixIcon: Icons.apartment,
-            textCapitalization: TextCapitalization.words,
           ),
 
           const SizedBox(height: AppSpacing.xl),
 
-          // Info box
-          Container(
-            padding: AppSpacing.paddingMd,
-            decoration: const BoxDecoration(
-              color: AppColors.infoLight,
-              borderRadius: AppSpacing.borderRadiusSm,
-            ),
+          // Info box in a glass container
+          GlassContainer(
+            blur: 8,
+            opacity: 0.5,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            padding: AppSpacing.cardPadding,
+            borderColor: AppColors.info.withValues(alpha: 0.2),
             child: Row(
               children: [
                 Icon(Icons.lightbulb_outline, color: AppColors.info),
@@ -452,34 +479,46 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
           const SizedBox(height: AppSpacing.xl),
 
-          // Subject areas
-          ChipSelector<String>(
-            label: 'Areas of Interest',
-            helperText: 'Select up to 5 subject areas'.tr(context),
-            options: _subjectOptions,
-            selectedValues: _selectedSubjects,
-            maxSelections: 5,
-            onChanged: (values) {
-              setState(() => _selectedSubjects
-                ..clear()
-                ..addAll(values));
-            },
+          // Subject areas in a glass card
+          GlassContainer(
+            blur: 12,
+            opacity: 0.7,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            padding: AppSpacing.cardPadding,
+            child: ChipSelector<String>(
+              label: 'Areas of Interest',
+              helperText: 'Select up to 5 subject areas'.tr(context),
+              options: _subjectOptions,
+              selectedValues: _selectedSubjects,
+              maxSelections: 5,
+              onChanged: (values) {
+                setState(() => _selectedSubjects
+                  ..clear()
+                  ..addAll(values));
+              },
+            ),
           ),
 
           const SizedBox(height: AppSpacing.xl),
 
-          // Skills
-          ChipSelector<String>(
-            label: 'Your Skills',
-            helperText: 'Select up to 8 skills'.tr(context),
-            options: _skillOptions,
-            selectedValues: _selectedSkills,
-            maxSelections: 8,
-            onChanged: (values) {
-              setState(() => _selectedSkills
-                ..clear()
-                ..addAll(values));
-            },
+          // Skills in a glass card
+          GlassContainer(
+            blur: 12,
+            opacity: 0.7,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            padding: AppSpacing.cardPadding,
+            child: ChipSelector<String>(
+              label: 'Your Skills',
+              helperText: 'Select up to 8 skills'.tr(context),
+              options: _skillOptions,
+              selectedValues: _selectedSkills,
+              maxSelections: 8,
+              onChanged: (values) {
+                setState(() => _selectedSkills
+                  ..clear()
+                  ..addAll(values));
+              },
+            ),
           ),
         ],
       ),
@@ -526,14 +565,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
           const SizedBox(height: AppSpacing.xxl),
 
-          // Summary card
-          Container(
-            padding: AppSpacing.paddingMd,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: AppSpacing.borderRadiusMd,
-              border: Border.all(color: AppColors.border),
-            ),
+          // Summary card in a glass container
+          GlassContainer(
+            blur: 12,
+            opacity: 0.7,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            padding: AppSpacing.cardPadding,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

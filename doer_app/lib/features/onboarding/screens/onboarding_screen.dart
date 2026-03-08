@@ -7,6 +7,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/router/route_names.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../core/translation/translation_extensions.dart';
 
 /// Onboarding carousel screen with 4 slides.
@@ -51,6 +53,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   /// Index of the currently visible page (0-3).
   int _currentPage = 0;
+
+  /// Mesh gradient position per slide for visual variety.
+  static const List<MeshPosition> _meshPositions = [
+    MeshPosition.topRight,
+    MeshPosition.bottomLeft,
+    MeshPosition.center,
+    MeshPosition.bottomRight,
+  ];
 
   /// Static list of onboarding slide data.
   ///
@@ -124,111 +134,114 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   /// Builds the onboarding screen UI.
   ///
   /// Layout structure:
-  /// - Skip button in top right
-  /// - Swipeable page view with animated slides
-  /// - Page indicator dots
-  /// - Next/Get Started button
+  /// - MeshGradientBackground with per-slide position
+  /// - Skip button in top right (text variant AppButton)
+  /// - Swipeable page view with animated slides in glass cards
+  /// - Pill-shaped page indicators with teal accent
+  /// - Next/Get Started button (gradient-filled primary AppButton)
   /// - Sign In link for existing users
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Skip button
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: AppSpacing.paddingMd,
-                child: TextButton(
-                  onPressed: _navigateToRegister,
-                  child: Text(
-                    'Skip'.tr(context),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary,
-                    ),
+      body: MeshGradientBackground(
+        position: _meshPositions[_currentPage],
+        colors: MeshColors.defaultColors,
+        opacity: 0.6,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Skip button - tertiary text variant
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: AppSpacing.paddingMd,
+                  child: AppButton(
+                    text: 'Skip'.tr(context),
+                    onPressed: _navigateToRegister,
+                    variant: AppButtonVariant.text,
+                    size: AppButtonSize.small,
                   ),
                 ),
               ),
-            ),
 
-            // Page view
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: _onPageChanged,
-                itemCount: _slides.length,
-                itemBuilder: (context, index) {
-                  return _OnboardingPage(slide: _slides[index]);
-                },
+              // Page view
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  itemCount: _slides.length,
+                  itemBuilder: (context, index) {
+                    return _OnboardingPage(slide: _slides[index]);
+                  },
+                ),
               ),
-            ),
 
-            // Bottom section
-            Padding(
-              padding: AppSpacing.paddingLg,
-              child: Column(
-                children: [
-                  // Page indicator
-                  SmoothPageIndicator(
-                    controller: _pageController,
-                    count: _slides.length,
-                    effect: const ExpandingDotsEffect(
-                      dotHeight: 8,
-                      dotWidth: 8,
-                      activeDotColor: AppColors.primary,
-                      dotColor: AppColors.border,
+              // Bottom section
+              Padding(
+                padding: AppSpacing.paddingLg,
+                child: Column(
+                  children: [
+                    // Page indicator - pill-shaped with teal accent
+                    SmoothPageIndicator(
+                      controller: _pageController,
+                      count: _slides.length,
+                      effect: const ExpandingDotsEffect(
+                        dotHeight: 8,
+                        dotWidth: 8,
+                        expansionFactor: 3,
+                        activeDotColor: AppColors.accent,
+                        dotColor: AppColors.border,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
+                    const SizedBox(height: AppSpacing.xl),
 
-                  // Action buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppButton(
-                          text: _currentPage == _slides.length - 1
-                              ? 'Get Started'
-                              : 'Next',
-                          onPressed: _nextPage,
-                          isFullWidth: true,
-                          suffixIcon: Icons.arrow_forward,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: AppSpacing.md),
-
-                  // Already have account
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Already have an account? '.tr(context),
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => context.go(RouteNames.login),
-                        child: Text(
-                          'Sign In'.tr(context),
-                          style: TextStyle(
-                            color: AppColors.accent,
-                            fontWeight: FontWeight.w600,
+                    // Action button - gradient-filled primary
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AppButton(
+                            text: _currentPage == _slides.length - 1
+                                ? 'Get Started'
+                                : 'Next',
+                            onPressed: _nextPage,
+                            variant: AppButtonVariant.primary,
+                            isFullWidth: true,
+                            suffixIcon: Icons.arrow_forward,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Already have account
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Already have an account? '.tr(context),
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => context.go(RouteNames.login),
+                          child: Text(
+                            'Sign In'.tr(context),
+                            style: TextStyle(
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -262,15 +275,15 @@ class OnboardingSlide {
 
 /// Single onboarding page widget with animated content.
 ///
-/// Displays the slide's icon, title, and subtitle with
-/// staggered fade and scale animations.
+/// Displays the slide's icon, title, and subtitle within a
+/// GlassContainer, with staggered fade and scale animations.
 class _OnboardingPage extends StatelessWidget {
   /// The slide data to display.
   final OnboardingSlide slide;
 
   const _OnboardingPage({required this.slide});
 
-  /// Builds the animated slide content.
+  /// Builds the animated slide content inside a glass card.
   ///
   /// Animation sequence:
   /// 1. Icon fades in and scales (0-400ms)
@@ -307,34 +320,48 @@ class _OnboardingPage extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.xxl),
 
-          // Title
-          Text(
-            slide.title,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+          // Title and subtitle wrapped in a glass card
+          GlassContainer(
+            blur: 12,
+            opacity: 0.6,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.xl,
             ),
-            textAlign: TextAlign.center,
-          )
-              .animate(delay: 200.ms)
-              .fadeIn(duration: 400.ms)
-              .slideY(begin: 0.2, end: 0),
+            child: Column(
+              children: [
+                // Title
+                Text(
+                  slide.title,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                )
+                    .animate(delay: 200.ms)
+                    .fadeIn(duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0),
 
-          const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
 
-          // Subtitle
-          Text(
-            slide.subtitle,
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-              height: 1.5,
+                // Subtitle
+                Text(
+                  slide.subtitle,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                )
+                    .animate(delay: 400.ms)
+                    .fadeIn(duration: 400.ms),
+              ],
             ),
-            textAlign: TextAlign.center,
-          )
-              .animate(delay: 400.ms)
-              .fadeIn(duration: 400.ms),
+          ),
         ],
       ),
     );
