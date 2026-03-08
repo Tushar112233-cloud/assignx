@@ -9,6 +9,8 @@ import '../../../core/utils/validators.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../core/translation/translation_extensions.dart';
 
 /// OTP-based login screen for doers.
@@ -169,164 +171,183 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(RouteNames.onboarding),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: AppSpacing.paddingLg,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: AppSpacing.lg),
-
-                // Header
-                Text(
-                  'Welcome Back'.tr(context),
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Custom back button row
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                  onPressed: () => context.go(RouteNames.onboarding),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  _otpSent
-                      ? 'Enter the verification code sent to your email'
-                      : 'Sign in to continue your earning journey'.tr(context),
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+              ),
 
-                const SizedBox(height: AppSpacing.xxl),
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: AppSpacing.paddingLg,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: AppSpacing.lg),
 
-                // Email field
-                AppTextField(
-                  label: 'Email',
-                  hint: 'Enter your email',
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: Icons.email_outlined,
-                  validator: Validators.email,
-                  enabled: !_otpSent,
-                ),
-
-                if (_otpSent) ...[
-                  const SizedBox(height: AppSpacing.lg),
-
-                  // OTP field
-                  AppTextField(
-                    label: 'Verification Code',
-                    hint: 'Enter OTP',
-                    controller: _otpController,
-                    keyboardType: TextInputType.number,
-                    prefixIcon: Icons.lock_outline,
-                    maxLength: 6,
-                    validator: (value) =>
-                        Validators.required(value, fieldName: 'OTP'),
-                  ),
-
-                  const SizedBox(height: AppSpacing.sm),
-
-                  // Resend OTP
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed:
-                          _resendCooldown > 0 ? null : _handleSendOtp,
-                      child: Text(
-                        _resendCooldown > 0
-                            ? 'Resend in ${_resendCooldown}s'
-                            : 'Resend OTP',
-                        style: TextStyle(
-                          color: _resendCooldown > 0
-                              ? AppColors.textTertiary
-                              : AppColors.accent,
-                          fontWeight: FontWeight.w500,
+                      // Brand header
+                      Text(
+                        'Welcome Back'.tr(context),
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                    ),
-                  ),
-
-                  const SizedBox(height: AppSpacing.xl),
-
-                  // Verify button
-                  AppButton(
-                    text: 'Verify & Sign In',
-                    onPressed: _handleVerifyOtp,
-                    isLoading: _isLoading,
-                    isFullWidth: true,
-                    size: AppButtonSize.large,
-                  ),
-
-                  const SizedBox(height: AppSpacing.md),
-
-                  // Change email
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _otpSent = false;
-                          _otpController.clear();
-                        });
-                      },
-                      child: Text(
-                        'Use a different email',
-                        style: TextStyle(
-                          color: AppColors.accent,
-                          fontWeight: FontWeight.w500,
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        _otpSent
+                            ? 'Enter the verification code sent to your email'
+                            : 'Sign in to continue your earning journey'.tr(context),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                    ),
-                  ),
-                ] else ...[
-                  const SizedBox(height: AppSpacing.xl),
 
-                  // Send OTP button
-                  AppButton(
-                    text: 'Send OTP',
-                    onPressed: _handleSendOtp,
-                    isLoading: _isLoading,
-                    isFullWidth: true,
-                    size: AppButtonSize.large,
-                  ),
-                ],
+                      const SizedBox(height: AppSpacing.xxl),
 
-                const SizedBox(height: AppSpacing.xxl),
+                      // Glass form container
+                      GlassContainer(
+                        blur: 20,
+                        opacity: 0.85,
+                        borderRadius: BorderRadius.circular(20),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        enableHoverEffect: false,
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Email field
+                              AppTextField(
+                                label: 'Email',
+                                hint: 'Enter your email',
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                prefixIcon: Icons.email_outlined,
+                                validator: Validators.email,
+                                enabled: !_otpSent,
+                              ),
 
-                // Sign up link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Don't have an account? ".tr(context),
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => context.go(RouteNames.register),
-                      child: Text(
-                        'Sign Up'.tr(context),
-                        style: TextStyle(
-                          color: AppColors.accent,
-                          fontWeight: FontWeight.w600,
+                              if (_otpSent) ...[
+                                const SizedBox(height: AppSpacing.lg),
+
+                                // OTP field
+                                AppTextField(
+                                  label: 'Verification Code',
+                                  hint: 'Enter OTP',
+                                  controller: _otpController,
+                                  keyboardType: TextInputType.number,
+                                  prefixIcon: Icons.lock_outline,
+                                  maxLength: 6,
+                                  validator: (value) =>
+                                      Validators.required(value, fieldName: 'OTP'),
+                                ),
+
+                                const SizedBox(height: AppSpacing.sm),
+
+                                // Resend OTP
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed:
+                                        _resendCooldown > 0 ? null : _handleSendOtp,
+                                    child: Text(
+                                      _resendCooldown > 0
+                                          ? 'Resend in ${_resendCooldown}s'
+                                          : 'Resend OTP',
+                                      style: TextStyle(
+                                        color: _resendCooldown > 0
+                                            ? AppColors.textTertiary
+                                            : AppColors.accent,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: AppSpacing.xl),
+
+                                // Verify button - primary variant
+                                AppButton(
+                                  text: 'Verify & Sign In',
+                                  onPressed: _handleVerifyOtp,
+                                  isLoading: _isLoading,
+                                  isFullWidth: true,
+                                  size: AppButtonSize.large,
+                                ),
+
+                                const SizedBox(height: AppSpacing.md),
+
+                                // Change email - secondary variant
+                                AppButton(
+                                  text: 'Use a different email',
+                                  variant: AppButtonVariant.secondary,
+                                  onPressed: () {
+                                    setState(() {
+                                      _otpSent = false;
+                                      _otpController.clear();
+                                    });
+                                  },
+                                  isFullWidth: true,
+                                  size: AppButtonSize.medium,
+                                ),
+                              ] else ...[
+                                const SizedBox(height: AppSpacing.xl),
+
+                                // Send OTP button - primary variant
+                                AppButton(
+                                  text: 'Send OTP',
+                                  onPressed: _handleSendOtp,
+                                  isLoading: _isLoading,
+                                  isFullWidth: true,
+                                  size: AppButtonSize.large,
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: AppSpacing.xxl),
+
+                      // Sign up link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Don't have an account? ".tr(context),
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => context.go(RouteNames.register),
+                            child: const Text(
+                              'Sign Up',
+                              style: TextStyle(
+                                color: AppColors.accent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

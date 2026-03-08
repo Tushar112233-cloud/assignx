@@ -7,6 +7,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/router/route_names.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../core/translation/translation_extensions.dart';
 
 /// Registration screen with Google OAuth only.
@@ -146,157 +149,144 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   /// Builds the registration screen UI.
   ///
   /// Layout structure:
-  /// - AppBar with back navigation to onboarding
-  /// - Header with "Create Account" title and subtitle
-  /// - Google Sign-In button with loading state
-  /// - Terms of Service and Privacy Policy legal text
+  /// - MeshGradientBackground with topRight position
+  /// - Back navigation button
+  /// - Header with "Join as a Doer" title and subtitle
+  /// - GlassContainer wrapping the Google Sign-In button and legal text
   /// - Sign In link for existing users
-  ///
-  /// Uses flexible spacers for vertical centering.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(RouteNames.onboarding),
-        ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: AppSpacing.paddingLg,
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        child: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Spacer(flex: 1),
-
-              // Header
-              Text(
-                'Create Account'.tr(context),
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Start your journey with DOER today'.tr(context),
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textSecondary,
+              // Custom back button row
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                  onPressed: () => context.go(RouteNames.onboarding),
                 ),
               ),
 
-              const Spacer(flex: 2),
+              // Main content
+              Expanded(
+                child: Padding(
+                  padding: AppSpacing.paddingLg,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Spacer(flex: 1),
 
-              // Google Sign In Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: OutlinedButton(
-                  onPressed: _isLoading ? null : _handleGoogleSignIn,
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.border),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    backgroundColor: AppColors.surface,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      // Brand header
+                      const Text(
+                        'Join as a Doer',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Start your journey with DOER today'.tr(context),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+
+                      const Spacer(flex: 2),
+
+                      // Glass form container
+                      GlassContainer(
+                        blur: 20,
+                        opacity: 0.85,
+                        borderRadius: BorderRadius.circular(20),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        enableHoverEffect: false,
+                        child: Column(
                           children: [
-                            Image.network(
-                              'https://www.google.com/favicon.ico',
-                              width: 24,
-                              height: 24,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.g_mobiledata, size: 24),
+                            // Google Sign In Button - secondary (glass) variant
+                            AppButton(
+                              text: 'Continue with Google'.tr(context),
+                              icon: Icons.g_mobiledata,
+                              variant: AppButtonVariant.secondary,
+                              onPressed: _isLoading ? null : _handleGoogleSignIn,
+                              isLoading: _isLoading,
+                              isFullWidth: true,
+                              size: AppButtonSize.large,
                             ),
-                            const SizedBox(width: AppSpacing.md),
-                            Text(
-                              'Continue with Google'.tr(context),
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
+
+                            const SizedBox(height: AppSpacing.lg),
+
+                            // Terms text
+                            RichText(
+                              textAlign: TextAlign.center,
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                                children: [
+                                  TextSpan(text: 'By signing up, you agree to our '.tr(context)),
+                                  TextSpan(
+                                    text: 'Terms of Service'.tr(context),
+                                    style: const TextStyle(
+                                      color: AppColors.accent,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    recognizer: _termsRecognizer,
+                                  ),
+                                  TextSpan(text: ' and '.tr(context)),
+                                  TextSpan(
+                                    text: 'Privacy Policy'.tr(context),
+                                    style: const TextStyle(
+                                      color: AppColors.accent,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    recognizer: _privacyRecognizer,
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              // Terms text
-              Center(
-                child: RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                    children: [
-                      TextSpan(text: 'By signing up, you agree to our '.tr(context)),
-                      TextSpan(
-                        text: 'Terms of Service'.tr(context),
-                        style: const TextStyle(
-                          color: AppColors.accent,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        recognizer: _termsRecognizer,
                       ),
-                      TextSpan(text: ' and '.tr(context)),
-                      TextSpan(
-                        text: 'Privacy Policy'.tr(context),
-                        style: const TextStyle(
-                          color: AppColors.accent,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        recognizer: _privacyRecognizer,
+
+                      const Spacer(flex: 2),
+
+                      // Sign in link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Already have an account? '.tr(context),
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => context.go(RouteNames.login),
+                            child: Text(
+                              'Sign In'.tr(context),
+                              style: const TextStyle(
+                                color: AppColors.accent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+
+                      const SizedBox(height: AppSpacing.lg),
                     ],
                   ),
                 ),
               ),
-
-              const Spacer(flex: 2),
-
-              // Sign in link
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Already have an account? '.tr(context),
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => context.go(RouteNames.login),
-                    child: Text(
-                      'Sign In'.tr(context),
-                      style: TextStyle(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
             ],
           ),
         ),
