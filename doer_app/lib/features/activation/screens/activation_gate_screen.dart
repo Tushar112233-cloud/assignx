@@ -9,6 +9,8 @@ import '../../../data/models/activation_model.dart';
 import '../../../providers/activation_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/activation_stepper.dart';
 import '../../../core/translation/translation_extensions.dart';
 
@@ -108,186 +110,245 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: activationState.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: AppSpacing.paddingLg,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: AppSpacing.xl),
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.defaultColors,
+        opacity: 0.6,
+        child: SafeArea(
+          child: activationState.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  padding: AppSpacing.paddingLg,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: AppSpacing.lg),
 
-                    // Lock icon
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.lock_open,
-                        size: 40,
-                        color: AppColors.primary,
-                      ),
-                    ),
+                      // Step indicator dots
+                      _buildStepIndicatorDots(status),
 
-                    const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.xl),
 
-                    // Header
-                    Text(
-                      'Unlock Your Dashboard'.tr(context),
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: AppSpacing.sm),
-
-                    Text(
-                      '${'Hello'.tr(context)}, ${user?.fullName.split(' ').first ?? 'there'}! ${'Complete these 3 steps to start earning.'.tr(context)}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: AppSpacing.xxl),
-
-                    // Activation stepper
-                    ActivationStepper(
-                      status: status,
-                      onStepTapped: _navigateToStep,
-                      currentStep: _getCurrentStep(status),
-                    ),
-
-                    const SizedBox(height: AppSpacing.xxl),
-
-                    // Step cards
-                    _buildStepCard(
-                      step: ActivationStep.training,
-                      isCompleted: status.trainingCompleted,
-                      isLocked: false,
-                      icon: Icons.school,
-                      subtitle: 'Learn about DOER platform and guidelines'.tr(context),
-                      progress: activationState.trainingProgressPercent,
-                      onTap: () => _navigateToStep(ActivationStep.training),
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    _buildStepCard(
-                      step: ActivationStep.quiz,
-                      isCompleted: status.quizPassed,
-                      isLocked: !status.trainingCompleted,
-                      icon: Icons.quiz,
-                      subtitle: 'Answer questions based on training'.tr(context),
-                      lastAttempt: activationState.lastQuizAttempt,
-                      onTap: status.trainingCompleted
-                          ? () => _navigateToStep(ActivationStep.quiz)
-                          : null,
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    _buildStepCard(
-                      step: ActivationStep.bankDetails,
-                      isCompleted: status.bankDetailsAdded,
-                      isLocked: !status.quizPassed,
-                      icon: Icons.account_balance,
-                      subtitle: 'Add your bank account for payments'.tr(context),
-                      onTap: status.quizPassed
-                          ? () => _navigateToStep(ActivationStep.bankDetails)
-                          : null,
-                    ),
-
-                    const SizedBox(height: AppSpacing.xxl),
-
-                    // Why this matters section
-                    Container(
-                      padding: AppSpacing.paddingLg,
-                      decoration: BoxDecoration(
-                        color: AppColors.info.withValues(alpha: 0.1),
-                        borderRadius: AppSpacing.borderRadiusLg,
-                        border: Border.all(
-                          color: AppColors.info.withValues(alpha: 0.3),
+                      // Lock icon
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.accent, AppColors.accentLight],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.accent.withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.lock_open,
+                          size: 40,
+                          color: Colors.white,
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                color: AppColors.info,
-                                size: 24,
-                              ),
-                              SizedBox(width: AppSpacing.sm),
-                              Text(
-                                'Why is this important?'.tr(context),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: AppSpacing.md),
-                          Text(
-                            '${'• Training ensures you understand our quality standards'.tr(context)}\n'
-                            '${'• Quiz verifies your readiness to handle projects'.tr(context)}\n'
-                            '${'• Bank details enable us to pay you on time'.tr(context)}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                              height: 1.6,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
 
-                    const SizedBox(height: AppSpacing.xl),
+                      const SizedBox(height: AppSpacing.lg),
 
-                    // Continue button
-                    if (!status.isFullyActivated)
-                      AppButton(
-                        text: _getButtonText(status),
-                        onPressed: () => _navigateToStep(_getCurrentStep(status)),
-                        isFullWidth: true,
-                        size: AppButtonSize.large,
+                      // Header
+                      Text(
+                        'Unlock Your Dashboard'.tr(context),
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
 
-                    const SizedBox(height: AppSpacing.md),
+                      const SizedBox(height: AppSpacing.sm),
 
-                    // Logout option
-                    TextButton(
-                      onPressed: () async {
-                        await ref.read(authProvider.notifier).signOut();
-                        if (mounted) {
-                          context.go(RouteNames.onboarding);
-                        }
-                      },
-                      child: Text(
-                        'Sign Out'.tr(context),
-                        style: TextStyle(
+                      Text(
+                        '${'Hello'.tr(context)}, ${user?.fullName.split(' ').first ?? 'there'}! ${'Complete these 3 steps to start earning.'.tr(context)}',
+                        style: const TextStyle(
+                          fontSize: 16,
                           color: AppColors.textSecondary,
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
 
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
+                      const SizedBox(height: AppSpacing.xxl),
+
+                      // Activation stepper in glass container
+                      GlassCard(
+                        padding: AppSpacing.paddingLg,
+                        child: ActivationStepper(
+                          status: status,
+                          onStepTapped: _navigateToStep,
+                          currentStep: _getCurrentStep(status),
+                        ),
+                      ),
+
+                      const SizedBox(height: AppSpacing.xxl),
+
+                      // Step cards
+                      _buildStepCard(
+                        step: ActivationStep.training,
+                        isCompleted: status.trainingCompleted,
+                        isLocked: false,
+                        icon: Icons.school,
+                        subtitle: 'Learn about DOER platform and guidelines'.tr(context),
+                        progress: activationState.trainingProgressPercent,
+                        onTap: () => _navigateToStep(ActivationStep.training),
+                      ),
+
+                      const SizedBox(height: AppSpacing.md),
+
+                      _buildStepCard(
+                        step: ActivationStep.quiz,
+                        isCompleted: status.quizPassed,
+                        isLocked: !status.trainingCompleted,
+                        icon: Icons.quiz,
+                        subtitle: 'Answer questions based on training'.tr(context),
+                        lastAttempt: activationState.lastQuizAttempt,
+                        onTap: status.trainingCompleted
+                            ? () => _navigateToStep(ActivationStep.quiz)
+                            : null,
+                      ),
+
+                      const SizedBox(height: AppSpacing.md),
+
+                      _buildStepCard(
+                        step: ActivationStep.bankDetails,
+                        isCompleted: status.bankDetailsAdded,
+                        isLocked: !status.quizPassed,
+                        icon: Icons.account_balance,
+                        subtitle: 'Add your bank account for payments'.tr(context),
+                        onTap: status.quizPassed
+                            ? () => _navigateToStep(ActivationStep.bankDetails)
+                            : null,
+                      ),
+
+                      const SizedBox(height: AppSpacing.xxl),
+
+                      // Why this matters section
+                      GlassCard(
+                        padding: AppSpacing.paddingLg,
+                        borderColor: AppColors.info.withValues(alpha: 0.2),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: AppColors.info,
+                                  size: 24,
+                                ),
+                                SizedBox(width: AppSpacing.sm),
+                                Text(
+                                  'Why is this important?'.tr(context),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: AppSpacing.md),
+                            Text(
+                              '${'• Training ensures you understand our quality standards'.tr(context)}\n'
+                              '${'• Quiz verifies your readiness to handle projects'.tr(context)}\n'
+                              '${'• Bank details enable us to pay you on time'.tr(context)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textSecondary,
+                                height: 1.6,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: AppSpacing.xl),
+
+                      // Continue button
+                      if (!status.isFullyActivated)
+                        AppButton(
+                          text: _getButtonText(status),
+                          onPressed: () => _navigateToStep(_getCurrentStep(status)),
+                          isFullWidth: true,
+                          size: AppButtonSize.large,
+                        ),
+
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Logout option
+                      TextButton(
+                        onPressed: () async {
+                          await ref.read(authProvider.notifier).signOut();
+                          if (mounted) {
+                            context.go(RouteNames.onboarding);
+                          }
+                        },
+                        child: Text(
+                          'Sign Out'.tr(context),
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
+    );
+  }
+
+  /// Builds the horizontal step indicator dots at the top of the screen.
+  ///
+  /// Shows 3 dots representing training, quiz, and bank details steps.
+  /// Completed steps use a teal gradient fill, active step uses accent,
+  /// and inactive steps use border color.
+  Widget _buildStepIndicatorDots(ActivationStatus status) {
+    final steps = [
+      status.trainingCompleted,
+      status.quizPassed,
+      status.bankDetailsAdded,
+    ];
+    final currentIndex = !status.trainingCompleted
+        ? 0
+        : !status.quizPassed
+            ? 1
+            : 2;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(3, (index) {
+        final isCompleted = steps[index];
+        final isActive = index == currentIndex && !isCompleted;
+
+        return Container(
+          width: isActive ? 32 : 12,
+          height: 12,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            gradient: isCompleted || isActive
+                ? const LinearGradient(
+                    colors: [AppColors.accent, AppColors.accentLight],
+                  )
+                : null,
+            color: !isCompleted && !isActive ? AppColors.border : null,
+          ),
+        );
+      }),
     );
   }
 
@@ -295,7 +356,7 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
   ///
   /// Displays step information with appropriate visual state:
   /// - Completed: Green border and checkmark icon
-  /// - Current: Blue highlight with step icon
+  /// - Current: Teal highlight with step icon
   /// - Locked: Grey with lock icon
   ///
   /// Shows progress bar for training step when in progress.
@@ -309,141 +370,141 @@ class _ActivationGateScreenState extends ConsumerState<ActivationGateScreen> {
     dynamic lastAttempt,
     VoidCallback? onTap,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusMd,
-        side: BorderSide(
-          color: isCompleted
-              ? AppColors.success
-              : isLocked
-                  ? Colors.transparent
-                  : AppColors.primary.withValues(alpha: 0.3),
-          width: isCompleted ? 2 : 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppSpacing.borderRadiusMd,
-        child: Padding(
-          padding: AppSpacing.paddingMd,
-          child: Row(
-            children: [
-              // Step icon
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: isCompleted
-                      ? AppColors.success.withValues(alpha: 0.1)
-                      : isLocked
-                          ? AppColors.border.withValues(alpha: 0.5)
-                          : AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: AppSpacing.borderRadiusMd,
-                ),
-                child: Icon(
-                  isCompleted
-                      ? Icons.check_circle
-                      : isLocked
-                          ? Icons.lock
-                          : icon,
-                  color: isCompleted
-                      ? AppColors.success
-                      : isLocked
-                          ? AppColors.textTertiary
-                          : AppColors.primary,
-                  size: 28,
-                ),
-              ),
+    return GlassCard(
+      onTap: onTap,
+      borderColor: isCompleted
+          ? AppColors.success.withValues(alpha: 0.5)
+          : isLocked
+              ? Colors.transparent
+              : AppColors.accent.withValues(alpha: 0.3),
+      borderWidth: isCompleted ? 2 : 1,
+      padding: AppSpacing.paddingMd,
+      child: Row(
+        children: [
+          // Step icon
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: isCompleted
+                  ? LinearGradient(
+                      colors: [
+                        AppColors.success.withValues(alpha: 0.15),
+                        AppColors.success.withValues(alpha: 0.05),
+                      ],
+                    )
+                  : isLocked
+                      ? null
+                      : const LinearGradient(
+                          colors: [
+                            Color(0x1A06B6D4),
+                            Color(0x0A06B6D4),
+                          ],
+                        ),
+              color: isLocked ? AppColors.border.withValues(alpha: 0.5) : null,
+              borderRadius: AppSpacing.borderRadiusMd,
+            ),
+            child: Icon(
+              isCompleted
+                  ? Icons.check_circle
+                  : isLocked
+                      ? Icons.lock
+                      : icon,
+              color: isCompleted
+                  ? AppColors.success
+                  : isLocked
+                      ? AppColors.textTertiary
+                      : AppColors.accent,
+              size: 28,
+            ),
+          ),
 
-              const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: AppSpacing.md),
 
-              // Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Step ${step.number}: ${step.title}'.tr(context),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: isLocked
-                            ? AppColors.textTertiary
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isLocked
-                            ? AppColors.textTertiary
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                    if (progress != null && progress > 0 && !isCompleted) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: AppSpacing.borderRadiusSm,
-                              child: LinearProgressIndicator(
-                                value: progress / 100,
-                                backgroundColor: AppColors.border,
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  AppColors.accent,
-                                ),
-                                minHeight: 4,
-                              ),
+          // Content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Step ${step.number}: ${step.title}'.tr(context),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isLocked
+                        ? AppColors.textTertiary
+                        : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isLocked
+                        ? AppColors.textTertiary
+                        : AppColors.textSecondary,
+                  ),
+                ),
+                if (progress != null && progress > 0 && !isCompleted) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: AppSpacing.borderRadiusSm,
+                          child: LinearProgressIndicator(
+                            value: progress / 100,
+                            backgroundColor: AppColors.border,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColors.accent,
                             ),
+                            minHeight: 4,
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${progress.toInt()}%',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${progress.toInt()}%',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
-                  ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // Status indicator
+          if (isCompleted)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.1),
+                borderRadius: AppSpacing.borderRadiusSm,
+              ),
+              child: Text(
+                'Done'.tr(context),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.success,
                 ),
               ),
-
-              // Status indicator
-              if (isCompleted)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
-                    borderRadius: AppSpacing.borderRadiusSm,
-                  ),
-                  child: Text(
-                    'Done'.tr(context),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.success,
-                    ),
-                  ),
-                )
-              else if (!isLocked)
-                const Icon(
-                  Icons.chevron_right,
-                  color: AppColors.textTertiary,
-                ),
-            ],
-          ),
-        ),
+            )
+          else if (!isLocked)
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textTertiary,
+            ),
+        ],
       ),
     );
   }

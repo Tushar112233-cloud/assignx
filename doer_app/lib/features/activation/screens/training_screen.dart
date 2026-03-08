@@ -8,6 +8,8 @@ import '../../../core/router/route_names.dart';
 import '../../../data/models/training_model.dart';
 import '../../../providers/activation_provider.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/training_module_card.dart';
 import '../widgets/training_pdf_viewer.dart';
 import '../widgets/training_video_player.dart';
@@ -74,6 +76,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -95,15 +98,23 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           ),
         ),
       ),
-      body: _isViewing && _selectedModule != null
-          ? _buildModuleViewer(_selectedModule!)
-          : _buildModuleList(modules, progress, allCompleted),
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.freshColors,
+        opacity: 0.5,
+        child: SafeArea(
+          child: _isViewing && _selectedModule != null
+              ? _buildModuleViewer(_selectedModule!)
+              : _buildModuleList(modules, progress, allCompleted),
+        ),
+      ),
     );
   }
 
   /// Builds the module list view with progress header.
   ///
   /// Shows:
+  /// - Step indicator dots
   /// - Progress bar with completed count
   /// - List of training modules
   /// - "Proceed to Quiz" button when all complete
@@ -114,43 +125,54 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
   ) {
     return Column(
       children: [
-        // Progress header
-        Container(
-          padding: AppSpacing.paddingLg,
-          color: AppColors.surface,
+        // Progress header in glass card
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0,
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Your Progress'.tr(context),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    '${_getCompletedCount(modules, progress)}/${modules.length} ${'modules'.tr(context)}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+              // Step indicator - Step 1 active
+              _buildStepIndicatorDots(0),
               const SizedBox(height: AppSpacing.md),
-              ClipRRect(
-                borderRadius: AppSpacing.borderRadiusSm,
-                child: LinearProgressIndicator(
-                  value: modules.isEmpty
-                      ? 0
-                      : _getCompletedCount(modules, progress) / modules.length,
-                  backgroundColor: AppColors.border,
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
-                  minHeight: 8,
+              GlassCard(
+                padding: AppSpacing.paddingLg,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Your Progress'.tr(context),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          '${_getCompletedCount(modules, progress)}/${modules.length} ${'modules'.tr(context)}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    ClipRRect(
+                      borderRadius: AppSpacing.borderRadiusSm,
+                      child: LinearProgressIndicator(
+                        value: modules.isEmpty
+                            ? 0
+                            : _getCompletedCount(modules, progress) / modules.length,
+                        backgroundColor: AppColors.border,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+                        minHeight: 8,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -199,12 +221,9 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 if (allCompleted)
                   Column(
                     children: [
-                      Container(
+                      GlassCard(
                         padding: AppSpacing.paddingMd,
-                        decoration: BoxDecoration(
-                          color: AppColors.success.withValues(alpha: 0.1),
-                          borderRadius: AppSpacing.borderRadiusMd,
-                        ),
+                        borderColor: AppColors.success.withValues(alpha: 0.3),
                         child: Row(
                           children: [
                             Icon(
@@ -261,30 +280,19 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         ),
 
         // Bottom action bar
-        Container(
+        GlassContainer(
+          blur: 20,
+          opacity: 0.9,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           padding: AppSpacing.paddingLg,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
           child: SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (isCompleted)
-                  Container(
+                  GlassCard(
                     padding: AppSpacing.paddingMd,
-                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.1),
-                      borderRadius: AppSpacing.borderRadiusMd,
-                    ),
+                    borderColor: AppColors.success.withValues(alpha: 0.3),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -395,13 +403,9 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           ),
           const SizedBox(height: AppSpacing.xl),
 
-          // Placeholder article content
-          Container(
+          // Placeholder article content in glass card
+          GlassCard(
             padding: AppSpacing.paddingLg,
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: AppSpacing.borderRadiusMd,
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -477,5 +481,33 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       }
     }
     return count;
+  }
+
+  /// Builds the horizontal step indicator dots.
+  ///
+  /// [activeIndex] indicates which step is currently active (0-based).
+  Widget _buildStepIndicatorDots(int activeIndex) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(3, (index) {
+        final isActive = index == activeIndex;
+        final isCompleted = index < activeIndex;
+
+        return Container(
+          width: isActive ? 32 : 12,
+          height: 12,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            gradient: isCompleted || isActive
+                ? const LinearGradient(
+                    colors: [AppColors.accent, AppColors.accentLight],
+                  )
+                : null,
+            color: !isCompleted && !isActive ? AppColors.border : null,
+          ),
+        );
+      }),
+    );
   }
 }

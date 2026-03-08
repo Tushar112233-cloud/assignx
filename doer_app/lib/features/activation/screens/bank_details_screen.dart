@@ -11,6 +11,8 @@ import '../../../providers/activation_provider.dart';
 import '../../../providers/auth_provider.dart' show BankDetailsFormData;
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/bank_verification_badge.dart';
 import '../../../core/translation/translation_extensions.dart';
 
@@ -276,6 +278,7 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
     if (existingDetails != null && activationState.status.bankDetailsAdded) {
       return Scaffold(
         backgroundColor: AppColors.background,
+        extendBodyBehindAppBar: true,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -292,52 +295,60 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
             ),
           ),
         ),
-        body: SingleChildScrollView(
-          padding: AppSpacing.paddingLg,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: AppSpacing.paddingMd,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
-                  borderRadius: AppSpacing.borderRadiusMd,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: AppColors.success,
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        'Bank details submitted successfully!'.tr(context),
-                        style: TextStyle(
+        body: MeshGradientBackground(
+          position: MeshPosition.bottomRight,
+          colors: MeshColors.defaultColors,
+          opacity: 0.5,
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: AppSpacing.paddingLg,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Step indicator dots - Step 3 active
+                  Center(child: _buildStepIndicatorDots(2)),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  GlassCard(
+                    padding: AppSpacing.paddingMd,
+                    borderColor: AppColors.success.withValues(alpha: 0.3),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle,
                           color: AppColors.success,
-                          fontWeight: FontWeight.w500,
                         ),
-                      ),
+                        SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            'Bank details submitted successfully!'.tr(context),
+                            style: TextStyle(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  BankAccountCard(
+                    accountHolderName: existingDetails.accountHolderName,
+                    maskedAccountNumber: existingDetails.maskedAccountNumber,
+                    bankName: existingDetails.bankName ?? 'Bank',
+                    ifscCode: existingDetails.ifscCode,
+                    isVerified: existingDetails.isVerified,
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+                  AppButton(
+                    text: 'Go to Dashboard',
+                    onPressed: () => context.go(RouteNames.dashboard),
+                    isFullWidth: true,
+                    size: AppButtonSize.large,
+                  ),
+                ],
               ),
-              const SizedBox(height: AppSpacing.xl),
-              BankAccountCard(
-                accountHolderName: existingDetails.accountHolderName,
-                maskedAccountNumber: existingDetails.maskedAccountNumber,
-                bankName: existingDetails.bankName ?? 'Bank',
-                ifscCode: existingDetails.ifscCode,
-                isVerified: existingDetails.isVerified,
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-              AppButton(
-                text: 'Go to Dashboard',
-                onPressed: () => context.go(RouteNames.dashboard),
-                isFullWidth: true,
-                size: AppButtonSize.large,
-              ),
-            ],
+            ),
           ),
         ),
       );
@@ -345,6 +356,7 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -361,222 +373,285 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: AppSpacing.paddingLg,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Text(
-                'Add Bank Account'.tr(context),
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Enter your bank details to receive payments for completed projects.'.tr(context),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
-              ),
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        colors: MeshColors.defaultColors,
+        opacity: 0.5,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: AppSpacing.paddingLg,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Step indicator dots - Step 3 active
+                  Center(child: _buildStepIndicatorDots(2)),
 
-              const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.lg),
 
-              // Security note
-              Container(
-                padding: AppSpacing.paddingMd,
-                decoration: BoxDecoration(
-                  color: AppColors.info.withValues(alpha: 0.1),
-                  borderRadius: AppSpacing.borderRadiusMd,
-                  border: Border.all(
-                    color: AppColors.info.withValues(alpha: 0.3),
+                  // Header
+                  Text(
+                    'Add Bank Account'.tr(context),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.security,
-                      color: AppColors.info,
-                      size: 20,
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Enter your bank details to receive payments for completed projects.'.tr(context),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
                     ),
-                    SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        'Your bank details are encrypted and securely stored.'.tr(context),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.info,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.xl),
-
-              // Account Holder Name
-              AppTextField(
-                label: 'Account Holder Name',
-                hint: 'Enter name as per bank records',
-                controller: _accountHolderNameController,
-                textCapitalization: TextCapitalization.words,
-                prefixIcon: Icons.person_outline,
-                validator: (value) =>
-                    Validators.required(value, fieldName: 'Account holder name'),
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              // Account Number
-              AppTextField(
-                label: 'Account Number',
-                hint: 'Enter your account number',
-                controller: _accountNumberController,
-                keyboardType: TextInputType.number,
-                prefixIcon: Icons.account_balance_wallet_outlined,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(18),
-                ],
-                validator: Validators.bankAccount,
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              // Confirm Account Number
-              AppTextField(
-                label: 'Confirm Account Number',
-                hint: 'Re-enter your account number',
-                controller: _confirmAccountNumberController,
-                keyboardType: TextInputType.number,
-                prefixIcon: Icons.account_balance_wallet_outlined,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(18),
-                ],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your account number';
-                  }
-                  if (value != _accountNumberController.text) {
-                    return 'Account numbers do not match';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              // IFSC Code
-              AppTextField(
-                label: 'IFSC Code',
-                hint: 'e.g., SBIN0001234',
-                controller: _ifscCodeController,
-                textCapitalization: TextCapitalization.characters,
-                prefixIcon: Icons.code,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-                  LengthLimitingTextInputFormatter(11),
-                  UpperCaseTextFormatter(),
-                ],
-                validator: Validators.ifscCode,
-                onChanged: (value) {
-                  if (value.length == 11) {
-                    _validateIfscCode(value);
-                  } else {
-                    setState(() {
-                      _bankName = null;
-                      _branchName = null;
-                      _ifscValid = false;
-                    });
-                  }
-                },
-              ),
-
-              const SizedBox(height: AppSpacing.sm),
-
-              // IFSC validation result
-              IfscValidationResult(
-                isLoading: _isValidatingIfsc,
-                isValid: _ifscValid,
-                bankName: _bankName,
-                branchName: _branchName,
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              // UPI ID (Optional)
-              AppTextField(
-                label: 'UPI ID (Optional)',
-                hint: 'e.g., yourname@upi',
-                controller: _upiIdController,
-                keyboardType: TextInputType.emailAddress,
-                prefixIcon: Icons.phone_android,
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    return Validators.upi(value);
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Important note
-              Container(
-                padding: AppSpacing.paddingMd,
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.1),
-                  borderRadius: AppSpacing.borderRadiusMd,
-                  border: Border.all(
-                    color: AppColors.warning.withValues(alpha: 0.3),
                   ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.warning_amber_outlined,
-                      color: AppColors.warning,
-                      size: 20,
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        'Please ensure all details are accurate. Incorrect information may delay your payments.'.tr(context),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textPrimary,
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Security note with shield icon
+                  GlassCard(
+                    padding: AppSpacing.paddingMd,
+                    borderColor: AppColors.accent.withValues(alpha: 0.2),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppColors.accent, AppColors.accentLight],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.shield,
+                            color: Colors.white,
+                            size: 22,
+                          ),
                         ),
-                      ),
+                        SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Secure & Encrypted'.tr(context),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Your bank details are encrypted and securely stored.'.tr(context),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Form fields in glass container
+                  GlassCard(
+                    padding: AppSpacing.paddingLg,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Account Holder Name
+                        AppTextField(
+                          label: 'Account Holder Name',
+                          hint: 'Enter name as per bank records',
+                          controller: _accountHolderNameController,
+                          textCapitalization: TextCapitalization.words,
+                          prefixIcon: Icons.person_outline,
+                          validator: (value) =>
+                              Validators.required(value, fieldName: 'Account holder name'),
+                        ),
+
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // Account Number
+                        AppTextField(
+                          label: 'Account Number',
+                          hint: 'Enter your account number',
+                          controller: _accountNumberController,
+                          keyboardType: TextInputType.number,
+                          prefixIcon: Icons.account_balance_wallet_outlined,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(18),
+                          ],
+                          validator: Validators.bankAccount,
+                        ),
+
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // Confirm Account Number
+                        AppTextField(
+                          label: 'Confirm Account Number',
+                          hint: 'Re-enter your account number',
+                          controller: _confirmAccountNumberController,
+                          keyboardType: TextInputType.number,
+                          prefixIcon: Icons.account_balance_wallet_outlined,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(18),
+                          ],
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please confirm your account number';
+                            }
+                            if (value != _accountNumberController.text) {
+                              return 'Account numbers do not match';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // IFSC Code
+                        AppTextField(
+                          label: 'IFSC Code',
+                          hint: 'e.g., SBIN0001234',
+                          controller: _ifscCodeController,
+                          textCapitalization: TextCapitalization.characters,
+                          prefixIcon: Icons.code,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                            LengthLimitingTextInputFormatter(11),
+                            UpperCaseTextFormatter(),
+                          ],
+                          validator: Validators.ifscCode,
+                          onChanged: (value) {
+                            if (value.length == 11) {
+                              _validateIfscCode(value);
+                            } else {
+                              setState(() {
+                                _bankName = null;
+                                _branchName = null;
+                                _ifscValid = false;
+                              });
+                            }
+                          },
+                        ),
+
+                        const SizedBox(height: AppSpacing.sm),
+
+                        // IFSC validation result
+                        IfscValidationResult(
+                          isLoading: _isValidatingIfsc,
+                          isValid: _ifscValid,
+                          bankName: _bankName,
+                          branchName: _branchName,
+                        ),
+
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // UPI ID (Optional)
+                        AppTextField(
+                          label: 'UPI ID (Optional)',
+                          hint: 'e.g., yourname@upi',
+                          controller: _upiIdController,
+                          keyboardType: TextInputType.emailAddress,
+                          prefixIcon: Icons.phone_android,
+                          validator: (value) {
+                            if (value != null && value.isNotEmpty) {
+                              return Validators.upi(value);
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Important note
+                  GlassCard(
+                    padding: AppSpacing.paddingMd,
+                    borderColor: AppColors.warning.withValues(alpha: 0.3),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.warning_amber_outlined,
+                          color: AppColors.warning,
+                          size: 20,
+                        ),
+                        SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            'Please ensure all details are accurate. Incorrect information may delay your payments.'.tr(context),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Submit button
+                  AppButton(
+                    text: 'Complete Activation',
+                    onPressed: _handleSubmit,
+                    isLoading: _isLoading,
+                    isFullWidth: true,
+                    size: AppButtonSize.large,
+                  ),
+
+                  const SizedBox(height: AppSpacing.lg),
+                ],
               ),
-
-              const SizedBox(height: AppSpacing.xl),
-
-              // Submit button
-              AppButton(
-                text: 'Complete Activation',
-                onPressed: _handleSubmit,
-                isLoading: _isLoading,
-                isFullWidth: true,
-                size: AppButtonSize.large,
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  /// Builds the horizontal step indicator dots.
+  ///
+  /// [activeIndex] indicates which step is currently active (0-based).
+  Widget _buildStepIndicatorDots(int activeIndex) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(3, (index) {
+        final isActive = index == activeIndex;
+        final isCompleted = index < activeIndex;
+
+        return Container(
+          width: isActive ? 32 : 12,
+          height: 12,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            gradient: isCompleted || isActive
+                ? const LinearGradient(
+                    colors: [AppColors.accent, AppColors.accentLight],
+                  )
+                : null,
+            color: !isCompleted && !isActive ? AppColors.border : null,
+          ),
+        );
+      }),
     );
   }
 }

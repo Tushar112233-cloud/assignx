@@ -8,6 +8,8 @@ import '../../../core/router/route_names.dart';
 import '../../../data/models/quiz_model.dart';
 import '../../../providers/activation_provider.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/quiz_question.dart';
 import '../widgets/quiz_result.dart';
 import '../../../core/translation/translation_extensions.dart';
@@ -85,9 +87,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
     if (questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('Quiz'.tr(context))),
-        body: const Center(
-          child: CircularProgressIndicator(),
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text('Quiz'.tr(context)),
+        ),
+        body: MeshGradientBackground(
+          position: MeshPosition.center,
+          colors: MeshColors.coolColors,
+          opacity: 0.5,
+          child: const Center(
+            child: CircularProgressIndicator(),
+          ),
         ),
       );
     }
@@ -96,6 +108,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     if (_showingResult && _result != null) {
       return Scaffold(
         backgroundColor: AppColors.background,
+        extendBodyBehindAppBar: true,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -107,18 +120,25 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             ),
           ),
         ),
-        body: QuizResultWidget(
-          attempt: _result!,
-          onRetry: () {
-            setState(() {
-              _currentQuestionIndex = 0;
-              _answers.clear();
-              _result = null;
-              _showingResult = false;
-            });
-          },
-          onContinue: () => context.go(RouteNames.bankDetails),
-          onReviewTraining: () => context.go(RouteNames.training),
+        body: MeshGradientBackground(
+          position: MeshPosition.center,
+          colors: MeshColors.defaultColors,
+          opacity: 0.5,
+          child: SafeArea(
+            child: QuizResultWidget(
+              attempt: _result!,
+              onRetry: () {
+                setState(() {
+                  _currentQuestionIndex = 0;
+                  _answers.clear();
+                  _result = null;
+                  _showingResult = false;
+                });
+              },
+              onContinue: () => context.go(RouteNames.bankDetails),
+              onReviewTraining: () => context.go(RouteNames.training),
+            ),
+          ),
         ),
       );
     }
@@ -127,6 +147,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -151,13 +172,13 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                 const Icon(
                   Icons.grid_view,
                   size: 18,
-                  color: AppColors.primary,
+                  color: AppColors.accent,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${_answers.length}/${questions.length}',
                   style: const TextStyle(
-                    color: AppColors.primary,
+                    color: AppColors.accent,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -166,77 +187,86 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Question content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: AppSpacing.paddingLg,
-              child: QuizQuestionWidget(
-                question: currentQuestion,
-                questionNumber: _currentQuestionIndex + 1,
-                totalQuestions: questions.length,
-                selectedOptionIndex: _answers[currentQuestion.id],
-                onOptionSelected: (index) {
-                  setState(() {
-                    _answers[currentQuestion.id] = index;
-                  });
-                },
-              ),
-            ),
-          ),
-
-          // Bottom navigation
-          Container(
-            padding: AppSpacing.paddingLg,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -4),
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: MeshColors.coolColors,
+        opacity: 0.4,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Step indicator dots - Step 2 active
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
                 ),
-              ],
-            ),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  // Previous button
-                  if (_currentQuestionIndex > 0)
-                    Expanded(
-                      child: AppButton(
-                        text: 'Previous',
-                        onPressed: () {
-                          setState(() {
-                            _currentQuestionIndex--;
-                          });
-                        },
-                        variant: AppButtonVariant.outline,
-                      ),
-                    ),
-
-                  if (_currentQuestionIndex > 0)
-                    const SizedBox(width: AppSpacing.md),
-
-                  // Next/Submit button
-                  Expanded(
-                    flex: _currentQuestionIndex > 0 ? 1 : 2,
-                    child: AppButton(
-                      text: _currentQuestionIndex == questions.length - 1
-                          ? 'Submit Quiz'
-                          : 'Next',
-                      onPressed: _answers.containsKey(currentQuestion.id)
-                          ? () => _handleNextOrSubmit(questions)
-                          : null,
-                      isLoading: _isSubmitting,
-                    ),
-                  ),
-                ],
+                child: _buildStepIndicatorDots(1),
               ),
-            ),
+
+              // Question content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: AppSpacing.paddingLg,
+                  child: QuizQuestionWidget(
+                    question: currentQuestion,
+                    questionNumber: _currentQuestionIndex + 1,
+                    totalQuestions: questions.length,
+                    selectedOptionIndex: _answers[currentQuestion.id],
+                    onOptionSelected: (index) {
+                      setState(() {
+                        _answers[currentQuestion.id] = index;
+                      });
+                    },
+                  ),
+                ),
+              ),
+
+              // Bottom navigation in glass container
+              GlassContainer(
+                blur: 20,
+                opacity: 0.9,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                padding: AppSpacing.paddingLg,
+                child: SafeArea(
+                  child: Row(
+                    children: [
+                      // Previous button
+                      if (_currentQuestionIndex > 0)
+                        Expanded(
+                          child: AppButton(
+                            text: 'Previous',
+                            onPressed: () {
+                              setState(() {
+                                _currentQuestionIndex--;
+                              });
+                            },
+                            variant: AppButtonVariant.outline,
+                          ),
+                        ),
+
+                      if (_currentQuestionIndex > 0)
+                        const SizedBox(width: AppSpacing.md),
+
+                      // Next/Submit button
+                      Expanded(
+                        flex: _currentQuestionIndex > 0 ? 1 : 2,
+                        child: AppButton(
+                          text: _currentQuestionIndex == questions.length - 1
+                              ? 'Submit Quiz'
+                              : 'Next',
+                          onPressed: _answers.containsKey(currentQuestion.id)
+                              ? () => _handleNextOrSubmit(questions)
+                              : null,
+                          isLoading: _isSubmitting,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -386,7 +416,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               children: [
                 _buildLegendItem(AppColors.success, 'Answered'),
                 const SizedBox(width: AppSpacing.lg),
-                _buildLegendItem(AppColors.primary, 'Current'),
+                _buildLegendItem(AppColors.accent, 'Current'),
                 const SizedBox(width: AppSpacing.lg),
                 _buildLegendItem(AppColors.border, 'Unanswered'),
               ],
@@ -419,6 +449,34 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Builds the horizontal step indicator dots.
+  ///
+  /// [activeIndex] indicates which step is currently active (0-based).
+  Widget _buildStepIndicatorDots(int activeIndex) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(3, (index) {
+        final isActive = index == activeIndex;
+        final isCompleted = index < activeIndex;
+
+        return Container(
+          width: isActive ? 32 : 12,
+          height: 12,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            gradient: isCompleted || isActive
+                ? const LinearGradient(
+                    colors: [AppColors.accent, AppColors.accentLight],
+                  )
+                : null,
+            color: !isCompleted && !isActive ? AppColors.border : null,
+          ),
+        );
+      }),
     );
   }
 }
