@@ -7,7 +7,9 @@ import '../../../../core/services/snackbar_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/router/routes.dart';
-import '../../../../shared/widgets/buttons/primary_button.dart';
+import '../../../../shared/widgets/buttons/app_button.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/project_model.dart';
 import '../providers/projects_provider.dart';
 import '../widgets/deadline_timer.dart';
@@ -46,153 +48,161 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(projectDetailProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(state.project?.projectNumber ?? 'Project Details'.tr(context)),
-        actions: [
-          if (state.project?.chatRoomId != null)
-            IconButton(
-              onPressed: _openChat,
-              icon: const Icon(Icons.chat_bubble_outline),
-            ),
-          PopupMenuButton<String>(
-            onSelected: _handleMenuAction,
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'refresh',
-                child: Row(
-                  children: [
-                    const Icon(Icons.refresh, size: 20),
-                    const SizedBox(width: 12),
-                    Text('Refresh'.tr(context)),
-                  ],
-                ),
+    return MeshGradientBackground(
+      position: MeshPosition.topRight,
+      colors: MeshColors.warmColors,
+      opacity: 0.5,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(state.project?.projectNumber ?? 'Project Details'.tr(context)),
+          actions: [
+            if (state.project?.chatRoomId != null)
+              IconButton(
+                onPressed: _openChat,
+                icon: const Icon(Icons.chat_bubble_outline),
               ),
-              PopupMenuItem(
-                value: 'history',
-                child: Row(
-                  children: [
-                    const Icon(Icons.history, size: 20),
-                    const SizedBox(width: 12),
-                    Text('View History'.tr(context)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: state.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : state.project == null
-              ? _ErrorView(
-                  message: state.error ?? 'Project not found'.tr(context),
-                  onRetry: () => ref
-                      .read(projectDetailProvider.notifier)
-                      .loadProject(widget.projectId),
-                )
-              : RefreshIndicator(
-                  onRefresh: () => ref
-                      .read(projectDetailProvider.notifier)
-                      .loadProject(widget.projectId),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Status and deadline header
-                        _HeaderSection(
-                          project: state.project!,
-                        ),
-                        const SizedBox(height: 24),
-                        // Project info
-                        _InfoSection(project: state.project!),
-                        const SizedBox(height: 24),
-                        // Description / Brief
-                        if (state.project!.description.isNotEmpty)
-                          _DescriptionSection(project: state.project!),
-                        // Instructions
-                        if (state.project!.instructions != null &&
-                            state.project!.instructions!.isNotEmpty) ...[
-                          const SizedBox(height: 24),
-                          _InstructionsSection(project: state.project!),
-                        ],
-                        // Focus Areas
-                        if (state.project!.focusAreas != null &&
-                            state.project!.focusAreas!.isNotEmpty) ...[
-                          const SizedBox(height: 24),
-                          _FocusAreasSection(project: state.project!),
-                        ],
-                        const SizedBox(height: 24),
-                        // People involved
-                        _PeopleSection(project: state.project!),
-                        const SizedBox(height: 24),
-                        // Live Document Link
-                        if (state.project!.liveDocumentUrl != null &&
-                            state.project!.liveDocumentUrl!.isNotEmpty) ...[
-                          _LiveDocumentSection(
-                            url: state.project!.liveDocumentUrl!,
-                            onOpen: () => _openUrl(state.project!.liveDocumentUrl!),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                        // Client-uploaded files / attachments
-                        if (state.project!.files != null &&
-                            state.project!.files!.isNotEmpty) ...[
-                          _FilesSection(
-                            files: state.project!.files!,
-                            onOpenFile: _openUrl,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                        // Deliverables
-                        if (state.deliverables.isNotEmpty) ...[
-                          _SectionTitle(
-                            title: 'Deliverables'.tr(context),
-                            count: state.deliverables.length,
-                          ),
-                          const SizedBox(height: 12),
-                          ...state.deliverables.map((d) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: QCReviewCard(
-                                  deliverable: d,
-                                  onView: () => _viewDeliverable(d.fileUrl),
-                                  onDownload: () =>
-                                      _downloadDeliverable(d.fileUrl),
-                                ),
-                              )),
-                          const SizedBox(height: 24),
-                        ],
-                        // Quality Check section
-                        if (_hasQualityCheckData(state.project!)) ...[
-                          _QualityCheckSection(
-                            project: state.project!,
-                            onOpenReport: _openUrl,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                        // Pricing breakdown
-                        if (state.project!.userQuote != null)
-                          _PricingSection(project: state.project!),
-                        if (state.project!.userQuote != null)
-                          const SizedBox(height: 24),
-                        // Timeline
-                        _TimelineSection(project: state.project!),
-                        // Bottom padding for actions
-                        const SizedBox(height: 100),
-                      ],
-                    ),
+            PopupMenuButton<String>(
+              onSelected: _handleMenuAction,
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'refresh',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.refresh, size: 20),
+                      const SizedBox(width: 12),
+                      Text('Refresh'.tr(context)),
+                    ],
                   ),
                 ),
-      // Action buttons
-      bottomNavigationBar: state.project != null && _showActions(state)
-          ? _ActionBar(
-              state: state,
-              onApprove: _approveDeliverable,
-              onRevision: _requestRevision,
-              onDeliver: _deliverToClient,
-            )
-          : null,
+                PopupMenuItem(
+                  value: 'history',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.history, size: 20),
+                      const SizedBox(width: 12),
+                      Text('View History'.tr(context)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        body: state.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : state.project == null
+                ? _ErrorView(
+                    message: state.error ?? 'Project not found'.tr(context),
+                    onRetry: () => ref
+                        .read(projectDetailProvider.notifier)
+                        .loadProject(widget.projectId),
+                  )
+                : RefreshIndicator(
+                    onRefresh: () => ref
+                        .read(projectDetailProvider.notifier)
+                        .loadProject(widget.projectId),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Glass hero card with status and deadline
+                          _GlassHeroCard(
+                            project: state.project!,
+                          ),
+                          const SizedBox(height: 24),
+                          // Project info
+                          _GlassInfoSection(project: state.project!),
+                          const SizedBox(height: 24),
+                          // Description / Brief
+                          if (state.project!.description.isNotEmpty)
+                            _GlassDescriptionSection(project: state.project!),
+                          // Instructions
+                          if (state.project!.instructions != null &&
+                              state.project!.instructions!.isNotEmpty) ...[
+                            const SizedBox(height: 24),
+                            _InstructionsSection(project: state.project!),
+                          ],
+                          // Focus Areas
+                          if (state.project!.focusAreas != null &&
+                              state.project!.focusAreas!.isNotEmpty) ...[
+                            const SizedBox(height: 24),
+                            _FocusAreasSection(project: state.project!),
+                          ],
+                          const SizedBox(height: 24),
+                          // People involved
+                          _GlassPeopleSection(project: state.project!),
+                          const SizedBox(height: 24),
+                          // Live Document Link
+                          if (state.project!.liveDocumentUrl != null &&
+                              state.project!.liveDocumentUrl!.isNotEmpty) ...[
+                            _LiveDocumentSection(
+                              url: state.project!.liveDocumentUrl!,
+                              onOpen: () => _openUrl(state.project!.liveDocumentUrl!),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                          // Client-uploaded files / attachments
+                          if (state.project!.files != null &&
+                              state.project!.files!.isNotEmpty) ...[
+                            _FilesSection(
+                              files: state.project!.files!,
+                              onOpenFile: _openUrl,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                          // Deliverables
+                          if (state.deliverables.isNotEmpty) ...[
+                            _SectionTitle(
+                              title: 'Deliverables'.tr(context),
+                              count: state.deliverables.length,
+                            ),
+                            const SizedBox(height: 12),
+                            ...state.deliverables.map((d) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: QCReviewCard(
+                                    deliverable: d,
+                                    onView: () => _viewDeliverable(d.fileUrl),
+                                    onDownload: () =>
+                                        _downloadDeliverable(d.fileUrl),
+                                  ),
+                                )),
+                            const SizedBox(height: 24),
+                          ],
+                          // Quality Check section
+                          if (_hasQualityCheckData(state.project!)) ...[
+                            _GlassQualityCheckSection(
+                              project: state.project!,
+                              onOpenReport: _openUrl,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                          // Pricing breakdown
+                          if (state.project!.userQuote != null)
+                            _GlassPricingSection(project: state.project!),
+                          if (state.project!.userQuote != null)
+                            const SizedBox(height: 24),
+                          // Timeline
+                          _GlassTimelineSection(project: state.project!),
+                          // Bottom padding for actions
+                          const SizedBox(height: 100),
+                        ],
+                      ),
+                    ),
+                  ),
+        // Action buttons
+        bottomNavigationBar: state.project != null && _showActions(state)
+            ? _GlassActionBar(
+                state: state,
+                onApprove: _approveDeliverable,
+                onRevision: _requestRevision,
+                onDeliver: _deliverToClient,
+              )
+            : null,
+      ),
     );
   }
 
@@ -225,7 +235,6 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             .loadProject(widget.projectId);
         break;
       case 'history':
-        // Project history would show revision history and status changes
         ref.read(snackbarServiceProvider).showInfo('Project history feature coming soon');
         break;
     }
@@ -340,23 +349,20 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 }
 
-/// Header section with status, deadline, and urgent badge.
-class _HeaderSection extends StatelessWidget {
-  const _HeaderSection({required this.project});
+/// Glass hero card with project status, title, progress, and deadline.
+class _GlassHeroCard extends StatelessWidget {
+  const _GlassHeroCard({required this.project});
 
   final dynamic project;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: project.status.color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: project.status.color.withValues(alpha: 0.3),
-        ),
-      ),
+    return GlassCard(
+      blur: 15,
+      opacity: 0.7,
+      borderRadius: BorderRadius.circular(20),
+      padding: const EdgeInsets.all(20),
+      elevation: 2,
       child: Column(
         children: [
           Row(
@@ -400,7 +406,7 @@ class _HeaderSection extends StatelessWidget {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Text(
                       project.title,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -418,7 +424,7 @@ class _HeaderSection extends StatelessWidget {
                     ],
                     if (project.progressPercentage != null &&
                         project.progressPercentage! > 0) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       Row(
                         children: [
                           Expanded(
@@ -430,7 +436,7 @@ class _HeaderSection extends StatelessWidget {
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   project.progressPercentage! >= 100
                                       ? AppColors.success
-                                      : AppColors.primary,
+                                      : AppColors.accent,
                                 ),
                                 minHeight: 6,
                               ),
@@ -456,15 +462,80 @@ class _HeaderSection extends StatelessWidget {
                 ),
             ],
           ),
+          // Financials row
+          if (project.userQuote != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.accent.withValues(alpha: 0.15),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _FinancialItem(
+                    label: 'Client Price'.tr(context),
+                    value: '\u20b9${(project.userQuote as num).toStringAsFixed(0)}',
+                    color: AppColors.textPrimaryLight,
+                  ),
+                  if (project.supervisorAmount != null)
+                    _FinancialItem(
+                      label: 'Your Earnings'.tr(context),
+                      value: '\u20b9${(project.supervisorAmount as num).toStringAsFixed(0)}',
+                      color: AppColors.success,
+                    ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-/// Info section with project details.
-class _InfoSection extends StatelessWidget {
-  const _InfoSection({required this.project});
+/// Small financial stat in the hero card.
+class _FinancialItem extends StatelessWidget {
+  const _FinancialItem({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.textSecondaryLight,
+              ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Glass info section with project details.
+class _GlassInfoSection extends StatelessWidget {
+  const _GlassInfoSection({required this.project});
 
   final dynamic project;
 
@@ -475,12 +546,12 @@ class _InfoSection extends StatelessWidget {
       children: [
         _SectionTitle(title: 'Project Details'.tr(context)),
         const SizedBox(height: 12),
-        Container(
+        GlassCard(
+          blur: 10,
+          opacity: 0.6,
+          borderRadius: BorderRadius.circular(14),
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight,
-            borderRadius: BorderRadius.circular(12),
-          ),
+          elevation: 1,
           child: Column(
             children: [
               _InfoRow(
@@ -525,7 +596,6 @@ class _InfoSection extends StatelessWidget {
   }
 
   String _formatServiceType(String type) {
-    // Convert camelCase or snake_case to title case
     return type
         .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}')
         .replaceAll('_', ' ')
@@ -535,9 +605,9 @@ class _InfoSection extends StatelessWidget {
   }
 }
 
-/// Description / Project Brief section - fully visible, not truncated.
-class _DescriptionSection extends StatelessWidget {
-  const _DescriptionSection({required this.project});
+/// Glass description / project brief section.
+class _GlassDescriptionSection extends StatelessWidget {
+  const _GlassDescriptionSection({required this.project});
 
   final dynamic project;
 
@@ -548,13 +618,13 @@ class _DescriptionSection extends StatelessWidget {
       children: [
         _SectionTitle(title: 'Project Brief'.tr(context)),
         const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
+        GlassCard(
+          blur: 10,
+          opacity: 0.6,
+          borderRadius: BorderRadius.circular(14),
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight,
-            borderRadius: BorderRadius.circular(12),
-          ),
+          elevation: 1,
+          width: double.infinity,
           child: Text(
             project.description,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -581,16 +651,14 @@ class _InstructionsSection extends StatelessWidget {
       children: [
         _SectionTitle(title: 'Specific Instructions'.tr(context)),
         const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
+        GlassCard(
+          blur: 10,
+          opacity: 0.6,
+          borderRadius: BorderRadius.circular(14),
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.amber.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.amber.withValues(alpha: 0.2),
-            ),
-          ),
+          elevation: 1,
+          borderColor: Colors.amber.withAlpha(50),
+          width: double.infinity,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -658,9 +726,9 @@ class _FocusAreasSection extends StatelessWidget {
   }
 }
 
-/// People section showing client and doer.
-class _PeopleSection extends StatelessWidget {
-  const _PeopleSection({required this.project});
+/// Glass people section showing client and doer.
+class _GlassPeopleSection extends StatelessWidget {
+  const _GlassPeopleSection({required this.project});
 
   final dynamic project;
 
@@ -675,7 +743,7 @@ class _PeopleSection extends StatelessWidget {
           children: [
             if (project.clientName != null)
               Expanded(
-                child: _PersonCard(
+                child: _GlassPersonCard(
                   name: project.clientName!,
                   role: 'Client'.tr(context),
                   email: project.clientEmail,
@@ -686,7 +754,7 @@ class _PeopleSection extends StatelessWidget {
               const SizedBox(width: 12),
             if (project.doerName != null)
               Expanded(
-                child: _PersonCard(
+                child: _GlassPersonCard(
                   name: project.doerName!,
                   role: 'Doer'.tr(context),
                   color: Colors.purple,
@@ -695,13 +763,13 @@ class _PeopleSection extends StatelessWidget {
           ],
         ),
         if (project.clientName == null && project.doerName == null)
-          Container(
-            width: double.infinity,
+          GlassCard(
+            blur: 10,
+            opacity: 0.6,
+            borderRadius: BorderRadius.circular(14),
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(12),
-            ),
+            elevation: 1,
+            width: double.infinity,
             child: Text(
               'No participants assigned yet'.tr(context),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -715,9 +783,9 @@ class _PeopleSection extends StatelessWidget {
   }
 }
 
-/// Person card widget.
-class _PersonCard extends StatelessWidget {
-  const _PersonCard({
+/// Glass person card widget.
+class _GlassPersonCard extends StatelessWidget {
+  const _GlassPersonCard({
     required this.name,
     required this.role,
     this.email,
@@ -731,13 +799,13 @@ class _PersonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
+      blur: 10,
+      opacity: 0.6,
+      borderRadius: BorderRadius.circular(14),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
+      elevation: 1,
+      borderColor: color.withAlpha(40),
       child: Row(
         children: [
           CircleAvatar(
@@ -808,56 +876,51 @@ class _LiveDocumentSection extends StatelessWidget {
       children: [
         _SectionTitle(title: 'Live Document'.tr(context)),
         const SizedBox(height: 12),
-        InkWell(
+        GlassCard(
+          blur: 10,
+          opacity: 0.6,
+          borderRadius: BorderRadius.circular(14),
+          padding: const EdgeInsets.all(16),
+          elevation: 1,
+          borderColor: Colors.blue.withAlpha(40),
           onTap: onOpen,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.blue.withValues(alpha: 0.2),
+          width: double.infinity,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.open_in_new, size: 20, color: Colors.blue),
               ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.open_in_new, size: 20, color: Colors.blue),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Open Live Document'.tr(context),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      url,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondaryLight,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Open Live Document'.tr(context),
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue,
-                            ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        url,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondaryLight,
-                            ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: Colors.blue),
-              ],
-            ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.blue),
+            ],
           ),
         ),
       ],
@@ -865,7 +928,7 @@ class _LiveDocumentSection extends StatelessWidget {
   }
 }
 
-/// Files/attachments section - shows client-uploaded reference files.
+/// Files/attachments section.
 class _FilesSection extends StatelessWidget {
   const _FilesSection({
     required this.files,
@@ -909,80 +972,74 @@ class _FileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
+    return GlassCard(
+      blur: 8,
+      opacity: 0.6,
       borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.grey.withValues(alpha: 0.2),
+      padding: const EdgeInsets.all(12),
+      elevation: 1,
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: _fileColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(_fileIcon, size: 20, color: _fileColor),
           ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: _fileColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(_fileIcon, size: 20, color: _fileColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    file.fileName,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      if (file.formattedSize.isNotEmpty) ...[
-                        Text(
-                          file.formattedSize,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondaryLight,
-                              ),
-                        ),
-                      ],
-                      if (file.fileCategory != null &&
-                          file.fileCategory!.isNotEmpty) ...[
-                        if (file.formattedSize.isNotEmpty)
-                          Text(
-                            '  |  ',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondaryLight,
-                                ),
-                          ),
-                        Text(
-                          file.fileCategory!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondaryLight,
-                              ),
-                        ),
-                      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  file.fileName,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    if (file.formattedSize.isNotEmpty) ...[
+                      Text(
+                        file.formattedSize,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondaryLight,
+                            ),
+                      ),
                     ],
-                  ),
-                ],
-              ),
+                    if (file.fileCategory != null &&
+                        file.fileCategory!.isNotEmpty) ...[
+                      if (file.formattedSize.isNotEmpty)
+                        Text(
+                          '  |  ',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondaryLight,
+                              ),
+                        ),
+                      Text(
+                        file.fileCategory!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondaryLight,
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
             ),
-            Icon(
-              Icons.download_outlined,
-              size: 20,
-              color: AppColors.textSecondaryLight,
-            ),
-          ],
-        ),
+          ),
+          Icon(
+            Icons.download_outlined,
+            size: 20,
+            color: AppColors.textSecondaryLight,
+          ),
+        ],
       ),
     );
   }
@@ -1041,9 +1098,9 @@ class _FileCard extends StatelessWidget {
   }
 }
 
-/// Quality check section - AI and plagiarism scores/reports.
-class _QualityCheckSection extends StatelessWidget {
-  const _QualityCheckSection({
+/// Glass quality check section.
+class _GlassQualityCheckSection extends StatelessWidget {
+  const _GlassQualityCheckSection({
     required this.project,
     required this.onOpenReport,
   });
@@ -1058,12 +1115,12 @@ class _QualityCheckSection extends StatelessWidget {
       children: [
         _SectionTitle(title: 'Quality Check'.tr(context)),
         const SizedBox(height: 12),
-        Container(
+        GlassCard(
+          blur: 10,
+          opacity: 0.6,
+          borderRadius: BorderRadius.circular(14),
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight,
-            borderRadius: BorderRadius.circular(12),
-          ),
+          elevation: 1,
           child: Column(
             children: [
               if (project.aiScore != null)
@@ -1084,7 +1141,6 @@ class _QualityCheckSection extends StatelessWidget {
                   icon: Icons.content_copy_outlined,
                   onOpenReport: onOpenReport,
                 ),
-              // Show report links even without scores
               if (project.aiScore == null &&
                   project.aiReportUrl != null &&
                   project.aiReportUrl!.isNotEmpty)
@@ -1212,9 +1268,9 @@ class _ReportLink extends StatelessWidget {
   }
 }
 
-/// Pricing section.
-class _PricingSection extends StatelessWidget {
-  const _PricingSection({required this.project});
+/// Glass pricing section.
+class _GlassPricingSection extends StatelessWidget {
+  const _GlassPricingSection({required this.project});
 
   final dynamic project;
 
@@ -1225,12 +1281,12 @@ class _PricingSection extends StatelessWidget {
       children: [
         _SectionTitle(title: 'Pricing Breakdown'.tr(context)),
         const SizedBox(height: 12),
-        Container(
+        GlassCard(
+          blur: 10,
+          opacity: 0.6,
+          borderRadius: BorderRadius.circular(14),
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight,
-            borderRadius: BorderRadius.circular(12),
-          ),
+          elevation: 1,
           child: Column(
             children: [
               _PricingRow(
@@ -1266,9 +1322,9 @@ class _PricingSection extends StatelessWidget {
   }
 }
 
-/// Timeline section showing key dates.
-class _TimelineSection extends StatelessWidget {
-  const _TimelineSection({required this.project});
+/// Glass timeline section showing key dates with glass milestone cards.
+class _GlassTimelineSection extends StatelessWidget {
+  const _GlassTimelineSection({required this.project});
 
   final dynamic project;
 
@@ -1335,12 +1391,12 @@ class _TimelineSection extends StatelessWidget {
       children: [
         _SectionTitle(title: 'Timeline'.tr(context)),
         const SizedBox(height: 12),
-        Container(
+        GlassCard(
+          blur: 10,
+          opacity: 0.6,
+          borderRadius: BorderRadius.circular(14),
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight,
-            borderRadius: BorderRadius.circular(12),
-          ),
+          elevation: 1,
           child: Column(
             children: events.asMap().entries.map((entry) {
               final index = entry.key;
@@ -1357,11 +1413,18 @@ class _TimelineSection extends StatelessWidget {
                       child: Column(
                         children: [
                           Container(
-                            width: 10,
-                            height: 10,
+                            width: 12,
+                            height: 12,
                             decoration: BoxDecoration(
                               color: event.color,
                               shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: event.color.withValues(alpha: 0.3),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
                           ),
                           if (!isLast)
@@ -1556,9 +1619,9 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-/// Action bar at bottom.
-class _ActionBar extends StatelessWidget {
-  const _ActionBar({
+/// Glass action bar at bottom with AppButton.
+class _GlassActionBar extends StatelessWidget {
+  const _GlassActionBar({
     required this.state,
     required this.onApprove,
     required this.onRevision,
@@ -1575,7 +1638,7 @@ class _ActionBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withAlpha(220),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -1589,33 +1652,34 @@ class _ActionBar extends StatelessWidget {
           children: [
             if (state.canRequestRevision)
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  text: 'Request Revision'.tr(context),
+                  variant: AppButtonVariant.secondary,
+                  icon: Icons.replay,
                   onPressed: state.isUpdating ? null : onRevision,
-                  icon: const Icon(Icons.replay),
-                  label: Text('Request Revision'.tr(context)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.orange,
-                    side: const BorderSide(color: Colors.orange),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
+                  isFullWidth: true,
                 ),
               ),
             if (state.canRequestRevision && state.canApprove)
               const SizedBox(width: 12),
             if (state.canApprove)
               Expanded(
-                child: PrimaryButton(
+                child: AppButton(
                   text: 'Approve'.tr(context),
+                  variant: AppButtonVariant.primary,
                   isLoading: state.isUpdating,
                   onPressed: onApprove,
+                  isFullWidth: true,
                 ),
               ),
             if (state.project?.status.name == 'approved')
               Expanded(
-                child: PrimaryButton(
+                child: AppButton(
                   text: 'Deliver to Client'.tr(context),
+                  variant: AppButtonVariant.primary,
                   isLoading: state.isUpdating,
                   onPressed: onDeliver,
+                  isFullWidth: true,
                 ),
               ),
           ],
@@ -1657,10 +1721,11 @@ class _ErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            OutlinedButton.icon(
+            AppButton(
+              text: 'Retry'.tr(context),
+              variant: AppButtonVariant.secondary,
+              icon: Icons.refresh,
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: Text('Retry'.tr(context)),
             ),
           ],
         ),

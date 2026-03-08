@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/router/routes.dart';
+import '../../../../shared/widgets/glass_container.dart';
 import '../providers/projects_provider.dart';
 import '../widgets/project_card.dart';
 import '../widgets/project_tabs.dart';
@@ -25,6 +26,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
   String _searchQuery = '';
   String _sortMode = 'recent';
   String _selectedSubject = 'All';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -40,6 +42,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -48,208 +51,253 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
     final state = ref.watch(projectsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Projects'.tr(context)),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.sort),
-            tooltip: 'Sort projects'.tr(context),
-            onSelected: (value) {
-              setState(() => _sortMode = value);
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'recent',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      size: 18,
-                      color: _sortMode == 'recent'
-                          ? AppColors.accent
-                          : AppColors.textSecondaryLight,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Recent'.tr(context),
-                      style: TextStyle(
-                        color: _sortMode == 'recent'
-                            ? AppColors.accent
-                            : null,
-                        fontWeight: _sortMode == 'recent'
-                            ? FontWeight.bold
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'due_soon',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.schedule,
-                      size: 18,
-                      color: _sortMode == 'due_soon'
-                          ? AppColors.accent
-                          : AppColors.textSecondaryLight,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Due Soon'.tr(context),
-                      style: TextStyle(
-                        color: _sortMode == 'due_soon'
-                            ? AppColors.accent
-                            : null,
-                        fontWeight: _sortMode == 'due_soon'
-                            ? FontWeight.bold
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'priority',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.flag,
-                      size: 18,
-                      color: _sortMode == 'priority'
-                          ? AppColors.accent
-                          : AppColors.textSecondaryLight,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Priority'.tr(context),
-                      style: TextStyle(
-                        color: _sortMode == 'priority'
-                            ? AppColors.accent
-                            : null,
-                        fontWeight: _sortMode == 'priority'
-                            ? FontWeight.bold
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          IconButton(
-            onPressed: () => ref.read(projectsProvider.notifier).refresh(),
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search bar
-          _SearchBar(
-            query: _searchQuery,
-            onChanged: (value) {
-              setState(() => _searchQuery = value);
-            },
-          ),
-          // Subject filter chips
-          _SubjectFilterChips(
-            selectedSubject: _selectedSubject,
-            onSelected: (subject) {
-              setState(() => _selectedSubject = subject);
-            },
-          ),
-          // Pipeline status bar
-          _PipelineBar(
-            activeCount: state.activeProjects.length,
-            reviewCount: state.forReviewProjects.length,
-            completedCount: state.completedProjects.length,
-            onTap: (index) {
-              _tabController.animateTo(index);
-            },
-          ),
-          // Tab bar
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: ProjectTabs(
-              tabController: _tabController,
-              activeCount: state.activeProjects.length,
-              forReviewCount: state.forReviewProjects.length,
-              completedCount: state.completedProjects.length,
-            ),
-          ),
-          // Error banner
-          if (state.error != null)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Top section: title + sort + refresh
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 16, 0),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, color: AppColors.error, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      state.error!,
-                      style: TextStyle(color: AppColors.error),
-                    ),
+                  Text(
+                    'Projects'.tr(context),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimaryLight,
+                        ),
+                  ),
+                  const Spacer(),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.sort, color: AppColors.textSecondaryLight),
+                    tooltip: 'Sort projects'.tr(context),
+                    onSelected: (value) {
+                      setState(() => _sortMode = value);
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'recent',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: 18,
+                              color: _sortMode == 'recent'
+                                  ? AppColors.accent
+                                  : AppColors.textSecondaryLight,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Recent'.tr(context),
+                              style: TextStyle(
+                                color: _sortMode == 'recent'
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _sortMode == 'recent'
+                                    ? FontWeight.bold
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'due_soon',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.schedule,
+                              size: 18,
+                              color: _sortMode == 'due_soon'
+                                  ? AppColors.accent
+                                  : AppColors.textSecondaryLight,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Due Soon'.tr(context),
+                              style: TextStyle(
+                                color: _sortMode == 'due_soon'
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _sortMode == 'due_soon'
+                                    ? FontWeight.bold
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'priority',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.flag,
+                              size: 18,
+                              color: _sortMode == 'priority'
+                                  ? AppColors.accent
+                                  : AppColors.textSecondaryLight,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Priority'.tr(context),
+                              style: TextStyle(
+                                color: _sortMode == 'priority'
+                                    ? AppColors.accent
+                                    : null,
+                                fontWeight: _sortMode == 'priority'
+                                    ? FontWeight.bold
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   IconButton(
-                    onPressed: () =>
-                        ref.read(projectsProvider.notifier).clearError(),
-                    icon: Icon(Icons.close, color: AppColors.error, size: 18),
-                    constraints: const BoxConstraints(),
-                    padding: EdgeInsets.zero,
+                    onPressed: () => ref.read(projectsProvider.notifier).refresh(),
+                    icon: const Icon(Icons.refresh, color: AppColors.textSecondaryLight),
                   ),
                 ],
               ),
             ),
-          // Tab views
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Active projects
-                _ProjectList(
-                  projects: _filterBySubject(state.activeProjects),
-                  isLoading: state.isLoading,
-                  emptyMessage: 'No active projects'.tr(context),
-                  emptyIcon: Icons.pending_outlined,
-                  onRefresh: () => ref.read(projectsProvider.notifier).refresh(),
-                  onProjectTap: _openProjectDetail,
-                  onChatTap: _openChat,
+            // Glass search bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: GlassContainer(
+                blur: 10,
+                opacity: 0.6,
+                borderRadius: BorderRadius.circular(16),
+                borderColor: Colors.white.withAlpha(50),
+                backgroundColor: Colors.white,
+                padding: EdgeInsets.zero,
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() => _searchQuery = value);
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search projects...'.tr(context),
+                    hintStyle: TextStyle(color: AppColors.textTertiaryLight),
+                    prefixIcon: Icon(Icons.search, color: AppColors.textSecondaryLight),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.close, color: AppColors.textSecondaryLight),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
                 ),
-                // For review projects
-                _ProjectList(
-                  projects: _filterBySubject(state.forReviewProjects),
-                  isLoading: state.isLoading,
-                  emptyMessage: 'No projects awaiting review'.tr(context),
-                  emptyIcon: Icons.rate_review_outlined,
-                  onRefresh: () => ref.read(projectsProvider.notifier).refresh(),
-                  onProjectTap: _openProjectDetail,
-                  onChatTap: _openChat,
-                  showActions: true,
-                  onApprove: _approveProject,
-                  onRevision: _requestRevision,
-                ),
-                // Completed projects
-                _ProjectList(
-                  projects: _filterBySubject(state.completedProjects),
-                  isLoading: state.isLoading,
-                  emptyMessage: 'No completed projects'.tr(context),
-                  emptyIcon: Icons.check_circle_outline,
-                  onRefresh: () => ref.read(projectsProvider.notifier).refresh(),
-                  onProjectTap: _openProjectDetail,
-                  onChatTap: _openChat,
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+            // Pill-shaped filter tabs
+            _GlassFilterTabs(
+              selectedSubject: _selectedSubject,
+              onSelected: (subject) {
+                setState(() => _selectedSubject = subject);
+              },
+            ),
+            // Pipeline status bar
+            _PipelineBar(
+              activeCount: state.activeProjects.length,
+              reviewCount: state.forReviewProjects.length,
+              completedCount: state.completedProjects.length,
+              onTap: (index) {
+                _tabController.animateTo(index);
+              },
+            ),
+            // Tab bar
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: ProjectTabs(
+                tabController: _tabController,
+                activeCount: state.activeProjects.length,
+                forReviewCount: state.forReviewProjects.length,
+                completedCount: state.completedProjects.length,
+              ),
+            ),
+            // Error banner
+            if (state.error != null)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        state.error!,
+                        style: TextStyle(color: AppColors.error),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () =>
+                          ref.read(projectsProvider.notifier).clearError(),
+                      icon: Icon(Icons.close, color: AppColors.error, size: 18),
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+              ),
+            // Tab views
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // Active projects
+                  _ProjectList(
+                    projects: _filterBySubject(state.activeProjects),
+                    isLoading: state.isLoading,
+                    emptyMessage: 'No active projects'.tr(context),
+                    emptyIcon: Icons.pending_outlined,
+                    onRefresh: () => ref.read(projectsProvider.notifier).refresh(),
+                    onProjectTap: _openProjectDetail,
+                    onChatTap: _openChat,
+                  ),
+                  // For review projects
+                  _ProjectList(
+                    projects: _filterBySubject(state.forReviewProjects),
+                    isLoading: state.isLoading,
+                    emptyMessage: 'No projects awaiting review'.tr(context),
+                    emptyIcon: Icons.rate_review_outlined,
+                    onRefresh: () => ref.read(projectsProvider.notifier).refresh(),
+                    onProjectTap: _openProjectDetail,
+                    onChatTap: _openChat,
+                    showActions: true,
+                    onApprove: _approveProject,
+                    onRevision: _requestRevision,
+                  ),
+                  // Completed projects
+                  _ProjectList(
+                    projects: _filterBySubject(state.completedProjects),
+                    isLoading: state.isLoading,
+                    emptyMessage: 'No completed projects'.tr(context),
+                    emptyIcon: Icons.check_circle_outline,
+                    onRefresh: () => ref.read(projectsProvider.notifier).refresh(),
+                    onProjectTap: _openProjectDetail,
+                    onChatTap: _openChat,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -337,6 +385,98 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
       );
       ref.read(projectsProvider.notifier).refresh();
     }
+  }
+}
+
+/// Glass pill-shaped filter tabs for subject filtering.
+class _GlassFilterTabs extends StatelessWidget {
+  const _GlassFilterTabs({
+    required this.selectedSubject,
+    required this.onSelected,
+  });
+
+  final String selectedSubject;
+  final ValueChanged<String> onSelected;
+
+  static const _subjects = [
+    ('All', Icons.apps),
+    ('Mathematics', Icons.functions),
+    ('Science', Icons.science),
+    ('English', Icons.menu_book),
+    ('History', Icons.history_edu),
+    ('Computer Science', Icons.computer),
+    ('Business', Icons.business),
+    ('Economics', Icons.trending_up),
+    ('Psychology', Icons.psychology),
+    ('Engineering', Icons.engineering),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        itemCount: _subjects.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final (subject, icon) = _subjects[index];
+          final isSelected = selectedSubject == subject;
+
+          return GestureDetector(
+            onTap: () => onSelected(subject),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.accent
+                    : Colors.white.withAlpha(140),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.accent
+                      : Colors.white.withAlpha(80),
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.accent.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 14,
+                    color: isSelected
+                        ? Colors.white
+                        : AppColors.textSecondaryLight,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    subject.tr(context),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textSecondaryLight,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w500,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -439,50 +579,6 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// Search bar widget for filtering projects by name or number.
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({
-    required this.query,
-    required this.onChanged,
-  });
-
-  final String query;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
-      ),
-      child: TextField(
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: 'Search projects...'.tr(context),
-          hintStyle: TextStyle(color: AppColors.textTertiaryLight),
-          prefixIcon: Icon(Icons.search, color: AppColors.textSecondaryLight),
-          suffixIcon: query.isNotEmpty
-              ? IconButton(
-                  icon: Icon(Icons.close, color: AppColors.textSecondaryLight),
-                  onPressed: () => onChanged(''),
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Pipeline status bar showing colored count pills for each project status.
 class _PipelineBar extends StatelessWidget {
   const _PipelineBar({
@@ -524,100 +620,6 @@ class _PipelineBar extends StatelessWidget {
             onTap: () => onTap(2),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Horizontal scrolling subject filter chips for filtering projects by subject.
-///
-/// Provides a list of common academic subjects that supervisors can use
-/// to narrow down their project lists alongside the existing status tabs.
-class _SubjectFilterChips extends StatelessWidget {
-  const _SubjectFilterChips({
-    required this.selectedSubject,
-    required this.onSelected,
-  });
-
-  final String selectedSubject;
-  final ValueChanged<String> onSelected;
-
-  static const _subjects = [
-    ('All', Icons.apps),
-    ('Mathematics', Icons.functions),
-    ('Science', Icons.science),
-    ('English', Icons.menu_book),
-    ('History', Icons.history_edu),
-    ('Computer Science', Icons.computer),
-    ('Business', Icons.business),
-    ('Economics', Icons.trending_up),
-    ('Psychology', Icons.psychology),
-    ('Engineering', Icons.engineering),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        itemCount: _subjects.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final (subject, icon) = _subjects[index];
-          final isSelected = selectedSubject == subject;
-
-          return GestureDetector(
-            onTap: () => onSelected(subject),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.accent
-                    : Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.accent
-                      : Theme.of(context).colorScheme.outline,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppColors.accent.withValues(alpha: 0.3),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 14,
-                    color: isSelected
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    subject.tr(context),
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: isSelected
-                              ? Colors.white
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.w500,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }

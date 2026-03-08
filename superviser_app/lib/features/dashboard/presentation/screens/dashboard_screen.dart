@@ -14,9 +14,10 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
+import '../../../../shared/widgets/glass_container.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/request_model.dart';
 import '../providers/dashboard_provider.dart';
-import '../widgets/dashboard_header.dart';
 import '../widgets/menu_drawer.dart';
 import '../widgets/field_filter.dart';
 import '../widgets/request_card.dart';
@@ -76,32 +77,106 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
     final unreadNotifs = ref.watch(unreadNotificationCountProvider);
+    final authState = ref.watch(authProvider);
+    final userName = authState.user?.fullName ?? 'Supervisor'.tr(context);
+    final firstName = userName.split(' ').first;
 
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: Colors.transparent,
       drawer: const MenuDrawer(),
       body: RefreshIndicator(
         onRefresh: () => ref.read(dashboardProvider.notifier).refresh(),
         child: CustomScrollView(
           slivers: [
-            // Header
+            // Safe area top padding
             SliverToBoxAdapter(
-              child: DashboardHeader(
-                onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-                onNotificationTap: _openNotifications,
-                notificationCount: unreadNotifs,
+              child: SizedBox(height: MediaQuery.of(context).padding.top + 8),
+            ),
+            // Top bar: menu + notification
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    GlassContainer(
+                      blur: 12,
+                      opacity: 0.15,
+                      borderRadius: BorderRadius.circular(14),
+                      borderColor: Colors.white.withAlpha(64),
+                      backgroundColor: Colors.white,
+                      onTap: () => _scaffoldKey.currentState?.openDrawer(),
+                      padding: const EdgeInsets.all(10),
+                      child: const Icon(Icons.menu_rounded, color: AppColors.textPrimaryLight, size: 22),
+                    ),
+                    const Spacer(),
+                    _GlassNotificationButton(
+                      count: unreadNotifs,
+                      onTap: _openNotifications,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Greeting
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _getGreeting(context),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textSecondaryLight,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      firstName,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimaryLight,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Status pills row
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Row(
+                  children: [
+                    _GlassStatusPill(
+                      label: 'Active'.tr(context),
+                      count: dashboardState.filteredNewRequests.length +
+                          dashboardState.filteredPaidRequests.length,
+                      color: AppColors.statusInProgress,
+                    ),
+                    const SizedBox(width: 10),
+                    _GlassStatusPill(
+                      label: 'Pending'.tr(context),
+                      count: dashboardState.filteredNewRequests.length,
+                      color: AppColors.statusPending,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Quick action CTA card
+            SliverToBoxAdapter(
+              child: _QuickActionCta(
+                onTap: _showQuickActions,
               ),
             ),
             // KPI stat cards
             SliverToBoxAdapter(
-              child: _KpiCardsRow(
+              child: _GlassKpiCardsRow(
                 newRequestsCount: dashboardState.filteredNewRequests.length,
                 paidRequestsCount: dashboardState.filteredPaidRequests.length,
               ),
-            ),
-            // Mini analytics chart
-            const SliverToBoxAdapter(
-              child: _MiniChart(),
             ),
             // Field filter
             SliverToBoxAdapter(
@@ -198,7 +273,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             SliverToBoxAdapter(
               child: _RecentActivitySection(),
             ),
-            // Bottom padding
+            // Bottom padding for floating nav bar clearance
             const SliverToBoxAdapter(
               child: SizedBox(height: 100),
             ),
@@ -215,6 +290,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  /// Returns greeting based on time of day.
+  String _getGreeting(BuildContext context) {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good Morning,'.tr(context);
+    } else if (hour < 17) {
+      return 'Good Afternoon,'.tr(context);
+    } else {
+      return 'Good Evening,'.tr(context);
+    }
+  }
+
   /// Opens the notifications screen.
   void _openNotifications() {
     context.pushNamed(RouteNames.notifications);
@@ -228,7 +315,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   /// Parameters:
   /// - [request]: The request to display details for
   void _viewRequestDetails(RequestModel request) {
-    // For now, show request details in a dialog since there's no dedicated request detail screen
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -240,7 +326,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               Text('${'Subject:'.tr(context)} ${request.subject}'),
               const SizedBox(height: 8),
-              Text('${'Budget:'.tr(context)} ₹${request.budget}'),
+              Text('${'Budget:'.tr(context)} \u20b9${request.budget}'),
               const SizedBox(height: 8),
               Text('${'Deadline:'.tr(context)} ${request.deadline.toString().split(' ')[0]}'),
               const SizedBox(height: 8),
@@ -259,12 +345,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   /// Shows the quote form sheet for a request.
-  ///
-  /// Opens a modal bottom sheet for creating and submitting a quote.
-  /// Shows a success snackbar if the quote is submitted successfully.
-  ///
-  /// Parameters:
-  /// - [request]: The request to create a quote for
   Future<void> _showQuoteForm(RequestModel request) async {
     final result = await QuoteFormSheet.show(context, request);
     if (result == true && mounted) {
@@ -278,12 +358,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   /// Shows the doer selection sheet for a request.
-  ///
-  /// Opens a modal bottom sheet for selecting and assigning a doer.
-  /// Shows a success snackbar with the doer's name if assigned.
-  ///
-  /// Parameters:
-  /// - [request]: The request to assign a doer to
   Future<void> _showDoerSelection(RequestModel request) async {
     final doer = await DoerSelectionSheet.show(context, request);
     if (doer != null && mounted) {
@@ -297,9 +371,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   /// Shows the quick actions bottom sheet.
-  ///
-  /// Displays common actions like searching doers, viewing analytics,
-  /// and accessing recent projects.
   void _showQuickActions() {
     showModalBottomSheet(
       context: context,
@@ -308,12 +379,287 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
+/// Glass notification button with count badge.
+class _GlassNotificationButton extends StatelessWidget {
+  const _GlassNotificationButton({
+    required this.count,
+    this.onTap,
+  });
+
+  final int count;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        GlassContainer(
+          blur: 12,
+          opacity: 0.15,
+          borderRadius: BorderRadius.circular(14),
+          borderColor: Colors.white.withAlpha(64),
+          backgroundColor: Colors.white,
+          onTap: onTap,
+          padding: const EdgeInsets.all(10),
+          child: const Icon(Icons.notifications_outlined, color: AppColors.textPrimaryLight, size: 22),
+        ),
+        if (count > 0)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: AppColors.error,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              child: Text(
+                count > 99 ? '99+' : count.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Glass-morphism status pill showing a label and count.
+class _GlassStatusPill extends StatelessWidget {
+  const _GlassStatusPill({
+    required this.label,
+    required this.count,
+    required this.color,
+  });
+
+  final String label;
+  final int count;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      blur: 10,
+      opacity: 0.12,
+      borderRadius: BorderRadius.circular(20),
+      borderColor: color.withAlpha(50),
+      backgroundColor: color,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$label $count',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Quick action CTA card with dark charcoal-to-orange gradient.
+class _QuickActionCta extends StatelessWidget {
+  const _QuickActionCta({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: const LinearGradient(
+              colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.gradientEnd.withAlpha(40),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Quick Actions'.tr(context),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Search doers, view analytics, recent projects'.tr(context),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withAlpha(180),
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(30),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 24),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A row of glass KPI stat cards displayed at the top of the dashboard.
+class _GlassKpiCardsRow extends StatelessWidget {
+  const _GlassKpiCardsRow({required this.newRequestsCount, this.paidRequestsCount = 0});
+
+  final int newRequestsCount;
+  final int paidRequestsCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: _GlassKpiCard(
+              icon: Icons.fiber_new,
+              iconColor: AppColors.info,
+              value: newRequestsCount.toString(),
+              label: 'New Requests'.tr(context),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _GlassKpiCard(
+              icon: Icons.assignment_ind,
+              iconColor: AppColors.accent,
+              value: paidRequestsCount.toString(),
+              label: 'Ready to Assign'.tr(context),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _GlassKpiCard(
+              icon: Icons.rate_review_outlined,
+              iconColor: AppColors.warning,
+              value: '--',
+              label: 'Pending QC'.tr(context),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _GlassKpiCard(
+              icon: Icons.currency_rupee,
+              iconColor: AppColors.success,
+              value: '--',
+              label: 'Earnings'.tr(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A single glass KPI stat card with a colored icon, bold value, and label.
+class _GlassKpiCard extends StatelessWidget {
+  const _GlassKpiCard({
+    required this.icon,
+    required this.iconColor,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      blur: 10,
+      opacity: 0.6,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      borderRadius: BorderRadius.circular(16),
+      borderColor: Colors.white.withAlpha(50),
+      elevation: 1,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withAlpha(25),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 18),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Section header widget for dashboard sections.
-///
-/// Displays a title, subtitle, count badge, and icon for a section.
-/// Used to introduce "New Requests" and "Ready to Assign" sections.
 class _SectionHeader extends StatelessWidget {
-  /// Creates a new [_SectionHeader] instance.
   const _SectionHeader({
     required this.title,
     required this.subtitle,
@@ -322,19 +668,10 @@ class _SectionHeader extends StatelessWidget {
     required this.iconColor,
   });
 
-  /// The main title text (e.g., "New Requests").
   final String title;
-
-  /// Descriptive subtitle (e.g., "Awaiting your quote").
   final String subtitle;
-
-  /// Number to display in the count badge.
   final int count;
-
-  /// Icon to display next to the title.
   final IconData icon;
-
-  /// Color for the icon and count badge.
   final Color iconColor;
 
   @override
@@ -392,34 +729,24 @@ class _SectionHeader extends StatelessWidget {
 }
 
 /// Empty section placeholder widget.
-///
-/// Displayed when a section has no items to show.
-/// Shows an icon and message indicating the empty state.
 class _EmptySection extends StatelessWidget {
-  /// Creates a new [_EmptySection] instance.
   const _EmptySection({
     required this.message,
     required this.icon,
   });
 
-  /// Message to display (e.g., "No new requests").
   final String message;
-
-  /// Icon to display above the message.
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
-      ),
+      blur: 8,
+      opacity: 0.5,
+      borderRadius: BorderRadius.circular(16),
+      elevation: 1,
       child: Column(
         children: [
           Icon(
@@ -441,20 +768,13 @@ class _EmptySection extends StatelessWidget {
 }
 
 /// Error banner widget for displaying error messages.
-///
-/// Shows a dismissible error message with an icon.
-/// Styled with error colors and a close button.
 class _ErrorBanner extends StatelessWidget {
-  /// Creates a new [_ErrorBanner] instance.
   const _ErrorBanner({
     required this.message,
     required this.onDismiss,
   });
 
-  /// The error message to display.
   final String message;
-
-  /// Callback when the dismiss button is tapped.
   final VoidCallback onDismiss;
 
   @override
@@ -489,11 +809,6 @@ class _ErrorBanner extends StatelessWidget {
 }
 
 /// Quick actions bottom sheet widget.
-///
-/// Displays a list of common quick actions the supervisor can take:
-/// - Search Doers
-/// - View Analytics
-/// - Recent Projects
 class _QuickActionsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -536,11 +851,7 @@ class _QuickActionsSheet extends StatelessWidget {
 }
 
 /// Quick action tile widget.
-///
-/// A single action item in the quick actions sheet.
-/// Displays an icon, title, subtitle, and chevron indicator.
 class _QuickActionTile extends StatelessWidget {
-  /// Creates a new [_QuickActionTile] instance.
   const _QuickActionTile({
     required this.icon,
     required this.title,
@@ -548,16 +859,9 @@ class _QuickActionTile extends StatelessWidget {
     required this.onTap,
   });
 
-  /// Icon to display on the left.
   final IconData icon;
-
-  /// Main title text.
   final String title;
-
-  /// Descriptive subtitle text.
   final String subtitle;
-
-  /// Callback when the tile is tapped.
   final VoidCallback onTap;
 
   @override
@@ -579,219 +883,7 @@ class _QuickActionTile extends StatelessWidget {
   }
 }
 
-/// A row of 4 KPI stat cards displayed at the top of the dashboard.
-///
-/// Shows quick summary metrics:
-/// - **New Requests**: Live count from dashboard state
-/// - **Ready to Assign**: Live count of paid requests
-/// - **In Progress** / **Pending QC**: Placeholder until real data is available
-///
-/// Each card shows a colored icon circle, a bold count, and a small label.
-class _KpiCardsRow extends StatelessWidget {
-  /// Creates a new [_KpiCardsRow] instance.
-  const _KpiCardsRow({required this.newRequestsCount, this.paidRequestsCount = 0});
-
-  /// The number of new requests to display in the first card.
-  final int newRequestsCount;
-
-  /// The number of paid requests ready to assign.
-  final int paidRequestsCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: _KpiCard(
-              icon: Icons.fiber_new,
-              iconColor: AppColors.info,
-              value: newRequestsCount.toString(),
-              label: 'New Requests'.tr(context),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _KpiCard(
-              icon: Icons.assignment_ind,
-              iconColor: AppColors.accent,
-              value: paidRequestsCount.toString(),
-              label: 'Ready to Assign'.tr(context),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _KpiCard(
-              icon: Icons.rate_review_outlined,
-              iconColor: AppColors.warning,
-              value: '--',
-              label: 'Pending QC'.tr(context),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _KpiCard(
-              icon: Icons.currency_rupee,
-              iconColor: AppColors.success,
-              value: '--',
-              label: 'Earnings'.tr(context),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A single KPI stat card with a colored icon, bold value, and label.
-///
-/// Used inside [_KpiCardsRow] to present individual metrics.
-class _KpiCard extends StatelessWidget {
-  /// Creates a new [_KpiCard] instance.
-  const _KpiCard({
-    required this.icon,
-    required this.iconColor,
-    required this.value,
-    required this.label,
-  });
-
-  /// The icon displayed in the colored circle.
-  final IconData icon;
-
-  /// The background tint color for the icon circle and text.
-  final Color iconColor;
-
-  /// The bold metric value (e.g., "8" or "$2,450").
-  final String value;
-
-  /// The descriptive label below the value.
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 18),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.textSecondaryLight,
-                ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A placeholder for the weekly completion trends chart.
-///
-/// Shows a message indicating that analytics data will appear
-/// once the supervisor has sufficient project history.
-class _MiniChart extends StatelessWidget {
-  /// Creates a new [_MiniChart] instance.
-  const _MiniChart();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Weekly Completions'.tr(context),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Tasks completed this week'.tr(context),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-              const SizedBox(height: 24),
-              Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.bar_chart,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Analytics will appear once you complete projects'.tr(context),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Recent activity feed section showing the last few events.
-///
-/// Displays a list of recent supervisor activities such as project
-/// assignments, quotes sent, payments received, and reviews completed.
-/// Uses mock data for now with the right structure for future backend integration.
 class _RecentActivitySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -838,15 +930,13 @@ class _RecentActivitySection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Activity items
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: Theme.of(context).colorScheme.outlineVariant,
-              ),
-            ),
+          // Activity items in a glass card
+          GlassCard(
+            blur: 10,
+            opacity: 0.6,
+            borderRadius: BorderRadius.circular(16),
+            padding: EdgeInsets.zero,
+            elevation: 1,
             child: Column(
               children: [
                 _ActivityItem(
@@ -866,7 +956,7 @@ class _RecentActivitySection extends StatelessWidget {
                   icon: Icons.send_outlined,
                   iconColor: AppColors.accent,
                   title: 'Quote sent to client'.tr(context),
-                  subtitle: 'Project #1842 - ₹3,500'.tr(context),
+                  subtitle: 'Project #1842 - \u20b93,500'.tr(context),
                   time: '15m ago'.tr(context),
                 ),
                 Divider(
@@ -878,7 +968,7 @@ class _RecentActivitySection extends StatelessWidget {
                   icon: Icons.payment_outlined,
                   iconColor: AppColors.success,
                   title: 'Payment received'.tr(context),
-                  subtitle: 'Project #1838 - ₹5,200'.tr(context),
+                  subtitle: 'Project #1838 - \u20b95,200'.tr(context),
                   time: '1h ago'.tr(context),
                 ),
                 Divider(
