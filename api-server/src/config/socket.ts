@@ -15,12 +15,9 @@ export interface AuthenticatedSocket extends Socket {
 }
 
 export const initializeSocket = (server: HttpServer): Server => {
-  const corsOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'];
-
   const io = new Server(server, {
     cors: {
-      origin: corsOrigins,
-      credentials: true,
+      origin: '*',
     },
   });
 

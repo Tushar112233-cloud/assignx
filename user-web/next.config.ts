@@ -1,9 +1,5 @@
 import type { NextConfig } from "next";
 
-const API_HOST = process.env.NEXT_PUBLIC_API_URL
-  ? new URL(process.env.NEXT_PUBLIC_API_URL).host
-  : "localhost:4000";
-
 const nextConfig: NextConfig = {
   /**
    * Performance optimizations
@@ -85,7 +81,7 @@ const nextConfig: NextConfig = {
               // Fonts: self + data URIs + Google Fonts
               "font-src 'self' data: https://fonts.gstatic.com",
               // API connections: self + Express API + Razorpay + Socket.IO
-              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"} ws://${API_HOST} wss://${API_HOST} https://api.razorpay.com https://lumberjack.razorpay.com`,
+              "connect-src *",
               // Frames: only Razorpay checkout iframe
               "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
               // Prevent clickjacking

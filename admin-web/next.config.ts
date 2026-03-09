@@ -63,7 +63,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://i.pravatar.cc",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' http://localhost:4000",
+              "connect-src *",
               "frame-src 'self'",
               "frame-ancestors 'none'",
               "base-uri 'self'",

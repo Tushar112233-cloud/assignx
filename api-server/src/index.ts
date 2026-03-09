@@ -21,11 +21,8 @@ const io = initializeSocket(server);
 // Make io accessible in routes
 app.set('io', io);
 
-// CORS
-app.use(cors({
-  origin: true,
-  credentials: true,
-}));
+// CORS – allow all origins
+app.use(cors());
 
 // Security & parsing
 app.use(helmet());
