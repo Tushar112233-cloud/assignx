@@ -10,7 +10,7 @@ import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 
-const DEV_BYPASS_EMAILS = ['admin@gmail.com'];
+const DEV_BYPASS_EMAILS = ['admin@gmail.com', 'admin@assignx.in'];
 
 function getModelByRole(role: string): any {
   switch (role) {
@@ -101,9 +101,29 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const normalizedEmail = email.toLowerCase().trim();
     const loginRole = role || 'user';
 
-    if (DEV_BYPASS_EMAILS.includes(normalizedEmail)) {
-      const result = await directLogin(normalizedEmail, 'admin');
-      return res.json(result);
+    // Admin password-based login
+    if (loginRole === 'admin' || DEV_BYPASS_EMAILS.includes(normalizedEmail)) {
+      const admin = await Admin.findOne({ email: normalizedEmail });
+
+      if (admin && admin.password && password) {
+        const isValid = await bcrypt.compare(password, admin.password);
+        if (!isValid) {
+          throw new AppError('Invalid credentials', 401);
+        }
+        const result = await directLogin(normalizedEmail, 'admin');
+        return res.json(result);
+      }
+
+      // Dev bypass for known emails (no password required)
+      if (DEV_BYPASS_EMAILS.includes(normalizedEmail)) {
+        const result = await directLogin(normalizedEmail, 'admin');
+        return res.json(result);
+      }
+
+      if (!admin) {
+        throw new AppError('No admin account found for this email', 404);
+      }
+      throw new AppError('Invalid credentials', 401);
     }
 
     if (!password) {

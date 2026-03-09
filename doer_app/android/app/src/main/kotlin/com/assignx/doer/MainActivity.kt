@@ -1,4 +1,4 @@
-package com.example.doer_app
+package com.assignx.doer
 
 import io.flutter.embedding.android.FlutterActivity
 

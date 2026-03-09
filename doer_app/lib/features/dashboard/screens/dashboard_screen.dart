@@ -8,15 +8,16 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/doer_project_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/dashboard_provider.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../widgets/assigned_task_card.dart';
 import '../widgets/task_pool_card.dart';
 import '../../../core/translation/translation_extensions.dart';
 
-/// Main dashboard screen with Welcome, Stats, Assigned Tasks and Open Pool.
+/// Main dashboard screen with greeting header, glass stat cards, CTA, and tasks.
 ///
-/// The primary screen for activated users, displaying a scrollable dashboard
-/// with quick stats, assigned project cards, and available work opportunities.
+/// Redesigned as a tab inside MainShell's IndexedStack. Uses transparent
+/// Scaffold background and glass morphism containers throughout.
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
@@ -38,17 +39,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           onRefresh: () => ref.read(dashboardProvider.notifier).refresh(),
           child: CustomScrollView(
             slivers: [
-              // Welcome header with gradient
+              // Greeting header
               SliverToBoxAdapter(
-                child: _buildWelcomeHeader(context),
+                child: _buildGreetingHeader(context),
               ),
 
-              // Quick stats row
+              // Status pills
               SliverToBoxAdapter(
-                child: _buildQuickStats(stats, dashboardState),
+                child: _buildStatusPills(dashboardState),
               ),
 
-              // Assigned Tasks section
+              // Browse Open Pool CTA card
+              SliverToBoxAdapter(
+                child: _buildBrowsePoolCTA(context),
+              ),
+
+              // Stat cards row
+              SliverToBoxAdapter(
+                child: _buildStatCardsRow(stats, dashboardState),
+              ),
+
+              // Assigned Tasks section header
               SliverToBoxAdapter(
                 child: _buildSectionHeader(
                   'Assigned Tasks'.tr(context),
@@ -73,7 +84,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ),
 
-              // Open Task Pool section
+              // Recent Tasks section
               SliverToBoxAdapter(
                 child: _buildSectionHeader(
                   'Open Task Pool'.tr(context),
@@ -84,7 +95,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
 
-              // Open Pool content
+              // Open Pool content as glass cards with status badges
               if (dashboardState.openPoolProjects.isEmpty)
                 const SliverToBoxAdapter(
                   child: _EmptyTaskPool(),
@@ -131,148 +142,226 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  /// Builds the welcome header with menu and notification buttons.
-  Widget _buildWelcomeHeader(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF1E3A5F), Color(0xFF2D4A6F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  /// Builds the large greeting header with time-based greeting and subtitle.
+  Widget _buildGreetingHeader(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.sm,
         ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.lg,
-          ),
-          child: Column(
-            children: [
-              // Top bar with notifications
-              Row(
-                children: [
-                  const Spacer(),
-                  _buildNotificationButton(context),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              // User info row
-              Consumer(
-                builder: (context, ref, _) {
-                  final user = ref.watch(currentUserProvider);
-                  final isAvailable = ref.watch(isAvailableProvider);
-                  final displayName = user?.fullName ?? 'Doer';
-                  final firstName = displayName.split(' ').first;
+        child: Consumer(
+          builder: (context, ref, _) {
+            final user = ref.watch(currentUserProvider);
+            final displayName = user?.fullName ?? 'Doer';
+            final firstName = displayName.split(' ').first;
 
-                  return Row(
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top bar with notification button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    _buildNotificationButton(context),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                // Time-based greeting with bold name
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.textPrimary,
+                      height: 1.3,
+                    ),
                     children: [
-                      // Avatar
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            firstName.isNotEmpty
-                                ? firstName[0].toUpperCase()
-                                : 'D',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _getGreeting(),
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.white.withValues(alpha: 0.8),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              firstName,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            // Availability indicator
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isAvailable
-                                    ? AppColors.success
-                                        .withValues(alpha: 0.2)
-                                    : Colors.white
-                                        .withValues(alpha: 0.15),
-                                borderRadius: AppSpacing.borderRadiusSm,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 7,
-                                    height: 7,
-                                    decoration: BoxDecoration(
-                                      color: isAvailable
-                                          ? AppColors.success
-                                          : AppColors.textTertiary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    isAvailable
-                                        ? 'Available'.tr(context)
-                                        : 'Unavailable'.tr(context),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: isAvailable
-                                          ? AppColors.success
-                                          : Colors.white
-                                              .withValues(alpha: 0.7),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                      TextSpan(text: '${_getGreeting()}, '),
+                      TextSpan(
+                        text: firstName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
-                  );
-                },
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Welcome back to your workspace'.tr(context),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Builds status pills showing active and pending counts.
+  Widget _buildStatusPills(DashboardState dashboardState) {
+    final activeCount = dashboardState.assignedProjects
+        .where((p) =>
+            p.status == DoerProjectStatus.inProgress ||
+            p.status == DoerProjectStatus.assigned)
+        .length;
+    final pendingCount = dashboardState.openPoolProjects.length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
+      child: Row(
+        children: [
+          _StatusPill(
+            label: 'Active'.tr(context),
+            count: activeCount,
+            color: AppColors.success,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          _StatusPill(
+            label: 'Pending'.tr(context),
+            count: pendingCount,
+            color: AppColors.warning,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the "Browse Open Pool" dark gradient CTA card.
+  Widget _buildBrowsePoolCTA(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+      ),
+      child: GestureDetector(
+        onTap: () {
+          // Scroll to the open pool section or navigate
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                AppColors.gradientStart,
+                AppColors.gradientMiddle,
+                AppColors.primaryLight,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Browse Open Pool'.tr(context),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Find new projects and start earning'.tr(context),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Builds stat cards row with glass containers.
+  Widget _buildStatCardsRow(DoerStats stats, DashboardState dashboardState) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.md,
+        0,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _GlassStatCard(
+              icon: Icons.assignment,
+              value: stats.activeProjects.toString(),
+              label: 'Active',
+              color: AppColors.info,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: _GlassStatCard(
+              icon: Icons.check_circle,
+              value: stats.completedProjects.toString(),
+              label: 'Completed',
+              color: AppColors.success,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: _GlassStatCard(
+              icon: Icons.account_balance_wallet,
+              value: _formatEarnings(dashboardState.pendingEarnings),
+              label: 'Earnings',
+              color: AppColors.warning,
+              prefix: '\u20B9',
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -284,7 +373,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         IconButton(
           onPressed: () => context.push('/notifications'),
           icon: const Icon(Icons.notifications_outlined,
-              color: Colors.white),
+              color: AppColors.textSecondary),
           tooltip: 'Notifications'.tr(context),
         ),
         Positioned(
@@ -300,53 +389,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  /// Builds the quick stats row.
-  Widget _buildQuickStats(DoerStats stats, DashboardState dashboardState) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _QuickStatCard(
-              icon: Icons.assignment,
-              value: stats.activeProjects.toString(),
-              label: 'Active Projects'.tr(context),
-              color: AppColors.info,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            _QuickStatCard(
-              icon: Icons.check_circle,
-              value: stats.completedProjects.toString(),
-              label: 'Completed'.tr(context),
-              color: AppColors.success,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            _QuickStatCard(
-              icon: Icons.account_balance_wallet,
-              value: _formatEarnings(dashboardState.pendingEarnings),
-              label: 'Pending Earnings'.tr(context),
-              color: AppColors.warning,
-              prefix: '\u20B9',
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            _QuickStatCard(
-              icon: Icons.star,
-              value: stats.rating > 0
-                  ? stats.rating.toStringAsFixed(1)
-                  : '--',
-              label: 'Rating'.tr(context),
-              color: AppColors.accent,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -378,7 +420,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(width: 10),
           Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -494,7 +536,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           children: [
             Text(
               'Are you sure you want to accept this project?'.tr(context),
-              style: TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 12),
             Container(
@@ -609,15 +651,62 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
-/// Quick stat card widget for horizontal scroll with gradient background.
-class _QuickStatCard extends StatelessWidget {
+/// Small glass pill showing a status label and count.
+class _StatusPill extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+
+  const _StatusPill({
+    required this.label,
+    required this.count,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      blur: 10,
+      opacity: 0.7,
+      borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+      borderColor: color.withValues(alpha: 0.2),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      enableHoverEffect: false,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '$label $count',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Glass stat card with icon, value, label, and optional prefix.
+class _GlassStatCard extends StatelessWidget {
   final IconData icon;
   final String value;
   final String label;
   final Color color;
   final String? prefix;
 
-  const _QuickStatCard({
+  const _GlassStatCard({
     required this.icon,
     required this.value,
     required this.label,
@@ -627,33 +716,12 @@ class _QuickStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 140,
+    return GlassCard(
+      blur: 12,
+      opacity: 0.8,
+      elevation: 1,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.withValues(alpha: 0.08),
-            color.withValues(alpha: 0.03),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
+      borderColor: color.withValues(alpha: 0.15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -714,21 +782,11 @@ class _EmptyAssignedTasks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       padding: AppSpacing.paddingLg,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      blur: 10,
+      opacity: 0.75,
       child: Column(
         children: [
           Container(
@@ -773,21 +831,11 @@ class _EmptyTaskPool extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       padding: AppSpacing.paddingLg,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      blur: 10,
+      opacity: 0.75,
       child: Column(
         children: [
           Container(
