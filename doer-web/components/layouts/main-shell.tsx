@@ -32,7 +32,7 @@ export function MainShell({ children, userData, stats }: MainShellProps) {
           <SidebarTrigger />
           <span className="text-sm font-semibold text-foreground">Menu</span>
         </div>
-        <div className="min-h-screen px-6 py-6 lg:px-10">
+        <div className="min-h-screen px-5 py-5 lg:px-8">
           {children}
         </div>
       </SidebarInset>

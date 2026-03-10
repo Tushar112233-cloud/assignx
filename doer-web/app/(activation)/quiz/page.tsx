@@ -6,6 +6,9 @@ import dynamic from 'next/dynamic'
 import type { QuizResult } from '@/components/activation/QuizComponent'
 import { ROUTES } from '@/lib/constants'
 
+import { CheckCircle2, ArrowRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
 /** Lazy load heavy QuizComponent (contains animations) */
 const QuizComponent = dynamic(
   () => import('@/components/activation/QuizComponent').then(mod => ({ default: mod.QuizComponent })),
@@ -21,6 +24,7 @@ const QuizComponent = dynamic(
 import { apiClient, getAccessToken } from '@/lib/api/client'
 import { activationService } from '@/services/activation.service'
 import { useAuthToken } from '@/hooks/useAuthToken'
+import { useActivationStore } from '@/hooks/useActivation'
 import type { Doer, QuizQuestion } from '@/types/database'
 
 /** Quiz questions without correct answers (security - not sent to client) */
@@ -146,6 +150,16 @@ export default function QuizPage() {
       }
 
       if (passed) {
+        // Update activation store so stepper reflects quiz completion
+        const currentActivation = useActivationStore.getState().activation
+        if (currentActivation) {
+          useActivationStore.getState().setActivation({
+            ...currentActivation,
+            quiz_passed: true,
+            quiz_passed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+        }
         router.push(ROUTES.bankDetails)
       } else {
         setError('Quiz not passed. Review the training materials and try again.')
@@ -210,6 +224,48 @@ export default function QuizPage() {
     }
   }
 
+  /**
+   * Handle skip when no quiz questions are available
+   * Marks quiz as passed and proceeds to bank details
+   */
+  const handleSkipQuiz = async () => {
+    setError(null)
+    setIsSubmitting(true)
+
+    try {
+      // Get doer record to submit a passing attempt
+      const doer = await apiClient<Doer>(`/api/doers/me`).catch(() => null)
+
+      if (doer) {
+        // Submit a zero-question passing attempt so the backend marks quiz_passed
+        try {
+          await activationService.submitQuizAttempt(doer.id, 0, 0, {})
+        } catch {
+          // If backend rejects the empty attempt, that's okay — just update the store
+        }
+      }
+
+      // Update activation store so stepper reflects quiz completion
+      const currentActivation = useActivationStore.getState().activation
+      if (currentActivation) {
+        useActivationStore.getState().setActivation({
+          ...currentActivation,
+          quiz_passed: true,
+          quiz_passed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+      }
+
+      router.push(ROUTES.bankDetails)
+    } catch (err) {
+      if (isMountedRef.current) {
+        setError('Failed to skip quiz. Please try again.')
+      }
+    } finally {
+      if (isMountedRef.current) setIsSubmitting(false)
+    }
+  }
+
   if (!isReady || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -220,6 +276,44 @@ export default function QuizPage() {
 
   if (!hasToken) {
     return null // Will redirect via useAuthToken
+  }
+
+  // No quiz questions available — allow user to skip through
+  if (questions.length === 0) {
+    return (
+      <div className="max-w-lg mx-auto text-center py-12 space-y-4">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+          <CheckCircle2 className="w-8 h-8 text-primary" />
+        </div>
+        <h2 className="text-xl font-semibold">No Quiz Required</h2>
+        <p className="text-muted-foreground">
+          There are no quiz questions available at this time. You can proceed to the next step.
+        </p>
+        {error && (
+          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+        <Button
+          onClick={handleSkipQuiz}
+          disabled={isSubmitting}
+          size="lg"
+          className="mt-2"
+        >
+          {isSubmitting ? (
+            <>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+              Processing...
+            </>
+          ) : (
+            <>
+              Continue to Bank Details
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </>
+          )}
+        </Button>
+      </div>
+    )
   }
 
   return (

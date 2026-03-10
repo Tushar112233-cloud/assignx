@@ -1,62 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import 'live_stats_badge.dart';
 
-/// Enhanced hero section for Campus Connect matching the web platform.
+/// Hero section for Campus Connect.
 ///
-/// Features:
-/// - "Campus Connect" badge at top
-/// - "Your Campus is BUZZING" animated text with shimmer effect
-/// - LiveStatsBadge row with real-time community stats
-/// - Description text about the platform
-/// - "Verify College to Post" CTA button
-/// - Vibrant warm orange-to-red gradient background with decorative elements
+/// Uniform rich coffee brown background with subtle white transparent
+/// circles and patterns. Single colorful icon pop for identity.
 class CampusConnectHero extends StatelessWidget {
-  /// Callback when the verify college CTA is tapped.
   final VoidCallback? onVerifyCollege;
 
-  const CampusConnectHero({
-    super.key,
-    this.onVerifyCollege,
-  });
+  const CampusConnectHero({super.key, this.onVerifyCollege});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(20, 4, 20, 8),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        // Uniform solid coffee brown — no gradient fade-out
+        color: const Color(0xFF54442B),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF6B35).withAlpha(30),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: AppColors.primaryDark.withValues(alpha: 0.18),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Stack(
         children: [
-          // Background gradient
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFFF6B35), // Vibrant orange
-                  Color(0xFFFF4444), // Warm red
-                  Color(0xFFE91E63), // Pink-red
-                ],
-                stops: [0.0, 0.5, 1.0],
-              ),
-            ),
-          ),
-
-          // Decorative circle elements for depth
+          // ── Subtle decorative circles ──
           Positioned(
             top: -30,
             right: -20,
@@ -65,189 +42,230 @@ class CampusConnectHero extends StatelessWidget {
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
           ),
           Positioned(
-            bottom: -40,
-            left: -30,
+            bottom: -35,
+            left: -15,
             child: Container(
-              width: 140,
-              height: 140,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
+                color: Colors.white.withValues(alpha: 0.04),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 40,
+            right: 30,
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.035),
+              ),
+            ),
+          ),
+          // Small ring accent
+          Positioned(
+            bottom: 30,
+            right: 60,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  width: 2,
+                ),
               ),
             ),
           ),
 
-          // Content
+          // ── Content ──
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // "Campus Connect" badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color(0xFF4ADE80),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.hub_rounded,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.95),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Campus Connect',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: Colors.white.withValues(alpha: 0.95),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-                    .animate()
-                    .fadeIn(duration: 500.ms, delay: 100.ms)
-                    .slideY(begin: -0.3, end: 0),
-                const SizedBox(height: 20),
-
-                // Animated "Your Campus is BUZZING" text
-                Column(
+                // Top row: colorful hub icon + LIVE badge
+                Row(
                   children: [
-                    Text(
-                      'Your Campus is',
-                      style: AppTextStyles.displaySmall.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 20,
-                        height: 1.2,
-                        letterSpacing: -0.3,
+                    // Pop-of-color icon (wallet-page style)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF3B82F6)
+                                .withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.hub_rounded,
+                        size: 16,
+                        color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Animate(
-                      onPlay: (controller) => controller.repeat(reverse: true),
-                      effects: [
-                        ShimmerEffect(
-                          duration: 2500.ms,
-                          color: Colors.white.withValues(alpha: 0.6),
-                        ),
-                      ],
-                      child: Text(
-                        'BUZZING',
-                        style: AppTextStyles.displayLarge.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 36,
-                          height: 1.1,
-                          letterSpacing: 4,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Color(0xFF4ADE80),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'LIVE',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 )
                     .animate()
-                    .fadeIn(duration: 600.ms, delay: 200.ms)
-                    .slideY(begin: 0.2, end: 0),
-                const SizedBox(height: 20),
+                    .fadeIn(duration: 400.ms, delay: 100.ms),
 
-                // Live stats badges
-                const LiveStatsBadge()
+                const SizedBox(height: 14),
+
+                Text(
+                  'Campus Connect',
+                  style: AppTextStyles.headingMedium.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 24,
+                    letterSpacing: -0.5,
+                    height: 1.15,
+                  ),
+                )
                     .animate()
-                    .fadeIn(duration: 500.ms, delay: 400.ms),
+                    .fadeIn(duration: 500.ms, delay: 150.ms)
+                    .slideX(begin: -0.05, end: 0),
+
+                const SizedBox(height: 4),
+
+                Text(
+                  'Your campus community, all in one place',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                )
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 250.ms),
+
                 const SizedBox(height: 16),
 
-                // Description text
-                Text(
-                  'Join conversations, discover opportunities, and connect with students across 500+ colleges',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    fontSize: 13,
-                    height: 1.6,
-                    letterSpacing: 0.1,
-                  ),
-                  textAlign: TextAlign.center,
-                )
+                const LiveStatsBadge()
                     .animate()
-                    .fadeIn(duration: 500.ms, delay: 500.ms),
-                const SizedBox(height: 20),
+                    .fadeIn(duration: 400.ms, delay: 350.ms),
 
-                // CTA Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                      onPressed: onVerifyCollege,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFFFF4444),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                const SizedBox(height: 16),
+
+                // CTA — gradient icon pop like dashboard quick actions
+                GestureDetector(
+                  onTap: onVerifyCollege,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.10),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                        elevation: 0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF4444)
-                                  .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Colorful icon container
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF10B981),
+                                Color(0xFF059669),
+                              ],
                             ),
-                            child: const Icon(
-                              Icons.verified_rounded,
-                              size: 18,
-                              color: Color(0xFFFF4444),
-                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF10B981)
+                                    .withValues(alpha: 0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Verify College to Post',
-                            style: AppTextStyles.buttonMedium.copyWith(
-                              color: const Color(0xFFFF4444),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                              letterSpacing: 0.3,
-                            ),
+                          child: const Icon(
+                            Icons.verified_rounded,
+                            size: 14,
+                            color: Colors.white,
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Verify College to Post',
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: AppColors.primaryDark,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 14,
+                          color: AppColors.textTertiary,
+                        ),
+                      ],
+                    ),
                   ),
                 )
                     .animate()
-                    .fadeIn(duration: 500.ms, delay: 600.ms)
-                    .slideY(begin: 0.3, end: 0),
+                    .fadeIn(duration: 400.ms, delay: 450.ms)
+                    .slideY(begin: 0.15, end: 0),
               ],
             ),
           ),
@@ -258,7 +276,6 @@ class CampusConnectHero extends StatelessWidget {
 }
 
 /// Header bar for Campus Connect - DEPRECATED, use DashboardAppBar instead.
-/// Kept for backward compatibility but should not be used.
 class CampusConnectHeader extends StatelessWidget
     implements PreferredSizeWidget {
   final double walletBalance;
@@ -277,7 +294,6 @@ class CampusConnectHeader extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
-    // Return empty container - use DashboardAppBar instead
     return const SizedBox.shrink();
   }
 }

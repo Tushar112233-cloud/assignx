@@ -5,26 +5,6 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
 
 /// Filter categories for Campus Connect.
-///
-/// Maps to internal filter types:
-/// - housing: HousingFilters (location, price, property type, amenities)
-/// - opportunities/events: EventFilters (event type, date, location, free/paid)
-/// - products/resources: ResourceFilters (subject, type, difficulty, rating)
-///
-/// Categories match the web app with full feature parity:
-/// - All: Shows all posts
-/// - Questions: Academic Q&A and doubts
-/// - Housing: Accommodation listings (students only)
-/// - Opportunities: Jobs & internships
-/// - Events: Campus events and activities
-/// - Marketplace: Buy & sell items
-/// - Resources: Study materials and resources
-/// - Lost & Found: Lost items
-/// - Rides: Carpool and ride sharing
-/// - Study Groups: Study teams
-/// - Clubs: Societies and clubs
-/// - Announcements: Official announcements
-/// - Discussions: General discussions
 enum CampusConnectCategory {
   all('All', Icons.dashboard_outlined),
   questions('Questions', Icons.help_outline),
@@ -50,8 +30,9 @@ enum CampusConnectCategory {
   const CampusConnectCategory(this.label, this.icon);
 }
 
-/// Color mapping for each category used in the filter pills.
-Color _getCategoryColor(CampusConnectCategory category) {
+/// Icon-only color — used for the small gradient icon container on each pill.
+/// The pill itself stays coffee brown when selected.
+Color getCategoryIconColor(CampusConnectCategory category) {
   switch (category) {
     case CampusConnectCategory.all:
       return AppColors.primary;
@@ -88,20 +69,11 @@ Color _getCategoryColor(CampusConnectCategory category) {
   }
 }
 
-/// Production-grade horizontal filter tabs bar for Campus Connect.
-///
-/// Features capsule-shaped pills with color-coded active states.
-/// Selected state shows a filled gradient background.
-/// Unselected state shows a clean outlined style.
-///
-/// The housing category is only shown to students. Non-students will see
-/// all other categories but not housing.
+/// Horizontal filter tabs bar — coffee brown selected state,
+/// colorful icon pops (like wallet page style).
 class FilterTabsBar extends StatelessWidget {
   final CampusConnectCategory? selectedCategory;
   final Function(CampusConnectCategory?) onCategoryChanged;
-
-  /// Whether the current user is a student.
-  /// If false, the housing category will be hidden.
   final bool isStudent;
 
   const FilterTabsBar({
@@ -111,8 +83,6 @@ class FilterTabsBar extends StatelessWidget {
     this.isStudent = true,
   });
 
-  /// Web-style categories matching the web app's full category list.
-  /// Housing is conditionally shown based on student status.
   static const List<CampusConnectCategory> webStyleCategories = [
     CampusConnectCategory.all,
     CampusConnectCategory.questions,
@@ -129,7 +99,6 @@ class FilterTabsBar extends StatelessWidget {
     CampusConnectCategory.discussions,
   ];
 
-  /// Quick access categories shown in featured section
   static const List<CampusConnectCategory> featuredCategories = [
     CampusConnectCategory.questions,
     CampusConnectCategory.housing,
@@ -141,7 +110,6 @@ class FilterTabsBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use web-style categories, hide housing for non-students
     final availableCategories = webStyleCategories.where((category) {
       if (category == CampusConnectCategory.housing && !isStudent) {
         return false;
@@ -151,19 +119,20 @@ class FilterTabsBar extends StatelessWidget {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       physics: const BouncingScrollPhysics(),
       child: Row(
         children: availableCategories.asMap().entries.map((entry) {
           final index = entry.key;
           final category = entry.value;
           return Padding(
-            padding: EdgeInsets.only(right: index < availableCategories.length - 1 ? 8 : 0),
-            child: _FilterCapsule(
+            padding: EdgeInsets.only(
+                right: index < availableCategories.length - 1 ? 6 : 0),
+            child: _FilterPill(
               icon: category.icon,
               label: category.label.tr(context),
               isSelected: selectedCategory == category,
-              accentColor: _getCategoryColor(category),
+              iconColor: getCategoryIconColor(category),
               onTap: () => onCategoryChanged(
                 selectedCategory == category ? null : category,
               ),
@@ -175,19 +144,19 @@ class FilterTabsBar extends StatelessWidget {
   }
 }
 
-/// Individual capsule filter pill with color-coded active state.
-class _FilterCapsule extends StatelessWidget {
+/// Filter pill — coffee brown when selected, colorful icon pop only.
+class _FilterPill extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
-  final Color accentColor;
+  final Color iconColor;
   final VoidCallback onTap;
 
-  const _FilterCapsule({
+  const _FilterPill({
     required this.icon,
     required this.label,
     required this.isSelected,
-    required this.accentColor,
+    required this.iconColor,
     required this.onTap,
   });
 
@@ -196,51 +165,40 @@ class _FilterCapsule extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected
-              ? accentColor.withValues(alpha: 0.12)
+              ? AppColors.primary.withValues(alpha: 0.08)
               : Colors.white,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? accentColor.withValues(alpha: 0.4)
-                : AppColors.border.withValues(alpha: 0.5),
-            width: isSelected ? 1.5 : 1,
+                ? AppColors.primary.withValues(alpha: 0.3)
+                : AppColors.border.withValues(alpha: 0.4),
+            width: 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: accentColor.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(4),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Icon gets the pop of color
             Icon(
               icon,
-              size: 16,
-              color: isSelected ? accentColor : AppColors.textTertiary,
+              size: 15,
+              color: isSelected ? iconColor : AppColors.textTertiary,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
+            // Text stays coffee brown
             Text(
               label,
               style: AppTextStyles.labelMedium.copyWith(
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? accentColor : AppColors.textSecondary,
+                color: isSelected
+                    ? AppColors.primaryDark
+                    : AppColors.textSecondary,
               ),
             ),
           ],
@@ -250,18 +208,12 @@ class _FilterCapsule extends StatelessWidget {
   }
 }
 
-/// Enhanced filter tabs bar with filter counts.
-///
-/// Shows badge counts on categories that have active filters.
-/// The housing category is only shown to students.
+/// Enhanced filter tabs bar with badge counts.
 class EnhancedFilterTabsBar extends StatelessWidget {
   final CampusConnectCategory? selectedCategory;
   final Function(CampusConnectCategory?) onCategoryChanged;
   final Map<CampusConnectCategory, int>? filterCounts;
   final bool showIcons;
-
-  /// Whether the current user is a student.
-  /// If false, the housing category will be hidden.
   final bool isStudent;
 
   const EnhancedFilterTabsBar({
@@ -275,8 +227,8 @@ class EnhancedFilterTabsBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use web-style categories, hide housing for non-students
-    final availableCategories = FilterTabsBar.webStyleCategories.where((category) {
+    final availableCategories =
+        FilterTabsBar.webStyleCategories.where((category) {
       if (category == CampusConnectCategory.housing && !isStudent) {
         return false;
       }
@@ -285,23 +237,24 @@ class EnhancedFilterTabsBar extends StatelessWidget {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       physics: const BouncingScrollPhysics(),
       child: Row(
         children: availableCategories.asMap().entries.map((entry) {
           final index = entry.key;
           final category = entry.value;
           final count = filterCounts?[category] ?? 0;
-          final catColor = _getCategoryColor(category);
+          final catIconColor = getCategoryIconColor(category);
 
           return Padding(
-            padding: EdgeInsets.only(right: index < availableCategories.length - 1 ? 8 : 0),
-            child: _FilterCapsuleWithBadge(
+            padding: EdgeInsets.only(
+                right: index < availableCategories.length - 1 ? 6 : 0),
+            child: _FilterPillWithBadge(
               icon: showIcons ? category.icon : null,
               label: category.label.tr(context),
               isSelected: selectedCategory == category,
               badgeCount: count,
-              accentColor: catColor,
+              iconColor: catIconColor,
               onTap: () => onCategoryChanged(
                 selectedCategory == category ? null : category,
               ),
@@ -313,21 +266,21 @@ class EnhancedFilterTabsBar extends StatelessWidget {
   }
 }
 
-/// Capsule filter pill with optional badge count and color-coded active state.
-class _FilterCapsuleWithBadge extends StatelessWidget {
+/// Filter pill with optional badge count.
+class _FilterPillWithBadge extends StatelessWidget {
   final IconData? icon;
   final String label;
   final bool isSelected;
   final int badgeCount;
-  final Color accentColor;
+  final Color iconColor;
   final VoidCallback onTap;
 
-  const _FilterCapsuleWithBadge({
+  const _FilterPillWithBadge({
     this.icon,
     required this.label,
     required this.isSelected,
     this.badgeCount = 0,
-    required this.accentColor,
+    required this.iconColor,
     required this.onTap,
   });
 
@@ -336,35 +289,20 @@ class _FilterCapsuleWithBadge extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected
-              ? accentColor.withValues(alpha: 0.12)
+              ? AppColors.primary.withValues(alpha: 0.08)
               : Colors.white,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? accentColor.withValues(alpha: 0.4)
-                : AppColors.border.withValues(alpha: 0.5),
-            width: isSelected ? 1.5 : 1,
+                ? AppColors.primary.withValues(alpha: 0.3)
+                : AppColors.border.withValues(alpha: 0.4),
+            width: 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: accentColor.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(4),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -372,35 +310,40 @@ class _FilterCapsuleWithBadge extends StatelessWidget {
             if (icon != null) ...[
               Icon(
                 icon,
-                size: 16,
-                color: isSelected ? accentColor : AppColors.textTertiary,
+                size: 15,
+                color: isSelected ? iconColor : AppColors.textTertiary,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
             ],
             Text(
               label,
               style: AppTextStyles.labelMedium.copyWith(
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? accentColor : AppColors.textSecondary,
+                color: isSelected
+                    ? AppColors.primaryDark
+                    : AppColors.textSecondary,
               ),
             ),
             if (badgeCount > 0) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? accentColor.withValues(alpha: 0.2)
-                      : AppColors.textTertiary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+                      ? AppColors.primary.withValues(alpha: 0.15)
+                      : AppColors.textTertiary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '$badgeCount',
                   style: AppTextStyles.labelSmall.copyWith(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: isSelected ? accentColor : AppColors.textSecondary,
+                    color: isSelected
+                        ? AppColors.primaryDark
+                        : AppColors.textSecondary,
                   ),
                 ),
               ),

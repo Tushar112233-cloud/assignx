@@ -48,8 +48,7 @@ class ProfileScreen extends ConsumerWidget {
     final referralAsync = ref.watch(referralProvider);
 
     return Scaffold(
-      // Transparent to show SubtleGradientScaffold from MainShell
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFFFEFDFB),
       body: profileAsync.when(
         data: (profile) => Column(
           children: [

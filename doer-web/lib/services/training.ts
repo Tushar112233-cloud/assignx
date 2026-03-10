@@ -23,9 +23,13 @@ export async function markModuleComplete(moduleId: string) {
 
 export async function isTrainingComplete(role: string) {
   try {
-    const data = await apiClient<{ complete: boolean }>(`/api/training/status?role=${role}`)
-    return data.complete ?? false
+    const data = await apiClient<{ trainingCompleted: boolean; complete: boolean }>(`/api/training/status?role=${role}`)
+    return data.trainingCompleted ?? data.complete ?? false
   } catch {
     return false
   }
+}
+
+export async function completeTraining() {
+  await apiClient('/api/training/complete', { method: 'POST' })
 }

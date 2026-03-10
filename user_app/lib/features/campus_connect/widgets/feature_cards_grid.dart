@@ -103,10 +103,10 @@ class FeatureCardsGrid extends StatelessWidget {
                 width: 4,
                 height: 22,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Color(0xFFFF6B35), Color(0xFFE91E63)],
+                    colors: [AppColors.primaryDark, AppColors.primary],
                   ),
                   borderRadius: BorderRadius.circular(2),
                 ),

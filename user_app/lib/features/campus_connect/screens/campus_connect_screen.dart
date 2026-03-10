@@ -19,12 +19,15 @@ import '../widgets/event_filters.dart';
 import '../widgets/resource_filters.dart';
 import '../widgets/housing_restricted_state.dart';
 import '../widgets/campus_connect_filter_sheet.dart';
+import '../widgets/quick_categories.dart';
 
-/// Campus Connect screen with staggered feed of community content.
+/// Campus Connect screen — coffee brown theme with colorful icon pops.
 ///
-/// Features an enhanced hero section, live feed preview, feature carousel,
-/// feature cards grid, quick access row, search, filter tabs, and a
-/// Pinterest-style staggered grid of various post types.
+/// Clean, breathable layout with:
+/// - Compact hero banner (coffee brown gradient)
+/// - Integrated search with coffee brown focus state
+/// - Minimal filter pills with category-colored icons
+/// - Refined masonry grid of post cards
 class CampusConnectScreen extends ConsumerStatefulWidget {
   const CampusConnectScreen({super.key});
 
@@ -42,7 +45,6 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
   EventFilters _eventFilters = EventFilters.empty;
   ResourceFilters _resourceFilters = ResourceFilters.empty;
 
-  /// Check if current user is a student.
   bool _isStudent(WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
     final profile = authState.valueOrNull?.profile;
@@ -53,23 +55,24 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
   Widget build(BuildContext context) {
     final listingsAsync = ref.watch(marketplaceListingsProvider);
     final isStudent = _isStudent(ref);
-
-    // Check if non-student is trying to view housing
     final isHousingRestricted =
         !isStudent && _selectedCategory == CampusConnectCategory.housing;
 
     return Scaffold(
-      // Transparent to show SubtleGradientScaffold from MainShell
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFFFEFDFB),
       body: Stack(
         children: [
           RefreshIndicator(
+            color: AppColors.primary,
             onRefresh: () async {
               ref.invalidate(marketplaceListingsProvider);
             },
             child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
               slivers: [
-                // 1. Enhanced Hero Section with gradient, animated text, live stats
+                // 1. Hero banner
                 SliverToBoxAdapter(
                   child: CampusConnectHero(
                     onVerifyCollege: () {
@@ -78,25 +81,33 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                   ),
                 ),
 
-                // 2. Search bar
+                // 2. Quick category shortcuts — colorful icon pops
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: SearchBarWidget(
-                      initialValue: _searchQuery,
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                      },
-                      onFilterTap: () {
-                        _showUnifiedFilterSheet(context);
+                    padding: const EdgeInsets.only(top: 14, bottom: 6),
+                    child: QuickCategories(
+                      onCategorySelected: (category) {
+                        setState(() => _selectedCategory = category);
                       },
                     ),
                   ),
                 ),
 
-                // 3. Filter tabs with college filter (all 12 categories)
+                // 3. Search bar
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: SearchBarWidget(
+                      initialValue: _searchQuery,
+                      onChanged: (value) {
+                        setState(() => _searchQuery = value);
+                      },
+                      onFilterTap: () => _showUnifiedFilterSheet(context),
+                    ),
+                  ),
+                ),
+
+                // 4. Filter tabs + college filter
                 SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,24 +115,18 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                       FilterTabsBar(
                         selectedCategory: _selectedCategory,
                         onCategoryChanged: (category) {
-                          setState(() {
-                            _selectedCategory = category;
-                          });
+                          setState(() => _selectedCategory = category);
                         },
                         isStudent: isStudent,
                       ),
-                      // College filter chip and internal filters row
+                      // College filter + internal filter row
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Row(
                           children: [
                             CollegeFilterChip(
-                              onFilterChanged: () {
-                                // Refresh listings when filter changes
-                                setState(() {});
-                              },
+                              onFilterChanged: () => setState(() {}),
                             ),
-                            // Internal filter button for filterable categories
                             if (_selectedCategory != null &&
                                 _hasInternalFilters(_selectedCategory!)) ...[
                               const SizedBox(width: 8),
@@ -140,40 +145,36 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                   ),
                 ),
 
-                // 4. Listings count
+                // 5. Results header
                 SliverToBoxAdapter(
                   child: listingsAsync.when(
                     data: (listings) {
                       final filteredCount = _filterListings(listings).length;
-                      return _ListingsCount(count: filteredCount);
+                      return _ResultsHeader(count: filteredCount);
                     },
-                    loading: () => const _ListingsCount(count: 0),
-                    error: (error, stackTrace) => const SizedBox.shrink(),
+                    loading: () => const _ResultsHeader(count: 0),
+                    error: (_, __) => const SizedBox.shrink(),
                   ),
                 ),
 
-                // 5. Staggered posts grid (existing feed)
+                // 6. Post feed
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   sliver: isHousingRestricted
-                      // Show housing restricted state for non-students
                       ? SliverToBoxAdapter(
                           child: HousingRestrictedState(
                             onClearFilters: () {
-                              setState(() {
-                                _selectedCategory = null;
-                              });
+                              setState(() => _selectedCategory = null);
                             },
                           ),
                         )
                       : listingsAsync.when(
                           data: (listings) {
-                            // Filter listings based on selected category and search
-                            // Also filter out housing for non-students
                             var filteredListings = _filterListings(listings);
                             if (!isStudent) {
                               filteredListings = filteredListings
-                                  .where((l) => l.type != ListingType.housing)
+                                  .where(
+                                      (l) => l.type != ListingType.housing)
                                   .toList();
                             }
 
@@ -209,23 +210,18 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                         ),
                 ),
 
-                // Bottom padding for navigation
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 120),
-                ),
+                // Bottom padding
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
             ),
           ),
 
-          // Floating Action Button
+          // FAB
           Positioned(
             bottom: 100,
             right: 20,
-            child: _FloatingActionButton(
-              onTap: () {
-                // Handle FAB tap - create new Campus Connect post
-                context.push('/campus-connect/create');
-              },
+            child: _CreatePostFab(
+              onTap: () => context.push('/campus-connect/create'),
             ),
           ),
         ],
@@ -233,16 +229,17 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     );
   }
 
-  /// Filter listings based on category, search query, college filter, and internal filters.
+  // ─────────────────────────────────────────────────────────
+  // Filtering logic (unchanged)
+  // ─────────────────────────────────────────────────────────
+
   List<MarketplaceListing> _filterListings(List<MarketplaceListing> listings) {
     var filtered = listings;
 
-    // Filter by college
     final collegeFilter = ref.read(collegeFilterProvider);
     final filterCollege = collegeFilter.filterCollege;
     if (filterCollege != null) {
       filtered = filtered.where((listing) {
-        // Match by collegeName or userUniversity field
         final listingCollege = listing.collegeName ?? listing.userUniversity;
         if (listingCollege == null) return false;
         return listingCollege
@@ -251,7 +248,6 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
       }).toList();
     }
 
-    // Filter by category (web-style categories)
     if (_selectedCategory != null &&
         _selectedCategory != CampusConnectCategory.all) {
       filtered = filtered.where((listing) {
@@ -309,22 +305,19 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
           case CampusConnectCategory.discussions:
             return listing.type == ListingType.communityPost ||
                 listing.type == ListingType.poll;
-          // Legacy categories for backwards compatibility
           case CampusConnectCategory.community:
             return listing.type == ListingType.communityPost ||
                 listing.type == ListingType.poll;
           case CampusConnectCategory.products:
             return listing.type == ListingType.product;
           case CampusConnectCategory.saved:
-            return false; // Saved is handled separately
+            return false;
         }
       }).toList();
 
-      // Apply internal filters based on category
       filtered = _applyInternalFilters(filtered, _selectedCategory!);
     }
 
-    // Filter by search query
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((listing) {
         return listing.title
@@ -340,7 +333,6 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     return filtered;
   }
 
-  /// Apply internal filters based on category type.
   List<MarketplaceListing> _applyInternalFilters(
     List<MarketplaceListing> listings,
     CampusConnectCategory category,
@@ -360,19 +352,14 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }
   }
 
-  /// Apply housing-specific filters.
   List<MarketplaceListing> _applyHousingFilters(
       List<MarketplaceListing> listings) {
     if (!_housingFilters.hasActiveFilters) return listings;
-
     return listings.where((listing) {
-      // Filter by price range
       if (listing.price != null) {
         if (listing.price! < _housingFilters.priceRange.start) return false;
         if (listing.price! > _housingFilters.priceRange.end) return false;
       }
-
-      // Filter by location
       if (_housingFilters.location != null &&
           _housingFilters.location!.isNotEmpty) {
         if (listing.location == null) return false;
@@ -382,16 +369,12 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
           return false;
         }
       }
-
-      // Filter by distance from campus
       if (_housingFilters.distanceFromCampus != null &&
           listing.distanceKm != null) {
         final maxDistanceKm =
             _getDistanceInKm(_housingFilters.distanceFromCampus!);
         if (listing.distanceKm! > maxDistanceKm) return false;
       }
-
-      // Filter by property type (from metadata)
       if (_housingFilters.propertyType.isNotEmpty) {
         final propertyType = listing.metadata?['property_type'] as String?;
         if (propertyType == null ||
@@ -399,8 +382,6 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
           return false;
         }
       }
-
-      // Filter by amenities (from metadata)
       if (_housingFilters.amenities.isNotEmpty) {
         final listingAmenities =
             (listing.metadata?['amenities'] as List<dynamic>?)
@@ -411,12 +392,10 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
         );
         if (!hasAllAmenities) return false;
       }
-
       return true;
     }).toList();
   }
 
-  /// Convert distance string to km.
   double _getDistanceInKm(String distance) {
     switch (distance) {
       case '0-1':
@@ -434,13 +413,10 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }
   }
 
-  /// Apply event-specific filters.
   List<MarketplaceListing> _applyEventFilters(
       List<MarketplaceListing> listings) {
     if (!_eventFilters.hasActiveFilters) return listings;
-
     return listings.where((listing) {
-      // Filter by event type
       if (_eventFilters.eventType.isNotEmpty) {
         final eventType = listing.metadata?['event_type'] as String?;
         if (eventType == null ||
@@ -448,8 +424,6 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
           return false;
         }
       }
-
-      // Filter by date range
       if (_eventFilters.dateFrom != null) {
         final eventDate = listing.metadata?['event_date'] != null
             ? DateTime.tryParse(listing.metadata!['event_date'] as String)
@@ -462,15 +436,11 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
           }
         }
       }
-
-      // Filter by free/paid
       if (_eventFilters.isFree == true) {
         if (listing.price != null && listing.price! > 0) return false;
       } else if (_eventFilters.isFree == false) {
         if (listing.price == null || listing.price == 0) return false;
       }
-
-      // Filter by location
       if (_eventFilters.location != null &&
           _eventFilters.location!.isNotEmpty) {
         if (listing.location == null) return false;
@@ -480,18 +450,14 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
           return false;
         }
       }
-
       return true;
     }).toList();
   }
 
-  /// Apply resource-specific filters.
   List<MarketplaceListing> _applyResourceFilters(
       List<MarketplaceListing> listings) {
     if (!_resourceFilters.hasActiveFilters) return listings;
-
     return listings.where((listing) {
-      // Filter by subject
       if (_resourceFilters.subject.isNotEmpty) {
         final subject = listing.metadata?['subject'] as String?;
         if (subject == null ||
@@ -499,8 +465,6 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
           return false;
         }
       }
-
-      // Filter by resource type
       if (_resourceFilters.resourceType.isNotEmpty) {
         final resourceType = listing.metadata?['resource_type'] as String?;
         if (resourceType == null ||
@@ -508,28 +472,22 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
           return false;
         }
       }
-
-      // Filter by difficulty
       if (_resourceFilters.difficulty != null) {
         final difficulty = listing.metadata?['difficulty'] as String?;
         if (difficulty == null || difficulty != _resourceFilters.difficulty) {
           return false;
         }
       }
-
-      // Filter by minimum rating
       if (_resourceFilters.minRating != null) {
         final rating = (listing.metadata?['rating'] as num?)?.toDouble();
         if (rating == null || rating < _resourceFilters.minRating!) {
           return false;
         }
       }
-
       return true;
     }).toList();
   }
 
-  /// Get filter count for a specific category.
   int _getFilterCountForCategory(CampusConnectCategory category) {
     switch (category) {
       case CampusConnectCategory.housing:
@@ -555,46 +513,30 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }
   }
 
-  /// Show housing-specific filters.
   Future<void> _showHousingFilters(BuildContext context) async {
     final result = await HousingFiltersSheet.show(
       context,
       initialFilters: _housingFilters,
     );
-    if (result != null) {
-      setState(() {
-        _housingFilters = result;
-      });
-    }
+    if (result != null) setState(() => _housingFilters = result);
   }
 
-  /// Show event-specific filters (used for opportunities).
   Future<void> _showEventFilters(BuildContext context) async {
     final result = await EventFiltersSheet.show(
       context,
       initialFilters: _eventFilters,
     );
-    if (result != null) {
-      setState(() {
-        _eventFilters = result;
-      });
-    }
+    if (result != null) setState(() => _eventFilters = result);
   }
 
-  /// Show resource-specific filters (used for products).
   Future<void> _showResourceFilters(BuildContext context) async {
     final result = await ResourceFiltersSheet.show(
       context,
       initialFilters: _resourceFilters,
     );
-    if (result != null) {
-      setState(() {
-        _resourceFilters = result;
-      });
-    }
+    if (result != null) setState(() => _resourceFilters = result);
   }
 
-  /// Check if a category has internal filters.
   bool _hasInternalFilters(CampusConnectCategory category) {
     switch (category) {
       case CampusConnectCategory.housing:
@@ -618,7 +560,6 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }
   }
 
-  /// Show internal filters based on selected category.
   Future<void> _showInternalFilters(
       BuildContext context, CampusConnectCategory category) async {
     switch (category) {
@@ -639,7 +580,6 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     }
   }
 
-  /// Show the unified filter sheet with all tabs.
   Future<void> _showUnifiedFilterSheet(BuildContext context) async {
     final currentFilters = CampusConnectFilters(
       housing: _housingFilters,
@@ -647,7 +587,6 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
       resources: _resourceFilters,
     );
 
-    // Determine initial tab based on selected category
     FilterTab? initialTab;
     if (_selectedCategory == CampusConnectCategory.housing) {
       initialTab = FilterTab.housing;
@@ -676,63 +615,68 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
   }
 }
 
-/// Production-grade listings count display.
-class _ListingsCount extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────
+// Private Widgets
+// ─────────────────────────────────────────────────────────────
+
+/// Results header — post count + sort button.
+class _ResultsHeader extends StatelessWidget {
   final int count;
 
-  const _ListingsCount({required this.count});
+  const _ResultsHeader({required this.count});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 8),
       child: Row(
         children: [
-          Text(
-            '$count',
-            style: AppTextStyles.labelMedium.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            'posts',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textTertiary,
-              fontSize: 14,
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '$count ',
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+                TextSpan(
+                  text: 'posts',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textTertiary,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
           const Spacer(),
-          // Sort button
           GestureDetector(
             onTap: () {
               // TODO: Show sort options
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: AppColors.surfaceLight,
-                borderRadius: BorderRadius.circular(16),
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: AppColors.border.withValues(alpha: 0.5),
+                  color: AppColors.border.withValues(alpha: 0.4),
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.sort_rounded,
-                    size: 14,
-                    color: AppColors.textSecondary,
-                  ),
+                  Icon(Icons.sort_rounded,
+                      size: 14, color: AppColors.textSecondary),
                   const SizedBox(width: 4),
                   Text(
                     'Latest',
                     style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.textSecondary,
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                   ),
                 ],
@@ -745,30 +689,105 @@ class _ListingsCount extends StatelessWidget {
   }
 }
 
-/// Production-grade floating action button.
-class _FloatingActionButton extends StatelessWidget {
+/// Internal filter chip for category-specific advanced filters.
+class _InternalFilterChip extends StatelessWidget {
+  final CampusConnectCategory category;
+  final int filterCount;
   final VoidCallback onTap;
 
-  const _FloatingActionButton({required this.onTap});
+  const _InternalFilterChip({
+    required this.category,
+    required this.filterCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasActive = filterCount > 0;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: hasActive
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: hasActive
+                ? AppColors.primary.withValues(alpha: 0.3)
+                : AppColors.border.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.tune_rounded,
+                size: 14,
+                color:
+                    hasActive ? AppColors.primary : AppColors.textTertiary),
+            const SizedBox(width: 4),
+            Text(
+              'Filters',
+              style: AppTextStyles.labelSmall.copyWith(
+                fontSize: 12,
+                fontWeight: hasActive ? FontWeight.w700 : FontWeight.w500,
+                color:
+                    hasActive ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+            if (filterCount > 0) ...[
+              const SizedBox(width: 4),
+              Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '$filterCount',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Teal-accented FAB for creating new posts.
+class _CreatePostFab extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _CreatePostFab({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.primary,
-      shape: const CircleBorder(),
-      elevation: 4,
-      shadowColor: AppColors.primary.withValues(alpha: 0.3),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 6,
+      shadowColor: AppColors.primary.withValues(alpha: 0.35),
       child: InkWell(
         onTap: onTap,
-        customBorder: const CircleBorder(),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          width: 56,
-          height: 56,
+          width: 54,
+          height: 54,
           alignment: Alignment.center,
           child: const Icon(
-            Icons.add_rounded,
+            Icons.edit_rounded,
             color: Colors.white,
-            size: 28,
+            size: 24,
           ),
         ),
       ),
@@ -786,8 +805,8 @@ class _StaggeredPostsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverMasonryGrid.count(
       crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
       childCount: listings.length,
       itemBuilder: (context, index) {
         final listing = listings[index];
@@ -796,13 +815,11 @@ class _StaggeredPostsGrid extends StatelessWidget {
     );
   }
 
-  /// Build appropriate post card based on listing type.
   Widget _buildPostCard(
       BuildContext context, MarketplaceListing listing, int index) {
     switch (listing.type) {
       case ListingType.communityPost:
       case ListingType.poll:
-        // Show help posts for some community posts based on certain criteria
         if (_shouldShowAsHelpPost(listing, index)) {
           return HelpPostCard(
             listing: listing,
@@ -813,9 +830,7 @@ class _StaggeredPostsGrid extends StatelessWidget {
         return DiscussionPostCard(
           listing: listing,
           onTap: () => _navigateToDetail(context, listing),
-          onLike: () {
-            // Toggle like
-          },
+          onLike: () {},
           onComment: () => _navigateToDetail(context, listing),
         );
 
@@ -843,9 +858,7 @@ class _StaggeredPostsGrid extends StatelessWidget {
         return ProductPostCard(
           listing: listing,
           onTap: () => _navigateToDetail(context, listing),
-          onLike: () {
-            // Toggle like
-          },
+          onLike: () {},
         );
 
       case ListingType.housing:
@@ -854,16 +867,13 @@ class _StaggeredPostsGrid extends StatelessWidget {
           onTap: () => _navigateToDetail(context, listing),
           onContact: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Opening chat...'),
-              ),
+              const SnackBar(content: Text('Opening chat...')),
             );
           },
         );
     }
   }
 
-  /// Determine if a community post should be shown as a help post.
   bool _shouldShowAsHelpPost(MarketplaceListing listing, int index) {
     final title = listing.title.toLowerCase();
     return title.contains('struggling') ||
@@ -879,7 +889,7 @@ class _StaggeredPostsGrid extends StatelessWidget {
   }
 }
 
-/// Loading skeleton grid.
+/// Loading skeleton grid — shimmer placeholders.
 class _LoadingGrid extends StatelessWidget {
   const _LoadingGrid();
 
@@ -887,59 +897,53 @@ class _LoadingGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return MasonryGridView.count(
       crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 6,
       itemBuilder: (context, index) {
-        // Varying heights for masonry effect
-        final height = index.isEven ? 160.0 : 200.0;
+        final height = index.isEven ? 150.0 : 185.0;
         return Container(
           height: height,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(
+              color: AppColors.border.withValues(alpha: 0.2),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Icon area skeleton
               Container(
-                height: index.isEven ? 80 : 100,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.vertical(
+                height: index.isEven ? 70 : 80,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      height: 14,
+                      height: 12,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8E8E8),
+                        color: AppColors.surfaceVariant,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      height: 12,
-                      width: 80,
+                      height: 10,
+                      width: 70,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8E8E8),
+                        color: AppColors.surfaceVariant,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -954,7 +958,7 @@ class _LoadingGrid extends StatelessWidget {
   }
 }
 
-/// Empty state widget.
+/// Empty state — clean and friendly.
 class _EmptyState extends StatelessWidget {
   final bool hasFilters;
   final VoidCallback onClearFilters;
@@ -972,73 +976,65 @@ class _EmptyState extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF5F5F5),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.04),
               shape: BoxShape.circle,
             ),
             child: Icon(
               hasFilters ? Icons.filter_list_off : Icons.inbox_outlined,
-              size: 48,
-              color: const Color(0xFF9B9B9B),
+              size: 40,
+              color: AppColors.primary.withValues(alpha: 0.6),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Text(
             hasFilters ? 'No posts found' : 'No posts yet',
             style: AppTextStyles.headingSmall.copyWith(
-              color: const Color(0xFF6B6B6B),
+              color: AppColors.textPrimary,
+              fontSize: 17,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             hasFilters
                 ? 'Try adjusting your filters or search'
-                : 'Be the first to post!',
+                : 'Be the first to share something!',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: const Color(0xFF9B9B9B),
+              color: AppColors.textTertiary,
+              fontSize: 13,
             ),
             textAlign: TextAlign.center,
           ),
           if (hasFilters) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Material(
-              color: AppColors.darkBrown,
+              color: AppColors.primary,
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
                 onTap: onClearFilters,
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
+                      horizontal: 20, vertical: 10),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.filter_alt_off,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
+                      const Icon(Icons.filter_alt_off,
+                          color: Colors.white, size: 16),
+                      const SizedBox(width: 6),
                       Text(
                         'Clear Filters',
                         style: AppTextStyles.labelMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
+                          fontSize: 13,
                         ),
                       ),
                     ],
@@ -1058,10 +1054,7 @@ class _ErrorState extends StatelessWidget {
   final String error;
   final VoidCallback onRetry;
 
-  const _ErrorState({
-    required this.error,
-    required this.onRetry,
-  });
+  const _ErrorState({required this.error, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -1071,72 +1064,64 @@ class _ErrorState extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: AppColors.errorLight,
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.error_outline_rounded,
-              size: 48,
+              size: 40,
               color: AppColors.error,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Text(
             'Something went wrong',
             style: AppTextStyles.headingSmall.copyWith(
-              color: const Color(0xFF6B6B6B),
+              color: AppColors.textPrimary,
+              fontSize: 17,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             error,
             style: AppTextStyles.bodySmall.copyWith(
-              color: const Color(0xFF9B9B9B),
+              color: AppColors.textTertiary,
+              fontSize: 12,
             ),
             textAlign: TextAlign.center,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Material(
-            color: AppColors.darkBrown,
+            color: AppColors.primary,
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
               onTap: onRetry,
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.refresh_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.refresh_rounded,
+                        color: Colors.white, size: 16),
+                    const SizedBox(width: 6),
                     Text(
-                      'Try Again',
+                      'Retry',
                       style: AppTextStyles.labelMedium.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
+                        fontSize: 13,
                       ),
                     ),
                   ],
@@ -1145,126 +1130,6 @@ class _ErrorState extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Internal filter chip button.
-///
-/// Shows a filter icon with the category-specific label and filter count badge.
-/// Matches the design of CollegeFilterChip for visual consistency.
-class _InternalFilterChip extends StatelessWidget {
-  final CampusConnectCategory category;
-  final int filterCount;
-  final VoidCallback onTap;
-
-  const _InternalFilterChip({
-    required this.category,
-    required this.filterCount,
-    required this.onTap,
-  });
-
-  String get _filterLabel {
-    switch (category) {
-      case CampusConnectCategory.housing:
-        return 'Housing Filters';
-      case CampusConnectCategory.events:
-      case CampusConnectCategory.opportunities:
-        return 'Event Filters';
-      case CampusConnectCategory.resources:
-      case CampusConnectCategory.products:
-        return 'Resource Filters';
-      default:
-        return 'Filters';
-    }
-  }
-
-  IconData get _filterIcon {
-    switch (category) {
-      case CampusConnectCategory.housing:
-        return Icons.home_outlined;
-      case CampusConnectCategory.events:
-      case CampusConnectCategory.opportunities:
-        return Icons.event_outlined;
-      case CampusConnectCategory.resources:
-      case CampusConnectCategory.products:
-        return Icons.menu_book_outlined;
-      default:
-        return Icons.filter_list_outlined;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasActiveFilters = filterCount > 0;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: hasActiveFilters
-              ? AppColors.primary.withValues(alpha: 0.1)
-              : AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: hasActiveFilters
-                ? AppColors.primary.withValues(alpha: 0.3)
-                : AppColors.border.withValues(alpha: 0.5),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              _filterIcon,
-              size: 14,
-              color: hasActiveFilters
-                  ? AppColors.primary
-                  : AppColors.textTertiary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              _filterLabel,
-              style: AppTextStyles.labelSmall.copyWith(
-                fontSize: 12,
-                color: hasActiveFilters
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
-                fontWeight:
-                    hasActiveFilters ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-            if (hasActiveFilters) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '$filterCount',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ] else ...[
-              const SizedBox(width: 4),
-              Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 16,
-                color: AppColors.textTertiary,
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }

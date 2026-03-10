@@ -173,15 +173,28 @@ export function TaskPoolList({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-12 text-center"
+            className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white/60 py-10 text-center"
           >
-            <Inbox className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-medium text-lg">No tasks available</h3>
-            <p className="text-sm text-muted-foreground mt-1">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E6F4FF] mb-3">
+              <Inbox className="h-5 w-5 text-[#4B9BFF]" />
+            </div>
+            <h3 className="font-semibold text-sm text-slate-700">
+              {searchQuery || filterSubject !== 'all' ? 'No matching tasks' : 'Pool is empty right now'}
+            </h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-[260px]">
               {searchQuery || filterSubject !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Check back later for new opportunities'}
+                ? 'Try adjusting your search or filters to find more tasks.'
+                : 'New tasks are added regularly. You\'ll get notified when something appears.'}
             </p>
+            {(searchQuery || filterSubject !== 'all') && (
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(''); setFilterSubject('all') }}
+                className="mt-3 text-xs font-medium text-[#4B9BFF] hover:underline underline-offset-2"
+              >
+                Clear filters
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

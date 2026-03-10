@@ -17,8 +17,8 @@ class ApiClient {
 
   static String get baseUrl {
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
-    // Android emulator needs 10.0.2.2, iOS simulator/desktop use localhost
-    if (Platform.isAndroid) return 'http://10.0.2.2:4000';
+    // Real device via ADB reverse port forwarding
+    if (Platform.isAndroid) return 'http://localhost:4000';
     return 'http://localhost:4000';
   }
 

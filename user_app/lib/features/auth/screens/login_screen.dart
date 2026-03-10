@@ -182,7 +182,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showSnack('Something went wrong. Please try again.');
+      final msg = e.toString().replaceFirst('Exception: ', '').replaceFirst(RegExp(r'^ApiException\(\d+\): '), '');
+      _showSnack(msg);
     }
   }
 
@@ -212,7 +213,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showSnack('Verification failed. Please try again.');
+      final msg = e.toString().replaceFirst('Exception: ', '').replaceFirst(RegExp(r'^ApiException\(\d+\): '), '');
+      _showSnack(msg);
       _clearOtp();
     }
   }

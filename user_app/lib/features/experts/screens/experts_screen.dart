@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lottie/lottie.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -11,18 +10,24 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/expert_model.dart';
 import '../../../providers/experts_provider.dart';
 import '../../../core/translation/translation_extensions.dart';
+import '../../../shared/animations/common_animations.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../home/widgets/home_app_bar.dart';
 import '../widgets/expert_card.dart';
 
-/// Tab types for the experts screen - matching web design
+// ─── Pop-of-color gradient for icon containers only (teal) ───
+// The page's unique accent — used ONLY in icon backgrounds, like wallet does.
+const _kTeal1 = Color(0xFF0D9488);
+const _kTeal2 = Color(0xFF14B8A6);
+
+/// Tab types for the experts screen.
 enum ExpertsTabType { doctors, allExperts, bookings }
 
-/// Main experts/consultations screen.
+/// Experts/consultations screen.
 ///
-/// Features a hero section with search, main tabs (Doctors/All Experts/Bookings),
-/// featured doctors carousel, and a list of available experts.
+/// Coffee brown base theme. Teal pops appear only inside icon gradient
+/// containers — following the same pattern as the wallet page.
 class ExpertsScreen extends ConsumerStatefulWidget {
   const ExpertsScreen({super.key});
 
@@ -32,12 +37,14 @@ class ExpertsScreen extends ConsumerStatefulWidget {
 
 class _ExpertsScreenState extends ConsumerState<ExpertsScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
   ExpertSpecialization? _selectedSpecialization;
   ExpertsTabType _activeTab = ExpertsTabType.doctors;
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -47,135 +54,131 @@ class _ExpertsScreenState extends ConsumerState<ExpertsScreen> {
     final featuredAsync = ref.watch(featuredExpertsProvider);
 
     return Scaffold(
-      // Transparent to show SubtleGradientScaffold from MainShell
-      backgroundColor: Colors.transparent,
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(expertsProvider);
-          ref.invalidate(featuredExpertsProvider);
-        },
-        child: CustomScrollView(
-          slivers: [
-            // Unified Dashboard App Bar (dark theme) - matches other pages
-            const SliverToBoxAdapter(
-              child: HomeAppBar(),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(expertsProvider);
+            ref.invalidate(featuredExpertsProvider);
+          },
+          color: AppColors.primary,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
             ),
-
-            // Hero section
-            SliverToBoxAdapter(
-              child: _ExpertsHero(
-                onSearch: (query) {
-                  ref.read(expertFilterProvider.notifier).setSearchQuery(query);
-                },
-                searchController: _searchController,
-              ),
-            ),
-
-            // Main tabs - Doctors / All Experts / My Bookings (matching web)
-            SliverToBoxAdapter(
-              child: _MainTabs(
-                activeTab: _activeTab,
-                onTabChanged: (tab) => setState(() => _activeTab = tab),
-              ),
-            ),
-
-            // Content based on active tab
-            if (_activeTab == ExpertsTabType.doctors) ...[
-              // Featured Doctors Carousel
-              SliverToBoxAdapter(
-                child: featuredAsync.when(
-                  data: (featured) {
-                    if (featured.isEmpty) return const SizedBox.shrink();
-                    return _FeaturedDoctorsCarousel(
-                      doctors: featured,
-                      onDoctorTap: _navigateToDetail,
-                      onBookTap: _navigateToBooking,
-                    );
-                  },
-                  loading: () => const _CarouselSkeleton(),
-                  error: (_, __) => const SizedBox.shrink(),
+            slivers: [
+                // ── App bar ──
+                SliverToBoxAdapter(
+                  child: const HomeAppBar()
+                      .fadeInSlideDown(duration: const Duration(milliseconds: 400)),
                 ),
-              ),
 
-              // Filter tabs for doctors
-              SliverToBoxAdapter(
-                child: _FilterTabs(
-                  selectedSpecialization: _selectedSpecialization,
-                  onSpecializationChanged: (spec) {
-                    setState(() => _selectedSpecialization = spec);
-                    ref.read(expertFilterProvider.notifier).setSpecialization(spec);
-                  },
+                // ── Greeting header ──
+                SliverToBoxAdapter(
+                  child: _TopBanner()
+                      .fadeInSlideUp(delay: const Duration(milliseconds: 50)),
                 ),
-              ),
 
-              // Doctors count
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-                  child: expertsAsync.when(
-                    data: (experts) => Text(
-                      '${experts.length} ${'doctor'.tr(context)}${experts.length != 1 ? 's' : ''} ${'available'.tr(context)}',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                // ── Search bar ──
+                SliverToBoxAdapter(
+                  child: _FloatingSearchBar(
+                    controller: _searchController,
+                    focusNode: _searchFocus,
+                    onChanged: (q) {
+                      ref.read(expertFilterProvider.notifier).setSearchQuery(q);
+                      setState(() {});
+                    },
+                    onClear: () {
+                      _searchController.clear();
+                      ref.read(expertFilterProvider.notifier).setSearchQuery('');
+                      setState(() {});
+                    },
+                  ).fadeInSlideUp(delay: const Duration(milliseconds: 100)),
+                ),
+
+                // ── Main tabs ──
+                SliverToBoxAdapter(
+                  child: _PillTabs(
+                    activeTab: _activeTab,
+                    onTabChanged: (tab) => setState(() => _activeTab = tab),
+                  ).fadeInSlideUp(delay: const Duration(milliseconds: 200)),
+                ),
+
+                // ── Tab content ──
+                if (_activeTab == ExpertsTabType.doctors) ...[
+                  // Featured doctors
+                  SliverToBoxAdapter(
+                    child: featuredAsync.when(
+                      data: (featured) {
+                        if (featured.isEmpty) return const SizedBox.shrink();
+                        return _FeaturedRow(
+                          doctors: featured,
+                          onDoctorTap: _navigateToDetail,
+                          onBookTap: _navigateToBooking,
+                        );
+                      },
+                      loading: () => const _FeaturedRowSkeleton(),
+                      error: (_, __) => const SizedBox.shrink(),
                     ),
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
                   ),
-                ),
-              ),
 
-              // Doctors list
-              _buildExpertsList(expertsAsync),
-            ] else if (_activeTab == ExpertsTabType.allExperts) ...[
-              // Filter tabs for all experts
-              SliverToBoxAdapter(
-                child: _FilterTabs(
-                  selectedSpecialization: _selectedSpecialization,
-                  onSpecializationChanged: (spec) {
-                    setState(() => _selectedSpecialization = spec);
-                    ref.read(expertFilterProvider.notifier).setSpecialization(spec);
-                  },
-                ),
-              ),
-
-              // All experts header
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-                  child: expertsAsync.when(
-                    data: (experts) => Text(
-                      '${experts.length} ${'expert'.tr(context)}${experts.length != 1 ? 's' : ''} ${'available'.tr(context)}',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                  // Filter chips
+                  SliverToBoxAdapter(
+                    child: _FilterChips(
+                      selected: _selectedSpecialization,
+                      onChanged: (spec) {
+                        setState(() => _selectedSpecialization = spec);
+                        ref.read(expertFilterProvider.notifier).setSpecialization(spec);
+                      },
                     ),
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
                   ),
-                ),
-              ),
 
-              // All experts list
-              _buildExpertsList(expertsAsync),
-            ] else ...[
-              // My Bookings tab
-              const SliverToBoxAdapter(
-                child: _MyBookingsSection(),
-              ),
-            ],
+                  // Count
+                  SliverToBoxAdapter(
+                    child: _CountLabel(
+                      expertsAsync: expertsAsync,
+                      noun: 'doctor',
+                    ),
+                  ),
 
-            // Bottom padding
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 120),
+                  // List
+                  _buildExpertsList(expertsAsync),
+                ] else if (_activeTab == ExpertsTabType.allExperts) ...[
+                  // Filter chips
+                  SliverToBoxAdapter(
+                    child: _FilterChips(
+                      selected: _selectedSpecialization,
+                      onChanged: (spec) {
+                        setState(() => _selectedSpecialization = spec);
+                        ref.read(expertFilterProvider.notifier).setSpecialization(spec);
+                      },
+                    ),
+                  ),
+
+                  // Count
+                  SliverToBoxAdapter(
+                    child: _CountLabel(
+                      expertsAsync: expertsAsync,
+                      noun: 'expert',
+                    ),
+                  ),
+
+                  // List
+                  _buildExpertsList(expertsAsync),
+                ] else ...[
+                  // Bookings
+                  const SliverToBoxAdapter(child: _MyBookingsSection()),
+                ],
+
+                // Bottom padding
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
     );
   }
 
-  /// Build experts list sliver
   Widget _buildExpertsList(AsyncValue<List<Expert>> expertsAsync) {
     return expertsAsync.when(
       data: (experts) {
@@ -194,12 +197,11 @@ class _ExpertsScreenState extends ConsumerState<ExpertsScreen> {
             ),
           );
         }
-
         return SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverList.separated(
             itemCount: experts.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final expert = experts[index];
               return ExpertCard(
@@ -207,6 +209,9 @@ class _ExpertsScreenState extends ConsumerState<ExpertsScreen> {
                 variant: ExpertCardVariant.defaultCard,
                 onTap: () => _navigateToDetail(expert),
                 onBook: () => _navigateToBooking(expert),
+              ).fadeInSlideUp(
+                delay: Duration(milliseconds: 50 * index),
+                duration: const Duration(milliseconds: 350),
               );
             },
           ),
@@ -216,7 +221,7 @@ class _ExpertsScreenState extends ConsumerState<ExpertsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         sliver: SliverList.separated(
           itemCount: 4,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (_, __) => const _ExpertCardSkeleton(),
         ),
       ),
@@ -238,215 +243,144 @@ class _ExpertsScreenState extends ConsumerState<ExpertsScreen> {
   }
 }
 
-/// Dashboard-inspired hero section for Expert Consultations.
-///
-/// Clean, minimal design with title, subtitle, Lottie animation,
-/// and flat search bar matching the dashboard greeting section style.
-class _ExpertsHero extends StatefulWidget {
-  final ValueChanged<String> onSearch;
-  final TextEditingController searchController;
+// ═══════════════════════════════════════════════════════════════════════════
+// TOP BANNER — dark brown card with decorative accents
+// ═══════════════════════════════════════════════════════════════════════════
 
-  const _ExpertsHero({
-    required this.onSearch,
-    required this.searchController,
-  });
-
-  @override
-  State<_ExpertsHero> createState() => _ExpertsHeroState();
-}
-
-class _ExpertsHeroState extends State<_ExpertsHero> {
-  final _focusNode = FocusNode();
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
+class _TopBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      margin: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        color: AppColors.darkBrown,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0D9488).withAlpha(30),
-            blurRadius: 16,
+            color: AppColors.primaryDark.withValues(alpha: 0.18),
+            blurRadius: 20,
             offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Stack(
         children: [
-          // Background gradient
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0D9488), // teal-600
-                  Color(0xFF14B8A6), // teal-500
-                  Color(0xFF0F766E), // teal-700
-                ],
-                stops: [0.0, 0.5, 1.0],
-              ),
-            ),
-          ),
-          // Decorative circle
+          // Decorative — thin arc top-right
           Positioned(
-            top: -30,
-            right: -20,
+            top: -40,
+            right: -30,
             child: Container(
-              width: 120,
-              height: 120,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  width: 1.5,
+                ),
               ),
             ),
           ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title row with icon
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Expert Consultations'.tr(context),
-                            style: AppTextStyles.displayMedium.copyWith(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              height: 1.2,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Get guidance from verified professionals'.tr(context),
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              fontSize: 14,
-                              color: Colors.white.withValues(alpha: 0.85),
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      width: 64,
-                      height: 64,
-                      child: Lottie.asset(
-                        'assets/animations/computer.json',
-                        fit: BoxFit.contain,
-                        repeat: true,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Icon(
-                              LucideIcons.stethoscope,
-                              size: 30,
-                              color: Colors.white.withValues(alpha: 0.9),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                // Stats pills
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _StatPill(icon: LucideIcons.users, label: 'Verified'.tr(context), value: '500+'),
-                    _StatPill(icon: LucideIcons.star, label: 'Rating'.tr(context), value: '4.9'),
-                    _StatPill(icon: LucideIcons.zap, label: 'Sessions'.tr(context), value: '10K+'),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                // Search bar
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 14),
-                        child: Icon(
-                          LucideIcons.search,
-                          size: 20,
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-                      Expanded(
-                        child: TextField(
-                          controller: widget.searchController,
-                          focusNode: _focusNode,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            fontSize: 15,
-                            color: Colors.white,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Search experts, specializations...'.tr(context),
-                            hintStyle: AppTextStyles.bodyMedium.copyWith(
-                              fontSize: 14,
-                              color: Colors.white.withValues(alpha: 0.6),
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                            isDense: true,
-                          ),
-                          onChanged: (value) {
-                            widget.onSearch(value);
-                            setState(() {});
-                          },
-                        ),
-                      ),
-                      if (widget.searchController.text.isNotEmpty)
-                        GestureDetector(
-                          onTap: () {
-                            widget.searchController.clear();
-                            widget.onSearch('');
-                            setState(() {});
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            child: Container(
-                              padding: const EdgeInsets.all(5),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                LucideIcons.x,
-                                size: 14,
-                                color: Colors.white.withValues(alpha: 0.8),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
+          // Decorative — small filled circle bottom-right
+          Positioned(
+            bottom: -20,
+            right: 30,
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.04),
+              ),
             ),
+          ),
+          // Decorative — tiny dot top-left area
+          Positioned(
+            top: 8,
+            right: 60,
+            child: Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.12),
+              ),
+            ),
+          ),
+
+          // Content
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Availability pill
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Experts Online'.tr(context),
+                  style: AppTextStyles.labelSmall.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Title
+              Text(
+                'Expert Consultations'.tr(context),
+                style: AppTextStyles.headingMedium.copyWith(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+
+              // Subtitle
+              Text(
+                'Get guidance from verified professionals'.tr(context),
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontSize: 13,
+                  color: Colors.white.withValues(alpha: 0.65),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Stats pills — glass morphed with colorful icons
+              Row(
+                children: [
+                  _BannerStatPill(
+                    icon: LucideIcons.shieldCheck,
+                    iconColors: [_kTeal1, _kTeal2],
+                    value: '500+',
+                    label: 'Verified'.tr(context),
+                  ),
+                  const SizedBox(width: 8),
+                  _BannerStatPill(
+                    icon: LucideIcons.star,
+                    iconColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)],
+                    value: '4.9',
+                    label: 'Rating'.tr(context),
+                  ),
+                  const SizedBox(width: 8),
+                  _BannerStatPill(
+                    icon: LucideIcons.zap,
+                    iconColors: [const Color(0xFF3B82F6), const Color(0xFF6366F1)],
+                    value: '10K+',
+                    label: 'Sessions'.tr(context),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -454,59 +388,193 @@ class _ExpertsHeroState extends State<_ExpertsHero> {
   }
 }
 
-/// Stat pill for the teal hero section.
-class _StatPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
+// ═══════════════════════════════════════════════════════════════════════════
+// FLOATING SEARCH BAR — neutral white, brown accents
+// ═══════════════════════════════════════════════════════════════════════════
 
-  const _StatPill({
-    required this.icon,
-    required this.label,
-    required this.value,
+class _FloatingSearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  const _FloatingSearchBar({
+    required this.controller,
+    required this.focusNode,
+    required this.onChanged,
+    required this.onClear,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.9)),
-          const SizedBox(width: 6),
-          Text(
-            value,
-            style: AppTextStyles.labelSmall.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.border.withValues(alpha: 0.15),
           ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: AppTextStyles.labelSmall.copyWith(
-              fontSize: 11,
-              color: Colors.white.withValues(alpha: 0.7),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
-          ),
-        ],
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Icon(
+                LucideIcons.search,
+                size: 18,
+                color: AppColors.textTertiary,
+              ),
+            ),
+            Expanded(
+              child: TextField(
+                controller: controller,
+                focusNode: focusNode,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search experts, specializations...'.tr(context),
+                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                    fontSize: 13,
+                    color: AppColors.textTertiary.withValues(alpha: 0.7),
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
+                  isDense: true,
+                ),
+                onChanged: onChanged,
+              ),
+            ),
+            if (controller.text.isNotEmpty)
+              GestureDetector(
+                onTap: onClear,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      LucideIcons.x,
+                      size: 13,
+                      color: AppColors.primary.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Main tabs - Doctors / All Experts / My Bookings (matching web design)
-class _MainTabs extends StatelessWidget {
+// ═══════════════════════════════════════════════════════════════════════════
+// BANNER STAT PILL — glass morphed pill for dark banner background
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _BannerStatPill extends StatelessWidget {
+  final IconData icon;
+  final List<Color> iconColors;
+  final String value;
+  final String label;
+
+  const _BannerStatPill({
+    required this.icon,
+    required this.iconColors,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.08),
+          ),
+        ),
+        child: Row(
+          children: [
+            // Colorful gradient icon
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: iconColors),
+                borderRadius: BorderRadius.circular(6),
+                boxShadow: [
+                  BoxShadow(
+                    color: iconColors.first.withValues(alpha: 0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(icon, size: 10, color: Colors.white),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    label,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      fontSize: 9,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PILL TABS — coffee brown active state
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _PillTabs extends StatelessWidget {
   final ExpertsTabType activeTab;
   final ValueChanged<ExpertsTabType> onTabChanged;
 
-  const _MainTabs({
+  const _PillTabs({
     required this.activeTab,
     required this.onTabChanged,
   });
@@ -520,29 +588,23 @@ class _MainTabs extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          color: Colors.white.withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.2),
-            width: 1,
+            color: Colors.white.withValues(alpha: 0.5),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(5),
+        padding: const EdgeInsets.all(4),
         child: Row(
           children: tabs.map((tab) {
             final isSelected = activeTab == tab.type;
@@ -552,24 +614,21 @@ class _MainTabs extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
                     gradient: isSelected
-                        ? const LinearGradient(
+                        ? LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF0D9488), // teal-600
-                              Color(0xFF0F766E), // teal-700
-                            ],
+                            colors: [AppColors.darkBrown, AppColors.primary],
                           )
                         : null,
                     color: isSelected ? null : Colors.transparent,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: const Color(0xFF0D9488).withValues(alpha: 0.3),
+                              color: AppColors.primary.withValues(alpha: 0.25),
                               blurRadius: 10,
                               offset: const Offset(0, 3),
                             ),
@@ -581,7 +640,7 @@ class _MainTabs extends StatelessWidget {
                     children: [
                       Icon(
                         tab.icon,
-                        size: 16,
+                        size: 15,
                         color: isSelected ? Colors.white : AppColors.textTertiary,
                       ),
                       const SizedBox(width: 6),
@@ -609,23 +668,26 @@ class _MainTabs extends StatelessWidget {
   }
 }
 
-/// Featured doctors carousel with auto-slide and large doctor cards
-class _FeaturedDoctorsCarousel extends StatefulWidget {
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURED DOCTORS ROW
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _FeaturedRow extends StatefulWidget {
   final List<Expert> doctors;
   final void Function(Expert) onDoctorTap;
   final void Function(Expert) onBookTap;
 
-  const _FeaturedDoctorsCarousel({
+  const _FeaturedRow({
     required this.doctors,
     required this.onDoctorTap,
     required this.onBookTap,
   });
 
   @override
-  State<_FeaturedDoctorsCarousel> createState() => _FeaturedDoctorsCarouselState();
+  State<_FeaturedRow> createState() => _FeaturedRowState();
 }
 
-class _FeaturedDoctorsCarouselState extends State<_FeaturedDoctorsCarousel> {
+class _FeaturedRowState extends State<_FeaturedRow> {
   late PageController _pageController;
   int _currentIndex = 0;
   Timer? _autoSlideTimer;
@@ -633,7 +695,7 @@ class _FeaturedDoctorsCarouselState extends State<_FeaturedDoctorsCarousel> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.92);
+    _pageController = PageController(viewportFraction: 0.88);
     _startAutoSlide();
   }
 
@@ -647,18 +709,16 @@ class _FeaturedDoctorsCarouselState extends State<_FeaturedDoctorsCarousel> {
   void _startAutoSlide() {
     _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (widget.doctors.isEmpty) return;
-      final nextIndex = (_currentIndex + 1) % widget.doctors.length;
+      final next = (_currentIndex + 1) % widget.doctors.length;
       _pageController.animateToPage(
-        nextIndex,
+        next,
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutCubic,
       );
     });
   }
 
-  void _pauseAutoSlide() {
-    _autoSlideTimer?.cancel();
-  }
+  void _pauseAutoSlide() => _autoSlideTimer?.cancel();
 
   void _resumeAutoSlide() {
     _autoSlideTimer?.cancel();
@@ -672,51 +732,44 @@ class _FeaturedDoctorsCarouselState extends State<_FeaturedDoctorsCarousel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section header
+        // Section title
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
           child: Row(
             children: [
+              // Amber pop icon (wallet pattern)
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
                   ),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
                       blurRadius: 8,
-                      offset: const Offset(0, 3),
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: Icon(
-                  LucideIcons.sparkles,
-                  size: 18,
-                  color: Colors.white,
+                child: const Icon(LucideIcons.sparkles, size: 14, color: Colors.white),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Featured Doctors'.tr(context),
+                style: AppTextStyles.labelLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
                 ),
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Featured Doctors'.tr(context),
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    'Top-rated medical professionals'.tr(context),
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+              const Spacer(),
+              Text(
+                '${_currentIndex + 1}/${widget.doctors.length}',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textTertiary,
+                  fontSize: 11,
+                ),
               ),
             ],
           ),
@@ -728,15 +781,15 @@ class _FeaturedDoctorsCarouselState extends State<_FeaturedDoctorsCarousel> {
           onPanEnd: (_) => _resumeAutoSlide(),
           onPanCancel: () => _resumeAutoSlide(),
           child: SizedBox(
-            height: 260,
+            height: 220,
             child: PageView.builder(
               controller: _pageController,
               itemCount: widget.doctors.length,
-              onPageChanged: (index) => setState(() => _currentIndex = index),
+              onPageChanged: (i) => setState(() => _currentIndex = i),
               itemBuilder: (context, index) {
                 final doctor = widget.doctors[index];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
                   child: _FeaturedDoctorCard(
                     doctor: doctor,
                     onTap: () => widget.onDoctorTap(doctor),
@@ -748,22 +801,24 @@ class _FeaturedDoctorsCarouselState extends State<_FeaturedDoctorsCarousel> {
           ),
         ),
 
-        // Progress dots
+        // Dots — brown palette
         if (widget.doctors.length > 1)
           Padding(
-            padding: const EdgeInsets.only(top: 12),
+            padding: const EdgeInsets.only(top: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(widget.doctors.length, (index) {
-                final isActive = index == _currentIndex;
+              children: List.generate(widget.doctors.length, (i) {
+                final isActive = i == _currentIndex;
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: isActive ? 24 : 8,
-                  height: 8,
+                  width: isActive ? 20 : 6,
+                  height: 6,
                   decoration: BoxDecoration(
-                    color: isActive ? AppColors.primary : AppColors.border,
-                    borderRadius: BorderRadius.circular(4),
+                    color: isActive
+                        ? AppColors.primary
+                        : AppColors.border.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 );
               }),
@@ -774,7 +829,7 @@ class _FeaturedDoctorsCarouselState extends State<_FeaturedDoctorsCarousel> {
   }
 }
 
-/// Featured doctor card - large, prominent, glassmorphic
+/// Featured doctor card — warm white card with subtle brown tint.
 class _FeaturedDoctorCard extends StatelessWidget {
   final Expert doctor;
   final VoidCallback onTap;
@@ -791,26 +846,32 @@ class _FeaturedDoctorCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
+          // Subtle warm tint — Color.lerp like wallet
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFFFEF7E0).withValues(alpha: 0.9),
+              Color.lerp(Colors.white, AppColors.accent, 0.06)!,
               Colors.white,
             ],
           ),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFFE5D9B6).withValues(alpha: 0.5),
-            width: 1.5,
+            color: AppColors.border.withValues(alpha: 0.12),
+            width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+              color: AppColors.primary.withValues(alpha: 0.08),
               blurRadius: 20,
-              offset: const Offset(0, 8),
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -821,25 +882,25 @@ class _FeaturedDoctorCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Large avatar - doctor as main focus
+                // Avatar
                 Stack(
                   children: [
                     Container(
-                      width: 96,
-                      height: 96,
+                      width: 72,
+                      height: 72,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 3),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
                       child: CircleAvatar(
-                        radius: 46,
+                        radius: 34,
                         backgroundColor: AppColors.primaryLight.withAlpha(50),
                         backgroundImage: doctor.avatar != null
                             ? NetworkImage(doctor.avatar!)
@@ -855,55 +916,54 @@ class _FeaturedDoctorCard extends StatelessWidget {
                             : null,
                       ),
                     ),
-                    // Availability indicator
                     Positioned(
-                      right: 2,
-                      bottom: 2,
+                      right: 1,
+                      bottom: 1,
                       child: Container(
-                        width: 22,
-                        height: 22,
+                        width: 18,
+                        height: 18,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: _getAvailabilityColor(),
-                          border: Border.all(color: Colors.white, width: 3),
+                          color: _availabilityColor,
+                          border: Border.all(color: Colors.white, width: 2.5),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
 
                 // Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Featured badge
+                      // Featured badge — amber gradient
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
                           ),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(LucideIcons.award, size: 12, color: Colors.white),
-                            const SizedBox(width: 4),
+                            const Icon(LucideIcons.award, size: 10, color: Colors.white),
+                            const SizedBox(width: 3),
                             Text(
                               'Featured'.tr(context),
                               style: AppTextStyles.caption.copyWith(
                                 color: Colors.white,
-                                fontSize: 10,
+                                fontSize: 9,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
 
                       // Name
                       Row(
@@ -911,8 +971,8 @@ class _FeaturedDoctorCard extends StatelessWidget {
                           Flexible(
                             child: Text(
                               doctor.name,
-                              style: AppTextStyles.headingMedium.copyWith(
-                                fontSize: 18,
+                              style: AppTextStyles.headingSmall.copyWith(
+                                fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               ),
                               maxLines: 1,
@@ -920,64 +980,64 @@ class _FeaturedDoctorCard extends StatelessWidget {
                             ),
                           ),
                           if (doctor.verified) ...[
-                            const SizedBox(width: 6),
-                            Icon(LucideIcons.badgeCheck, size: 18, color: AppColors.success),
+                            const SizedBox(width: 4),
+                            Icon(LucideIcons.badgeCheck, size: 16, color: AppColors.success),
                           ],
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
 
                       // Designation
                       Text(
                         doctor.designation,
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textSecondary,
-                          fontSize: 13,
+                          fontSize: 12,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
 
-                      // Rating and sessions
+                      // Rating
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppColors.warning.withAlpha(30),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.warning.withAlpha(50)),
+                              color: AppColors.warning.withAlpha(25),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(LucideIcons.star, size: 14, color: AppColors.warning),
-                                const SizedBox(width: 4),
+                                Icon(LucideIcons.star, size: 12, color: AppColors.warning),
+                                const SizedBox(width: 3),
                                 Text(
                                   doctor.ratingString,
                                   style: AppTextStyles.labelSmall.copyWith(
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
+                                    fontSize: 11,
                                   ),
                                 ),
                                 Text(
                                   ' (${doctor.reviewCount})',
                                   style: AppTextStyles.caption.copyWith(
                                     color: AppColors.textTertiary,
-                                    fontSize: 10,
+                                    fontSize: 9,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Icon(LucideIcons.users, size: 14, color: AppColors.textTertiary),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 8),
+                          Icon(LucideIcons.users, size: 12, color: AppColors.textTertiary),
+                          const SizedBox(width: 3),
                           Text(
                             '${doctor.totalSessions}',
-                            style: AppTextStyles.bodySmall.copyWith(
+                            style: AppTextStyles.caption.copyWith(
                               color: AppColors.textSecondary,
+                              fontSize: 11,
                             ),
                           ),
                         ],
@@ -987,9 +1047,9 @@ class _FeaturedDoctorCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const Spacer(),
 
-            // Price and book row
+            // Price + book row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -998,8 +1058,8 @@ class _FeaturedDoctorCard extends StatelessWidget {
                   children: [
                     Text(
                       doctor.priceString,
-                      style: AppTextStyles.headingMedium.copyWith(
-                        fontSize: 24,
+                      style: AppTextStyles.headingSmall.copyWith(
+                        fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: AppColors.primary,
                       ),
@@ -1008,24 +1068,38 @@ class _FeaturedDoctorCard extends StatelessWidget {
                       'per session'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.textTertiary,
-                        fontSize: 11,
+                        fontSize: 10,
                       ),
                     ),
                   ],
                 ),
+                // Book button — coffee brown
                 Material(
-                  color: AppColors.darkBrown,
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.transparent,
                   child: InkWell(
                     onTap: onBook,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.darkBrown, AppColors.primary],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
                       child: Text(
-                        'Book Consultation'.tr(context),
+                        'Book Now'.tr(context),
                         style: AppTextStyles.labelMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
+                          fontSize: 13,
                         ),
                       ),
                     ),
@@ -1039,7 +1113,7 @@ class _FeaturedDoctorCard extends StatelessWidget {
     );
   }
 
-  Color _getAvailabilityColor() {
+  Color get _availabilityColor {
     switch (doctor.availability) {
       case ExpertAvailability.available:
         return AppColors.success;
@@ -1051,43 +1125,157 @@ class _FeaturedDoctorCard extends StatelessWidget {
   }
 }
 
-/// Carousel skeleton loader
-class _CarouselSkeleton extends StatelessWidget {
-  const _CarouselSkeleton();
+// ═══════════════════════════════════════════════════════════════════════════
+// FILTER CHIPS — coffee brown selected state
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _FilterChips extends StatelessWidget {
+  final ExpertSpecialization? selected;
+  final ValueChanged<ExpertSpecialization?> onChanged;
+
+  const _FilterChips({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  static const _specs = [
+    null,
+    ExpertSpecialization.academicWriting,
+    ExpertSpecialization.researchMethodology,
+    ExpertSpecialization.dataAnalysis,
+    ExpertSpecialization.programming,
+    ExpertSpecialization.business,
+    ExpertSpecialization.careerCounseling,
+  ];
+
+  IconData _icon(ExpertSpecialization? s) {
+    if (s == null) return LucideIcons.layoutGrid;
+    switch (s) {
+      case ExpertSpecialization.academicWriting:
+        return LucideIcons.penTool;
+      case ExpertSpecialization.researchMethodology:
+        return LucideIcons.microscope;
+      case ExpertSpecialization.dataAnalysis:
+        return LucideIcons.barChart3;
+      case ExpertSpecialization.programming:
+        return LucideIcons.code2;
+      case ExpertSpecialization.business:
+        return LucideIcons.briefcase;
+      case ExpertSpecialization.careerCounseling:
+        return LucideIcons.compass;
+      default:
+        return LucideIcons.circle;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(20, 16, 20, 12),
-          child: SkeletonLoader(height: 20, width: 180),
-        ),
-        SizedBox(
-          height: 260,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceLight,
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: const Center(
-                child: SkeletonLoader(height: 200, width: double.infinity),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: _specs.asMap().entries.map((entry) {
+          final index = entry.key;
+          final spec = entry.value;
+          final isSelected = selected == spec;
+          final label = spec?.label.tr(context) ?? 'All'.tr(context);
+
+          return Padding(
+            padding: EdgeInsets.only(
+              right: index < _specs.length - 1 ? 8 : 0,
+            ),
+            child: GestureDetector(
+              onTap: () => onChanged(selected == spec ? null : spec),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary.withValues(alpha: 0.1)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.3)
+                        : AppColors.border.withValues(alpha: 0.3),
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.08),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _icon(spec),
+                      size: 14,
+                      color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ),
-      ],
+          );
+        }).toList(),
+      ),
     );
   }
 }
 
-/// Booking tab types
+// ═══════════════════════════════════════════════════════════════════════════
+// COUNT LABEL
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _CountLabel extends StatelessWidget {
+  final AsyncValue<List<Expert>> expertsAsync;
+  final String noun;
+
+  const _CountLabel({required this.expertsAsync, required this.noun});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+      child: expertsAsync.when(
+        data: (experts) => Text(
+          '${experts.length} ${noun.tr(context)}${experts.length != 1 ? 's' : ''} ${'available'.tr(context)}',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+            fontSize: 12,
+          ),
+        ),
+        loading: () => const SizedBox.shrink(),
+        error: (_, __) => const SizedBox.shrink(),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MY BOOKINGS SECTION
+// ═══════════════════════════════════════════════════════════════════════════
+
 enum _BookingTabType { upcoming, completed, cancelled }
 
-/// My Bookings section with sub-tabs (Upcoming / Completed / Cancelled)
 class _MyBookingsSection extends StatefulWidget {
   const _MyBookingsSection();
 
@@ -1105,21 +1293,18 @@ class _MyBookingsSectionState extends State<_MyBookingsSection> {
       child: Column(
         children: [
           const SizedBox(height: 8),
-          // Sub-tabs - glassmorphic container
           _BookingSubTabs(
             activeTab: _activeTab,
             onTabChanged: (tab) => setState(() => _activeTab = tab),
           ),
           const SizedBox(height: 20),
-          // Content based on tab
-          _BookingTabContent(activeTab: _activeTab),
+          _BookingEmptyState(tabType: _activeTab),
         ],
       ),
     );
   }
 }
 
-/// Sub-tabs for bookings (Upcoming / Completed / Cancelled)
 class _BookingSubTabs extends StatelessWidget {
   final _BookingTabType activeTab;
   final ValueChanged<_BookingTabType> onTabChanged;
@@ -1140,20 +1325,19 @@ class _BookingSubTabs extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.5),
-          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(6),
+      padding: const EdgeInsets.all(4),
       child: Row(
         children: tabs.map((tab) {
           final isSelected = activeTab == tab.type;
@@ -1163,10 +1347,10 @@ class _BookingSubTabs extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 11),
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
@@ -1182,10 +1366,10 @@ class _BookingSubTabs extends StatelessWidget {
                   children: [
                     Icon(
                       tab.icon,
-                      size: 16,
+                      size: 14,
                       color: isSelected ? Colors.white : AppColors.textSecondary,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 5),
                     Flexible(
                       child: Text(
                         tab.label,
@@ -1209,21 +1393,6 @@ class _BookingSubTabs extends StatelessWidget {
   }
 }
 
-/// Content for each booking tab
-class _BookingTabContent extends StatelessWidget {
-  final _BookingTabType activeTab;
-
-  const _BookingTabContent({required this.activeTab});
-
-  @override
-  Widget build(BuildContext context) {
-    // TODO: Connect to actual bookings provider
-    // For now, show empty state
-    return _BookingEmptyState(tabType: activeTab);
-  }
-}
-
-/// Empty state for booking tabs
 class _BookingEmptyState extends StatelessWidget {
   final _BookingTabType tabType;
 
@@ -1273,38 +1442,30 @@ class _BookingEmptyState extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(20),
+              color: AppColors.primary.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.5),
-                width: 1,
+                color: AppColors.primary.withValues(alpha: 0.1),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
             child: Icon(
               _icon,
-              size: 28,
-              color: AppColors.textSecondary,
+              size: 26,
+              color: AppColors.textTertiary,
             ),
           ),
           const SizedBox(height: 20),
           Text(
             _title(context),
             style: AppTextStyles.headingSmall.copyWith(
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             _description(context),
             style: AppTextStyles.bodyMedium.copyWith(
@@ -1319,192 +1480,12 @@ class _BookingEmptyState extends StatelessWidget {
   }
 }
 
-/// Capsule-style filter tabs for specializations matching Campus Connect.
-class _FilterTabs extends StatelessWidget {
-  final ExpertSpecialization? selectedSpecialization;
-  final ValueChanged<ExpertSpecialization?> onSpecializationChanged;
+// ═══════════════════════════════════════════════════════════════════════════
+// SKELETONS
+// ═══════════════════════════════════════════════════════════════════════════
 
-  const _FilterTabs({
-    required this.selectedSpecialization,
-    required this.onSpecializationChanged,
-  });
-
-  static const _displaySpecializations = [
-    null, // All
-    ExpertSpecialization.academicWriting,
-    ExpertSpecialization.researchMethodology,
-    ExpertSpecialization.dataAnalysis,
-    ExpertSpecialization.programming,
-    ExpertSpecialization.business,
-    ExpertSpecialization.careerCounseling,
-  ];
-
-  IconData _getIcon(ExpertSpecialization? spec) {
-    if (spec == null) return LucideIcons.layoutGrid;
-    switch (spec) {
-      case ExpertSpecialization.academicWriting:
-        return LucideIcons.penTool;
-      case ExpertSpecialization.researchMethodology:
-        return LucideIcons.microscope;
-      case ExpertSpecialization.dataAnalysis:
-        return LucideIcons.barChart3;
-      case ExpertSpecialization.programming:
-        return LucideIcons.code2;
-      case ExpertSpecialization.business:
-        return LucideIcons.briefcase;
-      case ExpertSpecialization.careerCounseling:
-        return LucideIcons.compass;
-      default:
-        return LucideIcons.circle;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: _displaySpecializations.asMap().entries.map((entry) {
-          final index = entry.key;
-          final spec = entry.value;
-          final isSelected = selectedSpecialization == spec;
-          final label = spec?.label.tr(context) ?? 'All'.tr(context);
-
-          final bgColor = isSelected
-              ? AppColors.primary.withValues(alpha: 0.1)
-              : AppColors.surfaceLight;
-          final borderColor = isSelected
-              ? AppColors.primary.withValues(alpha: 0.3)
-              : AppColors.border.withValues(alpha: 0.5);
-          final textColor = isSelected ? AppColors.primary : AppColors.textSecondary;
-          final iconColor = isSelected ? AppColors.primary : AppColors.textTertiary;
-
-          return Padding(
-            padding: EdgeInsets.only(
-              right: index < _displaySpecializations.length - 1 ? 8 : 0,
-            ),
-            child: GestureDetector(
-              onTap: () => onSpecializationChanged(
-                selectedSpecialization == spec ? null : spec,
-              ),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(20), // Capsule shape
-                  border: Border.all(
-                    color: borderColor,
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _getIcon(spec),
-                      size: 14,
-                      color: iconColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      label,
-                      style: AppTextStyles.labelMedium.copyWith(
-                        fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: textColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-/// Featured experts section.
-class _FeaturedSection extends StatelessWidget {
-  final List<Expert> experts;
-
-  const _FeaturedSection({required this.experts});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    LucideIcons.award,
-                    size: 18,
-                    color: AppColors.warning,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Featured Experts'.tr(context),
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              GestureDetector(
-                onTap: () {
-                  // See all featured
-                },
-                child: Text(
-                  'See all'.tr(context),
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 220,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: experts.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final expert = experts[index];
-              return SizedBox(
-                width: 260,
-                child: ExpertCard(
-                  expert: expert,
-                  variant: ExpertCardVariant.compact,
-                  onTap: () => context.push('/experts/${expert.id}'),
-                  onBook: () => context.push('/experts/${expert.id}/book'),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Featured section skeleton.
-class _FeaturedSectionSkeleton extends StatelessWidget {
-  const _FeaturedSectionSkeleton();
+class _FeaturedRowSkeleton extends StatelessWidget {
+  const _FeaturedRowSkeleton();
 
   @override
   Widget build(BuildContext context) {
@@ -1512,19 +1493,21 @@ class _FeaturedSectionSkeleton extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.fromLTRB(20, 16, 20, 12),
-          child: SkeletonLoader(height: 20, width: 150),
+          padding: EdgeInsets.fromLTRB(20, 16, 20, 10),
+          child: SkeletonLoader(height: 18, width: 160),
         ),
         SizedBox(
-          height: 200,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
+          height: 220,
+          child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: 3,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (_, __) => const SizedBox(
-              width: 260,
-              child: _ExpertCardSkeleton(),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Center(
+                child: SkeletonLoader(height: 180, width: double.infinity),
+              ),
             ),
           ),
         ),
@@ -1533,7 +1516,6 @@ class _FeaturedSectionSkeleton extends StatelessWidget {
   }
 }
 
-/// Expert card skeleton.
 class _ExpertCardSkeleton extends StatelessWidget {
   const _ExpertCardSkeleton();
 
@@ -1576,7 +1558,10 @@ class _ExpertCardSkeleton extends StatelessWidget {
   }
 }
 
-/// Empty state widget with polished design.
+// ═══════════════════════════════════════════════════════════════════════════
+// EMPTY STATE
+// ═══════════════════════════════════════════════════════════════════════════
+
 class _EmptyState extends StatelessWidget {
   final bool hasFilters;
   final VoidCallback onClearFilters;
@@ -1594,10 +1579,9 @@ class _EmptyState extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.2),
-            width: 1,
+            color: AppColors.border.withValues(alpha: 0.15),
           ),
           boxShadow: [
             BoxShadow(
@@ -1611,8 +1595,8 @@ class _EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -1622,61 +1606,59 @@ class _EmptyState extends StatelessWidget {
                     AppColors.accent.withValues(alpha: 0.1),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(22),
                 border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  width: 1,
+                  color: AppColors.primary.withValues(alpha: 0.08),
                 ),
               ),
               child: Icon(
                 hasFilters ? LucideIcons.filterX : LucideIcons.graduationCap,
-                size: 36,
+                size: 32,
                 color: AppColors.textTertiary,
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              hasFilters ? 'No experts found'.tr(context) : 'No experts available'.tr(context),
+              hasFilters
+                  ? 'No experts found'.tr(context)
+                  : 'No experts available'.tr(context),
               style: AppTextStyles.headingSmall.copyWith(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               hasFilters
                   ? 'Try adjusting your filters or search query'.tr(context)
                   : 'Check back later for available experts'.tr(context),
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textTertiary,
-                fontSize: 14,
+                fontSize: 13,
               ),
               textAlign: TextAlign.center,
             ),
             if (hasFilters) ...[
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
               Material(
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: onClearFilters,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 14,
+                      horizontal: 24,
+                      vertical: 12,
                     ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          AppColors.darkBrown,
-                          AppColors.primary,
-                        ],
+                        colors: [AppColors.darkBrown, AppColors.primary],
                       ),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.25),
+                          color: AppColors.primary.withValues(alpha: 0.2),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -1685,11 +1667,7 @@ class _EmptyState extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          LucideIcons.filterX,
-                          color: Colors.white,
-                          size: 18,
-                        ),
+                        const Icon(LucideIcons.filterX, color: Colors.white, size: 16),
                         const SizedBox(width: 8),
                         Text(
                           'Clear Filters'.tr(context),
@@ -1711,7 +1689,10 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// Error state widget.
+// ═══════════════════════════════════════════════════════════════════════════
+// ERROR STATE
+// ═══════════════════════════════════════════════════════════════════════════
+
 class _ErrorState extends StatelessWidget {
   final String error;
   final VoidCallback onRetry;
@@ -1734,14 +1715,14 @@ class _ErrorState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: AppColors.errorLight,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 LucideIcons.alertCircle,
-                size: 48,
+                size: 40,
                 color: AppColors.error,
               ),
             ),
@@ -1749,10 +1730,11 @@ class _ErrorState extends StatelessWidget {
             Text(
               'Something went wrong'.tr(context),
               style: AppTextStyles.headingSmall.copyWith(
+                fontSize: 17,
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               error,
               style: AppTextStyles.bodySmall.copyWith(
@@ -1764,8 +1746,7 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Material(
-              color: AppColors.darkBrown,
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.transparent,
               child: InkWell(
                 onTap: onRetry,
                 borderRadius: BorderRadius.circular(12),
@@ -1774,14 +1755,23 @@ class _ErrorState extends StatelessWidget {
                     horizontal: 24,
                     vertical: 12,
                   ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.darkBrown, AppColors.primary],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        LucideIcons.refreshCw,
-                        color: Colors.white,
-                        size: 18,
-                      ),
+                      const Icon(LucideIcons.refreshCw, color: Colors.white, size: 16),
                       const SizedBox(width: 8),
                       Text(
                         'Try Again'.tr(context),

@@ -131,7 +131,7 @@ export default function ActivationLayout({
                     <div
                       className={cn(
                         'w-16 sm:w-24 h-1 mx-2 rounded-full transition-colors',
-                        step.id < currentStep ? 'bg-green-500' : 'bg-muted'
+                        getStepStatus(step.id) === 'completed' ? 'bg-green-500' : 'bg-muted'
                       )}
                     />
                   )}

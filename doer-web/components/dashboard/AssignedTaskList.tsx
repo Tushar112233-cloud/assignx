@@ -79,12 +79,14 @@ export function AssignedTaskList({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-12 text-center"
+            className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white/60 py-10 text-center"
           >
-            <ClipboardList className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-medium text-lg">No assigned tasks</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Tasks assigned to you by supervisors will appear here
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EFEBFF] mb-3">
+              <ClipboardList className="h-5 w-5 text-[#7C3AED]" />
+            </div>
+            <h3 className="font-semibold text-sm text-slate-700">No assigned tasks yet</h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-[260px]">
+              Your supervisor will assign tasks here. In the meantime, check the Open Pool for available work.
             </p>
           </motion.div>
         )}

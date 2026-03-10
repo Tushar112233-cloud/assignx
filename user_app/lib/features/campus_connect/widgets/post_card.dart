@@ -6,50 +6,58 @@ import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/marketplace_model.dart';
 import 'like_button.dart';
 
-/// Base card wrapper with consistent elevated styling, clean shadows,
-/// and rounded corners for a premium feel.
+// ─────────────────────────────────────────────────────────────
+// Base card — clean, minimal, coffee brown accent
+// ─────────────────────────────────────────────────────────────
+
 class _BasePostCard extends StatelessWidget {
   final Widget child;
   final VoidCallback? onTap;
+  final Color? leftAccent;
 
   const _BasePostCard({
     required this.child,
     this.onTap,
+    this.leftAccent,
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       elevation: 0,
       child: Ink(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.3),
+            color: AppColors.border.withValues(alpha: 0.25),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: Colors.black.withAlpha(4),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
+              color: Colors.black.withAlpha(6),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: child,
+            borderRadius: BorderRadius.circular(16),
+            child: leftAccent != null
+                ? IntrinsicHeight(
+                    child: Row(
+                      children: [
+                        Container(width: 3, color: leftAccent),
+                        Expanded(child: child),
+                      ],
+                    ),
+                  )
+                : child,
           ),
         ),
       ),
@@ -57,10 +65,10 @@ class _BasePostCard extends StatelessWidget {
   }
 }
 
-/// Discussion/Community post card (Type 1: Simple with icon area).
-///
-/// Features a colorful gradient icon area, title, subtitle, footer with
-/// avatar + category tag, and like/comment buttons.
+// ─────────────────────────────────────────────────────────────
+// Discussion / Community Post Card
+// ─────────────────────────────────────────────────────────────
+
 class DiscussionPostCard extends StatelessWidget {
   final MarketplaceListing listing;
   final VoidCallback? onTap;
@@ -79,17 +87,17 @@ class DiscussionPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconData = _getIconForTitle(listing.title);
     final gradientColors = _getGradientForTitle(listing.title);
+    final iconData = _getIconForTitle(listing.title);
 
     return _BasePostCard(
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Gradient icon area
+          // Compact gradient header with icon
           Container(
-            height: 100,
+            height: 80,
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -98,53 +106,30 @@ class DiscussionPostCard extends StatelessWidget {
                 colors: gradientColors,
               ),
             ),
-            child: Stack(
-              children: [
-                // Subtle pattern overlay
-                Positioned(
-                  right: -10,
-                  top: -10,
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                  ),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(
-                      iconData,
-                      size: 28,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
+                child: Icon(iconData, size: 24, color: Colors.white),
+              ),
             ),
           ),
-
-          // Content
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 Text(
                   listing.title,
                   style: AppTextStyles.labelLarge.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                    fontSize: 14,
                     color: AppColors.textPrimary,
                     letterSpacing: -0.2,
+                    height: 1.3,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -154,60 +139,52 @@ class DiscussionPostCard extends StatelessWidget {
                   Text(
                     listing.description!,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
+                      color: AppColors.textTertiary,
+                      fontSize: 12,
                       height: 1.4,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-
-                const SizedBox(height: 12),
-
-                // Footer row with like and comment
-                Row(
-                  children: [
-                    Expanded(
-                      child: _PostFooter(
-                        userName: listing.userName,
-                        categoryLabel: 'Discussion'.tr(context),
-                        categoryColor: AppColors.categoryOrange,
-                      ),
-                    ),
-                    // Like count
-                    if (listing.likeCount > 0)
-                      CompactLikeButton(
-                        isLiked: isLiked,
-                        likeCount: listing.likeCount,
-                        onToggle: onLike,
-                      ),
-                    // Comment count
-                    if (listing.commentCount > 0) ...[
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: onComment,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.chat_bubble_outline_rounded,
-                              size: 16,
-                              color: AppColors.textTertiary,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              listing.commentCount.toString(),
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.textTertiary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                const SizedBox(height: 10),
+                _PostFooter(
+                  userName: listing.userName,
+                  categoryLabel: 'Discussion'.tr(context),
+                  categoryIconColor: const Color(0xFFF97316),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (listing.likeCount > 0)
+                        CompactLikeButton(
+                          isLiked: isLiked,
+                          likeCount: listing.likeCount,
+                          onToggle: onLike,
                         ),
-                      ),
+                      if (listing.commentCount > 0) ...[
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: onComment,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.chat_bubble_outline_rounded,
+                                  size: 14, color: AppColors.textTertiary),
+                              const SizedBox(width: 3),
+                              Text(
+                                listing.commentCount.toString(),
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textTertiary,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -218,37 +195,38 @@ class DiscussionPostCard extends StatelessWidget {
   }
 
   IconData _getIconForTitle(String title) {
-    final lowerTitle = title.toLowerCase();
-    if (lowerTitle.contains('food') || lowerTitle.contains('cafe')) {
+    final t = title.toLowerCase();
+    if (t.contains('food') || t.contains('cafe')) {
       return Icons.restaurant_outlined;
     }
-    if (lowerTitle.contains('book') || lowerTitle.contains('academic')) {
+    if (t.contains('book') || t.contains('academic')) {
       return Icons.menu_book_outlined;
     }
-    if (lowerTitle.contains('manage') || lowerTitle.contains('coding')) {
+    if (t.contains('manage') || t.contains('coding')) {
       return Icons.code_rounded;
     }
     return Icons.chat_bubble_outline_rounded;
   }
 
   List<Color> _getGradientForTitle(String title) {
-    final lowerTitle = title.toLowerCase();
-    if (lowerTitle.contains('food') || lowerTitle.contains('cafe')) {
-      return [const Color(0xFFFF6B35), const Color(0xFFFF8C42)];
+    final t = title.toLowerCase();
+    if (t.contains('food') || t.contains('cafe')) {
+      return [const Color(0xFFEA580C), const Color(0xFFFB923C)];
     }
-    if (lowerTitle.contains('book') || lowerTitle.contains('academic')) {
-      return [const Color(0xFF6366F1), const Color(0xFF818CF8)];
+    if (t.contains('book') || t.contains('academic')) {
+      return [const Color(0xFF4F46E5), const Color(0xFF818CF8)];
     }
-    if (lowerTitle.contains('manage') || lowerTitle.contains('coding')) {
-      return [const Color(0xFF10B981), const Color(0xFF34D399)];
+    if (t.contains('manage') || t.contains('coding')) {
+      return [const Color(0xFF059669), const Color(0xFF34D399)];
     }
-    return [const Color(0xFF8B5CF6), const Color(0xFFA78BFA)];
+    return [const Color(0xFF7C3AED), const Color(0xFFA78BFA)];
   }
 }
 
-/// Help post card (Type 2: With alert icon).
-///
-/// Features a warm gradient alert badge, title, description, and footer.
+// ─────────────────────────────────────────────────────────────
+// Help / Question Post Card
+// ─────────────────────────────────────────────────────────────
+
 class HelpPostCard extends StatelessWidget {
   final MarketplaceListing listing;
   final VoidCallback? onTap;
@@ -265,108 +243,89 @@ class HelpPostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _BasePostCard(
       onTap: onTap,
+      leftAccent: AppColors.primary,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
             colors: [
-              const Color(0xFFFEF3C7).withValues(alpha: 0.5),
+              AppColors.primary.withValues(alpha: 0.04),
               Colors.white,
             ],
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Stack for alert badge positioning
-              Stack(
-                clipBehavior: Clip.none,
+              // Badge with colorful icon pop
+              Row(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title
-                      Padding(
-                        padding: const EdgeInsets.only(right: 36),
-                        child: Text(
-                          listing.title,
-                          style: AppTextStyles.labelLarge.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            color: AppColors.textPrimary,
-                            letterSpacing: -0.2,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                  Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFF59E0B), Color(0xFFF97316)],
                       ),
-                      if (listing.description != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          listing.description!,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 13,
-                            height: 1.4,
-                          ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFF59E0B)
+                              .withValues(alpha: 0.25),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
                       ],
-                    ],
+                    ),
+                    child: const Icon(Icons.help_outline_rounded,
+                        size: 12, color: Colors.white),
                   ),
-
-                  // Alert badge (top right) with gradient
-                  Positioned(
-                    top: -4,
-                    right: -4,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFFFF6B35),
-                            Color(0xFFFF4444),
-                          ],
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFF4444)
-                                .withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          '!',
-                          style: AppTextStyles.labelMedium.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Needs Help',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
                     ),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 12),
-
-              // Footer row
+              const SizedBox(height: 8),
+              Text(
+                listing.title,
+                style: AppTextStyles.labelLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.2,
+                  height: 1.3,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (listing.description != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  listing.description!,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textTertiary,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: 10),
               _PostFooter(
                 userName: listing.userName,
                 categoryLabel: 'Help'.tr(context),
-                categoryColor: AppColors.categoryBlue,
+                categoryIconColor: const Color(0xFFF59E0B),
               ),
             ],
           ),
@@ -376,10 +335,10 @@ class HelpPostCard extends StatelessWidget {
   }
 }
 
-/// Event post card (Type 3: With gradient icon area).
-///
-/// Features a colorful gradient background with event icon,
-/// title, description (truncated), and footer.
+// ─────────────────────────────────────────────────────────────
+// Event Post Card
+// ─────────────────────────────────────────────────────────────
+
 class EventPostCard extends StatelessWidget {
   final MarketplaceListing listing;
   final VoidCallback? onTap;
@@ -399,88 +358,66 @@ class EventPostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Gradient icon area
           Container(
-            height: 100,
+            height: 80,
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFFEC4899), Color(0xFFF472B6)],
+                colors: [Color(0xFFDB2777), Color(0xFFF472B6)],
               ),
             ),
-            child: Stack(
-              children: [
-                Positioned(
-                  left: -15,
-                  bottom: -15,
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                  ),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(
-                      _getIconForEvent(listing.title),
-                      size: 28,
-                      color: Colors.white,
-                    ),
-                  ),
+                child: Icon(
+                  _getIconForEvent(listing.title),
+                  size: 24,
+                  color: Colors.white,
                 ),
-              ],
+              ),
             ),
           ),
-
-          // Content
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 Text(
                   listing.title,
                   style: AppTextStyles.labelLarge.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                    fontSize: 14,
                     color: AppColors.textPrimary,
                     letterSpacing: -0.2,
+                    height: 1.3,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (listing.description != null) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     listing.description!,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
+                      color: AppColors.textTertiary,
+                      fontSize: 12,
                       height: 1.4,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-
-                const SizedBox(height: 12),
-
-                // Footer row
+                const SizedBox(height: 10),
                 _PostFooter(
                   userName: listing.userName,
                   categoryLabel: 'Event'.tr(context),
-                  categoryColor: AppColors.categoryIndigo,
+                  categoryIconColor: const Color(0xFFEC4899),
                 ),
               ],
             ),
@@ -491,21 +428,17 @@ class EventPostCard extends StatelessWidget {
   }
 
   IconData _getIconForEvent(String title) {
-    final lowerTitle = title.toLowerCase();
-    if (lowerTitle.contains('aws') || lowerTitle.contains('cloud')) {
-      return Icons.cloud_outlined;
-    }
-    if (lowerTitle.contains('workshop')) {
-      return Icons.build_outlined;
-    }
+    final t = title.toLowerCase();
+    if (t.contains('aws') || t.contains('cloud')) return Icons.cloud_outlined;
+    if (t.contains('workshop')) return Icons.build_outlined;
     return Icons.celebration_rounded;
   }
 }
 
-/// Product listing card (Type 4: With gradient icon area and like overlay).
-///
-/// Features a colorful gradient background with product icon,
-/// title, description (truncated), footer, and like button.
+// ─────────────────────────────────────────────────────────────
+// Product / Marketplace Post Card
+// ─────────────────────────────────────────────────────────────
+
 class ProductPostCard extends StatelessWidget {
   final MarketplaceListing listing;
   final VoidCallback? onTap;
@@ -527,54 +460,36 @@ class ProductPostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon area with like button overlay
           Stack(
             children: [
               Container(
-                height: 100,
+                height: 80,
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                    colors: [Color(0xFF2563EB), Color(0xFF60A5FA)],
                   ),
                 ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: -20,
-                      top: -20,
-                      child: Container(
-                        width: 70,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.08),
-                        ),
-                      ),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(
-                          _getIconForProduct(listing.title),
-                          size: 28,
-                          color: Colors.white,
-                        ),
-                      ),
+                    child: Icon(
+                      _getIconForProduct(listing.title),
+                      size: 24,
+                      color: Colors.white,
                     ),
-                  ],
+                  ),
                 ),
               ),
-              // Like button in top right corner
               Positioned(
-                top: 8,
-                right: 8,
+                top: 6,
+                right: 6,
                 child: FloatingLikeButton(
                   isLiked: isLiked,
                   onToggle: onLike,
@@ -582,58 +497,48 @@ class ProductPostCard extends StatelessWidget {
               ),
             ],
           ),
-
-          // Content
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 Text(
                   listing.title,
                   style: AppTextStyles.labelLarge.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                    fontSize: 14,
                     color: AppColors.textPrimary,
                     letterSpacing: -0.2,
+                    height: 1.3,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (listing.description != null) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     listing.description!,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
+                      color: AppColors.textTertiary,
+                      fontSize: 12,
                       height: 1.4,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-
-                const SizedBox(height: 12),
-
-                // Footer row with likes
-                Row(
-                  children: [
-                    Expanded(
-                      child: _PostFooter(
-                        userName: listing.userName,
-                        categoryLabel: 'Product'.tr(context),
-                        categoryColor: AppColors.categoryGreen,
-                      ),
-                    ),
-                    if (listing.likeCount > 0)
-                      CompactLikeButton(
-                        isLiked: isLiked,
-                        likeCount: listing.likeCount,
-                        onToggle: onLike,
-                      ),
-                  ],
+                const SizedBox(height: 10),
+                _PostFooter(
+                  userName: listing.userName,
+                  categoryLabel: 'Product'.tr(context),
+                  categoryIconColor: const Color(0xFF3B82F6),
+                  trailing: listing.likeCount > 0
+                      ? CompactLikeButton(
+                          isLiked: isLiked,
+                          likeCount: listing.likeCount,
+                          onToggle: onLike,
+                        )
+                      : null,
                 ),
               ],
             ),
@@ -644,24 +549,24 @@ class ProductPostCard extends StatelessWidget {
   }
 
   IconData _getIconForProduct(String title) {
-    final lowerTitle = title.toLowerCase();
-    if (lowerTitle.contains('cycle') || lowerTitle.contains('bike')) {
+    final t = title.toLowerCase();
+    if (t.contains('cycle') || t.contains('bike')) {
       return Icons.pedal_bike_outlined;
     }
-    if (lowerTitle.contains('laptop') || lowerTitle.contains('computer')) {
+    if (t.contains('laptop') || t.contains('computer')) {
       return Icons.laptop_outlined;
     }
-    if (lowerTitle.contains('phone') || lowerTitle.contains('mobile')) {
+    if (t.contains('phone') || t.contains('mobile')) {
       return Icons.smartphone_outlined;
     }
     return Icons.shopping_bag_rounded;
   }
 }
 
-/// Housing listing card (Type 5: Compact with subtle gradient).
-///
-/// Features content-only card layout with a warm subtle gradient,
-/// title, description, and footer.
+// ─────────────────────────────────────────────────────────────
+// Housing Post Card
+// ─────────────────────────────────────────────────────────────
+
 class HousingPostCard extends StatelessWidget {
   final MarketplaceListing listing;
   final VoidCallback? onTap;
@@ -678,98 +583,84 @@ class HousingPostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _BasePostCard(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFFFEF3C7).withValues(alpha: 0.4),
-              Colors.white,
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Housing icon badge
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+      leftAccent: AppColors.primary,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Colorful icon container — wallet-page style
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFF59E0B)
+                            .withValues(alpha: 0.25),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFF59E0B)
-                              .withValues(alpha: 0.25),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.home_rounded,
-                      size: 16,
-                      color: Colors.white,
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      listing.title,
-                      style: AppTextStyles.labelLarge.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: AppColors.textPrimary,
-                        letterSpacing: -0.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  child: const Icon(Icons.home_rounded,
+                      size: 16, color: Colors.white),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    listing.title,
+                    style: AppTextStyles.labelLarge.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.2,
+                      height: 1.3,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ),
-              if (listing.description != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  listing.description!,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
-
-              const SizedBox(height: 12),
-
-              // Footer row
-              _PostFooter(
-                userName: listing.userName,
-                categoryLabel: 'Housing'.tr(context),
-                categoryColor: AppColors.categoryAmber,
+            ),
+            if (listing.description != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                listing.description!,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textTertiary,
+                  fontSize: 12,
+                  height: 1.4,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
-          ),
+            const SizedBox(height: 10),
+            _PostFooter(
+              userName: listing.userName,
+              categoryLabel: 'Housing'.tr(context),
+              categoryIconColor: const Color(0xFFF59E0B),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Opportunity post card.
-///
-/// Features a vibrant green gradient icon area with Opportunities category.
+// ─────────────────────────────────────────────────────────────
+// Opportunity Post Card
+// ─────────────────────────────────────────────────────────────
+
 class OpportunityPostCard extends StatelessWidget {
   final MarketplaceListing listing;
   final VoidCallback? onTap;
@@ -787,88 +678,63 @@ class OpportunityPostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Gradient icon area
           Container(
-            height: 100,
+            height: 80,
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF10B981), Color(0xFF34D399)],
+                colors: [Color(0xFF059669), Color(0xFF34D399)],
               ),
             ),
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -10,
-                  bottom: -10,
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                  ),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.rocket_launch_rounded,
-                      size: 28,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
+                child: const Icon(Icons.rocket_launch_rounded,
+                    size: 24, color: Colors.white),
+              ),
             ),
           ),
-
-          // Content
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 Text(
                   listing.title,
                   style: AppTextStyles.labelLarge.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                    fontSize: 14,
                     color: AppColors.textPrimary,
                     letterSpacing: -0.2,
+                    height: 1.3,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (listing.description != null) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     listing.description!,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
+                      color: AppColors.textTertiary,
+                      fontSize: 12,
                       height: 1.4,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-
-                const SizedBox(height: 12),
-
-                // Footer row
+                const SizedBox(height: 10),
                 _PostFooter(
                   userName: listing.userName,
-                  categoryLabel: 'Opportunities'.tr(context),
-                  categoryColor: AppColors.categoryTeal,
+                  categoryLabel: 'Opportunity'.tr(context),
+                  categoryIconColor: const Color(0xFF10B981),
                 ),
               ],
             ),
@@ -879,16 +745,21 @@ class OpportunityPostCard extends StatelessWidget {
   }
 }
 
-/// Post footer with styled avatar, username, and colored category pill.
+// ─────────────────────────────────────────────────────────────
+// Shared Footer — coffee brown text, colorful category dot only
+// ─────────────────────────────────────────────────────────────
+
 class _PostFooter extends StatelessWidget {
   final String userName;
   final String categoryLabel;
-  final Color categoryColor;
+  final Color categoryIconColor;
+  final Widget? trailing;
 
   const _PostFooter({
     required this.userName,
     required this.categoryLabel,
-    required this.categoryColor,
+    required this.categoryIconColor,
+    this.trailing,
   });
 
   @override
@@ -897,58 +768,33 @@ class _PostFooter extends StatelessWidget {
 
     return Row(
       children: [
-        // Styled avatar with gradient ring
-        Container(
-          padding: const EdgeInsets.all(1.5),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: isUnknown
-                ? null
-                : LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      categoryColor.withValues(alpha: 0.6),
-                      categoryColor,
-                    ],
+        // Avatar — coffee brown tones
+        CircleAvatar(
+          radius: 11,
+          backgroundColor: isUnknown
+              ? AppColors.surfaceVariant
+              : AppColors.primary.withValues(alpha: 0.08),
+          child: isUnknown
+              ? Icon(Icons.person_outline,
+                  size: 13, color: AppColors.neutralMuted)
+              : Text(
+                  userName[0].toUpperCase(),
+                  style: AppTextStyles.labelSmall.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
                   ),
-            border: isUnknown
-                ? Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
-                    width: 1,
-                  )
-                : null,
-          ),
-          child: CircleAvatar(
-            radius: 12,
-            backgroundColor: isUnknown
-                ? AppColors.avatarGray
-                : categoryColor.withValues(alpha: 0.12),
-            child: isUnknown
-                ? Icon(
-                    Icons.person_outline,
-                    size: 14,
-                    color: AppColors.neutralMuted,
-                  )
-                : Text(
-                    userName[0].toUpperCase(),
-                    style: AppTextStyles.labelSmall.copyWith(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: categoryColor,
-                    ),
-                  ),
-          ),
+                ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
 
-        // Username
+        // Username — coffee brown secondary text
         Expanded(
           child: Text(
             isUnknown ? 'Unknown'.tr(context) : userName,
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.textSecondary,
-              fontSize: 12,
+              color: AppColors.textTertiary,
+              fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
             maxLines: 1,
@@ -956,20 +802,40 @@ class _PostFooter extends StatelessWidget {
           ),
         ),
 
-        // Category pill tag
+        if (trailing != null) ...[
+          trailing!,
+          const SizedBox(width: 8),
+        ],
+
+        // Category pill — coffee brown bg with colorful dot
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
           decoration: BoxDecoration(
-            color: categoryColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: AppColors.primary.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(6),
           ),
-          child: Text(
-            categoryLabel,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: categoryColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 10,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Small colorful dot — the pop of color
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: categoryIconColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                categoryLabel,
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: AppColors.primaryDark,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 10,
+                ),
+              ),
+            ],
           ),
         ),
       ],

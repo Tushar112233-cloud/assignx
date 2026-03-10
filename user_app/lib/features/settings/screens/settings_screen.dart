@@ -107,8 +107,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final appearancePrefsAsync = ref.watch(appearancePrefsProvider);
 
     return Scaffold(
-      // Transparent to show SubtleGradientScaffold from MainShell
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFFFEFDFB),
       body: Column(
         children: [
           // Unified Dashboard App Bar (dark theme)

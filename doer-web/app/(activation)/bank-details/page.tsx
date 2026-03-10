@@ -7,6 +7,10 @@ import { BankDetailsForm } from '@/components/activation/BankDetailsForm'
 import { ROUTES } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
 import { activationService } from '@/services/activation.service'
+import { useActivationStore } from '@/hooks/useActivation'
+import { useAuthStore } from '@/stores/authStore'
+import { apiClient } from '@/lib/api/client'
+import type { Doer } from '@/types/database'
 
 /**
  * Bank details page
@@ -62,6 +66,29 @@ export default function BankDetailsPage() {
 
       if (!success) {
         throw new Error('Failed to save bank details')
+      }
+
+      // Update activation store so stepper reflects completion
+      const currentActivation = useActivationStore.getState().activation
+      if (currentActivation) {
+        useActivationStore.getState().setActivation({
+          ...currentActivation,
+          bank_details_added: true,
+          bank_details_added_at: new Date().toISOString(),
+          is_fully_activated: true,
+          activated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+      }
+
+      // Refetch doer so main layout allows dashboard access
+      try {
+        const updatedDoer = await apiClient<Doer>('/api/doers/me')
+        if (updatedDoer) {
+          useAuthStore.getState().setDoer(updatedDoer)
+        }
+      } catch {
+        // Non-critical - dashboard redirect will still work
       }
 
       // Mark onboarding as complete in localStorage (for UI state)

@@ -6,8 +6,10 @@ export const sendOTPEmail = async (email: string, otp: string): Promise<void> =>
   // In dev mode, log OTP to file for easy access
   if (process.env.NODE_ENV !== 'production') {
     const fs = await import('fs');
+    const os = await import('os');
+    const path = await import('path');
     const logLine = `[DEV-OTP] ${new Date().toISOString()} | ${email} | OTP: ${otp}\n`;
-    fs.appendFileSync('/private/tmp/api-server.log', logLine);
+    fs.appendFileSync(path.join(os.tmpdir(), 'api-server.log'), logLine);
     console.log(`[DEV-OTP] ${email} -> ${otp}`);
   }
 

@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation'
 import { CheckCircle2, PlayCircle, Loader2, ArrowRight, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiClient, getAccessToken } from '@/lib/api/client'
-import { getTrainingModules, getTrainingProgress, markModuleComplete, isTrainingComplete } from '@/lib/services/training'
+import { getTrainingModules, getTrainingProgress, markModuleComplete, isTrainingComplete, completeTraining } from '@/lib/services/training'
+import { useAuthStore } from '@/stores/authStore'
+import { useActivationStore } from '@/hooks/useActivation'
+import { ROUTES } from '@/lib/constants'
+import type { Doer } from '@/types/database'
 
 interface TrainingModule {
   id: string
@@ -33,6 +37,8 @@ export default function TrainingPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [allDone, setAllDone] = useState(false)
+  const [markingComplete, setMarkingComplete] = useState(false)
+  const [trainingMarked, setTrainingMarked] = useState(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -58,9 +64,10 @@ export default function TrainingPage() {
       setModules(mods)
       setProgress(prog)
 
-      // Check if all training is complete
+      // Check if training is already marked complete
       const done = await isTrainingComplete('doer')
       setAllDone(done)
+      if (done) setTrainingMarked(true)
     } catch (err) {
       console.error('Error loading training data:', err)
       setError('Failed to load training modules. Please refresh the page.')
@@ -96,6 +103,41 @@ export default function TrainingPage() {
     }
   }
 
+  const handleCompleteTraining = async () => {
+    if (markingComplete) return
+    setMarkingComplete(true)
+    setError(null)
+
+    try {
+      await completeTraining()
+      // Refetch doer so the auth store has training_completed = true
+      // This prevents main layout from redirecting back to /training
+      const updatedDoer = await apiClient<Doer>('/api/doers/me')
+      if (updatedDoer) {
+        useAuthStore.getState().setDoer(updatedDoer)
+      }
+
+      // Update activation store so the stepper reflects progress
+      const currentActivation = useActivationStore.getState().activation
+      if (currentActivation) {
+        useActivationStore.getState().setActivation({
+          ...currentActivation,
+          training_completed: true,
+          training_completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+      }
+
+      setTrainingMarked(true)
+      setAllDone(true)
+    } catch (err) {
+      console.error('Error completing training:', err)
+      setError('Failed to mark training as complete. Please try again.')
+    } finally {
+      setMarkingComplete(false)
+    }
+  }
+
   const getModuleStatus = (moduleId: string) => {
     const p = progress.find(pr => pr.module_id === moduleId)
     return p?.status || 'not_started'
@@ -103,7 +145,7 @@ export default function TrainingPage() {
 
   const completedCount = progress.filter(p => p.status === 'completed').length
   const totalMandatory = modules.filter(m => m.is_mandatory).length
-  const progressPercent = totalMandatory > 0 ? Math.round((completedCount / totalMandatory) * 100) : 0
+  const progressPercent = trainingMarked ? 100 : (totalMandatory > 0 ? Math.round((completedCount / totalMandatory) * 100) : 0)
 
   if (isLoading) {
     return (
@@ -145,7 +187,9 @@ export default function TrainingPage() {
             />
           </div>
           <p className="mt-2 text-xs text-slate-400">
-            {completedCount} of {totalMandatory} mandatory modules completed
+            {trainingMarked
+              ? 'Training complete'
+              : `${completedCount} of ${totalMandatory} mandatory modules completed`}
           </p>
         </div>
 
@@ -242,37 +286,51 @@ export default function TrainingPage() {
           })}
         </div>
 
-        {/* No modules state */}
-        {modules.length === 0 && (
+        {/* Mark Training as Complete (when no modules or all modules done) */}
+        {!trainingMarked && (modules.length === 0 || allDone) && (
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
             <BookOpen className="h-10 w-10 text-slate-300 mx-auto" />
-            <p className="mt-3 text-sm text-slate-500">No training modules available yet.</p>
+            <p className="mt-3 text-sm text-slate-500">
+              {modules.length === 0
+                ? 'No training modules are available at this time. Mark your training as complete to proceed.'
+                : 'All modules reviewed. Mark your training as complete to proceed.'}
+            </p>
             <Button
-              onClick={() => router.push('/dashboard')}
+              onClick={handleCompleteTraining}
+              disabled={markingComplete}
               className="mt-4 h-10 rounded-xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white font-semibold"
             >
-              Continue to Dashboard
-              <ArrowRight className="h-4 w-4 ml-2" />
+              {markingComplete ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Marking Complete...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Mark Training as Complete
+                </>
+              )}
             </Button>
           </div>
         )}
 
-        {/* All done */}
-        {allDone && modules.length > 0 && (
+        {/* Training Complete - Show Continue to Quiz */}
+        {trainingMarked && (
           <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 text-center shadow-sm">
             <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
               <CheckCircle2 className="h-7 w-7 text-emerald-600" />
             </div>
             <h3 className="mt-3 text-lg font-bold text-slate-900">Training Complete!</h3>
             <p className="mt-1 text-sm text-slate-500">
-              You have completed all mandatory training modules.
+              You have completed your training. Next up: pass the quiz.
             </p>
             <Button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push(ROUTES.quiz)}
               size="lg"
               className="mt-4 h-11 rounded-xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white font-semibold shadow-[0_8px_24px_rgba(90,124,255,0.30)] hover:shadow-[0_12px_32px_rgba(90,124,255,0.40)] hover:opacity-95"
             >
-              Continue to Dashboard
+              Continue to Quiz
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>

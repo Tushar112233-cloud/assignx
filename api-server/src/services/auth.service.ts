@@ -174,7 +174,7 @@ export const verifyOTP = async (email: string, otp: string, purpose: 'login' | '
     if (effectiveRole === 'user') {
       account = await User.create({
         email: normalizedEmail,
-        userType: role as 'student' | 'professional' | 'business',
+        userType: ['student', 'professional', 'business'].includes(role) ? role : 'student',
       });
     } else {
       throw new AppError('Use the dedicated signup endpoint for this role.', 400);
