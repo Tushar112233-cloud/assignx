@@ -146,11 +146,15 @@ class RequestCard extends StatelessWidget {
                     color: AppColors.textSecondaryLight,
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    request.clientName,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondaryLight,
-                        ),
+                  Flexible(
+                    child: Text(
+                      request.clientName,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondaryLight,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   // Word/Page count
                   if (request.wordCount != null || request.pageCount != null) ...[

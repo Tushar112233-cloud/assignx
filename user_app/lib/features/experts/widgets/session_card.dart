@@ -105,24 +105,23 @@ class SessionCard extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Date/time and meeting info
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 _buildInfoChip(
                   icon: Icons.calendar_today,
                   label: _formatDate(context, booking.date),
                 ),
-                const SizedBox(width: 12),
                 _buildInfoChip(
                   icon: Icons.access_time,
                   label: '${booking.startTime} - ${booking.endTime}',
                 ),
-                if (booking.meetLink != null) ...[
-                  const SizedBox(width: 12),
+                if (booking.meetLink != null)
                   _buildInfoChip(
                     icon: Icons.videocam,
                     label: 'Video Call'.tr(context),
                   ),
-                ],
               ],
             ),
 

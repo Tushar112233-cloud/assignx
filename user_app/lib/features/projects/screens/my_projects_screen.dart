@@ -930,13 +930,18 @@ class _ProjectCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Text(
-                            '#${project.projectNumber}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontFamily: 'monospace',
-                              color: _P.textSoft,
-                              fontWeight: FontWeight.w500,
+                          Flexible(
+                            flex: 0,
+                            child: Text(
+                              '#${project.projectNumber}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                                color: _P.textSoft,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           Container(

@@ -472,21 +472,25 @@ class _ProjectDetailContentState extends ConsumerState<_ProjectDetailContent>
                     Row(
                       children: [
                         if (project.subjectName != null) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _ProjectDetailColors.lightAccent,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              project.subjectName!,
-                              style: AppTextStyles.labelSmall.copyWith(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _ProjectDetailColors.lightAccent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                project.subjectName!,
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ),

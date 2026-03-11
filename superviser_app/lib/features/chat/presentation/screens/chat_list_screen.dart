@@ -162,12 +162,16 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                               children: [
                                 Icon(Icons.mark_email_unread_outlined, color: AppColors.accent, size: 18),
                                 const SizedBox(width: 10),
-                                Text(
-                                  '${state.totalUnread} ${'unread messages'.tr(context)}',
-                                  style: TextStyle(
-                                    color: AppColors.accent,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
+                                Flexible(
+                                  child: Text(
+                                    '${state.totalUnread} ${'unread messages'.tr(context)}',
+                                    style: TextStyle(
+                                      color: AppColors.accent,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -326,12 +330,16 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(
         children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: color ?? AppColors.textSecondaryLight,
-                  fontWeight: FontWeight.bold,
-                ),
+          Flexible(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: color ?? AppColors.textSecondaryLight,
+                    fontWeight: FontWeight.bold,
+                  ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           const SizedBox(width: 8),
           Container(

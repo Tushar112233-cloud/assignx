@@ -827,12 +827,16 @@ class _PostFooter extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Text(
-                categoryLabel,
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.primaryDark,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 10,
+              Flexible(
+                child: Text(
+                  categoryLabel,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 10,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

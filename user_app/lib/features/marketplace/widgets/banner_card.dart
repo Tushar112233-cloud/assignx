@@ -154,6 +154,7 @@ class BannerCard extends StatelessWidget {
                     Positioned(
                       left: 12,
                       bottom: 12,
+                      right: 12,
                       child: Row(
                         children: [
                           CircleAvatar(
@@ -169,11 +170,15 @@ class BannerCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            listing.userName,
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Text(
+                              listing.userName,
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -298,10 +303,14 @@ class BannerCard extends StatelessWidget {
                           color: AppColors.textTertiary,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '${'Closes'.tr(context)} ${_formatExpiry(context, listing.expiresAt!)}',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textTertiary,
+                        Flexible(
+                          child: Text(
+                            '${'Closes'.tr(context)} ${_formatExpiry(context, listing.expiresAt!)}',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textTertiary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

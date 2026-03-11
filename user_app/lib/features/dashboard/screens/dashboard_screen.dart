@@ -1253,15 +1253,19 @@ class _ProjectCard extends StatelessWidget {
             ),
             Row(
               children: [
-                Text(
-                  project.projectNumber,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                    color: _C.textSoft,
+                Flexible(
+                  child: Text(
+                    project.projectNumber,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                      color: _C.textSoft,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 Text(
                   _timeAgo(project.createdAt),
                   style: TextStyle(fontSize: 11, color: _C.textSoft),

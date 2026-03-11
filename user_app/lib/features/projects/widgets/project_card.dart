@@ -177,22 +177,29 @@ class _ProjectCardState extends State<ProjectCard> {
           Row(
             children: [
               // Project ID
-              Row(
-                children: [
-                  Icon(
-                    Icons.tag,
-                    size: 14,
-                    color: AppColors.textTertiary,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    widget.project.displayId,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontFamily: 'monospace',
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.tag,
+                      size: 14,
+                      color: AppColors.textTertiary,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        widget.project.displayId,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                          fontFamily: 'monospace',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(width: 16),

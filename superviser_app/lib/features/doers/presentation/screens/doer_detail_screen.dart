@@ -131,8 +131,10 @@ class DoerDetailScreen extends ConsumerWidget {
                             ),
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 12,
+                        runSpacing: 8,
                         children: [
                           // Rating badge
                           Container(
@@ -162,7 +164,6 @@ class DoerDetailScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(width: 12),
                           // Status badge
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

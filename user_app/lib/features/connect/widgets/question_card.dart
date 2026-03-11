@@ -203,26 +203,30 @@ class QuestionCard extends StatelessWidget {
               const SizedBox(width: 8),
 
               // Subject category chip
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withAlpha(30),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  question.subject,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.primary,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight.withAlpha(30),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    question.subject,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.primary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
 
-              const Spacer(),
+              const SizedBox(width: 8),
 
               // Relative date
               Text(

@@ -234,65 +234,77 @@ class _TicketHeader extends StatelessWidget {
           Row(
             children: [
               // Status badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: ticket.status.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      ticket.status.icon,
-                      size: 14,
-                      color: ticket.status.color,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      ticket.status.displayName,
-                      style: TextStyle(
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: ticket.status.color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        ticket.status.icon,
+                        size: 14,
                         color: ticket.status.color,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          ticket.status.displayName,
+                          style: TextStyle(
+                            color: ticket.status.color,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
               const SizedBox(width: 8),
 
               // Category badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      ticket.category.icon,
-                      size: 14,
-                      color: AppColors.textSecondaryLight,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      ticket.category.displayName,
-                      style: const TextStyle(
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        ticket.category.icon,
+                        size: 14,
                         color: AppColors.textSecondaryLight,
-                        fontSize: 12,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          ticket.category.displayName,
+                          style: const TextStyle(
+                            color: AppColors.textSecondaryLight,
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
