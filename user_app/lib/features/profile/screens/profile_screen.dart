@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../widgets/account_upgrade_card.dart';
@@ -1372,8 +1373,7 @@ class ProfileScreen extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
-              final repository = ref.read(profileRepositoryProvider);
-              await repository.logout();
+              await ref.read(authStateProvider.notifier).signOut();
               if (context.mounted) {
                 context.go('/login');
               }
@@ -1428,8 +1428,7 @@ class ProfileScreen extends ConsumerWidget {
               Navigator.pop(dialogContext);
               try {
                 await ApiClient.post('/users/me/deactivate', {});
-                final repository = ref.read(profileRepositoryProvider);
-                await repository.logout();
+                await ref.read(authStateProvider.notifier).signOut();
                 if (context.mounted) {
                   context.go('/login');
                 }
@@ -1512,9 +1511,7 @@ class ProfileScreen extends ConsumerWidget {
                       Navigator.pop(dialogContext);
                       try {
                         await ApiClient.post('/users/me/delete', {});
-                        final repository =
-                            ref.read(profileRepositoryProvider);
-                        await repository.logout();
+                        await ref.read(authStateProvider.notifier).signOut();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(

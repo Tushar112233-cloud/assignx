@@ -124,6 +124,11 @@ class RouteNames {
   /// Path: `/projects`
   static const String projects = '/projects';
 
+  /// Open pool projects screen.
+  ///
+  /// Path: `/open-pool`
+  static const String openPool = '/open-pool';
+
   /// Project detail screen with dynamic ID.
   ///
   /// Path: `/project/:id`
@@ -174,6 +179,11 @@ class RouteNames {
   /// Shows detailed performance metrics.
   /// Path: `/dashboard/statistics`
   static const String statistics = '/dashboard/statistics';
+
+  /// Insights screen (alias for statistics).
+  ///
+  /// Path: `/insights`
+  static const String insights = '/insights';
 
   /// Reviews and ratings screen.
   ///

@@ -169,48 +169,52 @@ class _EarningsGraphState extends State<EarningsGraph> {
             color: AppColors.textPrimary,
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: 8),
         Flexible(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: EarningsPeriod.values.map((period) {
-                final isSelected = period == _selectedPeriod;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedPeriod = period;
-                    });
-                    widget.onPeriodChanged?.call(period);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          isSelected ? AppColors.primary : Colors.transparent,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      period.label,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? Colors.white
-                            : AppColors.textSecondary,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: EarningsPeriod.values.map((period) {
+                  final isSelected = period == _selectedPeriod;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedPeriod = period;
+                      });
+                      widget.onPeriodChanged?.call(period);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected ? AppColors.primary : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        period.label,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textSecondary,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
           ),
         ),

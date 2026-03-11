@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -132,7 +133,7 @@ class ProfileHero extends StatelessWidget {
           ),
         ),
         IconButton(
-          onPressed: () {},
+          onPressed: () => context.push('/settings'),
           icon: const Icon(Icons.settings_outlined, color: Colors.white),
           style: IconButton.styleFrom(
             backgroundColor: Colors.white.withValues(alpha: 0.15),
@@ -201,7 +202,7 @@ class ProfileHero extends StatelessWidget {
               child: const Icon(
                 Icons.verified,
                 size: 22,
-                color: Color(0xFF5A7CFF),
+                color: AppColors.primary,
               ),
             ),
           ),
@@ -223,7 +224,9 @@ class ProfileHero extends StatelessWidget {
   Widget _buildBadgesRow() {
     final memberSince = DateFormat('MMM yyyy').format(profile.joinedAt);
 
-    return Row(
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Availability badge
@@ -321,30 +324,32 @@ class ProfileHero extends StatelessWidget {
           ),
         ),
       ],
+    ),
     );
   }
 
   Widget _buildEditButton(BuildContext context) {
     return SizedBox(
-      width: 180,
-      height: 42,
+      height: 44,
       child: OutlinedButton.icon(
         onPressed: onEditProfile,
         icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.white),
         label: Text(
           'Edit Profile'.tr(context),
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
             fontSize: 14,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.6), width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+          side: BorderSide(color: AppColors.primary.withValues(alpha: 0.8), width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
-          backgroundColor: Colors.white.withValues(alpha: 0.1),
+          backgroundColor: AppColors.primary.withValues(alpha: 0.85),
         ),
       ),
     );

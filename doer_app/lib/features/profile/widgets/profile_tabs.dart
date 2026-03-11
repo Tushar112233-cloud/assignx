@@ -219,7 +219,7 @@ class ProfileTabs extends ConsumerWidget {
                     icon: Icons.currency_rupee_rounded,
                     value: _formatAmount(profile.totalEarnings.toDouble()),
                     label: 'Earned'.tr(context),
-                    color: AppColors.accent,
+                    color: AppColors.primary,
                   ),
                 ),
               ],
@@ -845,7 +845,7 @@ class ProfileTabs extends ConsumerWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: AppColors.accent.withValues(alpha: 0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

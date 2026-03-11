@@ -107,6 +107,23 @@ abstract class AuthRepository {
 
   /// Sends a password reset email.
   Future<void> resetPasswordForEmail(String email);
+
+  /// Checks if an access request already exists for the given email and role.
+  ///
+  /// Returns the status string ('pending', 'approved', 'rejected') if found,
+  /// or null if no request exists (404).
+  Future<String?> checkAccessStatus(String email, {String role = 'doer'});
+
+  /// Completes the doer signup flow by verifying OTP and submitting all
+  /// registration data in a single request.
+  ///
+  /// Returns an [AuthResponse] with session tokens on success.
+  Future<AuthResponse> doerSignup({
+    required String email,
+    required String otp,
+    required String fullName,
+    required Map<String, dynamic> metadata,
+  });
 }
 
 /// API implementation of [AuthRepository].
@@ -429,5 +446,54 @@ class ApiAuthRepository implements AuthRepository {
       LoggerService.error('AuthRepository: Stack trace', stackTrace);
       rethrow;
     }
+  }
+
+  @override
+  Future<String?> checkAccessStatus(String email, {String role = 'doer'}) async {
+    LoggerService.info('AuthRepository: Checking access status', data: {'email': email, 'role': role});
+
+    try {
+      final response = await ApiClient.get(
+        '/access-requests/check',
+        queryParams: {
+          'email': email.toLowerCase().trim(),
+          'role': role,
+        },
+      );
+
+      if (response is Map<String, dynamic>) {
+        return response['status'] as String?;
+      }
+      return null;
+    } catch (e) {
+      // 404 means no existing request - that is expected.
+      if (e is ApiException && e.statusCode == 404) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<AuthResponse> doerSignup({
+    required String email,
+    required String otp,
+    required String fullName,
+    required Map<String, dynamic> metadata,
+  }) async {
+    LoggerService.info('AuthRepository: Completing doer signup', data: {'email': email});
+
+    final response = await ApiClient.post('/auth/doer-signup', {
+      'email': email.toLowerCase().trim(),
+      'otp': otp,
+      'fullName': fullName,
+      'metadata': metadata,
+    });
+
+    final authResponse = AuthResponse.fromJson(response as Map<String, dynamic>);
+    if (authResponse.hasSession) {
+      await TokenStorage.saveTokens(authResponse.accessToken!, authResponse.refreshToken!);
+    }
+    return authResponse;
   }
 }

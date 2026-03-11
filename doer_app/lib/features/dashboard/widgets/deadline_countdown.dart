@@ -327,19 +327,22 @@ class _LargeDeadlineTimerState extends State<LargeDeadlineTimer> {
             ),
           ),
         const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (days > 0) ...[
-              _buildTimeUnit(days.toString(), 'DAYS'.tr(context), textColor),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (days > 0) ...[
+                _buildTimeUnit(days.toString(), 'DAYS'.tr(context), textColor),
+                _buildSeparator(textColor),
+              ],
+              _buildTimeUnit(hours.toString().padLeft(2, '0'), 'HRS'.tr(context), textColor),
               _buildSeparator(textColor),
+              _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'MIN'.tr(context), textColor),
+              _buildSeparator(textColor),
+              _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'SEC'.tr(context), textColor),
             ],
-            _buildTimeUnit(hours.toString().padLeft(2, '0'), 'HRS'.tr(context), textColor),
-            _buildSeparator(textColor),
-            _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'MIN'.tr(context), textColor),
-            _buildSeparator(textColor),
-            _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'SEC'.tr(context), textColor),
-          ],
+          ),
         ),
       ],
     );

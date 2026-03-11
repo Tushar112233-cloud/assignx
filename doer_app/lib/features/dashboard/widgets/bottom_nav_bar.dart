@@ -1,42 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-/// Floating pill-shaped bottom navigation bar for the doer app.
+import '../../../core/constants/app_colors.dart';
+
+/// Clean, modern bottom navigation bar matching the doer-web sidebar aesthetic.
 ///
 /// Features:
-/// - Floating pill shape (height 60, borderRadius 30)
-/// - Solid dark background (#1A1A1A)
-/// - 5 navigation items: Dashboard, Projects, Resources, Earnings, Profile
-/// - Active icon: white, Inactive: #8A8A8A
-/// - Profile item shows avatar circle with border
-/// - Designed to be placed inside a Stack via Positioned
-///
-/// Example:
-/// ```dart
-/// Stack(
-///   children: [
-///     IndexedStack(...),
-///     BottomNavBar(
-///       currentIndex: 0,
-///       onTap: (index) => handleNavigation(index),
-///     ),
-///   ],
-/// )
-/// ```
+/// - White frosted glass background with subtle shadow
+/// - 5 navigation items with labels: Dashboard, Projects, Resources, Earnings, Profile
+/// - Active: primary color icon + label + top indicator line
+/// - Inactive: muted gray icons + labels
+/// - Profile item shows avatar circle
 class BottomNavBar extends StatelessWidget {
-  /// Currently selected index.
   final int currentIndex;
-
-  /// Callback when navigation item is tapped.
   final ValueChanged<int> onTap;
-
-  /// Profile avatar URL (optional).
   final String? profileImageUrl;
-
-  /// Bottom offset from screen edge. Defaults to 20px.
   final double bottomOffset;
-
-  /// Horizontal padding. Defaults to 16px.
   final double horizontalPadding;
 
   const BottomNavBar({
@@ -44,141 +23,232 @@ class BottomNavBar extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
     this.profileImageUrl,
-    this.bottomOffset = 20,
-    this.horizontalPadding = 16,
+    this.bottomOffset = 16,
+    this.horizontalPadding = 12,
   });
-
-  // Solid dark navbar colors
-  static const Color _navBackground = Color(0xFF1A1A1A);
-  static const Color _activeIconColor = Colors.white;
-  static const Color _inactiveIconColor = Color(0xFF8A8A8A);
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final navHeight = screenWidth < 360 ? 64.0 : 72.0;
+
     return Positioned(
       left: horizontalPadding,
       right: horizontalPadding,
       bottom: bottomOffset,
       child: Container(
-        height: 60,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        height: navHeight,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: _navBackground,
-          borderRadius: BorderRadius.circular(30),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.border.withValues(alpha: 0.5),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.20),
-              blurRadius: 16,
+              color: AppColors.primary.withValues(alpha: 0.08),
+              blurRadius: 24,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.10),
-              blurRadius: 32,
-              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // 0: Dashboard
-            _buildNavItem(
-              activeIcon: LucideIcons.layoutDashboard,
-              inactiveIcon: LucideIcons.layoutDashboard,
-              index: 0,
+            Expanded(
+              child: _NavItem(
+                icon: LucideIcons.layoutDashboard,
+                label: 'Dashboard',
+                isActive: currentIndex == 0,
+                onTap: () => onTap(0),
+              ),
             ),
-            // 1: Projects
-            _buildNavItem(
-              activeIcon: LucideIcons.folderClosed,
-              inactiveIcon: LucideIcons.folder,
-              index: 1,
+            Expanded(
+              child: _NavItem(
+                icon: LucideIcons.folderClosed,
+                label: 'Projects',
+                isActive: currentIndex == 1,
+                onTap: () => onTap(1),
+              ),
             ),
-            // 2: Resources
-            _buildNavItem(
-              activeIcon: LucideIcons.bookOpen,
-              inactiveIcon: LucideIcons.bookOpen,
-              index: 2,
+            Expanded(
+              child: _NavItem(
+                icon: LucideIcons.bookOpen,
+                label: 'Resources',
+                isActive: currentIndex == 2,
+                onTap: () => onTap(2),
+              ),
             ),
-            // 3: Earnings
-            _buildNavItem(
-              activeIcon: LucideIcons.wallet,
-              inactiveIcon: LucideIcons.wallet,
-              index: 3,
+            Expanded(
+              child: _NavItem(
+                icon: LucideIcons.wallet,
+                label: 'Earnings',
+                isActive: currentIndex == 3,
+                onTap: () => onTap(3),
+              ),
             ),
-            // 4: Profile (avatar)
-            _buildProfileItem(index: 4),
+            Expanded(
+              child: _ProfileNavItem(
+                isActive: currentIndex == 4,
+                onTap: () => onTap(4),
+                imageUrl: profileImageUrl,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  /// Builds a single navigation item with icon only.
-  Widget _buildNavItem({
-    required IconData activeIcon,
-    required IconData inactiveIcon,
-    required int index,
-  }) {
-    final isActive = currentIndex == index;
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isActive ? AppColors.primary : AppColors.textTertiary;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final iconSize = screenWidth < 360 ? 18.0 : 22.0;
+    final fontSize = screenWidth < 360 ? 9.0 : 10.0;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => onTap(index),
-        borderRadius: BorderRadius.circular(30),
-        child: Container(
-          width: 42,
-          height: 42,
-          alignment: Alignment.center,
-          child: Icon(
-            isActive ? activeIcon : inactiveIcon,
-            size: 24,
-            color: isActive ? _activeIconColor : _inactiveIconColor,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Active indicator dot
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: isActive ? 20 : 0,
+                height: 3,
+                margin: const EdgeInsets.only(bottom: 4),
+                decoration: BoxDecoration(
+                  color: isActive ? AppColors.accent : Colors.transparent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Icon(
+                icon,
+                size: iconSize,
+                color: color,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: color,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+}
 
-  /// Builds the profile avatar item.
-  Widget _buildProfileItem({required int index}) {
-    final isActive = currentIndex == index;
+class _ProfileNavItem extends StatelessWidget {
+  final bool isActive;
+  final VoidCallback onTap;
+  final String? imageUrl;
+
+  const _ProfileNavItem({
+    required this.isActive,
+    required this.onTap,
+    this.imageUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isActive ? AppColors.primary : AppColors.textTertiary;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final avatarSize = screenWidth < 360 ? 20.0 : 24.0;
+    final iconSize = screenWidth < 360 ? 11.0 : 13.0;
+    final fontSize = screenWidth < 360 ? 9.0 : 10.0;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => onTap(index),
-        borderRadius: BorderRadius.circular(30),
-        child: Container(
-          width: 42,
-          height: 42,
-          alignment: Alignment.center,
-          child: Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isActive ? _activeIconColor : _inactiveIconColor,
-                width: isActive ? 2 : 1.5,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Active indicator dot
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: isActive ? 20 : 0,
+                height: 3,
+                margin: const EdgeInsets.only(bottom: 4),
+                decoration: BoxDecoration(
+                  color: isActive ? AppColors.accent : Colors.transparent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              image: profileImageUrl != null
-                  ? DecorationImage(
-                      image: NetworkImage(profileImageUrl!),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-              color: profileImageUrl == null
-                  ? const Color(0xFF3A3A3A)
-                  : null,
-            ),
-            child: profileImageUrl == null
-                ? const Icon(
-                    LucideIcons.user,
-                    size: 16,
-                    color: _inactiveIconColor,
-                  )
-                : null,
+              Container(
+                width: avatarSize,
+                height: avatarSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isActive ? AppColors.primary : AppColors.border,
+                    width: isActive ? 2 : 1.5,
+                  ),
+                  image: imageUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(imageUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                  color: imageUrl == null
+                      ? AppColors.surfaceVariant
+                      : null,
+                ),
+                child: imageUrl == null
+                    ? Icon(
+                        LucideIcons.user,
+                        size: iconSize,
+                        color: color,
+                      )
+                    : null,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Profile',
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: color,
+                ),
+              ),
+            ],
           ),
         ),
       ),

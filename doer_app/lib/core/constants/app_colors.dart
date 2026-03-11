@@ -1,13 +1,13 @@
 /// Application color palette constants.
 ///
 /// This file defines the complete color system for the DOER app,
-/// following a warm-professional teal design theme.
+/// following a modern indigo-blue design theme matching the doer-web portal.
 ///
 /// ## Color Categories
-/// - **Primary Colors**: Main brand colors (deep teal tones)
-/// - **Accent Colors**: Interactive element highlights (vivid cyan)
+/// - **Primary Colors**: Main brand colors (indigo/blue tones)
+/// - **Accent Colors**: Interactive element highlights (cyan)
 /// - **Background Colors**: Surface and container colors
-/// - **Gradient Colors**: Teal-to-cyan gradient stops
+/// - **Gradient Colors**: Dark navy-to-indigo gradient stops
 /// - **Mesh Gradient Colors**: Soft pastels for corner gradients
 /// - **Text Colors**: Typography hierarchy colors
 /// - **Status Colors**: Success, warning, error, and info states
@@ -16,15 +16,15 @@
 /// - **Dark Theme Colors**: Alternative palette for dark mode
 ///
 /// ## Design Principles
-/// - Uses a cohesive deep teal primary palette for warmth and authority
-/// - Vivid cyan accents for actionable, earning-focused elements
+/// - Uses a cohesive indigo/blue primary palette for clarity and trust
+/// - Cyan accents for actionable, earning-focused elements
 /// - Semantic colors for status feedback
 /// - Consistent opacity levels for shadows and overlays
 library;
 
 import 'package:flutter/material.dart';
 
-/// App color palette following the warm-professional teal theme.
+/// App color palette following the indigo-blue theme from doer-web.
 ///
 /// All colors are defined as static constants for compile-time optimization
 /// and consistent usage across the application.
@@ -49,47 +49,47 @@ class AppColors {
   AppColors._();
 
   // ---------------------------------------------------------------------------
-  // Primary Colors - Deep Teal (warmer than navy)
+  // Primary Colors - Indigo/Blue
   // ---------------------------------------------------------------------------
 
-  /// Primary brand color - deep teal.
+  /// Primary brand color - indigo blue.
   ///
   /// Used for primary buttons, app bars, and key branding elements.
-  /// Hex: #1A4B5F
-  static const Color primary = Color(0xFF1A4B5F);
+  /// Hex: #5A7CFF
+  static const Color primary = Color(0xFF5A7CFF);
 
   /// Lighter shade of primary for hover states and secondary emphasis.
   ///
-  /// Hex: #2A5B6F
-  static const Color primaryLight = Color(0xFF2A5B6F);
+  /// Hex: #7B96FF
+  static const Color primaryLight = Color(0xFF7B96FF);
 
   /// Darker shade of primary for pressed states and emphasis.
   ///
-  /// Hex: #0A3B4F
-  static const Color primaryDark = Color(0xFF0A3B4F);
+  /// Hex: #4A6AEF
+  static const Color primaryDark = Color(0xFF4A6AEF);
 
   // ---------------------------------------------------------------------------
-  // Accent Colors - Vivid Cyan (energetic, earning-focused)
+  // Accent Colors - Cyan (energetic, earning-focused)
   // ---------------------------------------------------------------------------
 
-  /// Accent color - vivid cyan for interactive elements.
+  /// Accent color - cyan for interactive elements.
   ///
   /// Used for links, secondary buttons, and call-to-action elements.
-  /// Hex: #06B6D4
-  static const Color accent = Color(0xFF06B6D4);
+  /// Hex: #49C5FF
+  static const Color accent = Color(0xFF49C5FF);
 
   /// Lighter shade of accent for hover states.
   ///
-  /// Hex: #22D3EE
-  static const Color accentLight = Color(0xFF22D3EE);
+  /// Hex: #6DD5FF
+  static const Color accentLight = Color(0xFF6DD5FF);
 
   /// Darker shade of accent for pressed states.
   ///
-  /// Hex: #0891B2
-  static const Color accentDark = Color(0xFF0891B2);
+  /// Hex: #2BB5F0
+  static const Color accentDark = Color(0xFF2BB5F0);
 
   // ---------------------------------------------------------------------------
-  // Background Colors - Warmer off-whites
+  // Background Colors - Clean off-whites
   // ---------------------------------------------------------------------------
 
   /// Main background color - warm off-white.
@@ -110,23 +110,23 @@ class AppColors {
   static const Color surfaceVariant = Color(0xFFF1F5F9);
 
   // ---------------------------------------------------------------------------
-  // Gradient Colors - Teal to Cyan
+  // Gradient Colors - Dark Navy to Indigo
   // ---------------------------------------------------------------------------
 
-  /// Gradient start color - darkest teal.
+  /// Gradient start color - dark navy.
   ///
-  /// Hex: #0A3B4F
-  static const Color gradientStart = Color(0xFF0A3B4F);
+  /// Hex: #0B0F1A
+  static const Color gradientStart = Color(0xFF0B0F1A);
 
-  /// Gradient middle color - primary teal.
+  /// Gradient middle color - dark indigo.
   ///
-  /// Hex: #1A4B5F
-  static const Color gradientMiddle = Color(0xFF1A4B5F);
+  /// Hex: #1A1F3A
+  static const Color gradientMiddle = Color(0xFF1A1F3A);
 
-  /// Gradient end color - vivid cyan.
+  /// Gradient end color - indigo blue.
   ///
-  /// Hex: #06B6D4
-  static const Color gradientEnd = Color(0xFF06B6D4);
+  /// Hex: #5A7CFF
+  static const Color gradientEnd = Color(0xFF5A7CFF);
 
   // ---------------------------------------------------------------------------
   // Text Colors
@@ -134,21 +134,21 @@ class AppColors {
 
   /// Primary text color for headings and body text.
   ///
-  /// Deep teal-gray for warm readability.
-  /// Hex: #1A2B3B
-  static const Color textPrimary = Color(0xFF1A2B3B);
+  /// Slate-800 for crisp readability.
+  /// Hex: #1E293B
+  static const Color textPrimary = Color(0xFF1E293B);
 
   /// Secondary text color for supporting content.
   ///
-  /// Teal-tinted gray for less prominent text.
-  /// Hex: #5A7A8A
-  static const Color textSecondary = Color(0xFF5A7A8A);
+  /// Slate-500 for less prominent text.
+  /// Hex: #64748B
+  static const Color textSecondary = Color(0xFF64748B);
 
   /// Tertiary text color for captions and hints.
   ///
-  /// Light teal-gray for minimal emphasis text.
-  /// Hex: #8AA3B0
-  static const Color textTertiary = Color(0xFF8AA3B0);
+  /// Slate-400 for minimal emphasis text.
+  /// Hex: #94A3B8
+  static const Color textTertiary = Color(0xFF94A3B8);
 
   /// Text color for content on primary-colored backgrounds.
   ///
@@ -241,18 +241,18 @@ class AppColors {
 
   /// Default border color for containers.
   ///
-  /// Hex: #D5E0E5
-  static const Color border = Color(0xFFD5E0E5);
+  /// Hex: #E2E8F0
+  static const Color border = Color(0xFFE2E8F0);
 
   /// Light border for subtle separation.
   ///
-  /// Hex: #E8F0F3
-  static const Color borderLight = Color(0xFFE8F0F3);
+  /// Hex: #EEF2FF
+  static const Color borderLight = Color(0xFFEEF2FF);
 
   /// Dark border for emphasis.
   ///
-  /// Hex: #B0C4CE
-  static const Color borderDark = Color(0xFFB0C4CE);
+  /// Hex: #CBD5E1
+  static const Color borderDark = Color(0xFFCBD5E1);
 
   // ---------------------------------------------------------------------------
   // Divider
@@ -260,8 +260,8 @@ class AppColors {
 
   /// Standard divider color.
   ///
-  /// Hex: #D5E0E5
-  static const Color divider = Color(0xFFD5E0E5);
+  /// Hex: #E2E8F0
+  static const Color divider = Color(0xFFE2E8F0);
 
   // ---------------------------------------------------------------------------
   // Shadow
@@ -379,19 +379,19 @@ class AppColors {
 
   /// Dark theme background color.
   ///
-  /// Deep teal-navy for dark mode screens.
-  /// Hex: #0B1E28
-  static const Color darkBackground = Color(0xFF0B1E28);
+  /// Deep dark navy for dark mode screens.
+  /// Hex: #0B0F1A
+  static const Color darkBackground = Color(0xFF0B0F1A);
 
   /// Dark theme surface color.
   ///
   /// Slightly lighter than background for cards.
-  /// Hex: #142E3A
-  static const Color darkSurface = Color(0xFF142E3A);
+  /// Hex: #131729
+  static const Color darkSurface = Color(0xFF131729);
 
   /// Dark theme surface variant.
   ///
   /// For nested containers in dark mode.
-  /// Hex: #1E3E4D
-  static const Color darkSurfaceVariant = Color(0xFF1E3E4D);
+  /// Hex: #1E2340
+  static const Color darkSurfaceVariant = Color(0xFF1E2340);
 }

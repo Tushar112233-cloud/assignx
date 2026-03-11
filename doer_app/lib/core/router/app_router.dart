@@ -54,6 +54,7 @@ import '../../features/resources/screens/format_templates_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/settings_screen.dart';
 import '../../features/profile/screens/notifications_screen.dart';
+import '../../features/projects/screens/open_pool_screen.dart';
 import '../../features/support/screens/support_screen.dart';
 import '../../providers/auth_provider.dart';
 
@@ -238,6 +239,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const StatisticsScreen(),
       ),
       GoRoute(
+        path: RouteNames.insights,
+        name: 'insights',
+        builder: (context, state) => const StatisticsScreen(),
+      ),
+      GoRoute(
         path: RouteNames.reviews,
         name: 'reviews',
         builder: (context, state) => const ReviewsScreen(),
@@ -268,6 +274,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RouteNames.support,
         name: 'support',
         builder: (context, state) => const SupportScreen(),
+      ),
+
+      // Open Pool
+      GoRoute(
+        path: RouteNames.openPool,
+        name: 'openPool',
+        builder: (context, state) => const OpenPoolScreen(),
       ),
 
       // Project & Workspace Routes

@@ -266,12 +266,20 @@ class WorkspaceNotifier extends ChangeNotifier {
     _chatSubscription = _chatRepository
         .subscribeToMessages(_state.chatRoom!.id)
         .listen((message) {
-      // Add new message to state if not already present
-      if (!_state.messages.any((m) => m.id == message.id)) {
-        _updateState(_state.copyWith(
-          messages: [..._state.messages, message],
-        ));
-      }
+      // Skip if message with same ID already exists
+      if (_state.messages.any((m) => m.id == message.id)) return;
+
+      // Also skip near-duplicate messages (same content within 5 seconds)
+      // This prevents duplicates from Socket.IO broadcasting sent messages back
+      final isDuplicate = _state.messages.any((m) =>
+          m.content == message.content &&
+          m.sentAt.difference(message.sentAt).abs() <
+              const Duration(seconds: 5));
+      if (isDuplicate) return;
+
+      _updateState(_state.copyWith(
+        messages: [..._state.messages, message],
+      ));
     });
   }
 

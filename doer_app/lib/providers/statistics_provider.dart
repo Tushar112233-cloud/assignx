@@ -196,15 +196,17 @@ class StatisticsNotifier extends Notifier<StatisticsState> {
     return const StatisticsState(isLoading: true);
   }
 
-  /// Changes the selected period and recomputes.
+  /// Changes the selected period and recomputes without refetching.
   void setPeriod(StatsPeriod period) {
     state = state.copyWith(selectedPeriod: period);
-    _loadStatistics();
+    _loadStatistics(showLoading: false);
   }
 
   /// Loads all statistics by fetching projects and doer profile, then computing.
-  Future<void> _loadStatistics() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+  Future<void> _loadStatistics({bool showLoading = true}) async {
+    if (showLoading) {
+      state = state.copyWith(isLoading: true, errorMessage: null);
+    }
 
     try {
       // Fetch all projects and doer profile in parallel

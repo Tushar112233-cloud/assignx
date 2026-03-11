@@ -128,6 +128,11 @@ class PaymentHistoryScreen extends ConsumerWidget {
             p.status == PaymentStatus.processing)
         .fold(0.0, (sum, p) => sum + p.amount);
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 360;
+    final titleFontSize = isCompact ? 12.0 : 14.0;
+    final earningsFontSize = isCompact ? 26.0 : 32.0;
+
     return Card(
       elevation: 2,
       shape: const RoundedRectangleBorder(
@@ -141,10 +146,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppColors.accent,
-              AppColors.accent.withValues(alpha: 0.8),
-            ],
+            colors: [AppColors.primary, AppColors.accent],
           ),
         ),
         child: Column(
@@ -153,17 +155,21 @@ class PaymentHistoryScreen extends ConsumerWidget {
             Text(
               'Total Earnings'.tr(context),
               style: TextStyle(
-                fontSize: 14,
+                fontSize: titleFontSize,
                 color: Colors.white70,
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              CurrencyFormatter.formatCompactINR(profile?.totalEarnings ?? 0),
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                CurrencyFormatter.formatCompactINR(profile?.totalEarnings ?? 0),
+                style: TextStyle(
+                  fontSize: earningsFontSize,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.md),

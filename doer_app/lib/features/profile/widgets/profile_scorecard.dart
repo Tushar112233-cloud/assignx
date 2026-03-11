@@ -36,10 +36,10 @@ class ProfileScorecard extends StatelessWidget {
       ),
       _MetricData(
         icon: Icons.account_balance_wallet_rounded,
-        iconColor: AppColors.accent,
+        iconColor: AppColors.primary,
         value: '\u20B9${_formatCurrency(profile.totalEarnings)}',
         label: 'Earnings',
-        bgColor: AppColors.accent.withValues(alpha: 0.1),
+        bgColor: AppColors.primary.withValues(alpha: 0.1),
       ),
       _MetricData(
         icon: Icons.timer_rounded,

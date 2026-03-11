@@ -5,7 +5,7 @@ import '../../../core/api/api_client.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
-import '../../../providers/profile_provider.dart';
+import '../../../providers/auth_provider.dart';
 
 // ============================================================
 // DESIGN CONSTANTS
@@ -160,8 +160,7 @@ class DangerZoneSection extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(dialogContext);
               try {
-                final repository = ref.read(profileRepositoryProvider);
-                await repository.logout();
+                await ref.read(authStateProvider.notifier).signOut();
                 if (context.mounted) {
                   context.go('/login');
                 }
@@ -261,9 +260,7 @@ class DangerZoneSection extends ConsumerWidget {
   Future<void> _deactivateAccount(BuildContext context, WidgetRef ref) async {
     try {
       await ApiClient.post('/users/me/deactivate', {});
-
-      final repository = ref.read(profileRepositoryProvider);
-      await repository.logout();
+      await ref.read(authStateProvider.notifier).signOut();
 
       if (context.mounted) {
         context.go('/login');
@@ -393,9 +390,7 @@ class DangerZoneSection extends ConsumerWidget {
   Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
     try {
       await ApiClient.post('/users/me/delete', {});
-
-      final repository = ref.read(profileRepositoryProvider);
-      await repository.logout();
+      await ref.read(authStateProvider.notifier).signOut();
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

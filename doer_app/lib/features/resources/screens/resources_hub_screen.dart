@@ -140,7 +140,7 @@ class ResourcesHubScreen extends ConsumerWidget {
         children: [
           Icon(
             Icons.search,
-            color: AppColors.accent,
+            color: AppColors.primary,
             size: 22,
           ),
           const SizedBox(width: AppSpacing.sm),
@@ -192,7 +192,7 @@ class ResourcesHubScreen extends ConsumerWidget {
               'Citations',
               '$citations',
               Icons.format_quote,
-              AppColors.accent,
+              AppColors.primary,
             ),
           ),
         ],
@@ -244,7 +244,7 @@ class ResourcesHubScreen extends ConsumerWidget {
             title: 'Citation Builder',
             description: 'APA, MLA, Harvard & more',
             icon: Icons.format_quote,
-            color: AppColors.accent,
+            color: AppColors.primary,
             badge: citationCount > 0 ? '$citationCount' : null,
             onTap: () => context.push('/resources/citation-builder'),
             height: 170,
@@ -363,7 +363,7 @@ class ResourcesHubScreen extends ConsumerWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   AppColors.primary,
-                  AppColors.accent,
+                  AppColors.primary.withValues(alpha: 0.7),
                 ],
               ),
               borderRadius: BorderRadius.circular(14),
@@ -405,9 +405,9 @@ class ResourcesHubScreen extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: trainingProgress,
-                          backgroundColor: AppColors.accent.withValues(alpha: 0.15),
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.15),
                           valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.accent,
+                            AppColors.primary,
                           ),
                           minHeight: 6,
                         ),
@@ -419,7 +419,7 @@ class ResourcesHubScreen extends ConsumerWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.accent,
+                        color: AppColors.primary,
                       ),
                     ),
                   ],
@@ -432,12 +432,12 @@ class ResourcesHubScreen extends ConsumerWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.chevron_right,
-              color: AppColors.accent,
+              color: AppColors.primary,
               size: 20,
             ),
           ),
@@ -467,7 +467,7 @@ class ResourcesHubScreen extends ConsumerWidget {
             'Citation Guides',
             'Detailed guides for all citation styles',
             Icons.article,
-            AppColors.accent,
+            AppColors.primary,
           ),
           Divider(height: 1, color: AppColors.border.withValues(alpha: 0.3)),
           _buildLinkItem(

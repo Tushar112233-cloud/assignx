@@ -40,7 +40,7 @@ class ConnectHubScreen extends ConsumerStatefulWidget {
 }
 
 class _ConnectHubScreenState extends ConsumerState<ConnectHubScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   TabController? _tabController;
   List<ConnectType> _tabs = [];
 
@@ -54,7 +54,7 @@ class _ConnectHubScreenState extends ConsumerState<ConnectHubScreen>
     if (_tabs.length != newTabs.length ||
         !_tabs.every((t) => newTabs.contains(t))) {
       final oldIndex = _tabController?.index ?? 0;
-      _tabController?.dispose();
+      final oldController = _tabController;
       _tabs = newTabs;
       if (_tabs.length > 1) {
         _tabController = TabController(
@@ -64,6 +64,13 @@ class _ConnectHubScreenState extends ConsumerState<ConnectHubScreen>
         );
       } else {
         _tabController = null;
+      }
+      // Dispose old controller after the current frame completes to avoid
+      // "used after being disposed" errors from the previous widget tree.
+      if (oldController != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          oldController.dispose();
+        });
       }
     }
   }

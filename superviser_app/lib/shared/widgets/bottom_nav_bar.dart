@@ -1,13 +1,13 @@
-/// Floating pill-shaped bottom navigation bar for the supervisor app.
+/// Floating bottom navigation bar for the supervisor app.
 ///
 /// Features:
-/// - Floating pill shape (height 60, borderRadius 30)
-/// - Solid dark background (#1A1A1A)
-/// - 4 navigation items: Dashboard, Projects, Chat, Profile
-/// - Active icon: white, Inactive: #8A8A8A
-/// - Profile item shows avatar circle with border
+/// - White background with rounded corners (borderRadius: 24)
+/// - Subtle border and shadow
+/// - 5 navigation items with labels: Dashboard, Projects, Chat, Earnings, Profile
+/// - Active: primary color icon + label + animated orange indicator dot above icon
+/// - Inactive: tertiary text color icons + labels
+/// - Profile item shows avatar circle
 /// - Optional notification badge on Dashboard tab
-/// - Designed to be placed inside a Stack via Positioned
 ///
 /// Example:
 /// ```dart
@@ -26,7 +26,9 @@ library;
 
 import 'package:flutter/material.dart';
 
-/// Floating pill-shaped bottom navigation bar.
+import '../../core/theme/app_colors.dart';
+
+/// Floating bottom navigation bar with white pill design.
 class BottomNavBar extends StatelessWidget {
   /// Currently selected index.
   final int currentIndex;
@@ -37,10 +39,10 @@ class BottomNavBar extends StatelessWidget {
   /// Profile avatar URL (optional).
   final String? profileImageUrl;
 
-  /// Bottom offset from screen edge. Defaults to 20px.
+  /// Bottom offset from screen edge. Defaults to 16px.
   final double bottomOffset;
 
-  /// Horizontal padding. Defaults to 16px.
+  /// Horizontal padding. Defaults to 12px.
   final double horizontalPadding;
 
   /// Unread notification badge count for the Dashboard tab.
@@ -51,84 +53,130 @@ class BottomNavBar extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
     this.profileImageUrl,
-    this.bottomOffset = 20,
-    this.horizontalPadding = 16,
+    this.bottomOffset = 16,
+    this.horizontalPadding = 12,
     this.dashboardBadgeCount = 0,
   });
 
-  // Solid dark navbar colors
-  static const Color _navBackground = Color(0xFF1A1A1A);
-  static const Color _activeIconColor = Colors.white;
-  static const Color _inactiveIconColor = Color(0xFF8A8A8A);
-
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final navHeight = screenWidth < 360 ? 64.0 : 72.0;
+
     return Positioned(
       left: horizontalPadding,
       right: horizontalPadding,
       bottom: bottomOffset,
       child: Container(
-        height: 60,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        height: navHeight,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: _navBackground,
-          borderRadius: BorderRadius.circular(30),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.borderLight.withValues(alpha: 0.5),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.20),
-              blurRadius: 16,
+              color: AppColors.primary.withValues(alpha: 0.08),
+              blurRadius: 24,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.10),
-              blurRadius: 32,
-              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             // 0: Dashboard
-            _buildNavItem(
-              activeIcon: Icons.dashboard_rounded,
-              inactiveIcon: Icons.dashboard_outlined,
-              index: 0,
-              badgeCount: dashboardBadgeCount,
+            Expanded(
+              child: _NavItem(
+                activeIcon: Icons.dashboard_rounded,
+                inactiveIcon: Icons.dashboard_outlined,
+                label: 'Dashboard',
+                isActive: currentIndex == 0,
+                onTap: () => onTap(0),
+                badgeCount: dashboardBadgeCount,
+              ),
             ),
             // 1: Projects
-            _buildNavItem(
-              activeIcon: Icons.folder_rounded,
-              inactiveIcon: Icons.folder_outlined,
-              index: 1,
+            Expanded(
+              child: _NavItem(
+                activeIcon: Icons.folder_rounded,
+                inactiveIcon: Icons.folder_outlined,
+                label: 'Projects',
+                isActive: currentIndex == 1,
+                onTap: () => onTap(1),
+              ),
             ),
             // 2: Chat
-            _buildNavItem(
-              activeIcon: Icons.chat_bubble_rounded,
-              inactiveIcon: Icons.chat_bubble_outline,
-              index: 2,
+            Expanded(
+              child: _NavItem(
+                activeIcon: Icons.chat_bubble_rounded,
+                inactiveIcon: Icons.chat_bubble_outline,
+                label: 'Chat',
+                isActive: currentIndex == 2,
+                onTap: () => onTap(2),
+              ),
             ),
-            // 3: Profile (avatar)
-            _buildProfileItem(index: 3),
+            // 3: Earnings
+            Expanded(
+              child: _NavItem(
+                activeIcon: Icons.account_balance_wallet_rounded,
+                inactiveIcon: Icons.account_balance_wallet_outlined,
+                label: 'Earnings',
+                isActive: currentIndex == 3,
+                onTap: () => onTap(3),
+              ),
+            ),
+            // 4: Profile (avatar)
+            Expanded(
+              child: _ProfileNavItem(
+                isActive: currentIndex == 4,
+                onTap: () => onTap(4),
+                imageUrl: profileImageUrl,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  /// Builds a single navigation item with icon only.
-  Widget _buildNavItem({
-    required IconData activeIcon,
-    required IconData inactiveIcon,
-    required int index,
-    int badgeCount = 0,
-  }) {
-    final isActive = currentIndex == index;
+/// A single navigation item with icon, label, and active indicator.
+class _NavItem extends StatelessWidget {
+  final IconData activeIcon;
+  final IconData inactiveIcon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+  final int badgeCount;
+
+  const _NavItem({
+    required this.activeIcon,
+    required this.inactiveIcon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isActive ? AppColors.primary : AppColors.textTertiaryLight;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final iconSize = screenWidth < 360 ? 18.0 : 22.0;
+    final fontSize = screenWidth < 360 ? 9.0 : 10.0;
 
     Widget iconWidget = Icon(
       isActive ? activeIcon : inactiveIcon,
-      size: 24,
-      color: isActive ? _activeIconColor : _inactiveIconColor,
+      size: iconSize,
+      color: color,
     );
 
     if (badgeCount > 0) {
@@ -144,55 +192,120 @@ class BottomNavBar extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => onTap(index),
-        borderRadius: BorderRadius.circular(30),
-        child: Container(
-          width: 42,
-          height: 42,
-          alignment: Alignment.center,
-          child: iconWidget,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Animated orange indicator dot above icon
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: isActive ? 20 : 0,
+                height: 3,
+                margin: const EdgeInsets.only(bottom: 4),
+                decoration: BoxDecoration(
+                  color: isActive ? AppColors.accent : Colors.transparent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              iconWidget,
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: color,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  /// Builds the profile avatar item.
-  Widget _buildProfileItem({required int index}) {
-    final isActive = currentIndex == index;
+/// Profile avatar navigation item with label and active indicator.
+class _ProfileNavItem extends StatelessWidget {
+  final bool isActive;
+  final VoidCallback onTap;
+  final String? imageUrl;
+
+  const _ProfileNavItem({
+    required this.isActive,
+    required this.onTap,
+    this.imageUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isActive ? AppColors.primary : AppColors.textTertiaryLight;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final avatarSize = screenWidth < 360 ? 20.0 : 24.0;
+    final iconSize = screenWidth < 360 ? 11.0 : 13.0;
+    final fontSize = screenWidth < 360 ? 9.0 : 10.0;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => onTap(index),
-        borderRadius: BorderRadius.circular(30),
-        child: Container(
-          width: 42,
-          height: 42,
-          alignment: Alignment.center,
-          child: Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isActive ? _activeIconColor : _inactiveIconColor,
-                width: isActive ? 2 : 1.5,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Animated orange indicator dot above avatar
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: isActive ? 20 : 0,
+                height: 3,
+                margin: const EdgeInsets.only(bottom: 4),
+                decoration: BoxDecoration(
+                  color: isActive ? AppColors.accent : Colors.transparent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              image: profileImageUrl != null
-                  ? DecorationImage(
-                      image: NetworkImage(profileImageUrl!),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-              color: profileImageUrl == null ? const Color(0xFF3A3A3A) : null,
-            ),
-            child: profileImageUrl == null
-                ? const Icon(
-                    Icons.person,
-                    size: 16,
-                    color: _inactiveIconColor,
-                  )
-                : null,
+              Container(
+                width: avatarSize,
+                height: avatarSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isActive ? AppColors.primary : AppColors.borderLight,
+                    width: isActive ? 2 : 1.5,
+                  ),
+                  image: imageUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(imageUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                  color: imageUrl == null ? AppColors.surfaceVariantLight : null,
+                ),
+                child: imageUrl == null
+                    ? Icon(
+                        Icons.person,
+                        size: iconSize,
+                        color: color,
+                      )
+                    : null,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Profile',
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: color,
+                ),
+              ),
+            ],
           ),
         ),
       ),

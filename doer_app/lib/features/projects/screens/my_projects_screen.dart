@@ -1,7 +1,9 @@
 /// My Projects screen showing all doer projects organized by status tabs.
 ///
-/// Displays a large header with project count, stat cards, search bar,
+/// Displays a gradient hero banner with "Project Velocity Dashboard" heading,
+/// summary stat chips, stat cards, search bar with focus border,
 /// pill-shaped tab filters, and glass-morphism project cards.
+/// Matches the doer-web design pattern with primary indigo-blue colors.
 library;
 
 import 'package:flutter/material.dart';
@@ -12,10 +14,19 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/doer_project_model.dart';
+import '../../../providers/navigation_provider.dart';
 import '../../../providers/projects_provider.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_indicator.dart';
+
+/// Returns responsive horizontal padding based on screen width.
+double _responsiveHPadding(BuildContext context) {
+  final width = MediaQuery.sizeOf(context).width;
+  if (width > 600) return AppSpacing.xl;
+  if (width > 400) return AppSpacing.md;
+  return AppSpacing.sm;
+}
 
 /// Main My Projects screen with tabbed project lists.
 class MyProjectsScreen extends ConsumerStatefulWidget {
@@ -61,45 +72,17 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
           : RefreshIndicator(
               onRefresh: () =>
                   ref.read(myProjectsProvider.notifier).refresh(),
-              color: AppColors.accent,
+              color: AppColors.primary,
               child: CustomScrollView(
                 slivers: [
-                  // Top safe area padding
+                  // Gradient hero banner
                   SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: MediaQuery.of(context).padding.top + AppSpacing.md,
-                    ),
-                  ),
-
-                  // Large header with project count
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'My Projects'.tr(context),
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            '$totalProjects ${'projects total'.tr(context)}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: _HeroBanner(
+                      totalProjects: totalProjects,
+                      pipelineValue: stats.activeCount + stats.completedCount,
+                      activeCount: stats.activeCount,
+                      reviewCount: stats.underReviewCount,
+                      completedCount: stats.completedCount,
                     ),
                   ),
 
@@ -107,23 +90,32 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
                     child: SizedBox(height: AppSpacing.lg),
                   ),
 
-                  // Stat cards row: Active Projects / Completed
+                  // Stat cards row: Active Projects / Under Review / Completed
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: _responsiveHPadding(context),
                       ),
                       child: Row(
                         children: [
                           Expanded(
                             child: _StatCard(
                               icon: Icons.rocket_launch_rounded,
-                              iconColor: AppColors.info,
-                              label: 'Active Projects'.tr(context),
+                              iconColor: AppColors.primary,
+                              label: 'Active'.tr(context),
                               value: '${stats.activeCount}',
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.md),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: _StatCard(
+                              icon: Icons.rate_review_rounded,
+                              iconColor: AppColors.warning,
+                              label: 'Review'.tr(context),
+                              value: '${stats.underReviewCount}',
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: _StatCard(
                               icon: Icons.check_circle_rounded,
@@ -144,8 +136,8 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
                   // Browse Open Pool card
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: _responsiveHPadding(context),
                       ),
                       child: _BrowseOpenPoolCard(
                         onTap: () => context.push('/open-pool'),
@@ -160,8 +152,8 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
                   // Search bar
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: _responsiveHPadding(context),
                       ),
                       child: _GlassSearchBar(
                         controller: _searchController,
@@ -269,6 +261,182 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
 }
 
 // =============================================================================
+// Hero Banner
+// =============================================================================
+
+/// Gradient hero banner with project velocity dashboard heading and summary stats.
+class _HeroBanner extends StatelessWidget {
+  final int totalProjects;
+  final int pipelineValue;
+  final int activeCount;
+  final int reviewCount;
+  final int completedCount;
+
+  const _HeroBanner({
+    required this.totalProjects,
+    required this.pipelineValue,
+    required this.activeCount,
+    required this.reviewCount,
+    required this.completedCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isCompact = screenWidth < 380;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        topPadding + AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            AppColors.gradientStart,
+            AppColors.gradientMiddle,
+            AppColors.primaryDark,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDark.withAlpha(60),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Project Velocity'.tr(context),
+            style: TextStyle(
+              fontSize: isCompact ? 22 : 26,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Dashboard'.tr(context),
+            style: TextStyle(
+              fontSize: isCompact ? 22 : 26,
+              fontWeight: FontWeight.w800,
+              color: Colors.white.withAlpha(180),
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '$totalProjects ${'projects total'.tr(context)}',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withAlpha(160),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          // Mini stat chips row
+          Row(
+            children: [
+              _HeroStatChip(
+                label: 'Pipeline'.tr(context),
+                value: '$pipelineValue',
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              _HeroStatChip(
+                label: 'Active'.tr(context),
+                value: '$activeCount',
+                color: AppColors.primaryLight,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              _HeroStatChip(
+                label: 'Review'.tr(context),
+                value: '$reviewCount',
+                color: AppColors.warning,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              _HeroStatChip(
+                label: 'Done'.tr(context),
+                value: '$completedCount',
+                color: AppColors.success,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small stat chip used inside the hero banner.
+class _HeroStatChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _HeroStatChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(18),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(
+            color: Colors.white.withAlpha(20),
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Colors.white.withAlpha(140),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
 // Stat Card
 // =============================================================================
 
@@ -292,41 +460,39 @@ class _StatCard extends StatelessWidget {
       blur: 12,
       opacity: 0.8,
       borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.md,
+      ),
+      child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: iconColor.withAlpha(26),
               borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             ),
-            child: Icon(icon, size: 22, color: iconColor),
+            child: Icon(icon, size: 20, color: iconColor),
           ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
             ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -393,7 +559,7 @@ class _BrowseOpenPoolCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white.withAlpha(30),
+                color: AppColors.primary.withAlpha(50),
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
               ),
               child: const Icon(
@@ -413,8 +579,8 @@ class _BrowseOpenPoolCard extends StatelessWidget {
 // Glass Search Bar
 // =============================================================================
 
-/// Search bar inside a GlassContainer with search icon.
-class _GlassSearchBar extends StatelessWidget {
+/// Search bar inside a GlassContainer with search icon and primary focus border.
+class _GlassSearchBar extends StatefulWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
 
@@ -424,46 +590,70 @@ class _GlassSearchBar extends StatelessWidget {
   });
 
   @override
+  State<_GlassSearchBar> createState() => _GlassSearchBarState();
+}
+
+class _GlassSearchBarState extends State<_GlassSearchBar> {
+  bool _isFocused = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GlassContainer(
-      blur: 10,
-      opacity: 0.75,
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        border: Border.all(
+          color: _isFocused
+              ? AppColors.primary
+              : AppColors.border.withAlpha(80),
+          width: _isFocused ? 1.5 : 1.0,
+        ),
       ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.search_rounded,
-            color: AppColors.textTertiary,
-            size: 22,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              onChanged: onChanged,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.textPrimary,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search projects...'.tr(context),
-                hintStyle: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textTertiary,
-                ),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.sm,
+      child: GlassContainer(
+        blur: 10,
+        opacity: 0.75,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.search_rounded,
+              color: _isFocused ? AppColors.primary : AppColors.textTertiary,
+              size: 22,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Focus(
+                onFocusChange: (focused) =>
+                    setState(() => _isFocused = focused),
+                child: TextField(
+                  controller: widget.controller,
+                  onChanged: widget.onChanged,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                  cursorColor: AppColors.primary,
+                  decoration: InputDecoration(
+                    hintText: 'Search projects...'.tr(context),
+                    hintStyle: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textTertiary,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.sm,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -494,7 +684,9 @@ class _PillTabBar extends StatelessWidget {
       builder: (context, _) {
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          padding: EdgeInsets.symmetric(
+            horizontal: _responsiveHPadding(context),
+          ),
           child: Row(
             children: [
               _PillTab(
@@ -547,7 +739,7 @@ class _PillTab extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.accent
+              ? AppColors.primary
               : Colors.white.withAlpha(40),
           borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
           border: isSelected
@@ -590,8 +782,8 @@ class _GlassProjectCard extends StatelessWidget {
     final remaining = project.timeRemaining;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
+      padding: EdgeInsets.symmetric(
+        horizontal: _responsiveHPadding(context),
         vertical: AppSpacing.xs + 1,
       ),
       child: GlassCard(
@@ -741,9 +933,9 @@ class _GlassProjectCard extends StatelessWidget {
   Color _getStatusColor(DoerProjectStatus status) {
     switch (status) {
       case DoerProjectStatus.inProgress:
-        return AppColors.info;
+        return AppColors.primary;
       case DoerProjectStatus.assigned:
-        return AppColors.accent;
+        return AppColors.primary;
       case DoerProjectStatus.revisionRequested:
       case DoerProjectStatus.inRevision:
         return AppColors.error;

@@ -18,7 +18,6 @@ import '../../../../shared/widgets/glass_container.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/request_model.dart';
 import '../providers/dashboard_provider.dart';
-import '../widgets/menu_drawer.dart';
 import '../widgets/field_filter.dart';
 import '../widgets/request_card.dart';
 import '../widgets/quote_form_sheet.dart';
@@ -67,12 +66,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 /// State class for [DashboardScreen].
 ///
-/// Manages the scaffold key for drawer access and handles
-/// navigation and action sheet display.
+/// Manages navigation and action sheet display.
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  /// Key for accessing the scaffold state (drawer control).
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
@@ -82,9 +77,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final firstName = userName.split(' ').first;
 
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: Colors.transparent,
-      drawer: const MenuDrawer(),
       body: RefreshIndicator(
         onRefresh: () => ref.read(dashboardProvider.notifier).refresh(),
         child: CustomScrollView(
@@ -93,22 +86,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             SliverToBoxAdapter(
               child: SizedBox(height: MediaQuery.of(context).padding.top + 8),
             ),
-            // Top bar: menu + notification
+            // Top bar: notification button
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    GlassContainer(
-                      blur: 12,
-                      opacity: 0.15,
-                      borderRadius: BorderRadius.circular(14),
-                      borderColor: Colors.white.withAlpha(64),
-                      backgroundColor: Colors.white,
-                      onTap: () => _scaffoldKey.currentState?.openDrawer(),
-                      padding: const EdgeInsets.all(10),
-                      child: const Icon(Icons.menu_rounded, color: AppColors.textPrimaryLight, size: 22),
-                    ),
                     const Spacer(),
                     _GlassNotificationButton(
                       count: unreadNotifs,

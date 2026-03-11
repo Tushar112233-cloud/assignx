@@ -544,7 +544,8 @@ class AppShell extends ConsumerWidget {
     if (location.startsWith(RoutePaths.dashboard)) return 0;
     if (location.startsWith(RoutePaths.projects)) return 1;
     if (location.startsWith(RoutePaths.chat)) return 2;
-    if (location.startsWith(RoutePaths.profile)) return 3;
+    if (location.startsWith(RoutePaths.earnings)) return 3;
+    if (location.startsWith(RoutePaths.profile)) return 4;
     return 0;
   }
 
@@ -561,6 +562,9 @@ class AppShell extends ConsumerWidget {
         context.go(RoutePaths.chat);
         break;
       case 3:
+        context.go(RoutePaths.earnings);
+        break;
+      case 4:
         context.go(RoutePaths.profile);
         break;
     }
@@ -591,6 +595,7 @@ class AppShell extends ConsumerWidget {
 /// - Dashboard (home)
 /// - Projects
 /// - Chat
+/// - Earnings
 /// - Profile
 ///
 /// Shows unread notification count badge on Dashboard tab.
@@ -604,7 +609,8 @@ class AppBottomNavigationBar extends ConsumerWidget {
     if (location.startsWith(RoutePaths.dashboard)) return 0;
     if (location.startsWith(RoutePaths.projects)) return 1;
     if (location.startsWith(RoutePaths.chat)) return 2;
-    if (location.startsWith(RoutePaths.profile)) return 3;
+    if (location.startsWith(RoutePaths.earnings)) return 3;
+    if (location.startsWith(RoutePaths.profile)) return 4;
     return 0;
   }
 
@@ -621,6 +627,9 @@ class AppBottomNavigationBar extends ConsumerWidget {
         context.go(RoutePaths.chat);
         break;
       case 3:
+        context.go(RoutePaths.earnings);
+        break;
+      case 4:
         context.go(RoutePaths.profile);
         break;
     }

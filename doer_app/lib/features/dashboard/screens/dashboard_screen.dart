@@ -13,11 +13,16 @@ import '../../../shared/widgets/loading_overlay.dart';
 import '../widgets/assigned_task_card.dart';
 import '../widgets/task_pool_card.dart';
 import '../../../core/translation/translation_extensions.dart';
+import '../../../providers/navigation_provider.dart';
 
-/// Main dashboard screen with greeting header, glass stat cards, CTA, and tasks.
+/// Main dashboard screen matching the doer-web design.
 ///
-/// Redesigned as a tab inside MainShell's IndexedStack. Uses transparent
-/// Scaffold background and glass morphism containers throughout.
+/// Layout:
+/// 1. Greeting header with notification bell
+/// 2. Hero banner with motivational message + workspace status
+/// 3. Stat cards row (Assigned, Available, Urgent, Earnings)
+/// 4. Performance summary cards
+/// 5. Task sections with tabs (Assigned to Me / Open Pool)
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
@@ -25,7 +30,25 @@ class DashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+class _DashboardScreenState extends ConsumerState<DashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
@@ -40,101 +63,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: CustomScrollView(
             slivers: [
               // Greeting header
+              SliverToBoxAdapter(child: _buildGreetingHeader(context)),
+
+              // Hero banner
+              SliverToBoxAdapter(child: _buildHeroBanner(context, dashboardState)),
+
+              // Stat cards grid
               SliverToBoxAdapter(
-                child: _buildGreetingHeader(context),
+                child: _buildStatCardsGrid(stats, dashboardState),
               ),
 
-              // Status pills
+              // Performance + Task mix row
               SliverToBoxAdapter(
-                child: _buildStatusPills(dashboardState),
+                child: _buildPerformanceRow(stats, dashboardState),
               ),
 
-              // Browse Open Pool CTA card
+              // Your Tasks section header
               SliverToBoxAdapter(
-                child: _buildBrowsePoolCTA(context),
+                child: _buildTasksSectionHeader(context, dashboardState),
               ),
 
-              // Stat cards row
+              // Task tab bar
               SliverToBoxAdapter(
-                child: _buildStatCardsRow(stats, dashboardState),
+                child: _buildTaskTabBar(dashboardState),
               ),
 
-              // Assigned Tasks section header
-              SliverToBoxAdapter(
-                child: _buildSectionHeader(
-                  'Assigned Tasks'.tr(context),
-                  Icons.assignment,
-                  AppColors.primary,
-                  dashboardState.assignedProjects.length,
-                  onSeeAll: dashboardState.assignedProjects.length > 3
-                      ? () => context.push('/dashboard/projects')
-                      : null,
-                ),
-              ),
-
-              // Assigned Tasks content
-              if (dashboardState.assignedProjects.isEmpty)
-                const SliverToBoxAdapter(
-                  child: _EmptyAssignedTasks(),
-                )
+              // Task content
+              if (_tabController.index == 0)
+                ..._buildAssignedContent(dashboardState)
               else
-                SliverToBoxAdapter(
-                  child: _buildAssignedTasksList(
-                    dashboardState.assignedProjects,
-                  ),
-                ),
-
-              // Recent Tasks section
-              SliverToBoxAdapter(
-                child: _buildSectionHeader(
-                  'Open Task Pool'.tr(context),
-                  Icons.explore,
-                  AppColors.accent,
-                  dashboardState.openPoolProjects.length,
-                  onSeeAll: null,
-                ),
-              ),
-
-              // Open Pool content as glass cards with status badges
-              if (dashboardState.openPoolProjects.isEmpty)
-                const SliverToBoxAdapter(
-                  child: _EmptyTaskPool(),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                  ),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final sorted = _sortedPoolProjects(
-                          dashboardState.openPoolProjects,
-                        );
-                        final project = sorted[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: AppSpacing.md,
-                          ),
-                          child: TaskPoolCard(
-                            project: project,
-                            onTap: () =>
-                                context.push('/project/${project.id}'),
-                            onAccept: () =>
-                                _confirmAccept(context, project),
-                          ),
-                        );
-                      },
-                      childCount:
-                          dashboardState.openPoolProjects.length,
-                    ),
-                  ),
-                ),
+                ..._buildPoolContent(dashboardState),
 
               // Bottom padding for floating nav bar
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 100),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
         ),
@@ -142,62 +103,70 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  /// Builds the large greeting header with time-based greeting and subtitle.
   Widget _buildGreetingHeader(BuildContext context) {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.md,
-          AppSpacing.lg,
-          AppSpacing.sm,
-        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
         child: Consumer(
           builder: (context, ref, _) {
             final user = ref.watch(currentUserProvider);
             final displayName = user?.fullName ?? 'Doer';
             final firstName = displayName.split(' ').first;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            return Row(
               children: [
-                // Top bar with notification button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _buildNotificationButton(context),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                // Time-based greeting with bold name
-                RichText(
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textPrimary,
-                      height: 1.3,
+                // AX Logo badge
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.primary, AppColors.accent],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'AX',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextSpan(text: '${_getGreeting()}, '),
-                      TextSpan(
-                        text: firstName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
+                      Text(
+                        'AssignX Doer',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        'Freelancer Portal',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Welcome back to your workspace'.tr(context),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w400,
-                  ),
+                // Notification bell
+                _buildHeaderIcon(
+                  Icons.notifications_outlined,
+                  () => context.push('/notifications'),
+                  showBadge: true,
                 ),
               ],
             );
@@ -207,158 +176,301 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  /// Builds status pills showing active and pending counts.
-  Widget _buildStatusPills(DashboardState dashboardState) {
+  Widget _buildHeaderIcon(IconData icon, VoidCallback onTap,
+      {bool showBadge = false}) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          ),
+          child: IconButton(
+            onPressed: onTap,
+            icon: Icon(icon, size: 20, color: AppColors.textSecondary),
+            padding: EdgeInsets.zero,
+          ),
+        ),
+        if (showBadge)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: AppColors.error,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildHeroBanner(
+      BuildContext context, DashboardState dashboardState) {
+    final user = ref.watch(currentUserProvider);
+    final firstName = (user?.fullName ?? 'Doer').split(' ').first;
     final activeCount = dashboardState.assignedProjects
         .where((p) =>
             p.status == DoerProjectStatus.inProgress ||
             p.status == DoerProjectStatus.assigned)
         .length;
-    final pendingCount = dashboardState.openPoolProjects.length;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.md,
-      ),
-      child: Row(
-        children: [
-          _StatusPill(
-            label: 'Active'.tr(context),
-            count: activeCount,
-            color: AppColors.success,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          _StatusPill(
-            label: 'Pending'.tr(context),
-            count: pendingCount,
-            color: AppColors.warning,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds the "Browse Open Pool" dark gradient CTA card.
-  Widget _buildBrowsePoolCTA(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-      ),
-      child: GestureDetector(
-        onTap: () {
-          // Scroll to the open pool section or navigate
-        },
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                AppColors.gradientStart,
-                AppColors.gradientMiddle,
-                AppColors.primaryLight,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFEEF2FF), // light indigo
+              Color(0xFFF3F5FF), // pale blue
+              Color(0xFFE9FAFA), // cyan wash
             ],
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Browse Open Pool'.tr(context),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Find new projects and start earning'.tr(context),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Workspace active badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
               ),
-              const SizedBox(width: AppSpacing.md),
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Workspace active',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.success,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            // Greeting
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textPrimary,
+                  height: 1.3,
+                  fontFamily: 'Inter',
+                ),
+                children: [
+                  TextSpan(text: '${_getGreeting()}, '),
+                  TextSpan(
+                    text: firstName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Your workspace is ready. Explore new opportunities and keep your momentum going.',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Quick stats row
+            Row(
+              children: [
+                _HeroPill(
+                  value: '$activeCount',
+                  label: 'active',
+                  color: AppColors.info,
+                ),
+                const SizedBox(width: 16),
+                _HeroPill(
+                  value: '${dashboardState.openPoolProjects.length}',
+                  label: 'available',
+                  color: AppColors.success,
+                ),
+                const SizedBox(width: 16),
+                _HeroPill(
+                  value: '${_getUrgentCount(dashboardState)}',
+                  label: 'urgent',
+                  color: AppColors.error,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // CTA buttons
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      ref.read(navigationIndexProvider.notifier).setIndex(1);
+                    },
+                    icon: const Icon(Icons.explore_rounded, size: 18),
+                    label: const Text('Explore projects'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
                   ),
                 ),
-                child: const Icon(
-                  Icons.arrow_forward_rounded,
-                  color: Colors.white,
-                  size: 22,
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: () => context.push('/dashboard/statistics'),
+                  child: const Text('View insights'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: BorderSide(color: AppColors.border),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  /// Builds stat cards row with glass containers.
-  Widget _buildStatCardsRow(DoerStats stats, DashboardState dashboardState) {
+  Widget _buildStatCardsGrid(
+      DoerStats stats, DashboardState dashboardState) {
+    final urgentCount = _getUrgentCount(dashboardState);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.lg,
-        AppSpacing.md,
-        0,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _WebStatCard(
+                  icon: Icons.assignment_rounded,
+                  iconColor: AppColors.info,
+                  title: 'ASSIGNED TASKS',
+                  value: '${stats.activeProjects}',
+                  subtitle: '${stats.activeProjects} in progress',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _WebStatCard(
+                  icon: Icons.group_work_rounded,
+                  iconColor: AppColors.accent,
+                  title: 'AVAILABLE TASKS',
+                  value: '${dashboardState.openPoolProjects.length}',
+                  subtitle: 'In open pool',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _WebStatCard(
+                  icon: Icons.schedule_rounded,
+                  iconColor: AppColors.error,
+                  title: 'URGENT',
+                  value: '$urgentCount',
+                  subtitle: 'Need attention',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _WebStatCard(
+                  icon: Icons.currency_rupee_rounded,
+                  iconColor: AppColors.success,
+                  title: 'EARNINGS',
+                  value: '\u20B9${_formatEarnings(dashboardState.pendingEarnings)}',
+                  subtitle: 'Total available',
+                  isHighlighted: true,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildPerformanceRow(
+      DoerStats stats, DashboardState dashboardState) {
+    final completionRate = stats.completedProjects > 0
+        ? ((stats.completedProjects /
+                    (stats.completedProjects + stats.activeProjects)) *
+                100)
+            .round()
+        : 0;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Row(
         children: [
+          // Performance card
           Expanded(
-            child: _GlassStatCard(
-              icon: Icons.assignment,
-              value: stats.activeProjects.toString(),
-              label: 'Active',
-              color: AppColors.info,
+            child: _PerformanceCard(
+              title: 'Performance',
+              subtitle: 'Delivery health',
+              items: [
+                _PerfItem('Completion rate', '$completionRate%'),
+                _PerfItem('Active tasks', '${stats.activeProjects}'),
+                _PerfItem('Urgent tasks', '${_getUrgentCount(dashboardState)}'),
+              ],
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: 12),
+          // Priority tasks card
           Expanded(
-            child: _GlassStatCard(
-              icon: Icons.check_circle,
-              value: stats.completedProjects.toString(),
-              label: 'Completed',
-              color: AppColors.success,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: _GlassStatCard(
-              icon: Icons.account_balance_wallet,
-              value: _formatEarnings(dashboardState.pendingEarnings),
-              label: 'Earnings',
-              color: AppColors.warning,
-              prefix: '\u20B9',
+            child: _PriorityCard(
+              urgentCount: _getUrgentCount(dashboardState),
             ),
           ),
         ],
@@ -366,116 +478,103 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildNotificationButton(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        IconButton(
-          onPressed: () => context.push('/notifications'),
-          icon: const Icon(Icons.notifications_outlined,
-              color: AppColors.textSecondary),
-          tooltip: 'Notifications'.tr(context),
-        ),
-        Positioned(
-          right: 8,
-          top: 8,
-          child: Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: AppColors.error,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Builds a section header with title, icon, count badge, and optional "See All".
-  Widget _buildSectionHeader(
-    String title,
-    IconData icon,
-    Color color,
-    int count, {
-    VoidCallback? onSeeAll,
-  }) {
+  Widget _buildTasksSectionHeader(
+      BuildContext context, DashboardState dashboardState) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.sm,
-      ),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 18, color: color),
-          ),
-          const SizedBox(width: 10),
           Text(
-            title,
+            'Your tasks',
             style: const TextStyle(
-              fontSize: 17,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 3,
-            ),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-            ),
-            child: Text(
-              count.toString(),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+          const SizedBox(height: 2),
+          Text(
+            'Review assigned work and pick from the pool',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
             ),
           ),
-          const Spacer(),
-          if (onSeeAll != null)
-            GestureDetector(
-              onTap: onSeeAll,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-                ),
-                child: Text(
-                  'See All'.tr(context),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.accent,
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 
-  /// Builds the assigned tasks as a horizontal scrollable list.
+  Widget _buildTaskTabBar(DashboardState dashboardState) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Row(
+        children: [
+          _TaskTab(
+            icon: Icons.assignment_rounded,
+            label: 'Assigned to Me',
+            isActive: _tabController.index == 0,
+            onTap: () => setState(() => _tabController.animateTo(0)),
+          ),
+          const SizedBox(width: 8),
+          _TaskTab(
+            icon: Icons.group_work_rounded,
+            label: 'Open Pool',
+            count: dashboardState.openPoolProjects.length,
+            isActive: _tabController.index == 1,
+            onTap: () => setState(() => _tabController.animateTo(1)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildAssignedContent(DashboardState dashboardState) {
+    if (dashboardState.assignedProjects.isEmpty) {
+      return [
+        const SliverToBoxAdapter(child: _EmptyAssignedTasks()),
+      ];
+    }
+    return [
+      SliverToBoxAdapter(
+        child: _buildAssignedTasksList(dashboardState.assignedProjects),
+      ),
+    ];
+  }
+
+  List<Widget> _buildPoolContent(DashboardState dashboardState) {
+    if (dashboardState.openPoolProjects.isEmpty) {
+      return [
+        const SliverToBoxAdapter(child: _EmptyTaskPool()),
+      ];
+    }
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final sorted =
+                  _sortedPoolProjects(dashboardState.openPoolProjects);
+              final project = sorted[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: TaskPoolCard(
+                  project: project,
+                  onTap: () => context.push('/project/${project.id}'),
+                  onAccept: () => _confirmAccept(context, project),
+                ),
+              );
+            },
+            childCount: dashboardState.openPoolProjects.length,
+          ),
+        ),
+      ),
+    ];
+  }
+
   Widget _buildAssignedTasksList(List<DoerProjectModel> projects) {
-    // Sort: urgent/revision first, then by deadline
     final sorted = List<DoerProjectModel>.from(projects)
       ..sort((a, b) {
         if (a.hasRevision && !b.hasRevision) return -1;
@@ -485,8 +584,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return a.deadline.compareTo(b.deadline);
       });
 
-    // Show max 5 in horizontal scroll
     final display = sorted.take(5).toList();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.75 < 300 ? screenWidth * 0.75 : 300.0;
 
     return SizedBox(
       height: 220,
@@ -501,7 +601,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               right: index < display.length - 1 ? AppSpacing.md : 0,
             ),
             child: SizedBox(
-              width: 300,
+              width: cardWidth,
               child: AssignedTaskCard(
                 project: project,
                 onTap: () => context.push('/project/${project.id}'),
@@ -513,7 +613,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  /// Sorts pool projects by urgency then deadline.
   List<DoerProjectModel> _sortedPoolProjects(
       List<DoerProjectModel> projects) {
     return List<DoerProjectModel>.from(projects)
@@ -524,7 +623,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       });
   }
 
-  /// Shows confirmation dialog before accepting a project.
   void _confirmAccept(BuildContext context, DoerProjectModel project) {
     showDialog(
       context: context,
@@ -621,6 +719,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
   }
 
+  int _getUrgentCount(DashboardState dashboardState) {
+    return dashboardState.assignedProjects
+        .where((p) => p.isUrgent)
+        .length;
+  }
+
   String _formatDeadline(DateTime deadline) {
     final remaining = deadline.difference(DateTime.now());
     if (remaining.inDays > 0) {
@@ -645,127 +749,152 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning'.tr(context);
-    if (hour < 17) return 'Good Afternoon'.tr(context);
-    return 'Good Evening'.tr(context);
+    if (hour < 12) return 'Good morning'.tr(context);
+    if (hour < 17) return 'Good afternoon'.tr(context);
+    return 'Good evening'.tr(context);
   }
 }
 
-/// Small glass pill showing a status label and count.
-class _StatusPill extends StatelessWidget {
+// =============================================================================
+// Hero Pill - inline stat in the hero banner
+// =============================================================================
+
+class _HeroPill extends StatelessWidget {
+  final String value;
   final String label;
-  final int count;
   final Color color;
 
-  const _StatusPill({
+  const _HeroPill({
+    required this.value,
     required this.label,
-    required this.count,
     required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GlassContainer(
-      blur: 10,
-      opacity: 0.7,
-      borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-      borderColor: color.withValues(alpha: 0.2),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      enableHoverEffect: false,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: color,
           ),
-          const SizedBox(width: 6),
-          Text(
-            '$label $count',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            color: AppColors.textSecondary,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-/// Glass stat card with icon, value, label, and optional prefix.
-class _GlassStatCard extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-  final String? prefix;
+// =============================================================================
+// Web-style Stat Card
+// =============================================================================
 
-  const _GlassStatCard({
+class _WebStatCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String value;
+  final String subtitle;
+  final bool isHighlighted;
+
+  const _WebStatCard({
     required this.icon,
+    required this.iconColor,
+    required this.title,
     required this.value,
-    required this.label,
-    required this.color,
-    this.prefix,
+    required this.subtitle,
+    this.isHighlighted = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      blur: 12,
-      opacity: 0.8,
-      elevation: 1,
-      padding: const EdgeInsets.all(14),
-      borderColor: color.withValues(alpha: 0.15),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: isHighlighted
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primary, AppColors.accent],
+              )
+            : null,
+        color: isHighlighted ? null : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: isHighlighted
+            ? null
+            : Border.all(color: AppColors.border.withValues(alpha: 0.4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
+              color: isHighlighted
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: color),
+            child: Icon(
+              icon,
+              size: 20,
+              color: isHighlighted ? Colors.white : iconColor,
+            ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              if (prefix != null)
-                Text(
-                  prefix!,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                ),
-              Flexible(
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 8),
           Text(
-            label,
-            style: const TextStyle(
+            title,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: isHighlighted
+                  ? Colors.white.withValues(alpha: 0.7)
+                  : AppColors.textTertiary,
+              letterSpacing: 0.5,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: isHighlighted ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
+              color: isHighlighted
+                  ? Colors.white.withValues(alpha: 0.6)
+                  : AppColors.textTertiary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -776,99 +905,395 @@ class _GlassStatCard extends StatelessWidget {
   }
 }
 
-/// Empty state for assigned tasks section.
-class _EmptyAssignedTasks extends StatelessWidget {
-  const _EmptyAssignedTasks();
+// =============================================================================
+// Performance Card
+// =============================================================================
+
+class _PerfItem {
+  final String label;
+  final String value;
+  _PerfItem(this.label, this.value);
+}
+
+class _PerformanceCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final List<_PerfItem> items;
+
+  const _PerformanceCard({
+    required this.title,
+    required this.subtitle,
+    required this.items,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      padding: AppSpacing.paddingLg,
-      blur: 10,
-      opacity: 0.75,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.4)),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.08),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.assignment_outlined,
-              size: 32,
-              color: AppColors.primary,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.insights_rounded,
+                  size: 18,
+                  color: AppColors.accent,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'No Active Projects'.tr(context),
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Accept tasks from the pool below to get started!'.tr(context),
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
+          const SizedBox(height: 12),
+          ...items.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      item.label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      item.value,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
         ],
       ),
     );
   }
 }
 
-/// Empty state for task pool section.
+// =============================================================================
+// Priority Card
+// =============================================================================
+
+class _PriorityCard extends StatelessWidget {
+  final int urgentCount;
+
+  const _PriorityCard({required this.urgentCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  size: 18,
+                  color: AppColors.error,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Priority tasks',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Needs attention',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (urgentCount == 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(
+                  'All clear \u2014 no priority tasks',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.success,
+                  ),
+                ),
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(
+                  '$urgentCount task${urgentCount > 1 ? 's' : ''} need attention',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.error,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Task Tab
+// =============================================================================
+
+class _TaskTab extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int? count;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _TaskTab({
+    required this.icon,
+    required this.label,
+    this.count,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: isActive
+              ? null
+              : Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isActive ? Colors.white : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isActive ? Colors.white : AppColors.textSecondary,
+              ),
+            ),
+            if (count != null) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: isActive ? Colors.white : AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Empty States
+// =============================================================================
+
+class _EmptyAssignedTasks extends StatelessWidget {
+  const _EmptyAssignedTasks();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.4)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.assignment_outlined,
+                size: 32,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No Active Projects'.tr(context),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Accept tasks from the pool to get started!'.tr(context),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _EmptyTaskPool extends StatelessWidget {
   const _EmptyTaskPool();
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      padding: AppSpacing.paddingLg,
-      blur: 10,
-      opacity: 0.75,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.08),
-              shape: BoxShape.circle,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.4)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.explore_outlined,
+                size: 32,
+                color: AppColors.accent,
+              ),
             ),
-            child: const Icon(
-              Icons.explore_outlined,
-              size: 32,
-              color: AppColors.accent,
+            const SizedBox(height: 12),
+            Text(
+              'No Projects Available'.tr(context),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'No Projects Available'.tr(context),
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+            const SizedBox(height: 4),
+            Text(
+              'Check back later for new opportunities!'.tr(context),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Check back later for new opportunities!'.tr(context),
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
