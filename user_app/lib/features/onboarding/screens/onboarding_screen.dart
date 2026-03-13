@@ -32,19 +32,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   /// Each slide has gradient colors, title, subtitle, and Lottie animation URL.
   static const _pages = [
     {
-      'gradientColors': [Color(0xFFEC407A), Color(0xFFF48FB1)], // Pink
+      'gradientColors': [Color(0xFFBD916B), Color(0xFFD4A574)], // Warm caramel/sand
       'title': 'Expert Help',
       'subtitle': 'Get professional assistance at your fingertips, anytime',
       'lottieUrl': 'https://lottie.host/715ac670-afd6-4524-986e-e00f6d039876/vOvWdIeO1B.json',
     },
     {
-      'gradientColors': [Color(0xFF42A5F5), Color(0xFF90CAF9)], // Blue
+      'gradientColors': [Color(0xFF765341), Color(0xFF9D7B65)], // Coffee bean to warm brown
       'title': 'Versatile Projects',
       'subtitle': 'From essays to presentations, we handle it all for you',
       'lottieUrl': 'https://lottie.host/5533bf32-9e5e-4767-82d9-d08a4fde91b8/fHuLWM1ODi.json',
     },
     {
-      'gradientColors': [Color(0xFF66BB6A), Color(0xFFA5D6A7)], // Green (changed from pink)
+      'gradientColors': [Color(0xFF259369), Color(0xFF6FCF97)], // Sage green - earthy
       'title': 'Your Journey Starts',
       'subtitle': 'Join thousands of students achieving academic success',
       'lottieUrl': 'https://lottie.host/f5451620-d8db-4e9d-b228-de3b65c936d7/uSnBXiDaWD.json',
@@ -752,11 +752,11 @@ class _NextButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFF2196F3),
+            color: AppColors.primary,
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2196F3).withValues(alpha: 0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -781,11 +781,11 @@ class _NextButton extends StatelessWidget {
         width: 64,
         height: 64,
         decoration: BoxDecoration(
-          color: const Color(0xFF2196F3),
+          color: AppColors.primary,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF2196F3).withValues(alpha: 0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),

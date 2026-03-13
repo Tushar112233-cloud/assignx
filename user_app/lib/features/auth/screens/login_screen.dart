@@ -346,12 +346,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: AppColors.primary.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.school_rounded,
-                color: Colors.white,
+                color: AppColors.primary,
                 size: 20,
               ),
             ),
@@ -359,9 +359,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             Text(
               'AssignX',
               style: AppTextStyles.headingSmall.copyWith(
-                color: Colors.white,
+                color: AppColors.primary,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.2,
+                shadows: [
+                  Shadow(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
             ),
           ],
@@ -424,18 +431,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               ),
               prefixIcon: const Icon(Icons.email_outlined, size: 20),
               filled: true,
-              fillColor: Colors.grey.shade50,
+              fillColor: AppColors.surfaceVariant,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 14,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -449,21 +456,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           SizedBox(
             width: double.infinity,
             height: 48,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _onContinue,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: _isLoading
+                    ? null
+                    : const LinearGradient(
+                        colors: [AppColors.primary, AppColors.primaryLight],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                color: _isLoading ? AppColors.primary.withValues(alpha: 0.5) : null,
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: const Text(
-                'Continue',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _onContinue,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Continue',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),
@@ -489,6 +510,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 ),
               ),
             ),
+          ),
+          const SizedBox(height: 12),
+
+          // Secure login note.
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.lock_outline_rounded,
+                size: 14,
+                color: AppColors.textTertiary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Secure passwordless login',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textTertiary,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -561,21 +603,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           SizedBox(
             width: double.infinity,
             height: 48,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _onVerify,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: _isLoading
+                    ? null
+                    : const LinearGradient(
+                        colors: [AppColors.primary, AppColors.primaryLight],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                color: _isLoading ? AppColors.primary.withValues(alpha: 0.5) : null,
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: const Text(
-                'Verify',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _onVerify,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Verify',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),
@@ -632,15 +688,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         decoration: InputDecoration(
           counterText: '',
           filled: true,
-          fillColor: Colors.grey.shade50,
+          fillColor: AppColors.surfaceVariant,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderSide: const BorderSide(color: AppColors.border),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderSide: const BorderSide(color: AppColors.border),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -694,21 +750,21 @@ class _GlassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding + 12),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.85),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             border: Border.all(
               color: Colors.white.withValues(alpha: 0.5),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 blurRadius: 30,
                 offset: const Offset(0, -10),
               ),
@@ -726,9 +782,9 @@ class _MeshGradientBackground extends StatelessWidget {
   final double height;
 
   static const _colors = [
-    Color(0xFFFBE8E8), // Soft pink (creamy)
-    Color(0xFFFCEDE8), // Soft peach (orangish)
-    Color(0xFFF0E8F8), // Soft purple
+    Color(0xFFFBE8E0), // Warm peach
+    Color(0xFFF5E6D8), // Light sand
+    Color(0xFFEDE0D4), // Cream
   ];
 
   static const _alignments = [

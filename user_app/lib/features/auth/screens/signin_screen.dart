@@ -269,9 +269,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
             _MeshGradientBackground(
               height: screenHeight,
               colors: const [
-                Color(0xFFE8F4FB),
-                Color(0xFFE8F0FB),
-                Color(0xFFF0E8FB),
+                Color(0xFFFBE8E0),
+                Color(0xFFF5E6D8),
+                Color(0xFFEDE0D4),
               ],
             ),
 
@@ -446,16 +446,16 @@ class _EmailEntrySection extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF42A5F5).withValues(alpha: 0.15),
+                  color: AppColors.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFF42A5F5).withValues(alpha: 0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                     width: 2,
                   ),
                 ),
                 child: const Icon(
                   Icons.person_add_rounded,
-                  color: Color(0xFF42A5F5),
+                  color: AppColors.primary,
                   size: 28,
                 ),
               ),
@@ -540,7 +540,7 @@ class _EmailEntrySection extends StatelessWidget {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                        color: Color(0xFF42A5F5), width: 2),
+                        color: AppColors.primary, width: 2),
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -562,7 +562,7 @@ class _EmailEntrySection extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onSubmit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF42A5F5),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
@@ -597,7 +597,7 @@ class _EmailEntrySection extends StatelessWidget {
                     child: Text(
                       'Log in'.tr(context),
                       style: AppTextStyles.caption.copyWith(
-                        color: const Color(0xFF42A5F5),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -753,12 +753,12 @@ class _OtpEntrySection extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF42A5F5).withValues(alpha: 0.15),
+                  color: AppColors.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.pin_rounded,
-                  color: Color(0xFF42A5F5),
+                  color: AppColors.primary,
                   size: 24,
                 ),
               ),
@@ -872,7 +872,7 @@ class _OtpEntrySection extends StatelessWidget {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
-                                color: Color(0xFF42A5F5), width: 2),
+                                color: AppColors.primary, width: 2),
                           ),
                           filled: true,
                           fillColor: Colors.grey.shade50,
@@ -894,7 +894,7 @@ class _OtpEntrySection extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onVerify,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF42A5F5),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
@@ -934,7 +934,7 @@ class _OtpEntrySection extends StatelessWidget {
                       style: AppTextStyles.caption.copyWith(
                         color: resendCooldown > 0
                             ? AppColors.textSecondary
-                            : const Color(0xFF42A5F5),
+                            : AppColors.primary,
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),

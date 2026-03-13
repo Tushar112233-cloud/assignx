@@ -1,13 +1,15 @@
 "use client";
 
 /**
- * Campus Connect Page - Ultra Modern Community Platform
+ * Campus Connect Page - Redesigned
  *
- * FEATURES:
- * - Animated hero section with floating illustrations
- * - Feature carousel with stunning visuals
- * - Category cards with hover effects
- * - Pinterest-style masonry grid
+ * Cleaner, more focused layout:
+ * - Hero section (kept as-is with globe visualization)
+ * - Simplified category pills (max 6 visible + "More" dropdown)
+ * - Glassmorphic Quick Access cards
+ * - Search + filters bar
+ * - Post feed with skeleton loading
+ * - FAB for creating posts
  *
  * STUDENT-ONLY HOUSING:
  * - Housing category is only visible to users with user_type === 'student'
@@ -33,20 +35,12 @@ import {
   Trophy,
   Megaphone,
   MessageSquare,
-  ChevronRight,
-  ChevronLeft,
   Sparkles,
   Filter,
   GraduationCap,
-  Zap,
-  Globe,
+  ChevronDown,
   Search as SearchIcon,
   Lock,
-  MapPin,
-  Lightbulb,
-  Target,
-  Handshake,
-  PartyPopper,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +75,13 @@ import {
 import type { CampusConnectPost, CampusConnectCategory } from "@/types/campus-connect";
 
 // =============================================================================
+// GLASSMORPHIC CARD CLASSES
+// =============================================================================
+
+const GLASS_CARD =
+  "bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-[20px] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all duration-300";
+
+// =============================================================================
 // ANIMATION VARIANTS
 // =============================================================================
 
@@ -93,109 +94,15 @@ const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
   },
 };
-
-const floatAnimation = {
-  initial: { y: 0 },
-  animate: {
-    y: [-10, 10, -10],
-    transition: {
-      duration: 6,
-      repeat: Infinity,
-      ease: "easeInOut" as const,
-    },
-  },
-};
-
-// =============================================================================
-// FEATURE CAROUSEL DATA
-// =============================================================================
-
-interface FeatureSlide {
-  id: string;
-  title: string;
-  subtitle: string;
-  description: string;
-  features: string[];
-  icon: React.ElementType;
-  illustration: React.ElementType;
-  gradient: string;
-  accentColor: string;
-}
-
-function getFeatureSlides(isStudent: boolean): FeatureSlide[] {
-  const allSlides: FeatureSlide[] = [
-    {
-      id: "community",
-      title: "Your Campus Community",
-      subtitle: "Connect & Collaborate",
-      description: "Join thousands of students sharing knowledge, opportunities, and experiences across 500+ colleges",
-      features: ["Ask academic doubts", "Share study resources", "Form study groups"],
-      icon: Users,
-      illustration: Globe,
-      gradient: "from-blue-600 via-indigo-600 to-violet-600",
-      accentColor: "blue",
-    },
-    {
-      id: "opportunities",
-      title: "Discover Opportunities",
-      subtitle: "Jobs & Internships",
-      description: "Find internships, part-time jobs, and career opportunities exclusively posted by verified students and alumni",
-      features: ["Campus placements", "Startup internships", "Freelance gigs"],
-      icon: Briefcase,
-      illustration: Target,
-      gradient: "from-violet-600 via-purple-600 to-fuchsia-600",
-      accentColor: "purple",
-    },
-    {
-      id: "housing",
-      title: "Find Your Space",
-      subtitle: "Housing & Roommates",
-      description: "Discover verified PGs, flats, and hostels near your campus with student reviews and transparent pricing",
-      features: ["Verified listings", "Roommate finder", "Area guides"],
-      icon: Home,
-      illustration: MapPin,
-      gradient: "from-emerald-600 via-teal-600 to-cyan-600",
-      accentColor: "emerald",
-    },
-    {
-      id: "events",
-      title: "Campus Events",
-      subtitle: "Never Miss Out",
-      description: "Stay updated with fests, workshops, hackathons, and social events happening across your city",
-      features: ["Cultural fests", "Tech hackathons", "Networking events"],
-      icon: Calendar,
-      illustration: PartyPopper,
-      gradient: "from-orange-500 via-amber-500 to-yellow-500",
-      accentColor: "amber",
-    },
-    {
-      id: "resources",
-      title: "Study Resources",
-      subtitle: "Learn Together",
-      description: "Access notes, previous year papers, and study materials shared by seniors and toppers",
-      features: ["Subject notes", "PYQ papers", "Video lectures"],
-      icon: BookOpen,
-      illustration: Lightbulb,
-      gradient: "from-rose-500 via-pink-500 to-fuchsia-500",
-      accentColor: "pink",
-    },
-  ];
-
-  if (!isStudent) {
-    return allSlides.filter(slide => slide.id !== "housing");
-  }
-
-  return allSlides;
-}
 
 // =============================================================================
 // CATEGORY CONFIGURATION
 // =============================================================================
 
-interface CategoryCardConfig {
+interface CategoryConfig {
   id: CampusConnectCategory;
   label: string;
   icon: React.ElementType;
@@ -204,37 +111,20 @@ interface CategoryCardConfig {
   emoji: string;
 }
 
-function getFeaturedCategories(isStudent: boolean): CategoryCardConfig[] {
-  const allFeatured: CategoryCardConfig[] = [
-    { id: "questions", label: "Questions", icon: HelpCircle, gradient: "from-blue-500 to-cyan-500", description: "Ask doubts", emoji: "❓" },
-    { id: "housing", label: "Housing", icon: Home, gradient: "from-emerald-500 to-teal-500", description: "Find PGs", emoji: "🏠" },
-    { id: "opportunities", label: "Jobs", icon: Briefcase, gradient: "from-purple-500 to-violet-500", description: "Internships", emoji: "💼" },
-    { id: "events", label: "Events", icon: Calendar, gradient: "from-orange-500 to-amber-500", description: "Campus events", emoji: "🎉" },
-    { id: "marketplace", label: "Market", icon: ShoppingBag, gradient: "from-pink-500 to-rose-500", description: "Buy & sell", emoji: "🛍️" },
-    { id: "resources", label: "Resources", icon: BookOpen, gradient: "from-cyan-500 to-blue-500", description: "Study tips", emoji: "📚" },
-  ];
-
-  if (!isStudent) {
-    return allFeatured.filter(cat => cat.id !== "housing");
-  }
-
-  return allFeatured;
-}
-
-function getAllCategories(isStudent: boolean): CategoryCardConfig[] {
-  const categories: CategoryCardConfig[] = [
-    { id: "questions", label: "Questions", icon: HelpCircle, gradient: "from-blue-500 to-cyan-500", description: "Academic Q&A", emoji: "❓" },
-    { id: "housing", label: "Housing", icon: Home, gradient: "from-emerald-500 to-teal-500", description: "PG & flats", emoji: "🏠" },
-    { id: "opportunities", label: "Opportunities", icon: Briefcase, gradient: "from-purple-500 to-violet-500", description: "Jobs", emoji: "💼" },
-    { id: "events", label: "Events", icon: Calendar, gradient: "from-orange-500 to-amber-500", description: "Events", emoji: "🎉" },
-    { id: "marketplace", label: "Marketplace", icon: ShoppingBag, gradient: "from-pink-500 to-rose-500", description: "Buy/Sell", emoji: "🛍️" },
-    { id: "resources", label: "Resources", icon: BookOpen, gradient: "from-cyan-500 to-blue-500", description: "Study tips", emoji: "📚" },
-    { id: "lost_found", label: "Lost & Found", icon: SearchIcon, gradient: "from-red-500 to-rose-500", description: "Lost items", emoji: "🔍" },
-    { id: "rides", label: "Rides", icon: Car, gradient: "from-indigo-500 to-blue-500", description: "Carpool", emoji: "🚗" },
-    { id: "study_groups", label: "Study Groups", icon: Users, gradient: "from-violet-500 to-purple-500", description: "Study teams", emoji: "👥" },
-    { id: "clubs", label: "Clubs", icon: Trophy, gradient: "from-yellow-500 to-amber-500", description: "Societies", emoji: "🏆" },
-    { id: "announcements", label: "Announcements", icon: Megaphone, gradient: "from-slate-500 to-gray-500", description: "Official", emoji: "📢" },
-    { id: "discussions", label: "Discussions", icon: MessageSquare, gradient: "from-teal-500 to-emerald-500", description: "General", emoji: "💬" },
+function getAllCategories(isStudent: boolean): CategoryConfig[] {
+  const categories: CategoryConfig[] = [
+    { id: "questions", label: "Questions", icon: HelpCircle, gradient: "from-blue-500 to-cyan-500", description: "Academic Q&A", emoji: "?" },
+    { id: "housing", label: "Housing", icon: Home, gradient: "from-emerald-500 to-teal-500", description: "PG & flats", emoji: "" },
+    { id: "opportunities", label: "Opportunities", icon: Briefcase, gradient: "from-purple-500 to-violet-500", description: "Jobs", emoji: "" },
+    { id: "events", label: "Events", icon: Calendar, gradient: "from-orange-500 to-amber-500", description: "Events", emoji: "" },
+    { id: "marketplace", label: "Marketplace", icon: ShoppingBag, gradient: "from-pink-500 to-rose-500", description: "Buy/Sell", emoji: "" },
+    { id: "resources", label: "Resources", icon: BookOpen, gradient: "from-cyan-500 to-blue-500", description: "Study tips", emoji: "" },
+    { id: "lost_found", label: "Lost & Found", icon: SearchIcon, gradient: "from-red-500 to-rose-500", description: "Lost items", emoji: "" },
+    { id: "rides", label: "Rides", icon: Car, gradient: "from-indigo-500 to-blue-500", description: "Carpool", emoji: "" },
+    { id: "study_groups", label: "Study Groups", icon: Users, gradient: "from-violet-500 to-purple-500", description: "Study teams", emoji: "" },
+    { id: "clubs", label: "Clubs", icon: Trophy, gradient: "from-yellow-500 to-amber-500", description: "Societies", emoji: "" },
+    { id: "announcements", label: "Announcements", icon: Megaphone, gradient: "from-slate-500 to-gray-500", description: "Official", emoji: "" },
+    { id: "discussions", label: "Discussions", icon: MessageSquare, gradient: "from-teal-500 to-emerald-500", description: "General", emoji: "" },
   ];
 
   if (!isStudent) {
@@ -244,330 +134,285 @@ function getAllCategories(isStudent: boolean): CategoryCardConfig[] {
   return categories;
 }
 
-// getGreeting moved to campus-pulse-hero.tsx
+/** First 6 categories shown as visible pills, rest go into "More" dropdown */
+const VISIBLE_PILL_COUNT = 6;
 
 // =============================================================================
-// FEATURE CAROUSEL COMPONENT
+// QUICK ACCESS CARDS CONFIG
 // =============================================================================
 
-interface FeatureCarouselProps {
-  slides: FeatureSlide[];
+interface QuickAccessItem {
+  id: CampusConnectCategory;
+  label: string;
+  icon: React.ElementType;
+  gradient: string;
+  description: string;
 }
 
-function FeatureCarousel({ slides }: FeatureCarouselProps) {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [direction, setDirection] = useState(1);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const prefersReducedMotion = useReducedMotion();
+function getQuickAccessItems(isStudent: boolean): QuickAccessItem[] {
+  const items: QuickAccessItem[] = [
+    { id: "questions", label: "Ask a Doubt", icon: HelpCircle, gradient: "from-blue-500 to-cyan-500", description: "Get help from peers" },
+    { id: "housing", label: "Find Housing", icon: Home, gradient: "from-emerald-500 to-teal-500", description: "PGs & flats" },
+    { id: "opportunities", label: "Jobs & Gigs", icon: Briefcase, gradient: "from-purple-500 to-violet-500", description: "Internships & more" },
+    { id: "events", label: "Campus Events", icon: Calendar, gradient: "from-orange-500 to-amber-500", description: "Fests & workshops" },
+    { id: "marketplace", label: "Buy & Sell", icon: ShoppingBag, gradient: "from-pink-500 to-rose-500", description: "Student marketplace" },
+    { id: "resources", label: "Study Resources", icon: BookOpen, gradient: "from-cyan-500 to-blue-500", description: "Notes & papers" },
+  ];
 
-  useEffect(() => {
-    if (isPaused || prefersReducedMotion) return;
+  if (!isStudent) {
+    return items.filter(item => item.id !== "housing");
+  }
 
-    intervalRef.current = setInterval(() => {
-      setDirection(1);
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
+  return items;
+}
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isPaused, slides.length, prefersReducedMotion]);
+// =============================================================================
+// SKELETON LOADING COMPONENT
+// =============================================================================
 
-  const goToSlide = (index: number) => {
-    setDirection(index > currentSlide ? 1 : -1);
-    setCurrentSlide(index);
-    setIsPaused(true);
-    setTimeout(() => setIsPaused(false), 8000);
-  };
-
-  const goToPrev = () => {
-    setDirection(-1);
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-    setIsPaused(true);
-    setTimeout(() => setIsPaused(false), 8000);
-  };
-
-  const goToNext = () => {
-    setDirection(1);
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-    setIsPaused(true);
-    setTimeout(() => setIsPaused(false), 8000);
-  };
-
-  const slide = slides[currentSlide];
-  const SlideIcon = slide.icon;
-  const IllustrationIcon = slide.illustration;
-
-  const slideVariants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 300 : -300,
-      opacity: 0,
-      scale: 0.9,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-      scale: 1,
-    },
-    exit: (direction: number) => ({
-      x: direction > 0 ? -300 : 300,
-      opacity: 0,
-      scale: 0.9,
-    }),
-  };
-
+function PostSkeletonGrid() {
   return (
-    <div
-      className="relative w-full overflow-hidden rounded-3xl mb-8"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      {/* Background */}
-      <motion.div
-        key={slide.id + "-bg"}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className={cn("absolute inset-0 bg-gradient-to-br", slide.gradient)}
-      />
-
-      {/* Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-
-        {/* Animated Illustration */}
-        {!prefersReducedMotion && (
-          <motion.div
-            variants={floatAnimation}
-            initial="initial"
-            animate="animate"
-            className="absolute right-10 top-1/2 -translate-y-1/2 opacity-20 hidden lg:block"
-          >
-            <IllustrationIcon className="h-48 w-48 text-white" strokeWidth={0.5} />
-          </motion.div>
-        )}
-
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
-      </div>
-
-      {/* Content */}
-      <div className="relative p-6 md:p-8 lg:p-10 min-h-[280px] md:min-h-[320px]">
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={slide.id}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.3 },
-              scale: { duration: 0.3 },
-            }}
-            className="relative z-10"
-          >
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="flex items-center gap-3 mb-4"
-            >
-              <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                <SlideIcon className="h-7 w-7 text-white" strokeWidth={1.5} />
-              </div>
-              <span className="px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium text-white">
-                {slide.subtitle}
-              </span>
-            </motion.div>
-
-            {/* Title */}
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 tracking-tight"
-            >
-              {slide.title}
-            </motion.h2>
-
-            {/* Description */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-base md:text-lg text-white/80 max-w-xl mb-6"
-            >
-              {slide.description}
-            </motion.p>
-
-            {/* Features List */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="flex flex-wrap gap-3"
-            >
-              {slide.features.map((feature, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm text-sm text-white"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>{feature}</span>
-                </div>
-              ))}
-            </motion.div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Navigation Arrows */}
-        <button
-          onClick={goToPrev}
-          className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-all hover:scale-110 shadow-lg"
-          aria-label="Previous slide"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-        <button
-          onClick={goToNext}
-          className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-all hover:scale-110 shadow-lg"
-          aria-label="Next slide"
-        >
-          <ChevronRight className="h-6 w-6" />
-        </button>
-
-        {/* Dots Navigation */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className="group relative"
-              aria-label={`Go to slide ${index + 1}`}
-            >
-              <div
-                className={cn(
-                  "h-2 rounded-full transition-all duration-300",
-                  index === currentSlide
-                    ? "w-10 bg-white"
-                    : "w-2 bg-white/40 group-hover:bg-white/60"
-                )}
-              />
-              {index === currentSlide && !isPaused && !prefersReducedMotion && (
-                <motion.div
-                  className="absolute inset-0 bg-white/30 rounded-full origin-left"
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ duration: 5, ease: "linear" }}
-                  key={currentSlide}
-                />
-              )}
-            </button>
-          ))}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className={cn(GLASS_CARD, "p-5 space-y-4 animate-pulse")}>
+          {/* Author row */}
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-[#765341]/10 dark:bg-white/10" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3.5 w-24 rounded-full bg-[#765341]/10 dark:bg-white/10" />
+              <div className="h-2.5 w-16 rounded-full bg-[#765341]/8 dark:bg-white/8" />
+            </div>
+            <div className="h-5 w-14 rounded-full bg-[#765341]/8 dark:bg-white/8" />
+          </div>
+          {/* Content lines */}
+          <div className="space-y-2">
+            <div className="h-4 w-full rounded-full bg-[#765341]/10 dark:bg-white/10" />
+            <div className="h-4 w-4/5 rounded-full bg-[#765341]/8 dark:bg-white/8" />
+            <div className="h-4 w-3/5 rounded-full bg-[#765341]/6 dark:bg-white/6" />
+          </div>
+          {/* Image placeholder (sometimes) */}
+          {i % 2 === 0 && (
+            <div className="h-40 rounded-2xl bg-[#765341]/8 dark:bg-white/8" />
+          )}
+          {/* Engagement row */}
+          <div className="flex items-center gap-4 pt-1">
+            <div className="h-3 w-12 rounded-full bg-[#765341]/8 dark:bg-white/8" />
+            <div className="h-3 w-12 rounded-full bg-[#765341]/8 dark:bg-white/8" />
+            <div className="h-3 w-12 rounded-full bg-[#765341]/8 dark:bg-white/8" />
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 }
 
 // =============================================================================
-// WHAT IS CAMPUS CONNECT SECTION
+// CATEGORY PILLS BAR WITH "MORE" DROPDOWN
 // =============================================================================
 
-function WhatIsCampusConnect() {
+interface CategoryPillsBarProps {
+  categories: CategoryConfig[];
+  selectedCategory: CampusConnectCategory | "all";
+  onSelect: (category: CampusConnectCategory | "all") => void;
+}
+
+function CategoryPillsBar({ categories, selectedCategory, onSelect }: CategoryPillsBarProps) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
 
-  const features = [
-    {
-      icon: HelpCircle,
-      title: "Ask & Answer",
-      description: "Get help with academic doubts from seniors and peers",
-      color: "blue",
-    },
-    {
-      icon: Home,
-      title: "Find Housing",
-      description: "Discover verified PGs, flats, and roommates near campus",
-      color: "emerald",
-    },
-    {
-      icon: Briefcase,
-      title: "Grab Opportunities",
-      description: "Find internships, jobs, and freelance gigs",
-      color: "purple",
-    },
-    {
-      icon: Calendar,
-      title: "Join Events",
-      description: "Never miss fests, hackathons, and workshops",
-      color: "orange",
-    },
-    {
-      icon: ShoppingBag,
-      title: "Buy & Sell",
-      description: "Trade textbooks, gadgets, and more safely",
-      color: "pink",
-    },
-    {
-      icon: Handshake,
-      title: "Network",
-      description: "Connect with students from 500+ colleges",
-      color: "cyan",
-    },
-  ];
+  const visibleCats = categories.slice(0, VISIBLE_PILL_COUNT);
+  const overflowCats = categories.slice(VISIBLE_PILL_COUNT);
+  const hasOverflow = overflowCats.length > 0;
 
-  const colorMap: Record<string, string> = {
-    blue: "from-blue-500 to-cyan-500",
-    emerald: "from-emerald-500 to-teal-500",
-    purple: "from-purple-500 to-violet-500",
-    orange: "from-orange-500 to-amber-500",
-    pink: "from-pink-500 to-rose-500",
-    cyan: "from-cyan-500 to-blue-500",
-  };
+  // Is the selected category in the overflow?
+  const selectedInOverflow = overflowCats.some(c => c.id === selectedCategory);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!moreOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [moreOpen]);
+
+  const pillClass = (active: boolean) =>
+    cn(
+      "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 whitespace-nowrap",
+      active
+        ? "bg-[#765341] text-white shadow-lg shadow-[#765341]/20"
+        : "bg-white/70 dark:bg-white/5 backdrop-blur-sm text-[#14110F]/70 dark:text-white/60 hover:text-[#14110F] dark:hover:text-white hover:bg-white dark:hover:bg-white/10 border border-[#765341]/15 dark:border-white/10"
+    );
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {/* "All" pill */}
+      <button
+        onClick={() => onSelect("all")}
+        className={pillClass(selectedCategory === "all")}
+      >
+        <Sparkles className="h-3.5 w-3.5" />
+        All
+      </button>
+
+      {/* Visible category pills */}
+      {visibleCats.map((cat) => {
+        const Icon = cat.icon;
+        return (
+          <button
+            key={cat.id}
+            onClick={() => onSelect(cat.id)}
+            className={pillClass(selectedCategory === cat.id)}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {cat.label}
+          </button>
+        );
+      })}
+
+      {/* "More" dropdown */}
+      {hasOverflow && (
+        <div className="relative" ref={moreRef}>
+          <button
+            onClick={() => setMoreOpen(!moreOpen)}
+            className={cn(
+              pillClass(selectedInOverflow),
+              "gap-1.5"
+            )}
+          >
+            {selectedInOverflow
+              ? categories.find(c => c.id === selectedCategory)?.label || "More"
+              : "More"}
+            <ChevronDown className={cn(
+              "h-3.5 w-3.5 transition-transform duration-200",
+              moreOpen && "rotate-180"
+            )} />
+          </button>
+
+          <AnimatePresence>
+            {moreOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.15 }}
+                className={cn(
+                  "absolute top-full left-0 mt-2 z-50 min-w-[200px]",
+                  "bg-white/90 dark:bg-[#14110F]/90 backdrop-blur-xl rounded-2xl",
+                  "border border-[#765341]/15 dark:border-white/10",
+                  "shadow-xl shadow-black/10 p-2"
+                )}
+              >
+                {overflowCats.map((cat) => {
+                  const Icon = cat.icon;
+                  const isActive = selectedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        onSelect(cat.id);
+                        setMoreOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm transition-all",
+                        isActive
+                          ? "bg-[#765341] text-white"
+                          : "text-[#14110F]/80 dark:text-white/70 hover:bg-[#765341]/10 dark:hover:bg-white/10"
+                      )}
+                    >
+                      <div className={cn(
+                        "h-7 w-7 rounded-lg flex items-center justify-center",
+                        isActive
+                          ? "bg-white/20"
+                          : `bg-gradient-to-br ${cat.gradient}`
+                      )}>
+                        <Icon className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <span className="font-medium">{cat.label}</span>
+                        <p className={cn(
+                          "text-[11px]",
+                          isActive ? "text-white/70" : "text-[#14110F]/50 dark:text-white/40"
+                        )}>
+                          {cat.description}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================================================
+// QUICK ACCESS GLASSMORPHIC CARDS
+// =============================================================================
+
+interface QuickAccessSectionProps {
+  items: QuickAccessItem[];
+  selectedCategory: CampusConnectCategory | "all";
+  onSelect: (category: CampusConnectCategory) => void;
+}
+
+function QuickAccessSection({ items, selectedCategory, onSelect }: QuickAccessSectionProps) {
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <motion.div
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: "-100px" }}
+      viewport={{ once: true }}
       variants={staggerContainer}
-      className="mb-8"
+      className="mb-6"
     >
-      <motion.div variants={fadeInUp} className="flex items-center gap-2 mb-4">
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
-          <Zap className="h-4 w-4 text-white" />
-        </div>
-        <h2 className="text-lg font-semibold text-foreground">What is Campus Connect?</h2>
+      <motion.div variants={fadeInUp} className="flex items-center gap-2 mb-3">
+        <Sparkles className="h-4 w-4 text-[#765341]" />
+        <h3 className="text-sm font-semibold text-[#14110F] dark:text-[#E4E1C7]">Quick Access</h3>
       </motion.div>
 
-      <motion.p variants={fadeInUp} className="text-sm text-muted-foreground mb-6 max-w-2xl">
-        Campus Connect is your all-in-one platform to stay connected with your college community. From academic help to housing, we&apos;ve got you covered.
-      </motion.p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const isActive = selectedCategory === item.id;
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {features.map((feature, index) => {
-          const Icon = feature.icon;
           return (
-            <motion.div
-              key={feature.title}
+            <motion.button
+              key={item.id}
               variants={fadeInUp}
               whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.02 }}
-              className="group p-4 rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur-sm border border-border/50 hover:border-border hover:shadow-lg transition-all cursor-pointer"
+              whileTap={prefersReducedMotion ? {} : { scale: 0.97 }}
+              onClick={() => onSelect(item.id)}
+              className={cn(
+                "relative group p-4 rounded-[20px] text-left transition-all duration-300",
+                "bg-white/70 dark:bg-white/5 backdrop-blur-xl",
+                "border shadow-sm hover:shadow-xl hover:shadow-black/5",
+                isActive
+                  ? "border-[#765341]/40 dark:border-violet-400/30 ring-2 ring-[#765341]/20 dark:ring-violet-400/20"
+                  : "border-white/50 dark:border-white/10"
+              )}
             >
               <div className={cn(
-                "h-10 w-10 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3 group-hover:scale-110 transition-transform",
-                colorMap[feature.color]
+                "h-10 w-10 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110",
+                `bg-gradient-to-br ${item.gradient}`
               )}>
                 <Icon className="h-5 w-5 text-white" strokeWidth={1.5} />
               </div>
-              <h3 className="text-sm font-semibold text-foreground mb-1">{feature.title}</h3>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">{feature.description}</p>
-            </motion.div>
+              <p className="text-sm font-semibold text-[#14110F] dark:text-[#E4E1C7] mb-0.5">
+                {item.label}
+              </p>
+              <p className="text-[11px] text-[#14110F]/50 dark:text-white/40 leading-relaxed">
+                {item.description}
+              </p>
+            </motion.button>
           );
         })}
       </div>
@@ -587,9 +432,9 @@ export function CampusConnectPage() {
     return user?.user_type === "student" || user?.userType === "student";
   }, [user]);
 
-  const featureSlides = useMemo(() => getFeatureSlides(isStudent), [isStudent]);
-  const featuredCategories = useMemo(() => getFeaturedCategories(isStudent), [isStudent]);
+  const isLoggedIn = !!user;
   const allCategories = useMemo(() => getAllCategories(isStudent), [isStudent]);
+  const quickAccessItems = useMemo(() => getQuickAccessItems(isStudent), [isStudent]);
 
   // State
   const [posts, setPosts] = useState<CampusConnectPost[]>([]);
@@ -757,245 +602,166 @@ export function CampusConnectPage() {
   const showLoading = isLoading && posts.length === 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      {/* Decorative background */}
+    <div className="min-h-screen bg-gradient-to-b from-[#E4E1C7]/30 via-white to-[#E4E1C7]/20 dark:from-[#14110F] dark:via-[#14110F]/95 dark:to-[#14110F]">
+      {/* Subtle decorative background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-violet-400/10 to-purple-400/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 right-0 w-80 h-80 bg-gradient-to-br from-blue-400/10 to-cyan-400/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-0 w-72 h-72 bg-gradient-to-br from-pink-400/10 to-fuchsia-400/10 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-violet-400/8 to-purple-400/8 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 right-0 w-80 h-80 bg-gradient-to-br from-[#765341]/6 to-[#765341]/4 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 left-0 w-72 h-72 bg-gradient-to-br from-violet-400/6 to-fuchsia-400/6 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-10 overflow-y-auto min-h-screen">
-        <div className="max-w-[1400px] mx-auto">
-          {/* Hero Section - Live Campus Pulse */}
+        <div className="max-w-[1400px] mx-auto space-y-6">
+
+          {/* ============================================================= */}
+          {/* 1. HERO SECTION (kept as-is) */}
+          {/* ============================================================= */}
           <CampusPulseHero firstName={firstName} isVerified={isVerified} />
 
-          {/* Feature Carousel */}
-          <FeatureCarousel slides={featureSlides} />
+          {/* ============================================================= */}
+          {/* 2. QUICK ACCESS GLASSMORPHIC CARDS */}
+          {/* ============================================================= */}
+          <QuickAccessSection
+            items={quickAccessItems}
+            selectedCategory={selectedCategory}
+            onSelect={(cat) => setSelectedCategory(selectedCategory === cat ? "all" : cat)}
+          />
 
-          {/* What is Campus Connect */}
-          <WhatIsCampusConnect />
-
-          {/* Quick Access Categories */}
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="mb-6"
-          >
-            <motion.div variants={fadeInUp} className="flex items-center gap-2 mb-4">
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              <h3 className="text-sm font-medium text-foreground">Quick Access</h3>
-            </motion.div>
-            <div className="flex flex-wrap gap-3">
-              {featuredCategories.map((cat) => {
-                const Icon = cat.icon;
-                const isActive = selectedCategory === cat.id;
-
-                return (
-                  <motion.button
-                    key={cat.id}
-                    variants={fadeInUp}
-                    onClick={() => setSelectedCategory(isActive ? "all" : cat.id)}
-                    whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
-                    whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-200",
-                      isActive
-                        ? "bg-foreground border-transparent text-background shadow-lg"
-                        : "bg-white/80 dark:bg-white/5 backdrop-blur-sm border-border/50 hover:border-border hover:bg-white dark:hover:bg-white/10"
-                    )}
+          {/* ============================================================= */}
+          {/* 3. SEARCH + FILTERS BAR */}
+          {/* ============================================================= */}
+          <div className={cn(GLASS_CARD, "p-4")}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              {/* Search input */}
+              <div className="relative w-full sm:flex-1 sm:max-w-md">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#765341]/40 dark:text-white/40" />
+                <input
+                  type="text"
+                  placeholder="Search posts, questions, events..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-10 pl-10 pr-9 text-sm bg-[#14110F]/5 dark:bg-white/5 border border-[#765341]/10 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500/30 transition-all text-[#14110F] dark:text-white placeholder:text-[#14110F]/40 dark:placeholder:text-white/40"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#14110F]/40 dark:text-white/40 hover:text-[#14110F] dark:hover:text-white transition-colors"
                   >
-                    <div className={cn(
-                      "h-9 w-9 rounded-xl flex items-center justify-center",
-                      isActive ? "bg-background/20" : `bg-gradient-to-br ${cat.gradient}`
-                    )}>
-                      <Icon className="h-4 w-4 text-white" strokeWidth={1.5} />
-                    </div>
-                    <div className="text-left">
-                      <p className={cn("text-sm font-medium", isActive ? "text-background" : "text-foreground")}>
-                        {cat.emoji} {cat.label}
-                      </p>
-                      <p className={cn("text-[11px]", isActive ? "text-background/70" : "text-muted-foreground")}>
-                        {cat.description}
-                      </p>
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          {/* Search + Filters */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div className="relative w-full sm:w-auto flex-1 max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search posts, questions, events..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-12 pl-11 pr-4 text-sm bg-white/80 dark:bg-white/5 backdrop-blur-sm border border-border/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500/50 transition-all"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <CollegeFilterCompact
-                selectedUniversityId={selectedUniversityId}
-                onUniversityChange={setSelectedUniversityId}
-              />
-              <FilterSheet
-                filters={internalFilters}
-                onFiltersChange={setInternalFilters}
-                activeCategory={
-                  selectedCategory === "housing"
-                    ? "housing"
-                    : selectedCategory === "events"
-                    ? "events"
-                    : selectedCategory === "resources"
-                    ? "resources"
-                    : "all"
-                }
-              />
-              <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
-                <SheetTrigger asChild>
-                  <button className="relative h-12 w-12 flex items-center justify-center rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur-sm border border-border/50 hover:bg-white dark:hover:bg-white/10 transition-all">
-                    <Filter className="h-5 w-5 text-muted-foreground" />
-                    {hasActiveFilters && (
-                      <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-violet-500" />
-                    )}
+                    <X className="h-4 w-4" />
                   </button>
-                </SheetTrigger>
-                <SheetContent side="bottom" className="h-auto max-h-[80vh] rounded-t-3xl">
-                  <SheetHeader className="pb-4">
-                    <SheetTitle>General Filters</SheetTitle>
-                  </SheetHeader>
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-medium">My College Only</Label>
-                        <p className="text-xs text-muted-foreground">Show posts from your university</p>
-                      </div>
-                      <Switch checked={myCollegeOnly} onCheckedChange={setMyCollegeOnly} disabled={!user} />
-                    </div>
-                    <div className="flex gap-3 pt-2">
-                      <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={clearFilters}>
-                        Clear All
-                      </Button>
-                      <Button className="flex-1 h-12 rounded-xl" onClick={() => setFilterSheetOpen(false)}>
-                        Apply
-                      </Button>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </div>
-
-          <ActiveFiltersBar filters={internalFilters} onFiltersChange={setInternalFilters} className="mb-4" />
-
-          {/* Toolbar Row - Create Post + Saved */}
-          <div className="flex items-center gap-3 mb-6">
-            <Button
-              asChild
-              className="gap-2 rounded-xl h-11 px-5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:shadow-lg transition-all"
-            >
-              <Link href="/campus-connect/create">
-                <Plus className="h-4 w-4" />
-                Create Post
-              </Link>
-            </Button>
-            <Button
-              variant={showSaved ? "default" : "outline"}
-              className="gap-2 rounded-xl h-11 px-5"
-              onClick={() => setShowSaved(!showSaved)}
-            >
-              <Sparkles className="h-4 w-4" />
-              {showSaved ? "All Posts" : "Saved"}
-            </Button>
-          </div>
-
-          {/* Saved Listings View */}
-          {showSaved && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
-              <SavedListings />
-            </motion.div>
-          )}
-
-          {/* All Category Tabs */}
-          <div className="mb-6">
-            <div className="flex flex-wrap gap-2">
-              <motion.button
-                onClick={() => setSelectedCategory("all")}
-                whileHover={prefersReducedMotion ? {} : { scale: 1.03 }}
-                whileTap={prefersReducedMotion ? {} : { scale: 0.97 }}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-full transition-all duration-200",
-                  selectedCategory === "all"
-                    ? "bg-foreground text-background shadow-lg"
-                    : "bg-white/80 dark:bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white dark:hover:bg-white/10 border border-border/50"
                 )}
-              >
-                <Sparkles className="h-4 w-4" />
-                <span>All</span>
-              </motion.button>
+              </div>
 
-              {allCategories.map((cat) => {
-                const isActive = selectedCategory === cat.id;
-                const Icon = cat.icon;
-
-                return (
-                  <motion.button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    whileHover={prefersReducedMotion ? {} : { scale: 1.03 }}
-                    whileTap={prefersReducedMotion ? {} : { scale: 0.97 }}
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-full transition-all duration-200",
-                      isActive
-                        ? "bg-foreground text-background shadow-lg"
-                        : "bg-white/80 dark:bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white dark:hover:bg-white/10 border border-border/50"
-                    )}
-                  >
-                    <span>{cat.emoji}</span>
-                    <span>{cat.label}</span>
-                  </motion.button>
-                );
-              })}
+              {/* Filter controls */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <CollegeFilterCompact
+                  selectedUniversityId={selectedUniversityId}
+                  onUniversityChange={setSelectedUniversityId}
+                />
+                <FilterSheet
+                  filters={internalFilters}
+                  onFiltersChange={setInternalFilters}
+                  activeCategory={
+                    selectedCategory === "housing"
+                      ? "housing"
+                      : selectedCategory === "events"
+                      ? "events"
+                      : selectedCategory === "resources"
+                      ? "resources"
+                      : "all"
+                  }
+                />
+                <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+                  <SheetTrigger asChild>
+                    <button className="relative h-10 w-10 flex items-center justify-center rounded-xl bg-[#14110F]/5 dark:bg-white/5 border border-[#765341]/10 dark:border-white/10 hover:bg-[#14110F]/10 dark:hover:bg-white/10 transition-all">
+                      <Filter className="h-4 w-4 text-[#765341]/60 dark:text-white/60" />
+                      {hasActiveFilters && (
+                        <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-violet-500" />
+                      )}
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent side="bottom" className="h-auto max-h-[80vh] rounded-t-3xl">
+                    <SheetHeader className="pb-4">
+                      <SheetTitle>General Filters</SheetTitle>
+                    </SheetHeader>
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="space-y-0.5">
+                          <Label className="text-sm font-medium">My College Only</Label>
+                          <p className="text-xs text-muted-foreground">Show posts from your university</p>
+                        </div>
+                        <Switch checked={myCollegeOnly} onCheckedChange={setMyCollegeOnly} disabled={!user} />
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <Button variant="outline" className="flex-1 h-11 rounded-xl" onClick={clearFilters}>
+                          Clear All
+                        </Button>
+                        <Button className="flex-1 h-11 rounded-xl bg-[#765341] hover:bg-[#765341]/90" onClick={() => setFilterSheetOpen(false)}>
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
             </div>
           </div>
 
-          {/* Active Filters */}
+          <ActiveFiltersBar filters={internalFilters} onFiltersChange={setInternalFilters} className="mb-0" />
+
+          {/* ============================================================= */}
+          {/* 4. CATEGORY PILLS + ACTION BUTTONS */}
+          {/* ============================================================= */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Category pills */}
+            <CategoryPillsBar
+              categories={allCategories}
+              selectedCategory={selectedCategory}
+              onSelect={setSelectedCategory}
+            />
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                asChild
+                size="sm"
+                className="gap-2 rounded-xl h-9 px-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:shadow-lg transition-all text-sm"
+              >
+                <Link href="/campus-connect/create">
+                  <Plus className="h-3.5 w-3.5" />
+                  Create Post
+                </Link>
+              </Button>
+              <Button
+                variant={showSaved ? "default" : "outline"}
+                size="sm"
+                className="gap-2 rounded-xl h-9 px-4 text-sm"
+                onClick={() => setShowSaved(!showSaved)}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {showSaved ? "All Posts" : "Saved"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Active filter badges */}
           {hasActiveFilters && (
-            <div className="flex items-center gap-2 flex-wrap mb-6">
-              <span className="text-xs text-muted-foreground">Active filters:</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-[#14110F]/50 dark:text-white/40">Active:</span>
               {searchQuery && (
-                <Badge variant="secondary" className="gap-1 text-xs rounded-full px-3 py-1">
+                <Badge variant="secondary" className="gap-1 text-xs rounded-full px-3 py-1 bg-[#765341]/10 text-[#765341] dark:bg-white/10 dark:text-white/80 border-0">
                   &quot;{searchQuery}&quot;
                   <button onClick={() => setSearchQuery("")}><X className="h-3 w-3" /></button>
                 </Badge>
               )}
               {selectedCategory !== "all" && (
-                <Badge variant="secondary" className="gap-1 text-xs capitalize rounded-full px-3 py-1">
+                <Badge variant="secondary" className="gap-1 text-xs capitalize rounded-full px-3 py-1 bg-[#765341]/10 text-[#765341] dark:bg-white/10 dark:text-white/80 border-0">
                   {selectedCategory.replace("_", " ")}
                   <button onClick={() => setSelectedCategory("all")}><X className="h-3 w-3" /></button>
                 </Badge>
               )}
               {myCollegeOnly && (
-                <Badge variant="secondary" className="gap-1 text-xs rounded-full px-3 py-1">
+                <Badge variant="secondary" className="gap-1 text-xs rounded-full px-3 py-1 bg-[#765341]/10 text-[#765341] dark:bg-white/10 dark:text-white/80 border-0">
                   My College
                   <button onClick={() => setMyCollegeOnly(false)}><X className="h-3 w-3" /></button>
                 </Badge>
@@ -1003,9 +769,23 @@ export function CampusConnectPage() {
             </div>
           )}
 
-          {/* Main Content */}
+          {/* ============================================================= */}
+          {/* 5. SAVED LISTINGS (toggle) */}
+          {/* ============================================================= */}
+          {showSaved && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <SavedListings />
+            </motion.div>
+          )}
+
+          {/* ============================================================= */}
+          {/* 6. POST FEED AREA */}
+          {/* ============================================================= */}
           {error && (
-            <div className="flex items-start gap-3 p-5 rounded-2xl bg-red-50/80 dark:bg-red-950/30 backdrop-blur-sm border border-red-200 dark:border-red-800 mb-6">
+            <div className={cn(GLASS_CARD, "flex items-start gap-3 p-5 border-red-200/50 dark:border-red-800/30")}>
               <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center shrink-0">
                 <AlertCircle className="h-5 w-5 text-white" />
               </div>
@@ -1036,15 +816,8 @@ export function CampusConnectPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-20"
               >
-                <div className="relative mb-5">
-                  <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg animate-pulse">
-                    <Users className="h-7 w-7 text-white" />
-                  </div>
-                  <div className="absolute -inset-4 bg-gradient-to-br from-violet-400/20 to-fuchsia-500/20 rounded-full blur-xl pointer-events-none animate-pulse" />
-                </div>
-                <p className="text-sm text-muted-foreground">Loading posts...</p>
+                <PostSkeletonGrid />
               </motion.div>
             ) : posts.length === 0 ? (
               <motion.div
@@ -1069,7 +842,7 @@ export function CampusConnectPage() {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-4 pb-8"
               >
-                <p className="text-xs text-muted-foreground text-center">
+                <p className="text-xs text-[#14110F]/40 dark:text-white/30 text-center">
                   Showing {posts.length} {posts.length === 1 ? "post" : "posts"}
                   {searchQuery && ` matching "${searchQuery}"`}
                 </p>
@@ -1085,7 +858,9 @@ export function CampusConnectPage() {
             )}
           </AnimatePresence>
 
-          {/* Floating Action Button */}
+          {/* ============================================================= */}
+          {/* 7. FLOATING ACTION BUTTON */}
+          {/* ============================================================= */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -1103,6 +878,7 @@ export function CampusConnectPage() {
               </Link>
             </Button>
           </motion.div>
+
         </div>
       </div>
     </div>
@@ -1118,19 +894,19 @@ interface EmptyStateProps {
   selectedCategory: CampusConnectCategory | "all";
   isVerified: boolean;
   onClearFilters: () => void;
-  allCategories: CategoryCardConfig[];
+  allCategories: CategoryConfig[];
 }
 
 function EmptyState({ searchQuery, selectedCategory, isVerified, onClearFilters, allCategories }: EmptyStateProps) {
   if (searchQuery) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="h-16 w-16 rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur-sm border border-border/50 flex items-center justify-center mb-5 shadow-lg">
-          <Search className="h-7 w-7 text-muted-foreground" />
+      <div className={cn(GLASS_CARD, "flex flex-col items-center justify-center py-16 text-center")}>
+        <div className="h-14 w-14 rounded-2xl bg-[#765341]/10 dark:bg-white/10 flex items-center justify-center mb-4">
+          <Search className="h-6 w-6 text-[#765341]/60 dark:text-white/60" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">No results found</h3>
-        <p className="text-sm text-muted-foreground max-w-xs mb-6">No posts match &quot;{searchQuery}&quot;</p>
-        <Button variant="outline" className="rounded-xl h-11 px-6" onClick={onClearFilters}>
+        <h3 className="text-lg font-semibold text-[#14110F] dark:text-[#E4E1C7] mb-1.5">No results found</h3>
+        <p className="text-sm text-[#14110F]/50 dark:text-white/40 max-w-xs mb-5">No posts match &quot;{searchQuery}&quot;</p>
+        <Button variant="outline" className="rounded-xl h-10 px-5 border-[#765341]/20" onClick={onClearFilters}>
           Clear Search
         </Button>
       </div>
@@ -1142,28 +918,25 @@ function EmptyState({ searchQuery, selectedCategory, isVerified, onClearFilters,
   const gradient = categoryConfig?.gradient || "from-violet-500 to-fuchsia-600";
 
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="relative mb-5">
-        <div className={cn("h-16 w-16 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg", gradient)}>
-          <Icon className="h-7 w-7 text-white" />
-        </div>
-        <div className="absolute -inset-4 bg-gradient-to-br from-violet-400/20 to-fuchsia-500/20 rounded-full blur-xl pointer-events-none" />
+    <div className={cn(GLASS_CARD, "flex flex-col items-center justify-center py-16 text-center")}>
+      <div className={cn("h-14 w-14 rounded-2xl bg-gradient-to-br flex items-center justify-center mb-4 shadow-lg", gradient)}>
+        <Icon className="h-6 w-6 text-white" />
       </div>
-      <h3 className="text-xl font-semibold mb-2">
+      <h3 className="text-lg font-semibold text-[#14110F] dark:text-[#E4E1C7] mb-1.5">
         {selectedCategory !== "all" ? `No ${selectedCategory.replace("_", " ")} yet` : "No posts yet"}
       </h3>
-      <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+      <p className="text-sm text-[#14110F]/50 dark:text-white/40 mb-5 max-w-xs">
         Be the first to share something with your campus community!
       </p>
       {isVerified ? (
-        <Button asChild className="gap-2 rounded-xl h-11 px-6 bg-gradient-to-r from-violet-600 to-fuchsia-600">
+        <Button asChild className="gap-2 rounded-xl h-10 px-5 bg-gradient-to-r from-violet-600 to-fuchsia-600">
           <Link href="/campus-connect/create">
             <Plus className="h-4 w-4" />
             Create Post
           </Link>
         </Button>
       ) : (
-        <Button asChild variant="outline" className="gap-2 rounded-xl h-11 px-6">
+        <Button asChild variant="outline" className="gap-2 rounded-xl h-10 px-5 border-[#765341]/20">
           <Link href="/verify-college">
             <GraduationCap className="h-4 w-4" />
             Verify College to Post
@@ -1180,28 +953,25 @@ function EmptyState({ searchQuery, selectedCategory, isVerified, onClearFilters,
 
 function HousingRestrictedState({ onClearFilters }: { onClearFilters: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="relative mb-5">
-        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
-          <Lock className="h-7 w-7 text-white" />
-        </div>
-        <div className="absolute -inset-4 bg-gradient-to-br from-amber-400/20 to-orange-500/20 rounded-full blur-xl pointer-events-none" />
+    <div className={cn(GLASS_CARD, "flex flex-col items-center justify-center py-16 text-center")}>
+      <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-4 shadow-lg">
+        <Lock className="h-6 w-6 text-white" />
       </div>
-      <h3 className="text-xl font-semibold mb-2">Student-Only Feature</h3>
-      <p className="text-sm text-muted-foreground mb-2 max-w-sm">
+      <h3 className="text-lg font-semibold text-[#14110F] dark:text-[#E4E1C7] mb-1.5">Student-Only Feature</h3>
+      <p className="text-sm text-[#14110F]/50 dark:text-white/40 mb-1.5 max-w-sm">
         Housing listings are available exclusively for verified students.
       </p>
-      <p className="text-xs text-muted-foreground mb-6 max-w-xs">
+      <p className="text-xs text-[#14110F]/40 dark:text-white/30 mb-5 max-w-xs">
         Verify your student status to access PGs, flats, and roommate listings.
       </p>
       <div className="flex flex-col sm:flex-row gap-3">
-        <Button asChild className="gap-2 rounded-xl h-11 px-6 bg-gradient-to-r from-amber-500 to-orange-500">
+        <Button asChild className="gap-2 rounded-xl h-10 px-5 bg-gradient-to-r from-amber-500 to-orange-500">
           <Link href="/verify-student">
             <GraduationCap className="h-4 w-4" />
             Verify Student Status
           </Link>
         </Button>
-        <Button variant="outline" className="rounded-xl h-11 px-6" onClick={onClearFilters}>
+        <Button variant="outline" className="rounded-xl h-10 px-5 border-[#765341]/20" onClick={onClearFilters}>
           Browse Other Categories
         </Button>
       </div>

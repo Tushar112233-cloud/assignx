@@ -6,8 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-
-import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
 import '../../../data/models/project_model.dart';
@@ -25,16 +23,11 @@ class _P {
   _P._();
   // Brand base
   static const Color coffee = Color(0xFF765341);
-  static const Color coffeeDark = Color(0xFF54442B);
-  static const Color coffeeLight = Color(0xFFA07A65);
-  static const Color cream = Color(0xFFE4E1C7);
-  static const Color caramel = Color(0xFFBD916B);
 
-  // Pop is coffee — color pops come from status icons/dots only
+  // Pop is coffee -- color pops come from status icons/dots only
   static const Color pop = Color(0xFF765341);
   static const Color popLight = Color(0xFFA07A65);
   static const Color popSoft = Color(0xFFF5F0EB);
-  static const Color popAccent = Color(0xFF765341);
 
   // Status
   static const Color emerald = Color(0xFF259369);
@@ -45,8 +38,10 @@ class _P {
 
   // Surfaces
   static const Color bg = Color(0xFFFEFDFB);
-  static const Color surface = Color(0xFFFDFCFB);
   static const Color surfaceMuted = Color(0xFFF6F5F3);
+
+  // Glass card surface
+  static const Color glassBorder = Color(0x22765341);
 
   // Text
   static const Color text = Color(0xFF14110F);
@@ -58,7 +53,6 @@ class _P {
   static const Color borderLight = Color(0xFFF0EEEA);
 
   // Radii
-  static const double r = 22;
   static const double rSm = 16;
   static const double rXs = 12;
 }
@@ -305,56 +299,75 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
     );
   }
 
-  // ── Inline stats row ──
+  // ── Stats hero banner ──
   Widget _buildStatsBanner() {
     final countsAsync = ref.watch(projectCountsProvider);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      child: countsAsync.when(
-        data: (counts) {
-          final total = counts[5] ?? 0;
-          final active = counts[1] ?? 0;
-          final review = counts[2] ?? 0;
-          final done = counts[4] ?? 0;
-
-          return Row(
-            children: [
-              _InlineStat(value: total, label: 'Total', color: _P.pop),
-              const SizedBox(width: 6),
-              Container(width: 1, height: 22, color: _P.border),
-              const SizedBox(width: 6),
-              _InlineStat(value: active, label: 'Active', color: _P.sky),
-              const SizedBox(width: 6),
-              Container(width: 1, height: 22, color: _P.border),
-              const SizedBox(width: 6),
-              _InlineStat(value: review, label: 'Review', color: _P.amber),
-              const SizedBox(width: 6),
-              Container(width: 1, height: 22, color: _P.border),
-              const SizedBox(width: 6),
-              _InlineStat(value: done, label: 'Done', color: _P.emerald),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              _P.coffee,
+              _P.coffee.withValues(alpha: 0.85),
+              const Color(0xFF8B6553),
             ],
-          );
-        },
-        loading: () => Row(
-          children: [
-            _InlineStat(value: 0, label: 'Total', color: _P.pop, loading: true),
-            const SizedBox(width: 6),
-            Container(width: 1, height: 22, color: _P.border),
-            const SizedBox(width: 6),
-            _InlineStat(value: 0, label: 'Active', color: _P.sky, loading: true),
-            const SizedBox(width: 6),
-            Container(width: 1, height: 22, color: _P.border),
-            const SizedBox(width: 6),
-            _InlineStat(value: 0, label: 'Review', color: _P.amber, loading: true),
-            const SizedBox(width: 6),
-            Container(width: 1, height: 22, color: _P.border),
-            const SizedBox(width: 6),
-            _InlineStat(value: 0, label: 'Done', color: _P.emerald, loading: true),
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: _P.coffee.withValues(alpha: 0.25),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
           ],
         ),
-        error: (_, __) => const SizedBox.shrink(),
+        child: countsAsync.when(
+          data: (counts) {
+            final total = counts[5] ?? 0;
+            final active = counts[1] ?? 0;
+            final review = counts[2] ?? 0;
+            final done = counts[4] ?? 0;
+
+            return Row(
+              children: [
+                _HeroStat(value: total, label: 'Total', color: Colors.white),
+                _heroDivider(),
+                _HeroStat(value: active, label: 'Active', color: const Color(0xFF7DD3FC)),
+                _heroDivider(),
+                _HeroStat(value: review, label: 'Review', color: const Color(0xFFFCD34D)),
+                _heroDivider(),
+                _HeroStat(value: done, label: 'Done', color: const Color(0xFF6EE7B7)),
+              ],
+            );
+          },
+          loading: () => Row(
+            children: [
+              _HeroStat(value: 0, label: 'Total', color: Colors.white, loading: true),
+              _heroDivider(),
+              _HeroStat(value: 0, label: 'Active', color: const Color(0xFF7DD3FC), loading: true),
+              _heroDivider(),
+              _HeroStat(value: 0, label: 'Review', color: const Color(0xFFFCD34D), loading: true),
+              _heroDivider(),
+              _HeroStat(value: 0, label: 'Done', color: const Color(0xFF6EE7B7), loading: true),
+            ],
+          ),
+          error: (_, _) => const SizedBox.shrink(),
+        ),
       ),
+    );
+  }
+
+  Widget _heroDivider() {
+    return Container(
+      width: 1,
+      height: 30,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      color: Colors.white.withValues(alpha: 0.15),
     );
   }
 
@@ -462,48 +475,54 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
     );
   }
 
-  // ── Search bar ──
+  // ── Search bar (glass morphism) ──
   Widget _buildSearch() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(_P.rXs),
-          border: Border.all(color: _P.borderLight),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(_P.rXs),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.75),
+              borderRadius: BorderRadius.circular(_P.rXs),
+              border: Border.all(color: _P.glassBorder),
+              boxShadow: [
+                BoxShadow(
+                  color: _P.coffee.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: TextField(
-          controller: _searchCtrl,
-          onChanged: (v) => setState(() => _searchQuery = v),
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: _P.text,
-            fontSize: 14,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Search projects...',
-            hintStyle: TextStyle(color: _P.textSoft, fontSize: 14),
-            prefixIcon:
-                Icon(LucideIcons.search, size: 18, color: _P.textSoft),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? GestureDetector(
-                    onTap: () {
-                      _searchCtrl.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                    child:
-                        Icon(LucideIcons.x, size: 16, color: _P.textSoft),
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: (v) => setState(() => _searchQuery = v),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: _P.text,
+                fontSize: 14,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search projects...',
+                hintStyle: TextStyle(color: _P.textSoft, fontSize: 14),
+                prefixIcon:
+                    Icon(LucideIcons.search, size: 18, color: _P.textSoft),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () {
+                          _searchCtrl.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                        child:
+                            Icon(LucideIcons.x, size: 16, color: _P.textSoft),
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+            ),
           ),
         ),
       ),
@@ -601,8 +620,10 @@ class _BgPainter extends CustomPainter {
         end: Alignment.bottomCenter,
         colors: [
           Color(0xFFFEFDFB),
-          Color(0xFFF5F3EE),
+          Color(0xFFF8F5F0),
+          Color(0xFFF3F0EB),
         ],
+        stops: [0.0, 0.5, 1.0],
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, bg);
 
@@ -612,11 +633,23 @@ class _BgPainter extends CustomPainter {
         center: const Alignment(1.0, -0.5),
         radius: 1.3,
         colors: [
-          const Color(0xFF765341).withValues(alpha: 0.04),
+          const Color(0xFF765341).withValues(alpha: 0.06),
           const Color(0xFF765341).withValues(alpha: 0.0),
         ],
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, p1);
+
+    // Subtle cool tint bottom-left for depth
+    final p2 = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(-0.8, 1.0),
+        radius: 1.5,
+        colors: [
+          const Color(0xFF0EA5E9).withValues(alpha: 0.02),
+          const Color(0xFF0EA5E9).withValues(alpha: 0.0),
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, p2);
   }
 
   @override
@@ -624,15 +657,15 @@ class _BgPainter extends CustomPainter {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// INLINE STAT — compact dot + number + label
+// HERO STAT -- for gradient stats banner
 // ═══════════════════════════════════════════════════════════════
-class _InlineStat extends StatelessWidget {
+class _HeroStat extends StatelessWidget {
   final int value;
   final String label;
   final Color color;
   final bool loading;
 
-  const _InlineStat({
+  const _HeroStat({
     required this.value,
     required this.label,
     required this.color,
@@ -642,46 +675,41 @@ class _InlineStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 7,
-            height: 7,
+            width: 8,
+            height: 8,
+            margin: const EdgeInsets.only(bottom: 6),
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: color.withValues(alpha: 0.3),
-                  blurRadius: 4,
+                  color: color.withValues(alpha: 0.5),
+                  blurRadius: 6,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 6),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                loading ? '-' : '$value',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: _P.text,
-                  height: 1.1,
-                ),
-              ),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  color: _P.textSoft,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+          Text(
+            loading ? '-' : '$value',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -753,7 +781,7 @@ class _ProjectsList extends ConsumerWidget {
           child: CircularProgressIndicator(color: _P.pop, strokeWidth: 2.5),
         ),
       ),
-      error: (_, __) => Padding(
+      error: (_, _) => Padding(
         padding: const EdgeInsets.all(40),
         child: Center(
           child: Column(
@@ -874,145 +902,186 @@ class _ProjectCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white.withValues(alpha: 0.82),
           borderRadius: BorderRadius.circular(_P.rSm),
-          border: Border.all(color: _P.borderLight),
+          border: Border.all(color: _P.glassBorder),
           boxShadow: [
             BoxShadow(
-              color: s.color.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: s.color.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top row: icon + title + badge
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Status icon
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        s.color.withValues(alpha: 0.15),
-                        s.color.withValues(alpha: 0.05),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(13),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(_P.rSm),
+          child: Row(
+            children: [
+              // Left status color indicator strip
+              Container(
+                width: 4,
+                height: null,
+                constraints: const BoxConstraints(minHeight: 90),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      s.color,
+                      s.color.withValues(alpha: 0.4),
+                    ],
                   ),
-                  child: Icon(s.icon, color: s.color, size: 20),
                 ),
-                const SizedBox(width: 14),
-                // Title + project number
-                Expanded(
+              ),
+              // Card content
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        project.title,
-                        style: AppTextStyles.labelLarge.copyWith(
-                          color: _P.text,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14.5,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      // Top row: icon + title + badge
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Status icon
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  s.color.withValues(alpha: 0.15),
+                                  s.color.withValues(alpha: 0.05),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(13),
+                              border: Border.all(
+                                color: s.color.withValues(alpha: 0.1),
+                              ),
+                            ),
+                            child: Icon(s.icon, color: s.color, size: 20),
+                          ),
+                          const SizedBox(width: 14),
+                          // Title + project number
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  project.title,
+                                  style: AppTextStyles.labelLarge.copyWith(
+                                    color: _P.text,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14.5,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      flex: 0,
+                                      child: Text(
+                                        '#${project.projectNumber}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontFamily: 'monospace',
+                                          color: _P.textSoft,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Container(
+                                      width: 3,
+                                      height: 3,
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                      decoration: const BoxDecoration(
+                                        color: _P.textSoft,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    Flexible(
+                                      child: Text(
+                                        project.serviceType.displayName,
+                                        style: const TextStyle(
+                                            fontSize: 12, color: _P.textSoft),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Status badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: s.color.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: s.color.withValues(alpha: 0.15),
+                              ),
+                            ),
+                            child: Text(
+                              s.label,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: s.color,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
+
+                      // Progress bar
+                      if (project.status == ProjectStatus.inProgress) ...[
+                        const SizedBox(height: 14),
+                        ProjectProgressIndicator(
+                          percent: project.progressPercentage,
+                          showLabel: true,
+                        ),
+                      ],
+
+                      const SizedBox(height: 14),
+
+                      // Bottom row: time + actions
                       Row(
                         children: [
-                          Flexible(
-                            flex: 0,
-                            child: Text(
-                              '#${project.projectNumber}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontFamily: 'monospace',
-                                color: _P.textSoft,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          Icon(LucideIcons.clock,
+                              size: 13, color: _P.textSoft),
+                          const SizedBox(width: 5),
+                          Text(
+                            _timeAgo(project.updatedAt ?? project.createdAt),
+                            style: const TextStyle(
+                                fontSize: 12, color: _P.textSoft),
                           ),
-                          Container(
-                            width: 3,
-                            height: 3,
-                            margin:
-                                const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: const BoxDecoration(
-                              color: _P.textSoft,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          Flexible(
-                            child: Text(
-                              project.serviceType.displayName,
-                              style: const TextStyle(
-                                  fontSize: 12, color: _P.textSoft),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
+                          const Spacer(),
+                          _buildActions(context),
                         ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                // Status badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: s.color.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    s.label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: s.color,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // Progress bar
-            if (project.status == ProjectStatus.inProgress) ...[
-              const SizedBox(height: 14),
-              ProjectProgressIndicator(
-                percent: project.progressPercentage,
-                showLabel: true,
               ),
             ],
-
-            const SizedBox(height: 14),
-
-            // Bottom row: time + actions
-            Row(
-              children: [
-                Icon(LucideIcons.clock, size: 13, color: _P.textSoft),
-                const SizedBox(width: 5),
-                Text(
-                  _timeAgo(project.updatedAt ?? project.createdAt),
-                  style: const TextStyle(fontSize: 12, color: _P.textSoft),
-                ),
-                const Spacer(),
-                _buildActions(context),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );

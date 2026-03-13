@@ -409,34 +409,28 @@ class _FloatingSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.15),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.06),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
+      child: GlassCard(
+        blur: 12,
+        opacity: 0.85,
+        elevation: 1,
+        padding: EdgeInsets.zero,
+        borderRadius: BorderRadius.circular(16),
+        borderColor: AppColors.border.withValues(alpha: 0.12),
         child: Row(
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 16),
-              child: Icon(
-                LucideIcons.search,
-                size: 18,
-                color: AppColors.textTertiary,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [_kTeal1, _kTeal2]),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  LucideIcons.search,
+                  size: 14,
+                  color: Colors.white,
+                ),
               ),
             ),
             Expanded(
@@ -449,7 +443,7 @@ class _FloatingSearchBar extends StatelessWidget {
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search experts, specializations...'.tr(context),
-                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                  hintStyle: AppTextStyles.bodySmall.copyWith(
                     fontSize: 13,
                     color: AppColors.textTertiary.withValues(alpha: 0.7),
                   ),
@@ -471,13 +465,13 @@ class _FloatingSearchBar extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
+                      color: _kTeal1.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       LucideIcons.x,
                       size: 13,
-                      color: AppColors.primary.withValues(alpha: 0.6),
+                      color: _kTeal1.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -589,22 +583,14 @@ class _PillTabs extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.5),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
+      child: GlassCard(
+        blur: 10,
+        opacity: 0.7,
+        elevation: 1,
         padding: const EdgeInsets.all(4),
+        borderRadius: BorderRadius.circular(16),
+        borderColor: Colors.white.withValues(alpha: 0.4),
+        enableHoverEffect: false,
         child: Row(
           children: tabs.map((tab) {
             final isSelected = activeTab == tab.type;
@@ -617,10 +603,10 @@ class _PillTabs extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
                     gradient: isSelected
-                        ? LinearGradient(
+                        ? const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [AppColors.darkBrown, AppColors.primary],
+                            colors: [_kTeal1, _kTeal2],
                           )
                         : null,
                     color: isSelected ? null : Colors.transparent,
@@ -628,7 +614,7 @@ class _PillTabs extends StatelessWidget {
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.25),
+                              color: _kTeal1.withValues(alpha: 0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 3),
                             ),
@@ -737,17 +723,17 @@ class _FeaturedRowState extends State<_FeaturedRow> {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
           child: Row(
             children: [
-              // Amber pop icon (wallet pattern)
+              // Teal accent icon
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                    colors: [_kTeal1, _kTeal2],
                   ),
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+                      color: _kTeal1.withValues(alpha: 0.25),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -816,7 +802,7 @@ class _FeaturedRowState extends State<_FeaturedRow> {
                   height: 6,
                   decoration: BoxDecoration(
                     color: isActive
-                        ? AppColors.primary
+                        ? _kTeal1
                         : AppColors.border.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(3),
                   ),
@@ -843,272 +829,290 @@ class _FeaturedDoctorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return GlassCard(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          // Subtle warm tint — Color.lerp like wallet
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color.lerp(Colors.white, AppColors.accent, 0.06)!,
-              Colors.white,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.12),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Doctor info row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Avatar
-                Stack(
-                  children: [
-                    Container(
-                      width: 72,
-                      height: 72,
+      blur: 15,
+      opacity: 0.8,
+      elevation: 3,
+      padding: const EdgeInsets.all(16),
+      borderRadius: BorderRadius.circular(20),
+      borderColor: _kTeal1.withValues(alpha: 0.12),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withValues(alpha: 0.95),
+          Color.lerp(Colors.white, _kTeal1, 0.04)!,
+          Colors.white.withValues(alpha: 0.9),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Doctor info row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Avatar with teal ring accent
+              Stack(
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _kTeal1.withValues(alpha: 0.15),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 34,
+                      backgroundColor: _kTeal1.withAlpha(25),
+                      backgroundImage: doctor.avatar != null
+                          ? NetworkImage(doctor.avatar!)
+                          : null,
+                      child: doctor.avatar == null
+                          ? Text(
+                              doctor.initials,
+                              style: AppTextStyles.headingMedium.copyWith(
+                                color: _kTeal1,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                  Positioned(
+                    right: 1,
+                    bottom: 1,
+                    child: Container(
+                      width: 18,
+                      height: 18,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 34,
-                        backgroundColor: AppColors.primaryLight.withAlpha(50),
-                        backgroundImage: doctor.avatar != null
-                            ? NetworkImage(doctor.avatar!)
-                            : null,
-                        child: doctor.avatar == null
-                            ? Text(
-                                doctor.initials,
-                                style: AppTextStyles.headingMedium.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              )
-                            : null,
+                        color: _availabilityColor,
+                        border: Border.all(color: Colors.white, width: 2.5),
                       ),
                     ),
-                    Positioned(
-                      right: 1,
-                      bottom: 1,
-                      child: Container(
-                        width: 18,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _availabilityColor,
-                          border: Border.all(color: Colors.white, width: 2.5),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 14),
-
-                // Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Featured badge — amber gradient
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(LucideIcons.award, size: 10, color: Colors.white),
-                            const SizedBox(width: 3),
-                            Text(
-                              'Featured'.tr(context),
-                              style: AppTextStyles.caption.copyWith(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-
-                      // Name
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              doctor.name,
-                              style: AppTextStyles.headingSmall.copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (doctor.verified) ...[
-                            const SizedBox(width: 4),
-                            Icon(LucideIcons.badgeCheck, size: 16, color: AppColors.success),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-
-                      // Designation
-                      Text(
-                        doctor.designation,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Rating
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.warning.withAlpha(25),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(LucideIcons.star, size: 12, color: AppColors.warning),
-                                const SizedBox(width: 3),
-                                Text(
-                                  doctor.ratingString,
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                                Text(
-                                  ' (${doctor.reviewCount})',
-                                  style: AppTextStyles.caption.copyWith(
-                                    color: AppColors.textTertiary,
-                                    fontSize: 9,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(LucideIcons.users, size: 12, color: AppColors.textTertiary),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${doctor.totalSessions}',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textSecondary,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ),
-                ),
-              ],
-            ),
-            const Spacer(),
+                ],
+              ),
+              const SizedBox(width: 14),
 
-            // Price + book row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
+              // Info
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      doctor.priceString,
-                      style: AppTextStyles.headingSmall.copyWith(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    Text(
-                      'per session'.tr(context),
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textTertiary,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
-                // Book button — coffee brown
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onBook,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                    // Featured badge -- teal gradient
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.darkBrown, AppColors.primary],
+                        gradient: const LinearGradient(
+                          colors: [_kTeal1, _kTeal2],
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.25),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
+                            color: _kTeal1.withValues(alpha: 0.25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
-                      child: Text(
-                        'Book Now'.tr(context),
-                        style: AppTextStyles.labelMedium.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(LucideIcons.award, size: 10, color: Colors.white),
+                          const SizedBox(width: 3),
+                          Text(
+                            'Featured'.tr(context),
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Name
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            doctor.name,
+                            style: AppTextStyles.headingSmall.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (doctor.verified) ...[
+                          const SizedBox(width: 4),
+                          const Icon(LucideIcons.badgeCheck, size: 16, color: _kTeal1),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+
+                    // Designation
+                    Text(
+                      doctor.designation,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Rating
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withAlpha(25),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(LucideIcons.star, size: 12, color: AppColors.warning),
+                              const SizedBox(width: 3),
+                              Text(
+                                doctor.ratingString,
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              Text(
+                                ' (${doctor.reviewCount})',
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textTertiary,
+                                  fontSize: 9,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(LucideIcons.users, size: 12, color: AppColors.textTertiary),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${doctor.totalSessions}',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+
+          // Divider
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  _kTeal1.withValues(alpha: 0.1),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+
+          // Price + book row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    doctor.priceString,
+                    style: AppTextStyles.headingSmall.copyWith(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  Text(
+                    'per session'.tr(context),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textTertiary,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+              // Book button -- teal gradient
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onBook,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [_kTeal1, _kTeal2],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _kTeal1.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(LucideIcons.calendar, size: 13, color: Colors.white),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Book Now'.tr(context),
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1193,18 +1197,18 @@ class _FilterChips extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primary.withValues(alpha: 0.1)
+                      ? _kTeal1.withValues(alpha: 0.1)
                       : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected
-                        ? AppColors.primary.withValues(alpha: 0.3)
+                        ? _kTeal1.withValues(alpha: 0.35)
                         : AppColors.border.withValues(alpha: 0.3),
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.08),
+                            color: _kTeal1.withValues(alpha: 0.1),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -1217,7 +1221,7 @@ class _FilterChips extends StatelessWidget {
                     Icon(
                       _icon(spec),
                       size: 14,
-                      color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                      color: isSelected ? _kTeal1 : AppColors.textTertiary,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -1226,7 +1230,7 @@ class _FilterChips extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                         color: isSelected
-                            ? AppColors.primary
+                            ? _kTeal1
                             : AppColors.textSecondary,
                       ),
                     ),
@@ -1322,22 +1326,14 @@ class _BookingSubTabs extends StatelessWidget {
       (type: _BookingTabType.cancelled, icon: LucideIcons.xCircle, label: 'Cancelled'.tr(context)),
     ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.5),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+    return GlassCard(
+      blur: 8,
+      opacity: 0.6,
+      elevation: 1,
       padding: const EdgeInsets.all(4),
+      borderRadius: BorderRadius.circular(14),
+      borderColor: Colors.white.withValues(alpha: 0.4),
+      enableHoverEffect: false,
       child: Row(
         children: tabs.map((tab) {
           final isSelected = activeTab == tab.type;
@@ -1349,12 +1345,15 @@ class _BookingSubTabs extends StatelessWidget {
                 curve: Curves.easeOutCubic,
                 padding: const EdgeInsets.symmetric(vertical: 11),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.transparent,
+                  gradient: isSelected
+                      ? const LinearGradient(colors: [_kTeal1, _kTeal2])
+                      : null,
+                  color: isSelected ? null : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.25),
+                            color: _kTeal1.withValues(alpha: 0.25),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -1496,18 +1495,16 @@ class _FeaturedRowSkeleton extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(20, 16, 20, 10),
           child: SkeletonLoader(height: 18, width: 160),
         ),
-        SizedBox(
-          height: 220,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceLight,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Center(
-                child: SkeletonLoader(height: 180, width: double.infinity),
-              ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: GlassCard(
+            blur: 10,
+            opacity: 0.6,
+            padding: const EdgeInsets.all(16),
+            borderRadius: BorderRadius.circular(20),
+            height: 220,
+            child: const Center(
+              child: SkeletonLoader(height: 180, width: double.infinity),
             ),
           ),
         ),
@@ -1575,22 +1572,13 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Container(
+      child: GlassCard(
+        blur: 12,
+        opacity: 0.75,
+        elevation: 2,
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.15),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
+        borderRadius: BorderRadius.circular(22),
+        borderColor: _kTeal1.withValues(alpha: 0.08),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1602,13 +1590,13 @@ class _EmptyState extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppColors.primary.withValues(alpha: 0.06),
-                    AppColors.accent.withValues(alpha: 0.1),
+                    _kTeal1.withValues(alpha: 0.06),
+                    _kTeal2.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.08),
+                  color: _kTeal1.withValues(alpha: 0.1),
                 ),
               ),
               child: Icon(
@@ -1652,13 +1640,13 @@ class _EmptyState extends StatelessWidget {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [AppColors.darkBrown, AppColors.primary],
+                      gradient: const LinearGradient(
+                        colors: [_kTeal1, _kTeal2],
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.2),
+                          color: _kTeal1.withValues(alpha: 0.25),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -1756,13 +1744,13 @@ class _ErrorState extends StatelessWidget {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.darkBrown, AppColors.primary],
+                    gradient: const LinearGradient(
+                      colors: [_kTeal1, _kTeal2],
                     ),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.2),
+                        color: _kTeal1.withValues(alpha: 0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),

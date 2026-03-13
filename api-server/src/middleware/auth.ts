@@ -1,5 +1,4 @@
-import { Response, NextFunction } from 'express';
-import { Request } from 'express-serve-static-core';
+import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../services/jwt.service';
 import { AppError } from './errorHandler';
 
@@ -12,7 +11,7 @@ export const authenticate = (req: Request, _res: Response, next: NextFunction) =
   const token = authHeader.split(' ')[1];
   try {
     const decoded = verifyToken(token);
-    req.user = {
+    (req as any).user = {
       id: decoded.sub,
       email: decoded.email,
       role: decoded.role,
@@ -32,7 +31,7 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction) =
   const token = authHeader.split(' ')[1];
   try {
     const decoded = verifyToken(token);
-    req.user = {
+    (req as any).user = {
       id: decoded.sub,
       email: decoded.email,
       role: decoded.role,

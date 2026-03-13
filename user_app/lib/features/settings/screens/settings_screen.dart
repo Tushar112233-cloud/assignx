@@ -9,6 +9,7 @@ import '../../../providers/accessibility_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../shared/widgets/dashboard_app_bar.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../../profile/widgets/account_upgrade_card.dart';
 import '../widgets/language_selector.dart';
 import '../widgets/about_section.dart';
@@ -16,22 +17,6 @@ import '../widgets/danger_zone_section.dart';
 import '../widgets/feedback_section.dart';
 import '../widgets/my_roles_section.dart';
 import '../widgets/privacy_data_section.dart';
-
-// ============================================================
-// DESIGN CONSTANTS
-// ============================================================
-
-/// Design colors from specification
-class _SettingsColors {
-  // Note: scaffoldBackground removed - now using transparent for gradient from MainShell
-  static const cardBackground = Color(0xFFFFFFFF);
-  static const primaryText = Color(0xFF1A1A1A);
-  static const secondaryText = Color(0xFF6B6B6B);
-  static const mutedText = Color(0xFF8B8B8B);
-  static const toggleOn = Color(0xFF5D3A3A);
-  static const toggleOff = Color(0xFFE0E0E0);
-  static const selectedThemeTint = Color(0xFFF8F0F8);
-}
 
 // ============================================================
 // PROVIDERS
@@ -91,7 +76,8 @@ class AppearancePrefs {
 // MAIN SCREEN
 // ============================================================
 
-/// Settings screen with redesigned UI matching design specification.
+/// Settings screen with redesigned UI using GlassCard containers
+/// and the AppColors coffee bean palette for visual consistency.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -107,7 +93,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final appearancePrefsAsync = ref.watch(appearancePrefsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFEFDFB),
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           // Unified Dashboard App Bar (dark theme)
@@ -121,15 +107,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
                       // Page Title Section
                       _buildPageTitle(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
                       // Account Upgrade Banner
                       _buildAccountUpgradeCard(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
                       // Notifications Section
                       notifPrefsAsync.when(
@@ -137,7 +123,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         loading: () => _buildLoadingCard(),
                         error: (e, s) => const SizedBox.shrink(),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
                       // Appearance Section
                       appearancePrefsAsync.when(
@@ -145,27 +131,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         loading: () => _buildLoadingCard(),
                         error: (e, s) => const SizedBox.shrink(),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
                       // Language Section
                       _buildLanguageCard(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
                       // My Roles Section
                       const MyRolesSection(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
                       // Privacy & Data Section
                       const PrivacyDataSection(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
                       // Send Feedback Section
                       const FeedbackSection(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
                       // About AssignX Section
                       const AboutSection(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
                       // Danger Zone Section
                       const DangerZoneSection(),
@@ -185,7 +171,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // PAGE TITLE
   // ============================================================
 
-  /// Builds the page title section.
+  /// Builds the page title section with improved hierarchy.
   Widget _buildPageTitle() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,14 +181,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           style: AppTextStyles.displayLarge.copyWith(
             fontSize: 30,
             fontWeight: FontWeight.bold,
-            color: _SettingsColors.primaryText,
+            color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           'Manage your preferences and account',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: _SettingsColors.secondaryText,
+            color: AppColors.textSecondary,
           ),
         ),
       ],
@@ -237,11 +223,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // NOTIFICATIONS CARD
   // ============================================================
 
-  /// Builds the notifications settings card.
+  /// Builds the notifications settings card wrapped in a GlassCard.
   Widget _buildNotificationsCard(NotificationPrefs prefs) {
     return _SettingsCard(
       icon: Icons.notifications_outlined,
-      iconBackgroundColor: const Color(0xFFFFF3E0), // Soft orange
+      iconColor: const Color(0xFFE07B4C),
+      iconBackgroundColor: AppColors.meshOrange,
       title: 'Notifications',
       subtitle: 'Manage how you receive updates',
       children: [
@@ -278,14 +265,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // APPEARANCE CARD
   // ============================================================
 
-  /// Builds the appearance settings card.
+  /// Builds the appearance settings card wrapped in a GlassCard.
   Widget _buildAppearanceCard(AppThemeMode appThemeMode, AppearancePrefs prefs) {
     // Watch the accessibility provider for reduced motion state
     final reducedMotion = ref.watch(reducedMotionProvider);
 
     return _SettingsCard(
       icon: Icons.auto_awesome_outlined,
-      iconBackgroundColor: const Color(0xFFF3E5F5), // Soft purple
+      iconColor: const Color(0xFF7E57C2),
+      iconBackgroundColor: AppColors.meshPurple,
       title: 'Appearance',
       subtitle: 'Customize how the app looks',
       children: [
@@ -295,7 +283,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: Text(
             'Theme',
             style: AppTextStyles.labelLarge.copyWith(
-              color: _SettingsColors.primaryText,
+              color: AppColors.textPrimary,
             ),
           ),
         ),
@@ -310,7 +298,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () => ref.read(themeProvider.notifier).setTheme(AppThemeMode.system),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
               child: _ThemeOptionCard(
                 icon: Icons.wb_sunny_outlined,
@@ -319,7 +307,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () => ref.read(themeProvider.notifier).setTheme(AppThemeMode.light),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
               child: _ThemeOptionCard(
                 icon: Icons.dark_mode_outlined,
@@ -330,23 +318,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
 
         // Accessibility Section Header
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Row(
             children: [
-              Icon(
-                Icons.accessibility_new,
-                size: 18,
-                color: _SettingsColors.secondaryText,
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.meshBlue,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.accessibility_new,
+                  size: 16,
+                  color: AppColors.info,
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Text(
                 'Accessibility',
                 style: AppTextStyles.labelLarge.copyWith(
-                  color: _SettingsColors.primaryText,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -385,7 +381,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     return _SettingsCard(
       icon: Icons.language,
-      iconBackgroundColor: const Color(0xFFE3F2FD), // Soft blue
+      iconColor: const Color(0xFF2B93BE),
+      iconBackgroundColor: AppColors.meshBlue,
       title: 'Language',
       subtitle: 'Choose your preferred language',
       children: [
@@ -412,23 +409,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // LOADING CARD
   // ============================================================
 
-  /// Builds a loading placeholder card.
+  /// Builds a loading placeholder card using GlassCard.
   Widget _buildLoadingCard() {
-    return Container(
-      height: 100,
-      decoration: BoxDecoration(
-        color: _SettingsColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    return GlassCard(
+      elevation: 1,
+      enableHoverEffect: false,
+      child: SizedBox(
+        height: 80,
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              AppColors.primary.withValues(alpha: 0.6),
+            ),
           ),
-        ],
-      ),
-      child: const Center(
-        child: CircularProgressIndicator(strokeWidth: 2),
+        ),
       ),
     );
   }
@@ -454,9 +449,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 // PRIVATE WIDGETS
 // ============================================================
 
-/// Settings card container with section header.
+/// Settings card container with section header, wrapped in a GlassCard
+/// for the glassmorphic design language.
 class _SettingsCard extends StatelessWidget {
   final IconData icon;
+  final Color? iconColor;
   final Color? iconBackgroundColor;
   final String title;
   final String subtitle;
@@ -464,6 +461,7 @@ class _SettingsCard extends StatelessWidget {
 
   const _SettingsCard({
     required this.icon,
+    this.iconColor,
     this.iconBackgroundColor,
     required this.title,
     required this.subtitle,
@@ -472,83 +470,65 @@ class _SettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _SettingsColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Section Header
-            Row(
-              children: [
-                if (iconBackgroundColor != null)
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: iconBackgroundColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      icon,
-                      size: 20,
-                      color: _SettingsColors.secondaryText,
-                    ),
-                  )
-                else
-                  Icon(
-                    icon,
-                    size: 24,
-                    color: _SettingsColors.secondaryText,
-                  ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: AppTextStyles.headingSmall.copyWith(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: _SettingsColors.primaryText,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontSize: 13,
-                          color: _SettingsColors.mutedText,
-                        ),
-                      ),
-                    ],
-                  ),
+    return GlassCard(
+      elevation: 1,
+      opacity: 0.80,
+      enableHoverEffect: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: iconBackgroundColor ?? AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Children
-            ...children,
-          ],
-        ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: iconColor ?? AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.headingSmall.copyWith(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        fontSize: 13,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Children
+          ...children,
+        ],
       ),
     );
   }
 }
 
-/// Settings toggle item with title, subtitle, and switch.
+/// Settings toggle item with title, subtitle, and a coffee-bean-themed switch.
 class _SettingsToggleItem extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -569,7 +549,7 @@ class _SettingsToggleItem extends StatelessWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
             children: [
               Expanded(
@@ -581,41 +561,41 @@ class _SettingsToggleItem extends StatelessWidget {
                       style: AppTextStyles.labelLarge.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: _SettingsColors.primaryText,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
                       subtitle,
                       style: AppTextStyles.bodySmall.copyWith(
                         fontSize: 12,
-                        color: _SettingsColors.mutedText,
+                        color: AppColors.textTertiary,
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 12),
-              _CustomToggle(value: value, onChanged: onChanged),
+              _CoffeeBeanToggle(value: value, onChanged: onChanged),
             ],
           ),
         ),
         if (showDivider)
           Divider(
             height: 1,
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: AppColors.border.withValues(alpha: 0.3),
           ),
       ],
     );
   }
 }
 
-/// Custom toggle switch matching design spec.
-class _CustomToggle extends StatelessWidget {
+/// Custom toggle switch using the coffee bean primary color palette.
+class _CoffeeBeanToggle extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
 
-  const _CustomToggle({
+  const _CoffeeBeanToggle({
     required this.value,
     required this.onChanged,
   });
@@ -629,7 +609,7 @@ class _CustomToggle extends StatelessWidget {
         width: 50,
         height: 28,
         decoration: BoxDecoration(
-          color: value ? _SettingsColors.toggleOn : _SettingsColors.toggleOff,
+          color: value ? AppColors.primary : AppColors.border,
           borderRadius: BorderRadius.circular(14),
         ),
         child: AnimatedAlign(
@@ -639,9 +619,16 @@ class _CustomToggle extends StatelessWidget {
             width: 24,
             height: 24,
             margin: const EdgeInsets.symmetric(horizontal: 2),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
           ),
         ),
@@ -670,16 +657,16 @@ class _ThemeOptionCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        height: 72,
+        height: 76,
         decoration: BoxDecoration(
           color: isSelected
-              ? _SettingsColors.selectedThemeTint
-              : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected
-                ? AppColors.primary.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.2),
+                ? AppColors.primary.withValues(alpha: 0.4)
+                : AppColors.border.withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -690,18 +677,18 @@ class _ThemeOptionCard extends StatelessWidget {
               icon,
               size: 22,
               color: isSelected
-                  ? _SettingsColors.primaryText
-                  : _SettingsColors.secondaryText,
+                  ? AppColors.primary
+                  : AppColors.textSecondary,
             ),
             const SizedBox(height: 6),
             Text(
               label,
               style: AppTextStyles.labelMedium.copyWith(
                 fontSize: 12,
-                fontWeight: FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
-                    ? _SettingsColors.primaryText
-                    : _SettingsColors.secondaryText,
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
               ),
             ),
           ],
@@ -734,13 +721,13 @@ class _LanguageOptionChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
-              ? _SettingsColors.selectedThemeTint
-              : Colors.white,
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
-                ? AppColors.primary.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.2),
+                ? AppColors.primary.withValues(alpha: 0.4)
+                : AppColors.border.withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -758,13 +745,13 @@ class _LanguageOptionChip extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
-                    ? _SettingsColors.primaryText
-                    : _SettingsColors.secondaryText,
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
               ),
             ),
             if (isSelected) ...[
               const SizedBox(width: 6),
-              Icon(
+              const Icon(
                 Icons.check_circle,
                 size: 16,
                 color: AppColors.primary,
@@ -776,4 +763,3 @@ class _LanguageOptionChip extends StatelessWidget {
     );
   }
 }
-

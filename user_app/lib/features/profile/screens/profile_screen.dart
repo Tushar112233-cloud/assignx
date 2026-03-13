@@ -12,30 +12,18 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/widgets/dashboard_app_bar.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../widgets/account_upgrade_card.dart';
 import '../widgets/app_info_footer.dart';
 import '../widgets/avatar_upload_dialog.dart';
 import '../widgets/preferences_section.dart';
 import '../widgets/subscription_card.dart';
 
-/// Profile screen colors matching the design specification.
-class _ProfileColors {
-  // Note: scaffoldBackground removed - now using transparent for gradient from MainShell
-  static const cardBackground = Color(0xFFFFFFFF);
-  static const primaryText = Color(0xFF1A1A1A);
-  static const secondaryText = Color(0xFF6B6B6B);
-  static const mutedText = Color(0xFF8B8B8B);
-  static const avatarBackground = Color(0xFFF5F0E8);
-  static const avatarInitials = Color(0xFF5D4E37);
-  static const greenIconBg = Color(0xFFE8F5E9);
-  static const yellowIconBg = Color(0xFFFFF8E1);
-  static const creamIconBg = Color(0xFFF5F0E8);
-  static const tealBannerBg = Color(0xFFE0F2F1);
-  static const darkButton = Color(0xFF3D3228);
-  static const badgeBackground = Color(0xFFF0F0F0);
-  static const borderColor = Color(0xFFD0D0D0);
-  static const tealAccent = Color(0xFF26A69A);
-}
+/// Sage green accent color for the profile page.
+const Color _sageGreen = Color(0xFF6B8F71);
+
+/// Sage green light background tint.
+const Color _sageGreenLight = Color(0xFFE8F0E9);
 
 /// Main profile screen with hero section, stats, and settings.
 class ProfileScreen extends ConsumerWidget {
@@ -49,7 +37,7 @@ class ProfileScreen extends ConsumerWidget {
     final referralAsync = ref.watch(referralProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFEFDFB),
+      backgroundColor: AppColors.background,
       body: profileAsync.when(
         data: (profile) => Column(
           children: [
@@ -74,7 +62,7 @@ class ProfileScreen extends ConsumerWidget {
 
                     const SizedBox(height: 16),
 
-                    // Stats Grid (2×2)
+                    // Stats Grid (2x2)
                     walletAsync.when(
                       data: (wallet) => _buildStatsGrid(
                         context,
@@ -92,7 +80,7 @@ class ProfileScreen extends ConsumerWidget {
                         referrals: 0,
                         earned: 0,
                       ),
-                      error: (_, __) => _buildStatsGrid(
+                      error: (e, s) => _buildStatsGrid(
                         context,
                         ref,
                         balance: 0,
@@ -123,7 +111,7 @@ class ProfileScreen extends ConsumerWidget {
                         earned: referral.totalEarnings,
                       ),
                       loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
+                      error: (e, s) => const SizedBox.shrink(),
                     ),
 
                     const SizedBox(height: 16),
@@ -151,7 +139,7 @@ class ProfileScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 16),
               const Text('Failed to load profile'),
               TextButton(
@@ -165,34 +153,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds the transparent header bar with AssignX title and notification icon.
-  Widget _buildHeaderBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'AssignX',
-            style: AppTextStyles.headingMedium.copyWith(
-              color: _ProfileColors.primaryText,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          IconButton(
-            onPressed: () => context.push('/notifications'),
-            icon: const Icon(
-              Icons.notifications_outlined,
-              color: _ProfileColors.primaryText,
-              size: 26,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds the main profile card with avatar, name, and edit button.
+  /// Builds the main profile card with gradient-bordered avatar, name, and edit button.
   Widget _buildProfileCard(
     BuildContext context,
     WidgetRef ref, {
@@ -200,47 +161,58 @@ class ProfileScreen extends ConsumerWidget {
   }) {
     final joinDate = DateFormat('MMMM yyyy').format(profile.createdAt);
 
-    return Container(
+    return GlassCard(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: _ProfileColors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(15),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      elevation: 2,
       child: Column(
         children: [
-          // Avatar with camera overlay
+          // Avatar with gradient border and camera overlay
           GestureDetector(
             onTap: () => _showAvatarOptions(context, ref),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Main avatar
+                // Gradient border ring
                 Container(
-                  width: 110,
-                  height: 110,
+                  width: 114,
+                  height: 114,
                   decoration: BoxDecoration(
-                    color: profile.avatarUrl != null ? _ProfileColors.avatarBackground : null,
                     shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        _sageGreen,
+                        AppColors.primary,
+                        AppColors.accent,
+                      ],
+                    ),
                   ),
-                  child: profile.avatarUrl != null
-                      ? ClipOval(
-                          child: Image.network(
-                            profile.avatarUrl!,
-                            width: 110,
-                            height: 110,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _buildInitials(profile.initials),
-                          ),
-                        )
-                      : _buildInitials(profile.initials),
+                  child: Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(2),
+                        child: profile.avatarUrl != null
+                            ? ClipOval(
+                                child: Image.network(
+                                  profile.avatarUrl!,
+                                  width: 104,
+                                  height: 104,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (ctx, err, stack) =>
+                                      _buildInitials(profile.initials),
+                                ),
+                              )
+                            : _buildInitials(profile.initials),
+                      ),
+                    ),
+                  ),
                 ),
                 // Camera icon overlay
                 Positioned(
@@ -249,26 +221,27 @@ class ProfileScreen extends ConsumerWidget {
                   right: 0,
                   child: Center(
                     child: Container(
-                      width: 28,
-                      height: 28,
+                      width: 30,
+                      height: 30,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: _sageGreen,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: _ProfileColors.borderColor.withAlpha(100),
-                          width: 1,
+                          color: Colors.white,
+                          width: 2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withAlpha(10),
-                            blurRadius: 4,
+                            color: _sageGreen.withAlpha(60),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
                       child: const Icon(
                         Icons.camera_alt_outlined,
                         size: 14,
-                        color: _ProfileColors.secondaryText,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -290,7 +263,7 @@ class ProfileScreen extends ConsumerWidget {
                   style: AppTextStyles.headingMedium.copyWith(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: _ProfileColors.primaryText,
+                    color: AppColors.textPrimary,
                     letterSpacing: 0.5,
                   ),
                   maxLines: 1,
@@ -300,7 +273,8 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               // Account type badge (Student/Professional/Business)
               _buildAccountTypeBadge(
-                AccountType.fromDbString(profile.userType?.toDbString() ?? 'student'),
+                AccountType.fromDbString(
+                    profile.userType?.toDbString() ?? 'student'),
               ),
             ],
           ),
@@ -315,7 +289,7 @@ class ProfileScreen extends ConsumerWidget {
               const Icon(
                 Icons.email_outlined,
                 size: 16,
-                color: _ProfileColors.secondaryText,
+                color: AppColors.textSecondary,
               ),
               const SizedBox(width: 6),
               Flexible(
@@ -323,7 +297,7 @@ class ProfileScreen extends ConsumerWidget {
                   profile.email,
                   style: AppTextStyles.bodyMedium.copyWith(
                     fontSize: 14,
-                    color: _ProfileColors.secondaryText,
+                    color: AppColors.textSecondary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -331,7 +305,7 @@ class ProfileScreen extends ConsumerWidget {
               // Email verification badge (OAuth users are verified)
               if (profile.isVerified) ...[
                 const SizedBox(width: 6),
-                Icon(
+                const Icon(
                   Icons.check_circle,
                   size: 16,
                   color: AppColors.success,
@@ -350,14 +324,14 @@ class ProfileScreen extends ConsumerWidget {
               const Icon(
                 Icons.calendar_today_outlined,
                 size: 14,
-                color: _ProfileColors.mutedText,
+                color: AppColors.textTertiary,
               ),
               const SizedBox(width: 6),
               Text(
                 'Joined $joinDate',
                 style: AppTextStyles.bodySmall.copyWith(
                   fontSize: 13,
-                  color: _ProfileColors.mutedText,
+                  color: AppColors.textTertiary,
                 ),
               ),
             ],
@@ -369,22 +343,23 @@ class ProfileScreen extends ConsumerWidget {
           OutlinedButton(
             onPressed: () => context.push('/profile/edit'),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(
-                color: _ProfileColors.borderColor,
+              side: BorderSide(
+                color: _sageGreen.withAlpha(120),
                 width: 1.5,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.edit_outlined,
                   size: 16,
-                  color: _ProfileColors.primaryText,
+                  color: _sageGreen,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -392,7 +367,7 @@ class ProfileScreen extends ConsumerWidget {
                   style: AppTextStyles.labelMedium.copyWith(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: _ProfileColors.primaryText,
+                    color: _sageGreen,
                   ),
                 ),
               ],
@@ -408,8 +383,8 @@ class ProfileScreen extends ConsumerWidget {
   Widget _buildInitials(String initials) {
     return Center(
       child: Container(
-        width: 110,
-        height: 110,
+        width: 104,
+        height: 104,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
@@ -424,7 +399,7 @@ class ProfileScreen extends ConsumerWidget {
         child: const Icon(
           Icons.person_rounded,
           size: 48,
-          color: Color(0xFF8B7355), // warm brown
+          color: AppColors.accent, // warm brown from palette
         ),
       ),
     );
@@ -465,7 +440,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds the 2×2 stats grid.
+  /// Builds the 2x2 bento-style stats grid with glass cards.
   Widget _buildStatsGrid(
     BuildContext context,
     WidgetRef ref, {
@@ -484,9 +459,9 @@ class ProfileScreen extends ConsumerWidget {
               Expanded(
                 child: _buildStatCard(
                   icon: Icons.account_balance_wallet_outlined,
-                  iconColor: AppColors.success,
-                  iconBgColor: _ProfileColors.greenIconBg,
-                  value: '₹${balance.toStringAsFixed(0)}',
+                  iconColor: _sageGreen,
+                  iconBgColor: _sageGreenLight,
+                  value: '\u20B9${balance.toStringAsFixed(0)}',
                   label: 'Balance',
                   onTap: () => context.push('/wallet'),
                 ),
@@ -495,8 +470,8 @@ class ProfileScreen extends ConsumerWidget {
               Expanded(
                 child: _buildStatCard(
                   icon: Icons.check_circle_outline,
-                  iconColor: AppColors.success,
-                  iconBgColor: _ProfileColors.greenIconBg,
+                  iconColor: AppColors.primary,
+                  iconBgColor: AppColors.surfaceLight,
                   value: projects.toString(),
                   label: 'Projects',
                   onTap: () {},
@@ -511,8 +486,8 @@ class ProfileScreen extends ConsumerWidget {
               Expanded(
                 child: _buildStatCard(
                   icon: Icons.people_outline,
-                  iconColor: _ProfileColors.avatarInitials,
-                  iconBgColor: _ProfileColors.creamIconBg,
+                  iconColor: AppColors.accent,
+                  iconBgColor: AppColors.surfaceVariant,
                   value: referrals.toString(),
                   label: 'Referrals',
                   onTap: () {},
@@ -522,9 +497,9 @@ class ProfileScreen extends ConsumerWidget {
               Expanded(
                 child: _buildStatCard(
                   icon: Icons.card_giftcard,
-                  iconColor: const Color(0xFFF5A623),
-                  iconBgColor: _ProfileColors.yellowIconBg,
-                  value: '₹${earned.toStringAsFixed(0)}',
+                  iconColor: AppColors.warning,
+                  iconBgColor: AppColors.warningLight,
+                  value: '\u20B9${earned.toStringAsFixed(0)}',
                   label: 'Earned',
                   onTap: () {},
                 ),
@@ -536,7 +511,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds a single stat card for the grid.
+  /// Builds a single bento-style stat card with glass effect.
   Widget _buildStatCard({
     required IconData icon,
     required Color iconColor,
@@ -545,82 +520,69 @@ class ProfileScreen extends ConsumerWidget {
     required String label,
     VoidCallback? onTap,
   }) {
-    return GestureDetector(
+    return GlassCard(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: _ProfileColors.cardBackground,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(10),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top row with icon and arrow
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: iconBgColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: iconColor,
-                  ),
+      padding: const EdgeInsets.all(16),
+      elevation: 1,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top row with icon and arrow
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const Icon(
-                  Icons.arrow_outward,
-                  size: 14,
-                  color: _ProfileColors.mutedText,
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: iconColor,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Value
-            Text(
-              value,
-              style: AppTextStyles.headingMedium.copyWith(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: _ProfileColors.primaryText,
               ),
-            ),
-            const SizedBox(height: 2),
-            // Label
-            Text(
-              label,
-              style: AppTextStyles.caption.copyWith(
-                fontSize: 12,
-                color: _ProfileColors.mutedText,
+              const Icon(
+                Icons.arrow_outward,
+                size: 14,
+                color: AppColors.textTertiary,
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Value
+          Text(
+            value,
+            style: AppTextStyles.headingMedium.copyWith(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 2),
+          // Label
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              fontSize: 12,
+              color: AppColors.textTertiary,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  /// Builds the Add Money to Wallet banner.
+  /// Builds the Add Money to Wallet banner with sage green accent.
   Widget _buildAddMoneyBanner(BuildContext context, WidgetRef ref) {
-    return Container(
+    return GlassCard(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _ProfileColors.tealBannerBg,
-        borderRadius: BorderRadius.circular(14),
-      ),
+      elevation: 1,
+      backgroundColor: _sageGreenLight,
+      borderColor: _sageGreen.withAlpha(40),
       child: Row(
         children: [
           // Plus icon
@@ -628,13 +590,13 @@ class ProfileScreen extends ConsumerWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: _ProfileColors.tealAccent.withAlpha(30),
+              color: _sageGreen.withAlpha(30),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.add,
               size: 20,
-              color: _ProfileColors.tealAccent,
+              color: _sageGreen,
             ),
           ),
           const SizedBox(width: 12),
@@ -648,7 +610,7 @@ class ProfileScreen extends ConsumerWidget {
                   style: AppTextStyles.labelLarge.copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: _ProfileColors.primaryText,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -656,7 +618,7 @@ class ProfileScreen extends ConsumerWidget {
                   'Top-up for quick payments',
                   style: AppTextStyles.caption.copyWith(
                     fontSize: 12,
-                    color: _ProfileColors.tealAccent,
+                    color: _sageGreen,
                   ),
                 ),
               ],
@@ -666,9 +628,10 @@ class ProfileScreen extends ConsumerWidget {
           GestureDetector(
             onTap: () => _showTopUpSheet(context, ref),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: _ProfileColors.darkButton,
+                color: AppColors.darkBrown,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -697,27 +660,17 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds the Refer & Earn card.
+  /// Builds the Refer & Earn card with glass styling.
   Widget _buildReferralCard(
     BuildContext context, {
     required String code,
     required int referrals,
     required double earned,
   }) {
-    return Container(
+    return GlassCard(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _ProfileColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      elevation: 2,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -728,13 +681,13 @@ class ProfileScreen extends ConsumerWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: _ProfileColors.yellowIconBg,
+                  color: AppColors.warningLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.card_giftcard,
                   size: 20,
-                  color: Color(0xFFF5A623),
+                  color: AppColors.warning,
                 ),
               ),
               const SizedBox(width: 14),
@@ -747,14 +700,14 @@ class ProfileScreen extends ConsumerWidget {
                       style: AppTextStyles.headingSmall.copyWith(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: _ProfileColors.primaryText,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     Text(
-                      'Earn ₹50 per referral',
+                      'Earn \u20B950 per referral',
                       style: AppTextStyles.bodySmall.copyWith(
                         fontSize: 13,
-                        color: _ProfileColors.secondaryText,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -769,7 +722,7 @@ class ProfileScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
+              color: AppColors.surfaceVariant,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -781,7 +734,7 @@ class ProfileScreen extends ConsumerWidget {
                     style: AppTextStyles.labelLarge.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: _ProfileColors.primaryText,
+                      color: AppColors.textPrimary,
                       letterSpacing: 1,
                     ),
                     textAlign: TextAlign.center,
@@ -800,7 +753,7 @@ class ProfileScreen extends ConsumerWidget {
                   child: const Icon(
                     Icons.copy_outlined,
                     size: 20,
-                    color: _ProfileColors.secondaryText,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -826,7 +779,7 @@ class ProfileScreen extends ConsumerWidget {
                   },
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(
-                      color: _ProfileColors.borderColor,
+                      color: AppColors.border,
                       width: 1.5,
                     ),
                     shape: RoundedRectangleBorder(
@@ -837,14 +790,14 @@ class ProfileScreen extends ConsumerWidget {
                   icon: const Icon(
                     Icons.copy_outlined,
                     size: 16,
-                    color: _ProfileColors.primaryText,
+                    color: AppColors.textPrimary,
                   ),
                   label: Text(
                     'Copy Code',
                     style: AppTextStyles.labelMedium.copyWith(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: _ProfileColors.primaryText,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -861,7 +814,7 @@ class ProfileScreen extends ConsumerWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _ProfileColors.darkButton,
+                    backgroundColor: AppColors.darkBrown,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -890,7 +843,7 @@ class ProfileScreen extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF9F9F9),
+                    color: AppColors.surfaceLight,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
@@ -899,7 +852,7 @@ class ProfileScreen extends ConsumerWidget {
                       const Icon(
                         Icons.people_outline,
                         size: 18,
-                        color: _ProfileColors.mutedText,
+                        color: AppColors.textTertiary,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -907,7 +860,7 @@ class ProfileScreen extends ConsumerWidget {
                         style: AppTextStyles.headingSmall.copyWith(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: _ProfileColors.primaryText,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -915,7 +868,7 @@ class ProfileScreen extends ConsumerWidget {
                         'Referrals',
                         style: AppTextStyles.caption.copyWith(
                           fontSize: 12,
-                          color: _ProfileColors.mutedText,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ],
@@ -927,7 +880,7 @@ class ProfileScreen extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF9F9F9),
+                    color: AppColors.surfaceLight,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
@@ -936,15 +889,15 @@ class ProfileScreen extends ConsumerWidget {
                       const Icon(
                         Icons.account_balance_wallet_outlined,
                         size: 18,
-                        color: _ProfileColors.mutedText,
+                        color: AppColors.textTertiary,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '₹${earned.toStringAsFixed(0)}',
+                        '\u20B9${earned.toStringAsFixed(0)}',
                         style: AppTextStyles.headingSmall.copyWith(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: _ProfileColors.primaryText,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -952,7 +905,7 @@ class ProfileScreen extends ConsumerWidget {
                         'Earned',
                         style: AppTextStyles.caption.copyWith(
                           fontSize: 12,
-                          color: _ProfileColors.mutedText,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ],
@@ -966,8 +919,9 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds the settings section.
-  Widget _buildSettingsSection(BuildContext context, WidgetRef ref, dynamic profile) {
+  /// Builds the settings section with glass card items.
+  Widget _buildSettingsSection(
+      BuildContext context, WidgetRef ref, dynamic profile) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -978,7 +932,7 @@ class ProfileScreen extends ConsumerWidget {
             style: AppTextStyles.headingSmall.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: _ProfileColors.primaryText,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 12),
@@ -1001,7 +955,8 @@ class ProfileScreen extends ConsumerWidget {
           // Switch Account Type - uses actual account role from profile
           _buildUpgradeSettingsItem(
             context: context,
-            currentType: AccountType.fromDbString(profile.userType?.toDbString() ?? 'student'),
+            currentType: AccountType.fromDbString(
+                profile.userType?.toDbString() ?? 'student'),
           ),
           const SizedBox(height: 10),
           // Security Settings
@@ -1081,7 +1036,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds a single settings item.
+  /// Builds a single settings item with glass card styling.
   Widget _buildSettingsItem({
     required IconData icon,
     required String title,
@@ -1089,73 +1044,62 @@ class ProfileScreen extends ConsumerWidget {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    final iconColor = isDestructive ? AppColors.error : _ProfileColors.mutedText;
+    final iconColor =
+        isDestructive ? AppColors.error : AppColors.textTertiary;
 
-    return GestureDetector(
+    return GlassCard(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: _ProfileColors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(6),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      padding: const EdgeInsets.all(16),
+      elevation: 1,
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDestructive
+                  ? AppColors.errorLight
+                  : AppColors.surfaceVariant,
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isDestructive
-                    ? AppColors.errorLight
-                    : const Color(0xFFF5F5F5),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: iconColor,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: isDestructive
-                          ? AppColors.error
-                          : _ProfileColors.primaryText,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      fontSize: 13,
-                      color: _ProfileColors.mutedText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: _ProfileColors.mutedText,
+            child: Icon(
+              icon,
               size: 20,
+              color: iconColor,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: isDestructive
+                        ? AppColors.error
+                        : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    fontSize: 13,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right,
+            color: AppColors.textTertiary,
+            size: 20,
+          ),
+        ],
       ),
     );
   }
@@ -1173,7 +1117,8 @@ class ProfileScreen extends ConsumerWidget {
     final nextTier = currentType.canUpgradeTo.first;
 
     return GestureDetector(
-      onTap: () => context.push('/profile/upgrade?type=${currentType.toDbString()}'),
+      onTap: () =>
+          context.push('/profile/upgrade?type=${currentType.toDbString()}'),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -1216,7 +1161,7 @@ class ProfileScreen extends ConsumerWidget {
                     style: AppTextStyles.labelLarge.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: _ProfileColors.primaryText,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -1224,14 +1169,15 @@ class ProfileScreen extends ConsumerWidget {
                     'Switch to ${nextTier.displayName} role',
                     style: AppTextStyles.bodySmall.copyWith(
                       fontSize: 13,
-                      color: _ProfileColors.secondaryText,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: nextTier.color,
                 borderRadius: BorderRadius.circular(8),
@@ -1313,17 +1259,23 @@ class ProfileScreen extends ConsumerWidget {
                         vertical: 14,
                       ),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.surfaceVariant,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected ? AppColors.primary : AppColors.border,
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.border,
                         ),
                       ),
                       child: Text(
-                        '₹$amount',
+                        '\u20B9$amount',
                         style: AppTextStyles.labelLarge.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -1338,7 +1290,8 @@ class ProfileScreen extends ConsumerWidget {
                       ? () {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Opening payment...')),
+                            const SnackBar(
+                                content: Text('Opening payment...')),
                           );
                         }
                       : null,
@@ -1380,7 +1333,8 @@ class ProfileScreen extends ConsumerWidget {
             },
             child: Text(
               'Log Out',
-              style: AppTextStyles.labelMedium.copyWith(color: AppColors.error),
+              style: AppTextStyles.labelMedium
+                  .copyWith(color: AppColors.error),
             ),
           ),
         ],
@@ -1403,7 +1357,7 @@ class ProfileScreen extends ConsumerWidget {
             Text(
               'Deactivating your account will:',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: _ProfileColors.secondaryText,
+                color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 12),
@@ -1413,7 +1367,7 @@ class ProfileScreen extends ConsumerWidget {
             Text(
               'You can reactivate anytime by logging back in.',
               style: AppTextStyles.bodySmall.copyWith(
-                color: _ProfileColors.mutedText,
+                color: AppColors.textTertiary,
               ),
             ),
           ],
@@ -1441,7 +1395,7 @@ class ProfileScreen extends ConsumerWidget {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF59E0B),
+              backgroundColor: AppColors.warning,
               foregroundColor: Colors.white,
             ),
             child: const Text('Deactivate'),
@@ -1469,7 +1423,7 @@ class ProfileScreen extends ConsumerWidget {
               Text(
                 'This action is permanent and irreversible. All your data will be deleted.',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: _ProfileColors.secondaryText,
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -1486,10 +1440,10 @@ class ProfileScreen extends ConsumerWidget {
                   hintText: 'DELETE',
                   hintStyle: TextStyle(
                     fontFamily: 'monospace',
-                    color: _ProfileColors.mutedText,
+                    color: AppColors.textTertiary,
                   ),
                   filled: true,
-                  fillColor: const Color(0xFFF5F5F5),
+                  fillColor: AppColors.surfaceVariant,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
@@ -1511,13 +1465,15 @@ class ProfileScreen extends ConsumerWidget {
                       Navigator.pop(dialogContext);
                       try {
                         await ApiClient.post('/users/me/delete', {});
-                        await ref.read(authStateProvider.notifier).signOut();
+                        await ref
+                            .read(authStateProvider.notifier)
+                            .signOut();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content:
-                                  Text('Account deletion request submitted'),
-                              backgroundColor: Color(0xFFF44336),
+                              content: Text(
+                                  'Account deletion request submitted'),
+                              backgroundColor: AppColors.error,
                             ),
                           );
                           context.go('/login');
@@ -1526,7 +1482,8 @@ class ProfileScreen extends ConsumerWidget {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                                content: Text('Failed: ${e.toString()}')),
+                                content:
+                                    Text('Failed: ${e.toString()}')),
                           );
                         }
                       }

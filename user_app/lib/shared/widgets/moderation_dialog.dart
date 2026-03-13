@@ -248,7 +248,6 @@ class ModerationDialog extends StatelessWidget {
 
   Widget _buildWarningLevelIndicator(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final summary = userSummary!;
 
     String warningText;

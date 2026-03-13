@@ -20,7 +20,6 @@ class _LanguagePickerSheetState extends ConsumerState<LanguagePickerSheet> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   final Map<String, bool> _downloadedStatus = {};
-  bool _loadingStatus = true;
 
   @override
   void initState() {
@@ -49,7 +48,7 @@ class _LanguagePickerSheetState extends ConsumerState<LanguagePickerSheet> {
       }
     }
     if (mounted) {
-      setState(() => _loadingStatus = false);
+      setState(() {});
     }
   }
 

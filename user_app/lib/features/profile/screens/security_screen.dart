@@ -62,7 +62,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
   bool _isUpdatingPassword = false;
 
   // 2FA toggle
-  bool _is2FAEnabled = false;
+  final bool _is2FAEnabled = false;
 
   @override
   void dispose() {

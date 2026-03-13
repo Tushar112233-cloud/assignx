@@ -1,6 +1,6 @@
 /**
- * Form Layout - Minimal Styles
- * Most styling handled by Tailwind in component
+ * Form Layout - Coffee Brown Glassmorphic Styles
+ * Companion to form-layout.tsx
  */
 
 /* Custom input styling for forms */
@@ -11,7 +11,7 @@
   padding: 0.75rem 1rem;
   font-size: 0.9375rem;
   border: 1px solid hsl(var(--border));
-  border-radius: 0.75rem;
+  border-radius: 0.875rem;
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   transition: all 0.2s ease;
@@ -21,8 +21,8 @@
 .form-layout textarea:focus,
 .form-layout select:focus {
   outline: none;
-  border-color: hsl(var(--primary));
-  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+  border-color: #765341;
+  box-shadow: 0 0 0 3px rgba(118, 83, 65, 0.08);
 }
 
 .form-layout input::placeholder,
@@ -30,7 +30,7 @@
   color: hsl(var(--muted-foreground));
 }
 
-/* Option cards for selections */
+/* Option cards for selections - glassmorphic */
 .form-option-grid {
   display: grid;
   gap: 0.75rem;
@@ -39,21 +39,33 @@
 .form-option-card {
   position: relative;
   padding: 1rem 1.25rem;
-  background: hsl(var(--card));
-  border: 2px solid hsl(var(--border));
-  border-radius: 0.875rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 1rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   text-align: left;
+  backdrop-filter: blur(12px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .form-option-card {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
 }
 
 .form-option-card:hover {
-  border-color: hsl(var(--primary));
+  border-color: rgba(118, 83, 65, 0.4);
+  background: rgba(118, 83, 65, 0.03);
+  box-shadow: 0 4px 16px rgba(118, 83, 65, 0.06);
+  transform: translateY(-1px);
 }
 
 .form-option-card.selected {
-  border-color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.05);
+  border-color: #765341;
+  background: rgba(118, 83, 65, 0.05);
+  box-shadow: 0 4px 20px rgba(118, 83, 65, 0.1);
 }
 
 .form-option-card-header {
@@ -65,7 +77,7 @@
 .form-option-card-icon {
   width: 2.75rem;
   height: 2.75rem;
-  border-radius: 0.75rem;
+  border-radius: 0.875rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -89,7 +101,7 @@
   margin-top: 0.75rem;
   font-size: 1.125rem;
   font-weight: 600;
-  color: hsl(var(--primary));
+  color: #765341;
 }
 
 .form-option-card-price span {
@@ -98,13 +110,13 @@
   color: hsl(var(--muted-foreground));
 }
 
-/* Popular badge */
+/* Popular badge - coffee brown */
 .form-option-badge {
   position: absolute;
   top: -0.5rem;
   right: 0.75rem;
   padding: 0.25rem 0.625rem;
-  background: hsl(var(--primary));
+  background: #765341;
   color: white;
   font-size: 0.625rem;
   font-weight: 600;
@@ -113,13 +125,21 @@
   letter-spacing: 0.02em;
 }
 
-/* Summary card */
+/* Summary card - glassmorphic */
 .form-summary-card {
-  background: hsl(var(--muted));
-  border: 1px solid hsl(var(--border));
-  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 1.25rem;
   padding: 1.25rem;
   margin-top: 1.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .form-summary-card {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
 }
 
 .form-summary-row {
@@ -143,7 +163,7 @@
   justify-content: space-between;
   padding-top: 1rem;
   margin-top: 0.75rem;
-  border-top: 1px solid hsl(var(--border));
+  border-top: 1px solid hsl(var(--border) / 0.5);
   font-size: 1rem;
 }
 
@@ -154,7 +174,7 @@
 
 .form-summary-total-value {
   font-weight: 700;
-  color: hsl(var(--primary));
+  color: #765341;
   font-size: 1.25rem;
 }
 
@@ -168,19 +188,18 @@
 
 /* Scrollbar styling */
 .form-layout::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .form-layout::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 3px;
+  background: transparent;
 }
 
 .form-layout::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
+  background: rgba(118, 83, 65, 0.15);
   border-radius: 3px;
 }
 
 .form-layout::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
+  background: rgba(118, 83, 65, 0.3);
 }
