@@ -102,6 +102,7 @@ function ConnectWithExperts() {
 
   return (
     <section
+      id="expertise"
       ref={sectionRef}
       className="relative py-24 md:py-32 overflow-hidden"
       style={{
@@ -517,6 +518,7 @@ function TestimonialsSection() {
 
   return (
     <section
+      id="reviews"
       ref={sectionRef}
       className="relative py-24 overflow-hidden"
       style={{

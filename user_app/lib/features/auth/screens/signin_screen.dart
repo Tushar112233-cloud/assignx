@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lottie/lottie.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -276,6 +277,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
             ),
 
             SafeArea(
+              bottom: false,
               child: Column(
                 children: [
                   // App name header
@@ -285,23 +287,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.school_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                          SvgPicture.asset(
+                            'assets/images/logo.svg',
+                            width: 32,
+                            height: 32,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             'AssignX',
                             style: AppTextStyles.headingSmall.copyWith(
-                              color: Colors.white,
+                              color: AppColors.primary,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.2,
                             ),
@@ -315,9 +310,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                     ),
                   ),
 
-                  // Lottie animation
+                  // Lottie animation - takes available space, pushes card to bottom
                   Expanded(
-                    flex: 2,
                     child: Center(
                       child: _LottieHero(
                         floatAnimation: _floatController,
@@ -326,10 +320,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                     ),
                   ),
 
-                  // Bottom content
-                  Flexible(
-                    flex: 3,
-                    child: AnimatedSwitcher(
+                  // Bottom content pinned to bottom
+                  AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       transitionBuilder: (child, animation) {
                         return FadeTransition(
@@ -371,7 +363,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                                 }
                               },
                             ),
-                    ),
                   ),
                 ],
               ),

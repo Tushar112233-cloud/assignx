@@ -9,7 +9,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/login", "/register", "/auth", "/api/auth"]
+  const publicRoutes = ["/login", "/register", "/auth", "/api/auth", "/pending-approval", "/training"]
   const isPublicRoute = pathname === "/" || publicRoutes.some((route) => pathname.startsWith(route))
 
   if (isPublicRoute) {
@@ -19,7 +19,7 @@ export async function proxy(request: NextRequest) {
   // Check for JWT token in cookies
   const token = request.cookies.get("supervisor_token")?.value
 
-  if (!token && !pathname.startsWith("/_next") && !pathname.startsWith("/favicon")) {
+  if (!token && !pathname.startsWith("/_next") && !pathname.startsWith("/favicon") && !pathname.includes(".")) {
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("redirect", pathname)
     return NextResponse.redirect(loginUrl)

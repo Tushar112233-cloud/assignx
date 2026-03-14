@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/router/route_names.dart';
@@ -250,23 +251,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           // Logo badge + brand name
           Row(
             children: [
-              Container(
+              SvgPicture.asset(
+                'assets/images/logo.svg',
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'D',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    height: 1,
-                  ),
-                ),
               ),
               const SizedBox(width: AppSpacing.sm),
               const Text(

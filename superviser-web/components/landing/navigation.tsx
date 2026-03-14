@@ -6,10 +6,10 @@
  */
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import Link from "next/link"
-import { Menu, X, ShieldCheck, LayoutDashboard } from "lucide-react"
+import { Menu, X, LayoutDashboard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getAccessToken } from "@/lib/api/client"
 import "@/app/landing.css"
@@ -26,6 +26,16 @@ export function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const prefersReducedMotion = useReducedMotion()
+
+  const handleScrollTo = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault()
+    const target = document.querySelector(href)
+    if (target) {
+      const navHeight = 80
+      const top = target.getBoundingClientRect().top + window.scrollY - navHeight
+      window.scrollTo({ top, behavior: "smooth" })
+    }
+  }, [])
 
   useEffect(() => {
     setIsLoggedIn(!!getAccessToken())
@@ -61,9 +71,7 @@ export function Navigation() {
               whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
               whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
             >
-              <div className="w-8 h-8 rounded-lg bg-[var(--sv-accent)] flex items-center justify-center">
-                <ShieldCheck className="w-4 h-4 text-white" />
-              </div>
+              <img src="/logo.svg" alt="SupervisorX" className="w-8 h-8 rounded-lg" />
               <span
                 className={cn(
                   "font-bold text-lg tracking-tight transition-colors duration-300",
@@ -82,6 +90,7 @@ export function Navigation() {
                 <a
                   key={link.label}
                   href={link.href}
+                  onClick={(e) => handleScrollTo(e, link.href)}
                   className="px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--sv-text-muted)] hover:text-[var(--sv-text-primary)] hover:bg-[var(--sv-accent-lighter)] transition-colors duration-200"
                 >
                   {link.label}
@@ -154,7 +163,7 @@ export function Navigation() {
                 <a
                   key={link.label}
                   href={link.href}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={(e) => { handleScrollTo(e, link.href); setMobileOpen(false) }}
                   className="py-3 px-4 rounded-xl text-lg font-medium text-[var(--sv-text-primary)] hover:bg-[var(--sv-accent-lighter)] transition-colors"
                 >
                   {link.label}

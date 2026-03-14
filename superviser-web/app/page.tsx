@@ -28,7 +28,9 @@ export default function HomePage() {
 
   useEffect(() => {
     const token = getAccessToken()
-    if (token) {
+    // Also check cookie exists — proxy.ts guards /dashboard by cookie
+    const hasCookie = document.cookie.includes("supervisor_token=")
+    if (token && hasCookie) {
       router.replace(ROUTES.dashboard)
     }
   }, [router])

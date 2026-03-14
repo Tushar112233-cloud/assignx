@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -280,14 +281,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             _MeshGradientBackground(height: screenHeight),
 
             SafeArea(
+              bottom: false,
               child: Column(
                 children: [
                   // App name header.
                   _buildHeader(),
 
-                  // Lottie hero.
+                  // Lottie hero - takes available space and pushes card to bottom.
                   Expanded(
-                    flex: 2,
                     child: Center(
                       child: _LottieHero(
                         floatAnimation: _floatController,
@@ -296,27 +297,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     ),
                   ),
 
-                  // Bottom content card.
-                  Flexible(
-                    flex: 3,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      transitionBuilder: (child, animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 0.1),
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: _otpState
-                          ? _buildOtpSection(key: const ValueKey('otp'))
-                          : _buildEmailSection(key: const ValueKey('email')),
-                    ),
+                  // Bottom content card pinned to bottom.
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.1),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: _otpState
+                        ? _buildOtpSection(key: const ValueKey('otp'))
+                        : _buildEmailSection(key: const ValueKey('email')),
                   ),
                 ],
               ),
@@ -343,17 +341,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.school_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
+            SvgPicture.asset(
+              'assets/images/logo.svg',
+              width: 32,
+              height: 32,
             ),
             const SizedBox(width: 8),
             Text(

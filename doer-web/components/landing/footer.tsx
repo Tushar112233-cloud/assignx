@@ -9,7 +9,7 @@
 import { useRef } from "react"
 import { motion, useReducedMotion, useInView } from "framer-motion"
 import Link from "next/link"
-import { Briefcase, ArrowUpRight } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 import { DOER_EASE } from "@/lib/animations/constants"
 import "@/app/landing.css"
 
@@ -68,9 +68,7 @@ export function Footer() {
           {/* Brand column — spans 2 of 5 */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4 w-fit">
-              <div className="w-8 h-8 rounded-lg bg-[var(--landing-accent-primary)] flex items-center justify-center">
-                <Briefcase className="w-4 h-4 text-white" />
-              </div>
+              <img src="/logo.svg" alt="Dolancer" className="w-8 h-8 rounded-lg" />
               <span className="font-bold text-lg text-white tracking-tight">
                 Dolancer
               </span>

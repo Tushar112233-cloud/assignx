@@ -8,7 +8,6 @@
 import { useRef } from "react"
 import { motion, useReducedMotion, useInView } from "framer-motion"
 import Link from "next/link"
-import { ShieldCheck } from "lucide-react"
 import { SV_EASE } from "@/lib/animations/constants"
 import "@/app/landing.css"
 
@@ -66,9 +65,7 @@ export function Footer() {
           {/* Brand column */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-[var(--sv-accent)] flex items-center justify-center">
-                <ShieldCheck className="w-4 h-4 text-white" />
-              </div>
+              <img src="/logo.svg" alt="SupervisorX" className="w-8 h-8 rounded-lg" />
               <span className="font-bold text-lg text-white tracking-tight">
                 SupervisorX
               </span>

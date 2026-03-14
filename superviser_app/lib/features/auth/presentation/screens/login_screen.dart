@@ -3,6 +3,7 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -300,25 +301,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildLogo() {
     return Center(
-      child: Container(
+      child: SvgPicture.asset(
+        'assets/images/logo.svg',
         width: 80,
         height: 80,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.accent.withValues(alpha: 0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.admin_panel_settings,
-          size: 48,
-          color: Colors.white,
-        ),
       ),
     );
   }

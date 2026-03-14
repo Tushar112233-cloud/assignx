@@ -9,7 +9,7 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import Link from "next/link"
-import { Menu, X, Briefcase, LayoutDashboard } from "lucide-react"
+import { Menu, X, LayoutDashboard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getAccessToken } from "@/lib/api/client"
 import "@/app/landing.css"
@@ -67,9 +67,7 @@ export function Navigation() {
               whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
               whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
             >
-              <div className="w-8 h-8 rounded-lg bg-[var(--landing-accent-primary)] flex items-center justify-center">
-                <Briefcase className="w-4 h-4 text-white" />
-              </div>
+              <img src="/logo.svg" alt="Dolancer" className="w-8 h-8 rounded-lg" />
               <span
                 className={cn(
                   "font-bold text-lg tracking-tight transition-colors duration-300",

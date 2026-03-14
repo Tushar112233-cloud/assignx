@@ -11,7 +11,7 @@ import { useRef, useState } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { ArrowRight, GraduationCap, Mail, Phone, MapPin } from "lucide-react";
+import { ArrowRight, Mail, Phone, MapPin } from "lucide-react";
 import "@/app/landing.css";
 
 const footerLinks = {
@@ -91,9 +91,7 @@ export function Footer() {
               {/* Logo and description */}
               <div className="max-w-sm">
                 <Link href="/" className="inline-flex items-center gap-2 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--landing-accent-primary)] to-[var(--landing-accent-secondary)] flex items-center justify-center">
-                    <GraduationCap className="w-5 h-5 text-white" />
-                  </div>
+                  <img src="/logo.svg" alt="AssignX" className="w-10 h-10 rounded-lg" />
                   <span className="text-2xl font-bold text-white tracking-tight">
                     Assign<span className="text-[var(--landing-accent-tertiary)]">X</span>
                   </span>

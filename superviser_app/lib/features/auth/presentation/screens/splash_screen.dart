@@ -53,6 +53,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/constants.dart';
@@ -238,10 +239,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             ),
           ],
         ),
-        child: const Icon(
-          Icons.admin_panel_settings,
-          size: 64,
-          color: AppColors.primary,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SvgPicture.asset(
+            'assets/images/logo.svg',
+            width: 88,
+            height: 88,
+          ),
         ),
       ),
     );

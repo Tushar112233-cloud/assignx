@@ -7,13 +7,19 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
-import { Menu, X, GraduationCap, LayoutDashboard } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Menu, X, LayoutDashboard } from "lucide-react";
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { isLoggedIn as checkLoggedIn } from "@/lib/api/auth";
 import "@/app/landing.css";
+
+const navLinks = [
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "Expertise", href: "#expertise" },
+  { label: "Reviews", href: "#reviews" },
+];
 
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false);
@@ -21,6 +27,16 @@ export function Navigation() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const prefersReducedMotion = useReducedMotion();
+
+  const handleScrollTo = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    const target = document.querySelector(href);
+    if (target) {
+      const navHeight = 80;
+      const top = target.getBoundingClientRect().top + window.scrollY - navHeight;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+  }, []);
   // Check if user is logged in
   useEffect(() => {
     setIsLoggedIn(checkLoggedIn());
@@ -78,16 +94,7 @@ export function Navigation() {
               whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
               whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
             >
-              <div
-                className={cn(
-                  "rounded-lg flex items-center justify-center transition-all duration-300",
-                  scrolled
-                    ? "h-9 w-9 bg-gradient-to-br from-[var(--landing-accent-primary)] to-[var(--landing-accent-secondary)]"
-                    : "h-9 w-9 bg-[var(--landing-accent-primary)]"
-                )}
-              >
-                <GraduationCap className="text-white h-5 w-5" />
-              </div>
+              <img src="/logo.svg" alt="AssignX" className="h-9 w-9 rounded-lg" />
               <span
                 className={cn(
                   "font-bold tracking-tight transition-all duration-300 text-xl",
@@ -102,6 +109,21 @@ export function Navigation() {
             </motion.div>
           </Link>
 
+          {/* Nav Links - visible when not scrolled */}
+          {!scrolled && (
+            <div className="hidden md:flex items-center gap-1">
+              {navLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  onClick={(e) => handleScrollTo(e, link.href)}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] hover:bg-[var(--landing-accent-lighter)]"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          )}
 
           {/* Right: CTA Buttons */}
           <div className="flex items-center gap-1 sm:gap-2">
@@ -218,6 +240,26 @@ export function Navigation() {
               className="fixed top-20 left-4 right-4 z-50 landing-card shadow-2xl md:hidden overflow-hidden"
             >
               <div className="p-2">
+                {/* Nav Links */}
+                <div className="space-y-1 mb-1">
+                  {navLinks.map((link, i) => (
+                    <motion.div
+                      key={link.label}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.05 + i * 0.05, duration: 0.3 }}
+                    >
+                      <a
+                        href={link.href}
+                        onClick={(e) => { handleScrollTo(e, link.href); setMobileMenuOpen(false); }}
+                        className="block px-4 py-3 text-sm font-medium text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] transition-colors rounded-lg hover:bg-[var(--landing-accent-lighter)]"
+                      >
+                        {link.label}
+                      </a>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="h-px bg-[var(--landing-border)] my-2" />
                 {/* Auth Links */}
                 <div className="space-y-2">
                   {isLoggedIn ? (
