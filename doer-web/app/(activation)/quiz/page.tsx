@@ -129,7 +129,7 @@ export default function QuizPage() {
       if (!isMountedRef.current) return
 
       if (!doer) {
-        setError('Doer profile not found')
+        setError('Dolancer profile not found')
         return
       }
 

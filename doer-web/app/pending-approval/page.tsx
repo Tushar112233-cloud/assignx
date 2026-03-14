@@ -28,7 +28,7 @@ const steps = [
   },
   {
     icon: Zap,
-    label: 'Full doer access',
+    label: 'Full dolancer access',
     desc: 'Start taking on projects and earning',
     state: 'pending' as const,
   },

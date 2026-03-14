@@ -1,7 +1,7 @@
 /**
- * @fileoverview Testimonials — Doer Landing
+ * @fileoverview Testimonials — Dolancer Landing
  *
- * Two-row Marquee of Doer review cards, each highlighting monthly earnings.
+ * Two-row Marquee of Dolancer review cards, each highlighting monthly earnings.
  * Row 1 scrolls left, Row 2 scrolls right. Pauses on hover.
  */
 "use client"
@@ -154,15 +154,15 @@ export function Testimonials() {
         >
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--landing-accent-lighter)] border border-[var(--landing-border-teal)] mb-6">
             <span className="text-sm font-medium text-[var(--landing-accent-primary)]">
-              Doer Stories
+              Dolancer Stories
             </span>
           </span>
           <h2 className="landing-heading-lg text-[var(--landing-text-primary)] mb-4">
-            Real Doers,{" "}
+            Real Dolancers,{" "}
             <span className="landing-text-gradient">Real Earnings</span>
           </h2>
           <p className="text-lg text-[var(--landing-text-secondary)] max-w-2xl mx-auto">
-            Join thousands of skilled experts already earning on Doer.
+            Join thousands of skilled experts already earning on Dolancer.
           </p>
         </motion.div>
       </div>

@@ -56,7 +56,7 @@ export default function AuthLayout({
         {/* Stats */}
         <div className="relative z-10 flex gap-8">
           {[
-            { value: '2,400+', label: 'Active Doers' },
+            { value: '2,400+', label: 'Active Dolancers' },
             { value: '48h', label: 'Avg. Payout' },
             { value: '4.9', label: 'Avg. Rating' },
           ].map((stat) => (

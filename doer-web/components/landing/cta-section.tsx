@@ -1,8 +1,8 @@
 /**
- * @fileoverview CTA Section — Doer Landing
+ * @fileoverview CTA Section — Dolancer Landing
  *
  * Dark teal full-width section with glowing orbs and final call-to-action.
- * Two buttons: "Apply as Doer" (primary) and "Sign In" (ghost).
+ * Two buttons: "Apply as Dolancer" (primary) and "Sign In" (ghost).
  * Three trust points beneath the buttons.
  */
 "use client"

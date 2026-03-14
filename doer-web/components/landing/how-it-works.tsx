@@ -1,5 +1,5 @@
 /**
- * @fileoverview How It Works — Doer Landing
+ * @fileoverview How It Works — Dolancer Landing
  *
  * Three-step process with Lottie animations and alternating layout.
  * Steps: Browse Task Pool → Accept & Deliver → Get Paid Fast
@@ -214,7 +214,7 @@ export function HowItWorks() {
             </span>
           </span>
           <h2 className="landing-heading-lg text-[var(--landing-text-primary)] mb-4">
-            How Doers{" "}
+            How Dolancers{" "}
             <span className="landing-text-gradient">Earn</span>
           </h2>
           <p className="text-lg text-[var(--landing-text-secondary)] max-w-2xl mx-auto">

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Hero Section — Doer Landing
+ * @fileoverview Hero Section — Dolancer Landing
  *
  * Large headline with floating task cards showing earning potential.
  * Two CTA buttons, stat strip at bottom.
@@ -60,7 +60,7 @@ const taskCards = [
 
 /** Stats shown beneath CTAs */
 const heroStats = [
-  { value: "2,400+", label: "Active Doers" },
+  { value: "2,400+", label: "Active Dolancers" },
   { value: "₹8Cr+", label: "Total Paid Out" },
   { value: "12K+", label: "Tasks Completed" },
   { value: "4.9★", label: "Avg. Rating" },

@@ -1,4 +1,4 @@
-/// Profile state management provider for the Doer App.
+/// Profile state management provider for the Dolancer App.
 ///
 /// This file manages the user's profile data, payment history, bank details,
 /// notification preferences, and app notifications. It provides a comprehensive

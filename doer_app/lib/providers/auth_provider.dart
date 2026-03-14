@@ -1,4 +1,4 @@
-/// Authentication state management provider for the Doer App.
+/// Authentication state management provider for the Dolancer App.
 ///
 /// This file contains the core authentication logic including user sign-up,
 /// sign-in, sign-out, profile management, and session handling. It integrates

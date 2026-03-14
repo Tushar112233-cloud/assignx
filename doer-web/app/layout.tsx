@@ -16,13 +16,13 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'DOER - Your Skills, Your Earnings',
+  title: 'DOLANCER - Your Skills, Your Earnings',
   description: 'Talent Connect platform for skilled professionals to earn by completing tasks',
   keywords: ['freelance', 'tasks', 'earn', 'skills', 'talent'],
 }
 
 /**
- * Root layout component for the Doer Web application
+ * Root layout component for the Dolancer Web application
  */
 export default function RootLayout({
   children,

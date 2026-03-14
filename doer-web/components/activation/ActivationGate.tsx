@@ -102,7 +102,7 @@ export function ActivationGate({
               <Lock className="w-8 h-8 text-primary" />
             </div>
             <CardTitle className="text-2xl">
-              Unlock Your Doer Dashboard
+              Unlock Your Dolancer Dashboard
             </CardTitle>
             <CardDescription className="text-base">
               Hi {userName}! Complete these 3 steps to start earning

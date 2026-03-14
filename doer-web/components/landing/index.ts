@@ -1,5 +1,5 @@
 /**
- * Doer landing page components barrel export
+ * Dolancer landing page components barrel export
  */
 export * from "./navigation"
 export * from "./hero-section"

@@ -1,4 +1,4 @@
-// Copyright 2024 Doer App. All rights reserved.
+// Copyright 2024 Dolancer App. All rights reserved.
 // Use of this source code is governed by a BSD-style license.
 
 /// Training models for the Doer application.

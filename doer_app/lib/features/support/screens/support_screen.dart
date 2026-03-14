@@ -1,4 +1,4 @@
-/// Support screen for the Doer App.
+/// Support screen for the Dolancer App.
 ///
 /// Provides a comprehensive help and support interface including
 /// quick help cards, a contact form, contact information, and FAQs.

@@ -1,87 +1,31 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_text_styles.dart';
 
-/// Glass morphism container with backdrop blur effect.
+/// Lightweight glass morphism container without GPU-intensive BackdropFilter.
 ///
-/// Creates a frosted glass effect commonly used in modern UI designs.
-/// Supports configurable blur intensity, opacity, border styling,
-/// interactive effects, and gradient overlays.
-///
-/// Example:
-/// ```dart
-/// GlassContainer(
-///   blur: 20,
-///   opacity: 0.85,
-///   onTap: () => print('Tapped!'),
-///   child: Padding(
-///     padding: EdgeInsets.all(16),
-///     child: Text('Glass Content'),
-///   ),
-/// )
-/// ```
+/// Uses semi-transparent backgrounds with subtle borders and shadows
+/// to achieve a glass-like effect that performs well on real devices.
 class GlassContainer extends StatefulWidget {
-  /// Child widget to display inside the glass container.
   final Widget child;
-
-  /// Blur intensity for the backdrop filter.
-  /// Higher values create more blur. Default is 20.
   final double blur;
-
-  /// Background opacity (0.0 to 1.0).
-  /// Higher values create less transparency. Default is 0.85.
   final double opacity;
-
-  /// Border radius for the container.
-  /// Default is 16.0 (AppSpacing.radiusLg).
   final BorderRadius? borderRadius;
-
-  /// Border color. Default is white with 0.3 opacity.
   final Color? borderColor;
-
-  /// Border width in pixels. Default is 1.0.
   final double borderWidth;
-
-  /// Optional padding inside the container.
   final EdgeInsetsGeometry? padding;
-
-  /// Optional margin around the container.
   final EdgeInsetsGeometry? margin;
-
-  /// Background color before opacity is applied.
-  /// Default is white for light glass effect.
   final Color? backgroundColor;
-
-  /// Optional width constraint.
   final double? width;
-
-  /// Optional height constraint.
   final double? height;
-
-  /// Optional box shadows for depth effect.
   final List<BoxShadow>? shadows;
-
-  /// Optional gradient overlay on top of the glass effect.
   final Gradient? gradient;
-
-  /// Callback when container is tapped.
   final VoidCallback? onTap;
-
-  /// Callback when container is long pressed.
   final VoidCallback? onLongPress;
-
-  /// Enable hover/press lift effect. Default is true.
   final bool enableHoverEffect;
-
-  /// Animation duration for press effects. Default is 200ms.
   final Duration animationDuration;
-
-  /// Whether to apply an elevated/raised glass effect with stronger
-  /// shadows and a brighter border for a "lifted" appearance.
   final bool isElevated;
 
   const GlassContainer({
@@ -110,17 +54,9 @@ class GlassContainer extends StatefulWidget {
   State<GlassContainer> createState() => _GlassContainerState();
 }
 
-class _GlassContainerState extends State<GlassContainer>
-    with SingleTickerProviderStateMixin {
+class _GlassContainerState extends State<GlassContainer> {
   bool _isPressed = false;
 
-  /// Creates a press transform matrix with scale and translate.
-  Matrix4 _createPressTransform() {
-    return Matrix4.diagonal3Values(0.98, 0.98, 1.0)
-      ..setTranslationRaw(0.0, -2.0, 0.0);
-  }
-
-  /// Default multi-layer shadows for depth effect.
   List<BoxShadow> get _defaultShadows => [
         BoxShadow(
           color: Colors.black.withAlpha(8),
@@ -132,14 +68,8 @@ class _GlassContainerState extends State<GlassContainer>
           blurRadius: 20,
           offset: const Offset(0, 8),
         ),
-        BoxShadow(
-          color: Colors.black.withAlpha(3),
-          blurRadius: 40,
-          offset: const Offset(0, 16),
-        ),
       ];
 
-  /// Elevated shadows for raised glass effect with stronger depth.
   List<BoxShadow> get _elevatedShadows => [
         BoxShadow(
           color: Colors.black.withAlpha(15),
@@ -150,11 +80,6 @@ class _GlassContainerState extends State<GlassContainer>
           color: Colors.black.withAlpha(10),
           blurRadius: 32,
           offset: const Offset(0, 12),
-        ),
-        BoxShadow(
-          color: Colors.black.withAlpha(5),
-          blurRadius: 48,
-          offset: const Offset(0, 24),
         ),
       ];
 
@@ -180,41 +105,33 @@ class _GlassContainerState extends State<GlassContainer>
   Widget build(BuildContext context) {
     final bgColor = widget.backgroundColor ?? Colors.white;
     final bdrColor = widget.borderColor ??
-        Colors.white.withAlpha(widget.isElevated ? 102 : 77); // 0.4 or 0.3 opacity
+        Colors.white.withAlpha(widget.isElevated ? 102 : 77);
     final radius = widget.borderRadius ?? BorderRadius.circular(AppSpacing.radiusLg);
     final isInteractive = widget.onTap != null || widget.onLongPress != null;
 
     final effectiveShadows = widget.shadows ??
         (widget.isElevated ? _elevatedShadows : _defaultShadows);
 
-    Widget glassWidget = ClipRRect(
-      borderRadius: radius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: widget.blur, sigmaY: widget.blur),
-        child: AnimatedContainer(
-          duration: widget.animationDuration,
-          curve: Curves.easeOutCubic,
-          padding: widget.padding,
-          decoration: BoxDecoration(
-            color: bgColor.withAlpha((widget.opacity * 255).round()),
-            borderRadius: radius,
-            border: Border.all(
-              color: bdrColor,
-              width: widget.borderWidth,
-            ),
-            boxShadow: effectiveShadows,
-            gradient: widget.gradient,
+    Widget glassWidget = AnimatedScale(
+      scale: _isPressed && widget.enableHoverEffect ? 0.98 : 1.0,
+      duration: widget.animationDuration,
+      curve: Curves.easeOutCubic,
+      child: Container(
+        padding: widget.padding,
+        decoration: BoxDecoration(
+          color: bgColor.withAlpha((widget.opacity * 255).round()),
+          borderRadius: radius,
+          border: Border.all(
+            color: bdrColor,
+            width: widget.borderWidth,
           ),
-          transform: _isPressed && widget.enableHoverEffect
-              ? _createPressTransform()
-              : Matrix4.identity(),
-          transformAlignment: Alignment.center,
-          child: widget.child,
+          boxShadow: effectiveShadows,
+          gradient: widget.gradient,
         ),
+        child: widget.child,
       ),
     );
 
-    // Wrap with gesture detector if interactive
     if (isInteractive) {
       glassWidget = GestureDetector(
         onTapDown: _handleTapDown,
@@ -239,7 +156,6 @@ class _GlassContainerState extends State<GlassContainer>
 class GlassContainerVariants {
   GlassContainerVariants._();
 
-  /// Light glass effect - subtle blur with white background.
   static GlassContainer light({
     required Widget child,
     EdgeInsetsGeometry? padding,
@@ -262,7 +178,6 @@ class GlassContainerVariants {
     );
   }
 
-  /// Dark glass effect - blur with dark background.
   static GlassContainer dark({
     required Widget child,
     EdgeInsetsGeometry? padding,
@@ -285,7 +200,6 @@ class GlassContainerVariants {
     );
   }
 
-  /// Primary colored glass effect.
   static GlassContainer primary({
     required Widget child,
     EdgeInsetsGeometry? padding,
@@ -308,7 +222,6 @@ class GlassContainerVariants {
     );
   }
 
-  /// Card-style glass with subtle shadow.
   static GlassContainer card({
     required Widget child,
     EdgeInsetsGeometry? padding,
@@ -339,73 +252,24 @@ class GlassContainerVariants {
   }
 }
 
-/// Glass card widget - a card-style glass container with sensible defaults.
-///
-/// Provides a convenient wrapper around [GlassContainer] with card-specific
-/// styling including elevation, padding, and interactive effects.
-///
-/// Example:
-/// ```dart
-/// GlassCard(
-///   onTap: () => print('Card tapped'),
-///   child: Column(
-///     children: [
-///       Text('Card Title'),
-///       Text('Card content goes here'),
-///     ],
-///   ),
-/// )
-/// ```
+/// Glass card widget with sensible card defaults.
 class GlassCard extends StatelessWidget {
-  /// Child widget to display inside the card.
   final Widget child;
-
-  /// Blur intensity. Default is 15.
   final double blur;
-
-  /// Background opacity. Default is 0.75.
   final double opacity;
-
-  /// Border radius. Default is 16.
   final BorderRadius? borderRadius;
-
-  /// Border color. Default is white with 0.2 opacity.
   final Color? borderColor;
-
-  /// Border width. Default is 1.0.
   final double borderWidth;
-
-  /// Padding inside the card. Default is 16.
   final EdgeInsetsGeometry? padding;
-
-  /// Margin around the card.
   final EdgeInsetsGeometry? margin;
-
-  /// Background color. Default is white.
   final Color? backgroundColor;
-
-  /// Optional gradient overlay.
   final Gradient? gradient;
-
-  /// Width constraint.
   final double? width;
-
-  /// Height constraint.
   final double? height;
-
-  /// Callback when card is tapped.
   final VoidCallback? onTap;
-
-  /// Callback when card is long pressed.
   final VoidCallback? onLongPress;
-
-  /// Enable hover/press effect. Default is true.
   final bool enableHoverEffect;
-
-  /// Custom shadows. Uses default card shadows if not specified.
   final List<BoxShadow>? shadows;
-
-  /// Elevation level for shadow intensity (0-5). Default is 2.
   final int elevation;
 
   const GlassCard({
@@ -440,11 +304,6 @@ class GlassCard extends StatelessWidget {
         blurRadius: blurRadius,
         offset: Offset(0, yOffset),
       ),
-      BoxShadow(
-        color: Colors.black.withAlpha((shadowAlpha * 0.5).round()),
-        blurRadius: blurRadius * 2,
-        offset: Offset(0, yOffset * 2),
-      ),
     ];
   }
 
@@ -471,87 +330,30 @@ class GlassCard extends StatelessWidget {
   }
 }
 
-/// Glass button widget - a button-style glass container.
-///
-/// Provides a glass morphism button with built-in tap effects,
-/// loading state, and icon support.
-///
-/// Example:
-/// ```dart
-/// GlassButton(
-///   label: 'Continue',
-///   icon: Icons.arrow_forward,
-///   onPressed: () => print('Button pressed'),
-/// )
-/// ```
+/// Glass button widget with built-in tap effects and loading state.
 class GlassButton extends StatefulWidget {
-  /// Button label text.
   final String? label;
-
-  /// Icon to display before label.
   final IconData? icon;
-
-  /// Icon widget (takes precedence over icon).
   final Widget? iconWidget;
-
-  /// Callback when button is pressed.
   final VoidCallback? onPressed;
-
-  /// Callback when button is long pressed.
   final VoidCallback? onLongPress;
-
-  /// Blur intensity. Default is 20.
   final double blur;
-
-  /// Background opacity. Default is 0.85.
   final double opacity;
-
-  /// Border radius. Default is 12.
   final BorderRadius? borderRadius;
-
-  /// Border color.
   final Color? borderColor;
-
-  /// Border width. Default is 1.0.
   final double borderWidth;
-
-  /// Background color. Default is white.
   final Color? backgroundColor;
-
-  /// Text/icon color. Default is primary text color.
   final Color? foregroundColor;
-
-  /// Padding inside the button.
   final EdgeInsetsGeometry? padding;
-
-  /// Margin around the button.
   final EdgeInsetsGeometry? margin;
-
-  /// Optional gradient overlay.
   final Gradient? gradient;
-
-  /// Whether button takes full width.
   final bool fullWidth;
-
-  /// Button height. Default is 52.
   final double height;
-
-  /// Whether button is in loading state.
   final bool isLoading;
-
-  /// Enable hover/press effect. Default is true.
   final bool enableHoverEffect;
-
-  /// Animation duration for press effects.
   final Duration animationDuration;
-
-  /// Custom shadows.
   final List<BoxShadow>? shadows;
-
-  /// Font size for label. Default is 16.
   final double fontSize;
-
-  /// Font weight for label. Default is w600.
   final FontWeight fontWeight;
 
   const GlassButton({
@@ -590,12 +392,6 @@ class _GlassButtonState extends State<GlassButton> {
 
   bool get _isDisabled => widget.onPressed == null || widget.isLoading;
 
-  /// Creates a press transform matrix with scale and translate.
-  Matrix4 _createPressTransform() {
-    return Matrix4.diagonal3Values(0.98, 0.98, 1.0)
-      ..setTranslationRaw(0.0, -2.0, 0.0);
-  }
-
   void _handleTapDown(TapDownDetails details) {
     if (!_isDisabled && widget.enableHoverEffect) {
       setState(() => _isPressed = true);
@@ -618,7 +414,7 @@ class _GlassButtonState extends State<GlassButton> {
   Widget build(BuildContext context) {
     final bgColor = widget.backgroundColor ?? Colors.white;
     final fgColor = widget.foregroundColor ?? AppColors.textPrimary;
-    final bdrColor = widget.borderColor ?? Colors.white.withAlpha(77); // 0.3 opacity
+    final bdrColor = widget.borderColor ?? Colors.white.withAlpha(77);
     final radius = widget.borderRadius ?? BorderRadius.circular(AppSpacing.radiusMd);
     const defaultPadding = EdgeInsets.symmetric(
       horizontal: AppSpacing.lg,
@@ -657,42 +453,35 @@ class _GlassButtonState extends State<GlassButton> {
             ],
           );
 
-    Widget button = ClipRRect(
-      borderRadius: radius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: widget.blur, sigmaY: widget.blur),
-        child: AnimatedContainer(
-          duration: widget.animationDuration,
-          curve: Curves.easeOutCubic,
-          height: widget.height,
-          padding: widget.padding ?? defaultPadding,
-          decoration: BoxDecoration(
-            color: bgColor.withAlpha(
-              _isDisabled
-                  ? ((widget.opacity * 255) * 0.6).round()
-                  : (widget.opacity * 255).round(),
-            ),
-            borderRadius: radius,
-            border: Border.all(
-              color: bdrColor,
-              width: widget.borderWidth,
-            ),
-            boxShadow: widget.shadows ??
-                [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(8),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-            gradient: widget.gradient,
+    Widget button = AnimatedScale(
+      scale: _isPressed ? 0.98 : 1.0,
+      duration: widget.animationDuration,
+      curve: Curves.easeOutCubic,
+      child: Container(
+        height: widget.height,
+        padding: widget.padding ?? defaultPadding,
+        decoration: BoxDecoration(
+          color: bgColor.withAlpha(
+            _isDisabled
+                ? ((widget.opacity * 255) * 0.6).round()
+                : (widget.opacity * 255).round(),
           ),
-          transform: _isPressed
-              ? _createPressTransform()
-              : Matrix4.identity(),
-          transformAlignment: Alignment.center,
-          child: Center(child: buttonContent),
+          borderRadius: radius,
+          border: Border.all(
+            color: bdrColor,
+            width: widget.borderWidth,
+          ),
+          boxShadow: widget.shadows ??
+              [
+                BoxShadow(
+                  color: Colors.black.withAlpha(8),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+          gradient: widget.gradient,
         ),
+        child: Center(child: buttonContent),
       ),
     );
 
@@ -717,35 +506,15 @@ class _GlassButtonState extends State<GlassButton> {
 }
 
 /// Animated glass container with shimmer effect.
-///
-/// Creates a glass container with a subtle animated opacity
-/// for attention-grabbing effects.
 class AnimatedGlassContainer extends StatefulWidget {
-  /// Child widget to display inside the glass container.
   final Widget child;
-
-  /// Animation duration. Default is 2 seconds.
   final Duration duration;
-
-  /// Blur intensity. Default is 20.
   final double blur;
-
-  /// Base opacity. Default is 0.85.
   final double opacity;
-
-  /// Border radius. Default is 16.
   final BorderRadius? borderRadius;
-
-  /// Optional padding inside the container.
   final EdgeInsetsGeometry? padding;
-
-  /// Optional margin around the container.
   final EdgeInsetsGeometry? margin;
-
-  /// Background color. Default is white.
   final Color? backgroundColor;
-
-  /// Border color.
   final Color? borderColor;
 
   const AnimatedGlassContainer({
@@ -815,7 +584,6 @@ class _AnimatedGlassContainerState extends State<AnimatedGlassContainer>
 
 /// Extension methods for creating glass containers easily.
 extension GlassContainerExtensions on Widget {
-  /// Wraps the widget in a [GlassContainer].
   Widget withGlass({
     double blur = 20.0,
     double opacity = 0.85,
@@ -835,7 +603,6 @@ extension GlassContainerExtensions on Widget {
     );
   }
 
-  /// Wraps the widget in a [GlassCard].
   Widget withGlassCard({
     double blur = 15.0,
     double opacity = 0.75,

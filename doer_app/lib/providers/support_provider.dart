@@ -1,4 +1,4 @@
-/// Support state management provider for the Doer App.
+/// Support state management provider for the Dolancer App.
 ///
 /// This file manages the support section including FAQ loading from
 /// Supabase and support ticket submission.

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Doer Landing Navigation
+ * @fileoverview Dolancer Landing Navigation
  *
  * Floating pill nav on scroll, teal-branded, with "Start Earning" CTA.
  * Transparent at top, becomes dark floating pill when scrolled > 80px.
@@ -22,7 +22,7 @@ const navLinks = [
 ]
 
 /**
- * Navigation bar for the Doer landing page.
+ * Navigation bar for the Dolancer landing page.
  * Transitions from transparent to a floating dark pill on scroll.
  */
 export function Navigation() {

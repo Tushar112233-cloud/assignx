@@ -1,4 +1,4 @@
-/// Dashboard state management provider for the Doer App.
+/// Dashboard state management provider for the Dolancer App.
 ///
 /// This file manages the main dashboard view that activated doers see,
 /// including their assigned projects, open pool projects available for

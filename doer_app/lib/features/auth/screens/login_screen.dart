@@ -309,7 +309,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem('2,400+', 'Active Doers'),
+                _buildStatItem('2,400+', 'Active Dolancers'),
                 _buildStatDivider(),
                 _buildStatItem('48h', 'Avg. Payout'),
                 _buildStatDivider(),

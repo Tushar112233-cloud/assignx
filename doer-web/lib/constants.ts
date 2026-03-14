@@ -1,9 +1,9 @@
 /**
- * Application constants for Doer Web
+ * Application constants for Dolancer Web
  */
 
 /** App name and branding */
-export const APP_NAME = 'DOER'
+export const APP_NAME = 'DOLANCER'
 export const APP_TAGLINE = 'Your Skills, Your Earnings'
 export const POWERED_BY = 'Powered by AssignX'
 

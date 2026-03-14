@@ -1,4 +1,4 @@
-/// Statistics data provider for the Doer App.
+/// Statistics data provider for the Dolancer App.
 ///
 /// Computes statistics from project data and doer profile,
 /// including earnings over time, project distributions, subject rankings,
@@ -454,7 +454,7 @@ class StatisticsNotifier extends Notifier<StatisticsState> {
 
     if (state.averageRating >= 4.5) {
       insights.add(const InsightItem(
-        message: 'Outstanding rating! You are in the top 10% of doers.',
+        message: 'Outstanding rating! You are in the top 10% of dolancers.',
         type: InsightType.success,
       ));
     } else if (state.averageRating >= 4.0) {

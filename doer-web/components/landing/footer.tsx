@@ -1,5 +1,5 @@
 /**
- * @fileoverview Footer — Doer Landing
+ * @fileoverview Footer — Dolancer Landing
  *
  * Dark teal footer with brand column + 3 link columns.
  * Fade-in on scroll. Copyright bar at bottom.
@@ -15,7 +15,7 @@ import "@/app/landing.css"
 
 const footerLinks = {
   forDoers: {
-    title: "For Doers",
+    title: "For Dolancers",
     links: [
       { label: "Browse Tasks", href: "/register" },
       { label: "How It Works", href: "#how-it-works" },

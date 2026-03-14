@@ -37,7 +37,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   const userData = {
-    name: user?.full_name || user?.email?.split('@')[0] || 'Doer',
+    name: user?.full_name || user?.email?.split('@')[0] || 'Dolancer',
     email: user?.email || '',
     avatar: user?.avatar_url || '',
   }

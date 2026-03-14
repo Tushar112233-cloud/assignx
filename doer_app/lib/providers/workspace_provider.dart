@@ -1,4 +1,4 @@
-/// Workspace state management provider for the Doer App.
+/// Workspace state management provider for the Dolancer App.
 ///
 /// This file manages the project workspace where doers work on their
 /// assigned projects. Integrated with Supabase for real-time chat,

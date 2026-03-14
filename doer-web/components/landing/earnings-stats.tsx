@@ -1,5 +1,5 @@
 /**
- * @fileoverview Earnings Stats — Doer Landing
+ * @fileoverview Earnings Stats — Dolancer Landing
  *
  * Four animated counter stat cards showing platform metrics.
  * Counters animate from 0 using framer-motion springs when scrolled into view.
@@ -35,7 +35,7 @@ const stats: Stat[] = [
     id: "doers",
     value: 2400,
     suffix: "+",
-    label: "Active Doers",
+    label: "Active Dolancers",
     description: "Skilled experts earning on the platform",
     Icon: Users,
   },
@@ -45,7 +45,7 @@ const stats: Stat[] = [
     prefix: "₹",
     suffix: "Cr+",
     label: "Total Paid Out",
-    description: "Real earnings delivered to Doers",
+    description: "Real earnings delivered to Dolancers",
     Icon: IndianRupee,
   },
   {
@@ -200,7 +200,7 @@ export function EarningsStats() {
             Numbers That Speak
           </h2>
           <p className="text-[var(--landing-text-secondary)]">
-            Real metrics from real Doers on our platform.
+            Real metrics from real Dolancers on our platform.
           </p>
         </motion.div>
 

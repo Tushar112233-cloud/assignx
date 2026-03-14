@@ -60,15 +60,15 @@ const FAQ_DATA: FAQItem[] = [
   // Getting Started
   {
     id: "gs-1",
-    question: "How do I get started as a doer?",
-    answer: "To get started as a doer, first create your account and complete your profile with your skills, experience, and qualifications. Then, verify your email and complete the skill verification process. Once approved, you can start browsing and applying for projects that match your expertise.",
+    question: "How do I get started as a dolancer?",
+    answer: "To get started as a dolancer, first create your account and complete your profile with your skills, experience, and qualifications. Then, verify your email and complete the skill verification process. Once approved, you can start browsing and applying for projects that match your expertise.",
     category: "getting-started",
     keywords: ["signup", "registration", "onboarding", "start", "begin", "new"],
   },
   {
     id: "gs-2",
-    question: "What skills do I need to become a successful doer?",
-    answer: "Success as a doer depends on your chosen field. Generally, you need strong technical or creative skills relevant to your domain, excellent communication abilities, time management skills, and a commitment to quality work. We recommend getting verified in at least one skill area to increase your visibility to supervisers.",
+    question: "What skills do I need to become a successful dolancer?",
+    answer: "Success as a dolancer depends on your chosen field. Generally, you need strong technical or creative skills relevant to your domain, excellent communication abilities, time management skills, and a commitment to quality work. We recommend getting verified in at least one skill area to increase your visibility to supervisers.",
     category: "getting-started",
     keywords: ["skills", "requirements", "qualifications", "expertise", "abilities"],
   },
@@ -112,7 +112,7 @@ const FAQ_DATA: FAQItem[] = [
   {
     id: "pay-4",
     question: "Are there any fees for receiving payments?",
-    answer: "No, we don't charge any fees for processing payouts to doers. The amount you see in your available balance is exactly what you'll receive in your bank account. However, your bank may have their own charges for receiving transfers, which vary by institution.",
+    answer: "No, we don't charge any fees for processing payouts to dolancers. The amount you see in your available balance is exactly what you'll receive in your bank account. However, your bank may have their own charges for receiving transfers, which vary by institution.",
     category: "payments",
     keywords: ["fees", "charges", "cost", "commission", "deduction"],
   },
@@ -164,7 +164,7 @@ const FAQ_DATA: FAQItem[] = [
   },
   {
     id: "acc-2",
-    question: "How can I improve my doer rating?",
+    question: "How can I improve my dolancer rating?",
     answer: "Your rating is based on quality of work, timeliness, and communication. To improve: deliver high-quality work consistently, meet deadlines, maintain clear communication, respond promptly to messages, and be professional in all interactions. Getting skill verifications also boosts credibility.",
     category: "account",
     keywords: ["rating", "reputation", "review", "improve", "score", "feedback"],

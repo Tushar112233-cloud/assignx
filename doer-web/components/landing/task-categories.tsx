@@ -1,5 +1,5 @@
 /**
- * @fileoverview Task Categories Marquee — Doer Landing
+ * @fileoverview Task Categories Marquee — Dolancer Landing
  *
  * Two-row scrolling strip showing all task types available on the platform.
  * Row 1 scrolls left, Row 2 scrolls right.

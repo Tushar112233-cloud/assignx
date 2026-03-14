@@ -1,4 +1,4 @@
-/// Resources and tools state management provider for the Doer App.
+/// Resources and tools state management provider for the Dolancer App.
 ///
 /// This file manages the resources section of the app which provides
 /// doers with training modules, AI content detection, and citation

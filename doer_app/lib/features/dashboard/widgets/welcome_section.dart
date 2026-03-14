@@ -18,7 +18,7 @@ class WelcomeSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final isAvailable = ref.watch(isAvailableProvider);
-    final displayName = user?.fullName ?? 'Doer';
+    final displayName = user?.fullName ?? 'Dolancer';
     final firstName = displayName.split(' ').first;
 
     return Container(

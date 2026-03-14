@@ -17,9 +17,7 @@ class ApiClient {
 
   static String get baseUrl {
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
-    // Android emulator needs 10.0.2.2; iOS/desktop use localhost
-    if (Platform.isAndroid) return 'http://10.0.2.2:4000';
-    return 'http://localhost:4000';
+    return 'https://api.assignx.in';
   }
 
   static final http.Client _httpClient = http.Client();

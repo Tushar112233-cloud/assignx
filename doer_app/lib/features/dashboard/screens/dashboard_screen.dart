@@ -111,7 +111,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         child: Consumer(
           builder: (context, ref, _) {
             final user = ref.watch(currentUserProvider);
-            final displayName = user?.fullName ?? 'Doer';
+            final displayName = user?.fullName ?? 'Dolancer';
             final firstName = displayName.split(' ').first;
 
             return Row(
@@ -145,7 +145,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'AssignX Doer',
+                        'AssignX Dolancer',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -215,7 +215,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   Widget _buildHeroBanner(
       BuildContext context, DashboardState dashboardState) {
     final user = ref.watch(currentUserProvider);
-    final firstName = (user?.fullName ?? 'Doer').split(' ').first;
+    final firstName = (user?.fullName ?? 'Dolancer').split(' ').first;
     final activeCount = dashboardState.assignedProjects
         .where((p) =>
             p.status == DoerProjectStatus.inProgress ||

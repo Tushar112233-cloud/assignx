@@ -1,7 +1,7 @@
 /**
- * @fileoverview Benefits Section — Doer Landing
+ * @fileoverview Benefits Section — Dolancer Landing
  *
- * Bento-grid layout of 8 cards highlighting key Doer platform benefits.
+ * Bento-grid layout of 8 cards highlighting key Dolancer platform benefits.
  * Two cards span 2 columns (size: "lg") for visual variety.
  * Cards reveal a blue/indigo gradient background on hover.
  */
@@ -86,7 +86,7 @@ const benefits: Benefit[] = [
     Icon: Users2,
     title: "Expert Community",
     description:
-      "Connect with thousands of skilled Doers. Share resources, tips, and grow together.",
+      "Connect with thousands of skilled Dolancers. Share resources, tips, and grow together.",
     size: "sm",
     gradient: "from-blue-400/10 to-indigo-400/5",
     iconBg: "bg-blue-100 dark:bg-blue-900/30",
@@ -211,7 +211,7 @@ export function BenefitsSection() {
         >
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--landing-accent-lighter)] border border-[var(--landing-border-teal)] mb-6">
             <span className="text-sm font-medium text-[var(--landing-accent-primary)]">
-              Why Doers Love It
+              Why Dolancers Love It
             </span>
           </span>
           <h2 className="landing-heading-lg text-[var(--landing-text-primary)] mb-4">

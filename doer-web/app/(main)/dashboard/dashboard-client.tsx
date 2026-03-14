@@ -601,7 +601,7 @@ export function DashboardClient() {
 
       {/* Row 2: Hero banner with greeting + right stat cards */}
       <HeroBanner
-        userName={user?.full_name || 'Doer'}
+        userName={user?.full_name || 'Dolancer'}
         assignedCount={assignedTasks.length}
         activeCount={activeCount}
         poolCount={poolTasks.length}
