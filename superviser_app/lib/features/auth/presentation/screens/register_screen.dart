@@ -14,6 +14,8 @@ import '../../../../shared/widgets/glass_container.dart';
 import '../../../../shared/widgets/inputs/app_text_field.dart';
 import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../providers/auth_provider.dart';
+import '../../../common/data/models/subject.dart' as subject_model;
+import '../../../common/presentation/providers/subjects_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -33,9 +35,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   // Step 2: Professional Profile
   final _yearsController = TextEditingController();
-  final _expertiseController = TextEditingController();
   final _bioController = TextEditingController();
   String _qualification = 'Masters';
+  final List<String> _selectedSubjectIds = [];
 
   // Step 3: Bank Details
   final _bankNameController = TextEditingController();
@@ -59,7 +61,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _yearsController.dispose();
-    _expertiseController.dispose();
     _bioController.dispose();
     _bankNameController.dispose();
     _accountNumberController.dispose();
@@ -105,8 +106,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           context.showErrorSnackBar('Please enter years of experience'.tr(context));
           return false;
         }
-        if (_expertiseController.text.trim().isEmpty) {
-          context.showErrorSnackBar('Please enter your expertise areas'.tr(context));
+        if (_selectedSubjectIds.isEmpty) {
+          context.showErrorSnackBar('Please select at least one subject area'.tr(context));
           return false;
         }
         return true;
@@ -129,9 +130,36 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
-  void _handleNext() {
+  bool _isCheckingEmail = false;
+
+  Future<void> _handleNext() async {
     context.unfocus();
     if (!_validateCurrentStep()) return;
+
+    if (_currentStep == 0) {
+      setState(() => _isCheckingEmail = true);
+      try {
+        final result = await ref.read(authProvider.notifier).checkEmailAvailability(
+          _emailController.text.trim(),
+        );
+        if (!mounted) return;
+        final available = result['available'] as bool? ?? true;
+        final conflictingRole = result['conflictingRole'] as String?;
+        if (!available && conflictingRole != null) {
+          context.showErrorSnackBar(
+            'This email is already registered as a $conflictingRole. Please use a different email or log in to our website.',
+          );
+          setState(() => _isCheckingEmail = false);
+          return;
+        }
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _isCheckingEmail = false);
+        context.showErrorSnackBar('Failed to verify email. Please try again.');
+        return;
+      }
+      setState(() => _isCheckingEmail = false);
+    }
 
     if (_currentStep == 2 && !_agreedToTerms) {
       context.showErrorSnackBar('Please agree to the Terms of Service'.tr(context));
@@ -186,16 +214,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     context.unfocus();
     ref.read(authProvider.notifier).clearError();
 
-    final expertiseList = _expertiseController.text.trim()
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-
     final metadata = <String, dynamic>{
       'qualification': _qualification,
       'yearsOfExperience': int.tryParse(_yearsController.text.trim()) ?? 0,
-      'expertiseAreas': expertiseList,
+      'subjects': _selectedSubjectIds.asMap().entries.map((e) => ({
+        'subjectId': e.value,
+        'isPrimary': e.key == 0,
+      })).toList(),
       'bio': _bioController.text.trim(),
       'bankName': _bankNameController.text.trim(),
       'accountNumber': _accountNumberController.text.trim(),
@@ -356,6 +381,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             PrimaryButton(
               text: 'Next'.tr(context),
               onPressed: _handleNext,
+              isLoading: _isCheckingEmail,
             ),
             const SizedBox(height: 24),
             _buildLoginLink(),
@@ -415,12 +441,49 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
             const SizedBox(height: 16),
 
-            AppTextField(
-              controller: _expertiseController,
-              label: 'Expertise Areas'.tr(context),
-              hint: 'e.g. Machine Learning, NLP, Computer Vision'.tr(context),
-              prefixIcon: Icons.category_outlined,
-              textInputAction: TextInputAction.next,
+            // Subject areas multi-select
+            Text(
+              'Subject Areas'.tr(context),
+              style: AppTypography.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ref.watch(subjectsProvider).when(
+              loading: () => const Center(child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              )),
+              error: (err, _) => GestureDetector(
+                onTap: () => ref.invalidate(subjectsProvider),
+                child: Text(
+                  'Failed to load subjects. Tap to retry.',
+                  style: AppTypography.bodySmall.copyWith(color: AppColors.error),
+                ),
+              ),
+              data: (subjects) => Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: subjects.map((subject) {
+                  final isSelected = _selectedSubjectIds.contains(subject.id);
+                  return FilterChip(
+                    label: Text(subject.name),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedSubjectIds.add(subject.id);
+                        } else {
+                          _selectedSubjectIds.remove(subject.id);
+                        }
+                      });
+                    },
+                    selectedColor: AppColors.accent.withValues(alpha: 0.2),
+                    checkmarkColor: AppColors.accent,
+                  );
+                }).toList(),
+              ),
             ),
             const SizedBox(height: 16),
 
