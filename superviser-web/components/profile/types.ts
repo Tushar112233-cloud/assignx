@@ -12,6 +12,7 @@ export interface SupervisorProfile {
   qualification: string
   years_of_experience: number
   expertise_areas: string[]
+  subjects: Array<{ subjectId: string; isPrimary: boolean }>
   bio?: string
   rating: number
   total_reviews: number

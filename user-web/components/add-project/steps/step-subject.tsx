@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SubjectSelector } from "../subject-selector";
+import { useSubjects } from "@/lib/hooks/use-subjects";
 import type { ProjectStep1Schema } from "@/lib/validations/project";
 import type { ProjectType } from "@/types/add-project";
 
@@ -82,6 +83,8 @@ interface StepSubjectProps {
 export function StepSubject({ form, onSubmit }: StepSubjectProps) {
   const selectedType = form.watch("projectType") as ProjectType | undefined;
   const selectedSubject = form.watch("subject");
+  const { subjects } = useSubjects();
+  const isOtherSelected = subjects.find((s) => s._id === selectedSubject)?.slug === "other";
 
   const placeholder = selectedType
     ? topicPlaceholders[selectedType]
@@ -158,7 +161,8 @@ export function StepSubject({ form, onSubmit }: StepSubjectProps) {
           value={selectedSubject}
           onChange={(value) => {
             form.setValue("subject", value, { shouldValidate: true });
-            if (value !== "other") {
+            const selectedSlug = subjects.find((s) => s._id === value)?.slug;
+            if (selectedSlug !== "other") {
               form.setValue("customSubject", "", { shouldValidate: true });
             }
           }}

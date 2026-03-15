@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/router/route_names.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/subjects_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -110,19 +111,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     'Master\'s Degree',
     'PhD',
     'Other',
-  ];
-
-  final List<ChipOption<String>> _subjectOptions = [
-    const ChipOption(value: 'engineering', label: 'Engineering'),
-    const ChipOption(value: 'business', label: 'Business'),
-    const ChipOption(value: 'science', label: 'Science'),
-    const ChipOption(value: 'arts', label: 'Arts'),
-    const ChipOption(value: 'law', label: 'Law'),
-    const ChipOption(value: 'medicine', label: 'Medicine'),
-    const ChipOption(value: 'technology', label: 'Technology'),
-    const ChipOption(value: 'design', label: 'Design'),
-    const ChipOption(value: 'marketing', label: 'Marketing'),
-    const ChipOption(value: 'finance', label: 'Finance'),
   ];
 
   final List<ChipOption<String>> _skillOptions = [
@@ -479,23 +467,44 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
           const SizedBox(height: AppSpacing.xl),
 
-          // Subject areas in a glass card
+          // Subject areas in a glass card (fetched from API)
           GlassContainer(
             blur: 12,
             opacity: 0.7,
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
             padding: AppSpacing.cardPadding,
-            child: ChipSelector<String>(
-              label: 'Areas of Interest',
-              helperText: 'Select up to 5 subject areas'.tr(context),
-              options: _subjectOptions,
-              selectedValues: _selectedSubjects,
-              maxSelections: 5,
-              onChanged: (values) {
-                setState(() => _selectedSubjects
-                  ..clear()
-                  ..addAll(values));
-              },
+            child: ref.watch(subjectsProvider).when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (err, _) => GestureDetector(
+                onTap: () => ref.invalidate(subjectsProvider),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Text(
+                    'Failed to load subjects. Tap to retry.'.tr(context),
+                    style: TextStyle(color: AppColors.error),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              data: (subjects) => ChipSelector<String>(
+                label: 'Areas of Interest',
+                helperText: 'Select up to 5 subject areas'.tr(context),
+                options: subjects
+                    .map((s) => ChipOption<String>(value: s.id, label: s.name))
+                    .toList(),
+                selectedValues: _selectedSubjects,
+                maxSelections: 5,
+                onChanged: (values) {
+                  setState(() => _selectedSubjects
+                    ..clear()
+                    ..addAll(values));
+                },
+              ),
             ),
           ),
 

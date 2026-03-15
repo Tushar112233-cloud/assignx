@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
-import '../../../data/models/project_model.dart';
+import '../../../data/models/subject.dart';
+import '../../../providers/subjects_provider.dart';
 
-/// Searchable dropdown for selecting project subject.
+/// Searchable dropdown for selecting a project subject fetched from the API.
 ///
-/// Displays a list of 10 subjects matching the web application.
-/// Includes a search TextField to filter subjects by name.
-class SubjectDropdown extends StatelessWidget {
-  final ProjectSubject? value;
-  final ValueChanged<ProjectSubject?> onChanged;
+/// Displays a loading indicator while subjects are being fetched,
+/// an error state with retry on failure, and a searchable bottom sheet
+/// when subjects are available.
+class SubjectDropdown extends ConsumerWidget {
+  /// Currently selected subject, or null if none selected.
+  final Subject? value;
+
+  /// Callback when a subject is selected.
+  final ValueChanged<Subject?> onChanged;
+
+  /// Optional error text to display below the dropdown.
   final String? errorText;
 
   const SubjectDropdown({
@@ -22,7 +30,7 @@ class SubjectDropdown extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -32,7 +40,7 @@ class SubjectDropdown extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         GestureDetector(
-          onTap: () => _showSearchableDropdown(context),
+          onTap: () => _showSearchableDropdown(context, ref),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
@@ -61,7 +69,7 @@ class SubjectDropdown extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      value!.displayName,
+                      value!.name,
                       style: AppTextStyles.bodyMedium,
                     ),
                   ),
@@ -97,28 +105,48 @@ class SubjectDropdown extends StatelessWidget {
   }
 
   /// Opens a bottom sheet with a searchable subject list.
-  void _showSearchableDropdown(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _SearchableSubjectSheet(
-        selectedValue: value,
-        onSelected: (subject) {
-          onChanged(subject);
-          Navigator.of(context).pop();
-        },
-      ),
+  void _showSearchableDropdown(BuildContext context, WidgetRef ref) {
+    final subjectsAsync = ref.read(subjectsProvider);
+
+    subjectsAsync.when(
+      loading: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Loading subjects...')),
+        );
+      },
+      error: (err, _) {
+        ref.invalidate(subjectsProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load subjects. Retrying...')),
+        );
+      },
+      data: (subjects) {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => _SearchableSubjectSheet(
+            subjects: subjects,
+            selectedValue: value,
+            onSelected: (subject) {
+              onChanged(subject);
+              Navigator.of(context).pop();
+            },
+          ),
+        );
+      },
     );
   }
 }
 
 /// Bottom sheet with search filtering for subjects.
 class _SearchableSubjectSheet extends StatefulWidget {
-  final ProjectSubject? selectedValue;
-  final ValueChanged<ProjectSubject> onSelected;
+  final List<Subject> subjects;
+  final Subject? selectedValue;
+  final ValueChanged<Subject> onSelected;
 
   const _SearchableSubjectSheet({
+    required this.subjects,
     required this.selectedValue,
     required this.onSelected,
   });
@@ -132,20 +160,12 @@ class _SearchableSubjectSheetState extends State<_SearchableSubjectSheet> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
-  /// All subjects available for selection.
-  /// Includes the full ProjectSubject enum which covers all 10 web subjects:
-  /// Engineering, Business, Medicine, Law, Natural Sciences (Physics/Chemistry/Biology),
-  /// Mathematics, Humanities & Literature, Social Sciences, and Other.
-  List<ProjectSubject> get _allSubjects => ProjectSubject.values;
-
   /// Filtered subjects based on search query.
-  List<ProjectSubject> get _filteredSubjects {
-    if (_searchQuery.isEmpty) return _allSubjects;
+  List<Subject> get _filteredSubjects {
+    if (_searchQuery.isEmpty) return widget.subjects;
     final query = _searchQuery.toLowerCase();
-    return _allSubjects
-        .where(
-          (s) => s.displayName.toLowerCase().contains(query),
-        )
+    return widget.subjects
+        .where((s) => s.name.toLowerCase().contains(query))
         .toList();
   }
 
@@ -249,7 +269,7 @@ class _SearchableSubjectSheetState extends State<_SearchableSubjectSheet> {
                     itemCount: _filteredSubjects.length,
                     itemBuilder: (context, index) {
                       final subject = _filteredSubjects[index];
-                      final isSelected = widget.selectedValue == subject;
+                      final isSelected = widget.selectedValue?.id == subject.id;
 
                       return ListTile(
                         leading: Container(
@@ -266,7 +286,7 @@ class _SearchableSubjectSheetState extends State<_SearchableSubjectSheet> {
                           ),
                         ),
                         title: Text(
-                          subject.displayName,
+                          subject.name,
                           style: AppTextStyles.bodyMedium.copyWith(
                             fontWeight: isSelected
                                 ? FontWeight.w600

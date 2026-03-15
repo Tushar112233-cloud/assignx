@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { subjects, type Subject } from "@/lib/data/subjects";
+import { useSubjects, type ApiSubject } from "@/lib/hooks/use-subjects";
+import { getSubjectPresentation } from "@/lib/data/subjects";
 
 interface SubjectSelectorProps {
   value: string;
@@ -31,7 +32,8 @@ interface SubjectSelectorProps {
 }
 
 /**
- * Subject selector with search, icons, and "Other" custom input support
+ * Subject selector with search, icons, and "Other" custom input support.
+ * Fetches subjects from the API and uses slug-based presentation mapping.
  */
 export function SubjectSelector({
   value,
@@ -43,9 +45,13 @@ export function SubjectSelector({
   className,
 }: SubjectSelectorProps) {
   const [open, setOpen] = useState(false);
+  const { subjects, isLoading } = useSubjects();
 
-  const selectedSubject = subjects.find((s) => s.id === value);
-  const isOther = value === "other";
+  const selectedSubject = subjects.find((s) => s._id === value);
+  const selectedPresentation = selectedSubject
+    ? getSubjectPresentation(selectedSubject.slug)
+    : null;
+  const isOther = selectedSubject?.slug === "other";
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -61,15 +67,20 @@ export function SubjectSelector({
               !value && "text-muted-foreground"
             )}
           >
-            {selectedSubject ? (
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading subjects...</span>
+              </div>
+            ) : selectedSubject && selectedPresentation ? (
               <div className="flex items-center gap-2">
                 <div
                   className={cn(
                     "flex h-7 w-7 items-center justify-center rounded-lg shadow-sm",
-                    selectedSubject.color
+                    selectedPresentation.color
                   )}
                 >
-                  <selectedSubject.icon className="h-4 w-4" />
+                  <selectedPresentation.icon className="h-4 w-4" />
                 </div>
                 <span className="font-medium">{selectedSubject.name}</span>
               </div>
@@ -85,35 +96,38 @@ export function SubjectSelector({
             <CommandList>
               <CommandEmpty>No subject found.</CommandEmpty>
               <CommandGroup>
-                {subjects.map((subject) => (
-                  <CommandItem
-                    key={subject.id}
-                    value={subject.name}
-                    onSelect={() => {
-                      onChange(subject.id);
-                      setOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={cn(
-                          "flex h-7 w-7 items-center justify-center rounded-lg shadow-sm",
-                          subject.color
-                        )}
-                      >
-                        <subject.icon className="h-4 w-4" />
+                {subjects.map((subject) => {
+                  const presentation = getSubjectPresentation(subject.slug);
+                  return (
+                    <CommandItem
+                      key={subject._id}
+                      value={subject.name}
+                      onSelect={() => {
+                        onChange(subject._id);
+                        setOpen(false);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={cn(
+                            "flex h-7 w-7 items-center justify-center rounded-lg shadow-sm",
+                            presentation.color
+                          )}
+                        >
+                          <presentation.icon className="h-4 w-4" />
+                        </div>
+                        <span className="font-medium">{subject.name}</span>
                       </div>
-                      <span className="font-medium">{subject.name}</span>
-                    </div>
-                    <Check
-                      className={cn(
-                        "ml-auto h-4 w-4 text-violet-600",
-                        value === subject.id ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                  </CommandItem>
-                ))}
+                      <Check
+                        className={cn(
+                          "ml-auto h-4 w-4 text-violet-600",
+                          value === subject._id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             </CommandList>
           </Command>

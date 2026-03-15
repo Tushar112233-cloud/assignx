@@ -18,6 +18,7 @@ import {
   type ProjectStep4Schema,
 } from "@/lib/validations/project";
 import type { ProjectType } from "@/types/add-project";
+import { useSubjects } from "@/lib/hooks/use-subjects";
 import { createProject, createProjectFileRecord } from "@/lib/actions/data";
 import { apiClient } from "@/lib/api/client";
 import { sanitizeFileName } from "@/lib/validations/file-upload";
@@ -37,6 +38,7 @@ interface NewProjectFormProps {
  * Guides users through 4 steps to submit a project
  */
 export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlledStep }: NewProjectFormProps) {
+  const { subjects: apiSubjects } = useSubjects();
   const [internalStep, setInternalStep] = useState(0);
 
   // Use controlled step if provided, otherwise use internal state
@@ -157,7 +159,7 @@ export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlle
         projectType: allFormData.projectType,
         title: allFormData.topic || `Project - ${allFormData.subject}`,
         subjectId: allFormData.subject,
-        customSubject: allFormData.subject === "other" ? allFormData.customSubject : undefined,
+        customSubject: apiSubjects.find((s) => s._id === allFormData.subject)?.slug === "other" ? allFormData.customSubject : undefined,
         topic: allFormData.topic,
         wordCount: allFormData.wordCount,
         referenceStyleId: allFormData.referenceStyle,

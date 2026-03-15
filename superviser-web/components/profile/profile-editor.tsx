@@ -13,11 +13,9 @@ import {
   GraduationCap,
   Briefcase,
   Save,
-  X,
   Camera,
   Building2,
   CreditCard,
-  Plus,
 } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -30,6 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { SupervisorProfile } from "./types"
+import { useSubjects } from "@/lib/hooks/use-subjects"
 
 interface ProfileEditorProps {
   profile: SupervisorProfile
@@ -39,8 +38,8 @@ interface ProfileEditorProps {
 
 export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps) {
   const [editedProfile, setEditedProfile] = useState<SupervisorProfile>(profile)
-  const [newExpertise, setNewExpertise] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const { subjects, isLoading: subjectsLoading } = useSubjects()
 
   const handleInputChange = (field: keyof SupervisorProfile, value: string | number) => {
     setEditedProfile((prev) => ({ ...prev, [field]: value }))
@@ -53,21 +52,17 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
     }))
   }
 
-  const addExpertise = () => {
-    if (newExpertise.trim() && !editedProfile.expertise_areas.includes(newExpertise.trim())) {
-      setEditedProfile((prev) => ({
+  const toggleSubject = (subjectId: string) => {
+    setEditedProfile((prev) => {
+      const existing = prev.subjects || []
+      const isSelected = existing.some((s) => s.subjectId === subjectId)
+      return {
         ...prev,
-        expertise_areas: [...prev.expertise_areas, newExpertise.trim()],
-      }))
-      setNewExpertise("")
-    }
-  }
-
-  const removeExpertise = (area: string) => {
-    setEditedProfile((prev) => ({
-      ...prev,
-      expertise_areas: prev.expertise_areas.filter((a) => a !== area),
-    }))
+        subjects: isSelected
+          ? existing.filter((s) => s.subjectId !== subjectId)
+          : [...existing, { subjectId, isPrimary: false }],
+      }
+    })
   }
 
   const handleSave = async () => {
@@ -231,46 +226,36 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
         </CardContent>
       </Card>
 
-      {/* Expertise Areas */}
+      {/* Subject Areas */}
       <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Areas of Expertise</CardTitle>
+          <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Subject Areas</CardTitle>
           <CardDescription className="text-sm text-gray-500">
-            Add or remove your subject expertise
+            Select subjects you supervise
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {editedProfile.expertise_areas.map((area) => (
-              <Badge
-                key={area}
-                variant="secondary"
-                className="gap-1 pr-1"
-              >
-                {area}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-4 w-4 p-0 hover:bg-transparent"
-                  onClick={() => removeExpertise(area)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </Badge>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Add new expertise area..."
-              value={newExpertise}
-              onChange={(e) => setNewExpertise(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addExpertise()}
-            />
-            <Button variant="outline" onClick={addExpertise}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add
-            </Button>
-          </div>
+        <CardContent>
+          {subjectsLoading ? (
+            <div className="text-sm text-gray-500">Loading subjects...</div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {subjects.map((subject) => {
+                const isSelected = editedProfile.subjects?.some(
+                  (s) => s.subjectId === subject._id
+                )
+                return (
+                  <Badge
+                    key={subject._id}
+                    variant={isSelected ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => toggleSubject(subject._id)}
+                  >
+                    {subject.name}
+                  </Badge>
+                )
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 

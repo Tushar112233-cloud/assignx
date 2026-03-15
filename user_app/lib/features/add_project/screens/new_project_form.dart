@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/project_model.dart';
+import '../../../data/models/subject.dart';
 import '../../../providers/project_provider.dart';
 import '../widgets/budget_display.dart';
 import '../widgets/deadline_picker.dart';
@@ -41,7 +42,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
   ProjectType? _projectType;
 
   // Step 2: Project details
-  ProjectSubject? _subject;
+  Subject? _subject;
   DateTime? _deadline;
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -210,7 +211,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         serviceType: _mapServiceType(),
-        subjectId: _subject?.name,
+        subjectId: _subject?.id,
         deadline: _deadline ?? DateTime.now().add(const Duration(days: 7)),
         wordCount: _wordCount,
         pageCount: int.tryParse(_pageCountController.text),
@@ -857,7 +858,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
               _SummaryItem('Title'.tr(context), _titleController.text),
               _SummaryItem(
                 'Subject'.tr(context),
-                _subject?.displayName ?? 'Not selected'.tr(context),
+                _subject?.name ?? 'Not selected'.tr(context),
               ),
               _SummaryItem(
                 'Deadline'.tr(context),
