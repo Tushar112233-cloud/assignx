@@ -48,26 +48,36 @@ async function seed() {
   // ============== STEP 1: Create Subjects, Skills, Reference Styles ==============
   console.log('\n--- Creating Subjects ---');
   const subjectNames = [
-    { name: 'Computer Science', category: 'Engineering' },
-    { name: 'Mathematics', category: 'Science' },
-    { name: 'English Literature', category: 'Humanities' },
-    { name: 'Business Management', category: 'Business' },
-    { name: 'Psychology', category: 'Social Sciences' },
-    { name: 'Economics', category: 'Business' },
-    { name: 'Physics', category: 'Science' },
-    { name: 'Marketing', category: 'Business' },
-    { name: 'Data Science', category: 'Engineering' },
-    { name: 'Mechanical Engineering', category: 'Engineering' },
+    { name: 'Engineering', slug: 'engineering', category: 'STEM' },
+    { name: 'Computer Science', slug: 'computer-science', category: 'STEM' },
+    { name: 'Mathematics & Statistics', slug: 'mathematics', category: 'STEM' },
+    { name: 'Physics', slug: 'physics', category: 'STEM' },
+    { name: 'Chemistry', slug: 'chemistry', category: 'STEM' },
+    { name: 'Biology', slug: 'biology', category: 'STEM' },
+    { name: 'Data Science', slug: 'data-science', category: 'STEM' },
+    { name: 'Business & Management', slug: 'business', category: 'Business' },
+    { name: 'Economics', slug: 'economics', category: 'Business' },
+    { name: 'Marketing', slug: 'marketing', category: 'Business' },
+    { name: 'Finance', slug: 'finance', category: 'Business' },
+    { name: 'Medicine & Healthcare', slug: 'medicine', category: 'Health' },
+    { name: 'Nursing', slug: 'nursing', category: 'Health' },
+    { name: 'Psychology', slug: 'psychology', category: 'Social Sciences' },
+    { name: 'Sociology', slug: 'sociology', category: 'Social Sciences' },
+    { name: 'Law', slug: 'law', category: 'Humanities' },
+    { name: 'Humanities & Literature', slug: 'literature', category: 'Humanities' },
+    { name: 'History', slug: 'history', category: 'Humanities' },
+    { name: 'Arts & Design', slug: 'arts', category: 'Creative' },
+    { name: 'Other', slug: 'other', category: 'Other' },
   ];
 
   const subjects = [];
   for (const s of subjectNames) {
-    const existing = await Subject.findOne({ name: s.name });
-    if (existing) {
-      subjects.push(existing);
-    } else {
-      subjects.push(await Subject.create(s));
-    }
+    const existing = await Subject.findOneAndUpdate(
+      { slug: s.slug },
+      { $set: { name: s.name, slug: s.slug, category: s.category, isActive: true } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    subjects.push(existing!);
   }
   console.log(`Created/found ${subjects.length} subjects`);
 
