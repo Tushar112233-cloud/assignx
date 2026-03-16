@@ -18,7 +18,8 @@ interface TransactionFilter {
 
 export async function getWallet(): Promise<Wallet | null> {
   try {
-    return await apiClient<Wallet>('/api/wallets/me')
+    const data = await apiClient<{ wallet: Wallet }>('/api/wallets/me')
+    return data.wallet || null
   } catch (err) {
     logger.error('Wallet', 'Error fetching wallet:', err)
     return null
@@ -48,13 +49,17 @@ export async function getWalletTransactions(
 }
 
 export async function getEarningsData(
-  period: 'week' | 'month' | 'year' = 'month'
+  _period: 'week' | 'month' | 'year' = 'month'
 ): Promise<EarningsData[]> {
   try {
-    const data = await apiClient<{ earnings: EarningsData[] }>(
-      `/api/wallets/earnings/data?period=${period}`
+    const data = await apiClient<{ earnings: Array<{ _id: { year: number; month: number }; total: number; count: number }> }>(
+      `/api/wallets/earnings/monthly`
     )
-    return data.earnings || []
+    // Transform the monthly aggregation into EarningsData format
+    return (data.earnings || []).map(item => ({
+      date: `${item._id.year}-${String(item._id.month).padStart(2, '0')}-01`,
+      amount: item.total,
+    }))
   } catch (err) {
     logger.error('Wallet', 'Error fetching earnings data:', err)
     return []
@@ -68,12 +73,23 @@ export async function getEarningsSummary(): Promise<{
   currentBalance: number
 }> {
   try {
-    return await apiClient<{
-      totalEarnings: number
-      pendingPayout: number
-      completedPayouts: number
-      currentBalance: number
+    const data = await apiClient<{
+      summary: {
+        balance: number
+        totalCredited: number
+        totalDebited: number
+        totalWithdrawn: number
+        lockedAmount: number
+        thisMonthEarnings: number
+      }
     }>('/api/wallets/earnings/summary')
+    const s = data.summary
+    return {
+      totalEarnings: s.totalCredited || 0,
+      pendingPayout: s.lockedAmount || 0,
+      completedPayouts: s.totalWithdrawn || 0,
+      currentBalance: s.balance || 0,
+    }
   } catch {
     return {
       totalEarnings: 0,

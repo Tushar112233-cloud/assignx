@@ -19,50 +19,10 @@ interface FloatingPost {
   timeAgo: string;
 }
 
-const samplePosts: FloatingPost[] = [
-  {
-    id: "1",
-    title: "Anyone selling MacBook charger?",
-    category: "marketplace",
-    college: "IIT Delhi",
-    timeAgo: "2m",
-  },
-  {
-    id: "2",
-    title: "Looking for roommate near campus",
-    category: "housing",
-    college: "BITS Pilani",
-    timeAgo: "5m",
-  },
-  {
-    id: "3",
-    title: "Hackathon this weekend - need designer!",
-    category: "events",
-    college: "VIT Vellore",
-    timeAgo: "8m",
-  },
-  {
-    id: "4",
-    title: "How to prepare for GATE?",
-    category: "questions",
-    college: "NIT Trichy",
-    timeAgo: "12m",
-  },
-  {
-    id: "5",
-    title: "Remote internship - React dev needed",
-    category: "opportunities",
-    college: "IIIT Hyderabad",
-    timeAgo: "15m",
-  },
-  {
-    id: "6",
-    title: "DSA notes from topper available",
-    category: "resources",
-    college: "DTU Delhi",
-    timeAgo: "18m",
-  },
-];
+/**
+ * Activity posts - populated from real data in production
+ */
+const samplePosts: FloatingPost[] = [];
 
 const categoryColors: Record<string, { bg: string; text: string }> = {
   questions: { bg: "bg-blue-500/20", text: "text-blue-300" },
@@ -101,6 +61,15 @@ export function LiveActivityFeed({
 }: LiveActivityFeedProps) {
   const prefersReducedMotion = useReducedMotion();
   const [visiblePosts, setVisiblePosts] = useState<number[]>([0, 1, 2, 3]);
+
+  // No posts to display
+  if (samplePosts.length === 0) {
+    return (
+      <div className={cn("relative w-full h-full flex items-center justify-center", className)}>
+        <p className="text-xs text-white/40">No activity yet</p>
+      </div>
+    );
+  }
 
   // Cycle through posts
   useEffect(() => {

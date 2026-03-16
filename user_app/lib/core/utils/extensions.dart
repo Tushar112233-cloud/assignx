@@ -39,6 +39,22 @@ extension StringExtensions on String {
   }
 }
 
+/// Check if a nullable string is a valid network image URL.
+///
+/// Returns true only if:
+/// - The string is not null
+/// - The string is not empty
+/// - The URI has a valid scheme (http or https)
+///
+/// This prevents errors from empty strings, `file:///` URIs,
+/// or other invalid image sources being passed to NetworkImage.
+bool isValidImageUrl(String? url) {
+  if (url == null || url.isEmpty) return false;
+  final uri = Uri.tryParse(url);
+  if (uri == null) return false;
+  return uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https');
+}
+
 /// DateTime extensions.
 extension DateTimeExtensions on DateTime {
   /// Format as readable date (e.g., "Dec 27, 2025").

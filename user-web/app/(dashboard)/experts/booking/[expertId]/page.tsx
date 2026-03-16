@@ -5,7 +5,7 @@
  * Features improved step indicator and clean card design
  */
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -15,14 +15,12 @@ import {
   Calendar,
   Clock,
   CheckCircle2,
-  CreditCard,
   Shield,
   Loader2,
   Video,
   MessageSquare,
   BadgeCheck,
   Star,
-  Sparkles,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -40,12 +38,11 @@ import {
 import { cn } from "@/lib/utils";
 import { formatINR } from "@/lib/utils";
 import { BookingCalendar, PriceBreakdown } from "@/components/experts";
-import { getExpertById } from "@/lib/data/experts";
+import { fetchExpertById, createExpertBookingOrder, verifyExpertBookingPayment } from "@/lib/data/experts";
 import { toast } from "sonner";
 import type { TimeSlot, ConsultationBooking } from "@/types/expert";
 import { COMMISSION_RATES } from "@/types/expert";
 import { useBookingStore } from "@/stores";
-import { bookExpertSession } from "@/lib/actions/data";
 
 /**
  * Booking steps configuration
@@ -55,7 +52,7 @@ type BookingStep = "datetime" | "details" | "payment";
 const STEPS = [
   { key: "datetime", label: "Date & Time", icon: Calendar, emoji: "📅" },
   { key: "details", label: "Details", icon: MessageSquare, emoji: "📝" },
-  { key: "payment", label: "Payment", icon: CreditCard, emoji: "💳" },
+  { key: "payment", label: "Confirm", icon: CheckCircle2, emoji: "✅" },
 ] as const;
 
 /**
@@ -78,8 +75,32 @@ export default function ExpertBookingPage({
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [expert, setExpert] = useState<import("@/types/expert").Expert | null>(null);
+  const [isLoadingExpert, setIsLoadingExpert] = useState(true);
 
-  const expert = getExpertById(resolvedParams.expertId);
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoadingExpert(true);
+    fetchExpertById(resolvedParams.expertId).then((data) => {
+      if (!cancelled) {
+        setExpert(data);
+        setIsLoadingExpert(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [resolvedParams.expertId]);
+
+  // Handle loading state
+  if (isLoadingExpert) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600 mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Loading expert...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Handle expert not found
   if (!expert) {
@@ -89,7 +110,7 @@ export default function ExpertBookingPage({
           <div className="text-5xl mb-4">🔍</div>
           <h2 className="text-lg font-semibold mb-2">Expert not found</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            The expert you're looking for doesn't exist.
+            The expert you are looking for does not exist.
           </p>
           <Button
             variant="outline"
@@ -178,69 +199,130 @@ export default function ExpertBookingPage({
   };
 
   /**
-   * Handle payment processing
+   * Load Razorpay checkout script
+   */
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  /**
+   * Handle payment processing via Razorpay
    */
   const handlePayment = async () => {
     setIsProcessingPayment(true);
 
     try {
-      // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const totalAmount = expert.pricePerSession;
 
-      // Persist booking to database
-      const dbResult = await bookExpertSession({
-        expertId: expert.id,
-        sessionType: "consultation",
-        date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
-        time: selectedTimeSlot?.time || "",
-        topic,
-        notes: notes || undefined,
-        hourlyRate: expert.pricePerSession,
-      });
-
-      // Check for DB error
-      if (dbResult?.error) {
-        throw new Error(dbResult.error);
+      // Step 1: Load Razorpay script
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        toast.error("Failed to load payment gateway. Please try again.");
+        setIsProcessingPayment(false);
+        return;
       }
 
-      // Generate booking ID from DB response or fallback
-      const newBookingId = dbResult?.booking?.id || dbResult?.booking?._id || `BOOK-${Date.now()}`;
-      setBookingId(String(newBookingId));
+      // Step 2: Create Razorpay order
+      const orderData = await createExpertBookingOrder(expert.id, totalAmount);
+      if (!orderData) {
+        toast.error("Failed to create payment order. Please try again.");
+        setIsProcessingPayment(false);
+        return;
+      }
 
-      // Calculate commission split
-      const totalAmount = expert.pricePerSession;
-      const expertAmount = Math.round(totalAmount * COMMISSION_RATES.EXPERT_PERCENTAGE / 100);
-      const platformFee = totalAmount - expertAmount;
+      // Step 3: Open Razorpay checkout
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "AssignX",
+        description: `Consultation with ${expert.name}`,
+        order_id: orderData.orderId,
+        theme: { color: "#7c3aed" },
+        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+          try {
+            // Step 4: Verify payment and create booking
+            const result = await verifyExpertBookingPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              expertId: expert.id,
+              date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+              time: selectedTimeSlot?.time || "",
+              startTime: selectedTimeSlot?.time || "",
+              endTime: "",
+              duration: 60,
+              topic,
+              notes: notes || "",
+              amount: totalAmount,
+            });
 
-      // Update local store for immediate UI feedback
-      const newBooking: ConsultationBooking = {
-        id: String(newBookingId),
-        expertId: expert.id,
-        clientId: "current-user",
-        date: selectedDate!,
-        startTime: selectedTimeSlot!.time,
-        endTime: "",
-        duration: 60,
-        topic,
-        notes: notes || undefined,
-        status: "upcoming",
-        meetLink: `https://meet.google.com/${String(newBookingId).toLowerCase()}`,
-        totalAmount,
-        expertAmount,
-        platformFee,
-        currency: "INR",
-        paymentId: `pay_${Date.now()}`,
-        paymentStatus: "completed",
-        createdAt: new Date(),
-        updatedAt: new Date(),
+            if (!result) {
+              toast.error("Payment verification failed. Please contact support.");
+              setIsProcessingPayment(false);
+              return;
+            }
+
+            const newBookingId = result.booking?.id || result.booking?._id || `BOOK-${Date.now()}`;
+            setBookingId(String(newBookingId));
+
+            // Calculate commission split for local store
+            const expertAmount = Math.round(totalAmount * COMMISSION_RATES.EXPERT_PERCENTAGE / 100);
+            const platformFee = totalAmount - expertAmount;
+
+            // Update local store for immediate UI feedback
+            const newBooking: ConsultationBooking = {
+              id: String(newBookingId),
+              expertId: expert.id,
+              clientId: "current-user",
+              date: selectedDate!,
+              startTime: selectedTimeSlot!.time,
+              endTime: "",
+              duration: 60,
+              topic,
+              notes: notes || undefined,
+              status: "upcoming",
+              totalAmount,
+              expertAmount,
+              platformFee,
+              currency: "INR",
+              paymentId: response.razorpay_payment_id,
+              paymentStatus: "completed",
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+            addBooking(newBooking);
+
+            setShowConfirmation(true);
+            toast.success("Payment successful! Booking confirmed.");
+          } catch {
+            toast.error("Payment verification failed. Please contact support.");
+          } finally {
+            setIsProcessingPayment(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            toast.info("Payment cancelled");
+            setIsProcessingPayment(false);
+          },
+        },
       };
-      addBooking(newBooking);
 
-      setShowConfirmation(true);
-      toast.success("Booking confirmed! Check your email for details.");
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
     } catch (error) {
-      toast.error("Payment failed. Please try again.");
-    } finally {
+      toast.error("Booking failed. Please try again.");
       setIsProcessingPayment(false);
     }
   };
@@ -347,6 +429,7 @@ export default function ExpertBookingPage({
                 >
                   <BookingCalendar
                     expertId={expert.id}
+                    expertAvailability={expert.availabilitySlots}
                     selectedDate={selectedDate}
                     selectedTimeSlot={selectedTimeSlot}
                     onDateSelect={setSelectedDate}
@@ -522,28 +605,25 @@ export default function ExpertBookingPage({
                     showDetails
                   />
 
-                  {/* Payment Method */}
+                  {/* Payment Info */}
                   <div className="rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 overflow-hidden">
                     <div className="p-5 border-b border-stone-100 dark:border-stone-800">
                       <h3 className="font-semibold flex items-center gap-2">
-                        <span>💳</span>
-                        Payment Method
+                        <span>&#8377;</span>
+                        Payment Info
                       </h3>
                     </div>
                     <div className="p-5">
-                      <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/30">
-                        <div className="h-10 w-10 rounded-lg bg-violet-100 dark:bg-violet-900/50 flex items-center justify-center">
-                          <CreditCard className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                      <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30">
+                        <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                          <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-sm">Razorpay</p>
+                          <p className="font-medium text-sm">Pay Now via Razorpay</p>
                           <p className="text-xs text-muted-foreground">
-                            UPI, Cards, Net Banking, Wallets
+                            Secure payment via UPI, Card, or Net Banking. Booking is confirmed after payment.
                           </p>
                         </div>
-                        <span className="px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
-                          Secure
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -573,12 +653,12 @@ export default function ExpertBookingPage({
                 {isProcessingPayment ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Processing...
+                    Processing Payment...
                   </>
                 ) : currentStep === "payment" ? (
                   <>
-                    Pay {formatINR(expert.pricePerSession)}
-                    <Sparkles className="h-4 w-4" />
+                    Pay {formatINR(expert.pricePerSession)} & Confirm
+                    <CheckCircle2 className="h-4 w-4" />
                   </>
                 ) : (
                   <>
@@ -647,14 +727,14 @@ export default function ExpertBookingPage({
                 <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
                   <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <span className="text-muted-foreground">Secure payment</span>
+                <span className="text-muted-foreground">Verified expert</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <span className="text-muted-foreground">
-                  100% money-back guarantee
+                  Free cancellation
                 </span>
               </div>
               <div className="flex items-center gap-3 text-sm">
@@ -710,15 +790,14 @@ export default function ExpertBookingPage({
                   </span>
                 </div>
                 <div className="flex justify-between p-3 text-sm">
-                  <span className="text-muted-foreground">Amount Paid</span>
+                  <span className="text-muted-foreground">Amount</span>
                   <span className="font-medium text-emerald-600 dark:text-emerald-400">
                     {formatINR(expert.pricePerSession)}
                   </span>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground text-center">
-                A confirmation email with the Google Meet link has been sent to
-                your registered email address.
+                Payment is complete. The Google Meet link will be shared by the admin before your session.
               </p>
             </div>
             <DialogFooter className="flex-col sm:flex-row gap-2">

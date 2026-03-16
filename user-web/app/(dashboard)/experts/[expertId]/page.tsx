@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -26,7 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { formatINR } from "@/lib/utils";
-import { getExpertById, getExpertReviews } from "@/lib/data/experts";
+import { fetchExpertById, fetchExpertReviews } from "@/lib/data/experts";
 import type { ExpertSpecialization } from "@/types/expert";
 
 /**
@@ -59,9 +59,37 @@ export default function ExpertProfilePage({
   const resolvedParams = use(params);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("about");
+  const [expert, setExpert] = useState<import("@/types/expert").Expert | null>(null);
+  const [reviews, setReviews] = useState<import("@/types/expert").ExpertReview[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const expert = getExpertById(resolvedParams.expertId);
-  const reviews = getExpertReviews(resolvedParams.expertId);
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    Promise.all([
+      fetchExpertById(resolvedParams.expertId),
+      fetchExpertReviews(resolvedParams.expertId),
+    ]).then(([expertData, reviewsData]) => {
+      if (!cancelled) {
+        setExpert(expertData);
+        setReviews(reviewsData);
+        setIsLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [resolvedParams.expertId]);
+
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="container max-w-4xl mx-auto px-4 py-6 flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600 mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading expert profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Handle expert not found
   if (!expert) {
@@ -430,6 +458,25 @@ export default function ExpertProfilePage({
                       </p>
                     </div>
                   </div>
+
+                  {/* Availability Schedule */}
+                  {expert.availabilitySlots && expert.availabilitySlots.length > 0 && (
+                    <div className="flex items-start gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                        <Clock className="h-5 w-5 text-white" strokeWidth={2} />
+                      </div>
+                      <div>
+                        <p className="font-semibold mb-2">Availability Schedule</p>
+                        <div className="flex flex-wrap gap-2">
+                          {expert.availabilitySlots.map((slot) => (
+                            <span key={slot.day} className="text-xs px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 capitalize">
+                              {slot.day} {slot.startTime}–{slot.endTime}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </TabsContent>

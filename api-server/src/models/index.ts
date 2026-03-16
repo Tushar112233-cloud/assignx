@@ -39,3 +39,7 @@ export { FormatTemplate } from './FormatTemplate';
 export { ReferenceStyle } from './ReferenceStyle';
 export { AuditLog } from './AuditLog';
 export { AccessRequest } from './AccessRequest';
+export { Job } from './Job';
+export { JobApplication } from './JobApplication';
+export { Investor } from './Investor';
+export { PitchDeck } from './PitchDeck';

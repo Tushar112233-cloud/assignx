@@ -18,12 +18,9 @@ export const authService = {
     return user
   },
 
-  async signUp(email: string, _password: string, fullName: string, phone: string) {
-    return apiClient('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ email, fullName, phone, role: 'doer' }),
-      skipAuth: true,
-    })
+  async signUp(email: string, _password: string, _fullName: string, _phone: string) {
+    // Registration is handled via send-otp -> doer-signup flow
+    return sendOTP(email, 'signup', 'doer')
   },
 
   async signIn(email: string, _password: string) {
@@ -61,28 +58,21 @@ export const doerService = {
   },
 
   async createDoer(
-    data: {
+    _data: {
       qualification: Qualification
       experience_level: ExperienceLevel
       university_name?: string
       bio?: string
     }
   ): Promise<Doer> {
-    return apiClient<Doer>('/api/doers', {
-      method: 'POST',
-      body: JSON.stringify({
-        qualification: data.qualification,
-        experience_level: data.experience_level,
-        university_name: data.university_name || null,
-        bio: data.bio || null,
-      }),
-    })
+    // Doer records are created server-side during the doer-signup flow.
+    // This should not be called directly. Return existing doer profile.
+    return apiClient<Doer>('/api/doers/me')
   },
 
-  async createDoerActivation(doerId: string): Promise<void> {
-    await apiClient(`/api/doers/${doerId}/activation`, {
-      method: 'POST',
-    })
+  async createDoerActivation(_doerId: string): Promise<void> {
+    // Activation record is created server-side during doer signup.
+    // This is a no-op.
   },
 
   async updateProfileSetup(
@@ -94,36 +84,45 @@ export const doerService = {
       bio?: string
     }
   ): Promise<Doer> {
+    // API uses camelCase field names (Mongoose schema)
     return apiClient<Doer>(`/api/doers/${doerId}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        qualification: data.qualification,
+        universityName: data.university_name,
+        experienceLevel: data.experience_level,
+        bio: data.bio,
+      }),
     })
   },
 
   async updateSkills(doerId: string, skillIds: string[]): Promise<void> {
     await apiClient(`/api/doers/${doerId}/skills`, {
-      method: 'PUT',
-      body: JSON.stringify({ skillIds }),
+      method: 'POST',
+      body: JSON.stringify({ skills: skillIds.map(id => ({ skillId: id })) }),
     })
   },
 
   async updateSubjects(doerId: string, subjectIds: string[]): Promise<void> {
     await apiClient(`/api/doers/${doerId}/subjects`, {
-      method: 'PUT',
-      body: JSON.stringify({ subjectIds }),
+      method: 'POST',
+      body: JSON.stringify({ subjects: subjectIds.map((id, i) => ({ subjectId: id, isPrimary: i === 0 })) }),
     })
   },
 
   async getSkills() {
-    return apiClient<Array<{ id: string; name: string; is_active: boolean }>>('/api/skills')
+    const data = await apiClient<{ skills: Array<{ _id: string; name: string; isActive: boolean }> }>('/api/skills')
+    return (data.skills || []).map(s => ({ id: s._id, name: s.name, is_active: s.isActive }))
   },
 
   async getSubjects() {
-    return apiClient<Array<{ id: string; name: string; is_active: boolean }>>('/api/subjects')
+    const data = await apiClient<{ subjects: Array<{ _id: string; name: string; isActive: boolean }> }>('/api/subjects')
+    return (data.subjects || []).map(s => ({ id: s._id, name: s.name, is_active: s.isActive }))
   },
 
   async getUniversities() {
-    return apiClient<Array<{ id: string; name: string; is_active: boolean }>>('/api/universities')
+    const data = await apiClient<{ universities: Array<{ _id: string; name: string; isActive: boolean }> }>('/api/universities')
+    return (data.universities || []).map(u => ({ id: u._id, name: u.name, is_active: u.isActive }))
   },
 }
 

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -9,7 +7,7 @@ import '../../../../core/translation/translation_extensions.dart';
 /// Animated 3-dot typing indicator widget.
 ///
 /// Displays a subtle animation showing that someone is typing in the chat.
-/// Uses glass morphism styling to match the app's design system.
+/// Uses semi-transparent container styling to match the app's design system.
 ///
 /// Example:
 /// ```dart
@@ -133,61 +131,55 @@ class _TypingIndicatorState extends State<TypingIndicator>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Dots container with glass effect
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withValues(alpha: 0.15),
-                          Colors.white.withValues(alpha: 0.08),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(3, (index) {
-                        return AnimatedBuilder(
-                          animation: _dotAnimations[index],
-                          builder: (context, child) {
-                            return Transform.translate(
-                              offset: Offset(0, _dotAnimations[index].value),
-                              child: Container(
-                                margin: EdgeInsets.only(
-                                  right: index < 2 ? 4 : 0,
-                                ),
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: widget.dotColor ?? AppColors.primary,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: (widget.dotColor ?? AppColors.primary)
-                                          .withValues(alpha: 0.4),
-                                      blurRadius: 4,
-                                      spreadRadius: 1,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      }),
-                    ),
+              // Dots container - lightweight alternative to BackdropFilter
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: 0.18),
+                      Colors.white.withValues(alpha: 0.10),
+                    ],
                   ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(3, (index) {
+                    return AnimatedBuilder(
+                      animation: _dotAnimations[index],
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(0, _dotAnimations[index].value),
+                          child: Container(
+                            margin: EdgeInsets.only(
+                              right: index < 2 ? 4 : 0,
+                            ),
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: widget.dotColor ?? AppColors.primary,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (widget.dotColor ?? AppColors.primary)
+                                      .withValues(alpha: 0.4),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
                 ),
               ),
 

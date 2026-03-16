@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/expert_model.dart';
 
 /// Expert card widget with glassmorphic styling.
@@ -561,8 +562,8 @@ class ExpertCard extends StatelessWidget {
             radius: size / 2,
             backgroundColor: AppColors.primaryLight.withAlpha(50),
             backgroundImage:
-                expert.avatar != null ? NetworkImage(expert.avatar!) : null,
-            child: expert.avatar == null
+                isValidImageUrl(expert.avatar) ? NetworkImage(expert.avatar!) : null,
+            child: !isValidImageUrl(expert.avatar)
                 ? Text(
                     expert.initials,
                     style: AppTextStyles.labelLarge.copyWith(

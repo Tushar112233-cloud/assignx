@@ -196,12 +196,12 @@ function BookingCard({
    */
   const handleReviewSubmit = async ({ rating, comment }: { rating: number; comment: string }) => {
     try {
-      await apiClient(`/api/expert-bookings/${booking.id}/review`, {
+      await apiClient(`/api/experts/${booking.expertId}/review`, {
         method: "POST",
         body: JSON.stringify({
-          review_rating: rating,
-          review_text: comment,
-          reviewed_at: new Date().toISOString(),
+          rating,
+          review: comment,
+          bookingId: booking.id,
         }),
       });
     } catch {

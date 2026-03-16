@@ -179,17 +179,16 @@ class _ServiceCard extends StatelessWidget {
       duration: Duration(milliseconds: 400 + animationDelay),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
+        // Combined two nested Opacity widgets into one to avoid GPU overhead.
         return Opacity(
-          opacity: value,
+          opacity: value * (isDisabled ? 0.5 : 1.0),
           child: Transform.translate(
             offset: Offset(0, 16 * (1 - value)),
             child: child,
           ),
         );
       },
-      child: Opacity(
-        opacity: isDisabled ? 0.5 : 1.0,
-        child: Material(
+      child: Material(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           elevation: 0,
@@ -294,7 +293,6 @@ class _ServiceCard extends StatelessWidget {
               ),
             ),
           ),
-        ),
       ),
     );
   }

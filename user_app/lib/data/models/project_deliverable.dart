@@ -61,16 +61,40 @@ class ProjectDeliverable {
   });
 
   /// Creates a [ProjectDeliverable] from JSON data.
+  ///
+  /// Handles both the normalized API format (which uses `name`, `url`, `size`)
+  /// and the raw MongoDB format (which uses `fileName`, `fileUrl`, etc.).
   factory ProjectDeliverable.fromJson(Map<String, dynamic> json) {
+    // Parse file size: API may return a human-readable string like "1.2 MB"
+    // or a numeric value in bytes.
+    int? parseFileSize(dynamic sizeValue, dynamic bytesValue) {
+      // Prefer raw bytes if available
+      if (bytesValue != null) {
+        if (bytesValue is num) return bytesValue.toInt();
+        if (bytesValue is String) return int.tryParse(bytesValue);
+      }
+      // The API returns `size` as a formatted string like "1.2 MB" or "500 KB"
+      if (sizeValue is num) return sizeValue.toInt();
+      if (sizeValue is String) {
+        final numericOnly = int.tryParse(sizeValue);
+        if (numericOnly != null) return numericOnly;
+        // Don't try to parse "1.2 MB" strings back to bytes -- leave as null
+      }
+      return null;
+    }
+
     return ProjectDeliverable(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       projectId: (json['project_id'] ?? json['projectId'] ?? '').toString(),
-      fileName: (json['file_name'] ?? json['fileName'] ?? '').toString(),
-      fileUrl: (json['file_url'] ?? json['fileUrl'] ?? '').toString(),
+      // API returns `name` for deliverables, raw format uses `fileName`
+      fileName: (json['file_name'] ?? json['fileName'] ?? json['name'] ?? '').toString(),
+      // API returns `url` for deliverables, raw format uses `fileUrl`
+      fileUrl: (json['file_url'] ?? json['fileUrl'] ?? json['url'] ?? '').toString(),
       fileType: (json['file_type'] ?? json['fileType']) as String?,
-      fileSizeBytes: (json['file_size_bytes'] ?? json['fileSizeBytes']) != null
-          ? ((json['file_size_bytes'] ?? json['fileSizeBytes']) as num).toInt()
-          : null,
+      fileSizeBytes: parseFileSize(
+        json['size'],
+        json['file_size_bytes'] ?? json['fileSizeBytes'],
+      ),
       version: json['version'] as int? ?? 1,
       isFinal: (json['is_final'] ?? json['isFinal']) as bool? ?? false,
       qcStatus: (json['qc_status'] ?? json['qcStatus']) as String?,
@@ -80,7 +104,9 @@ class ProjectDeliverable {
           ? DateTime.tryParse((json['qc_at'] ?? json['qcAt']).toString())
           : null,
       uploadedBy: (json['uploaded_by'] ?? json['uploadedBy'] ?? '').toString(),
-      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      createdAt: DateTime.tryParse(
+        (json['created_at'] ?? json['createdAt'] ?? json['uploadedAt'] ?? '').toString(),
+      ) ?? DateTime.now(),
     );
   }
 

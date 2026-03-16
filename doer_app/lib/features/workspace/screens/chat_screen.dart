@@ -106,12 +106,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               message.sentAt,
                             );
 
-                        return Column(
-                          children: [
-                            if (showDate)
-                              _buildDateDivider(message.sentAt),
-                            _ChatBubble(message: message),
-                          ],
+                        return RepaintBoundary(
+                          child: Column(
+                            children: [
+                              if (showDate)
+                                _buildDateDivider(message.sentAt),
+                              _ChatBubble(message: message),
+                            ],
+                          ),
                         );
                       },
                     ),

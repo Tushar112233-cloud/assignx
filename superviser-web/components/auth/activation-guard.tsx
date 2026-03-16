@@ -34,15 +34,16 @@ export function ActivationGuard({ children }: { children: React.ReactNode }) {
       }
 
       try {
+        // /api/auth/me returns a flat object with userType and role fields directly
         const data = await apiFetch<{
-          profile: { userType: string }
-          roleData: { isActivated: boolean } | null
+          userType?: string
+          role?: string
+          isActivated?: boolean
         }>("/api/auth/me")
 
         if (
-          data.profile?.userType === "supervisor" &&
-          data.roleData &&
-          !data.roleData.isActivated
+          (data.userType === "supervisor" || data.role === "supervisor") &&
+          data.isActivated === false
         ) {
           router.replace("/modules")
           return

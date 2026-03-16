@@ -9,8 +9,6 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/tutor_model.dart';
 import '../../../providers/connect_provider.dart';
-import '../../../shared/widgets/glass_container.dart';
-import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../marketplace/widgets/tutor_card.dart';
 import '../../marketplace/widgets/tutor_profile_sheet.dart';
@@ -24,8 +22,7 @@ import '../widgets/study_group_card.dart';
 
 /// Main Connect screen with tabs for Tutors, Study Groups, and Resources.
 ///
-/// Features a curved hero section, search bar, and tabbed content areas.
-/// Uses the marketplace styling with glassmorphic design.
+/// Clean Coffee Bean themed design with simple cards and clear layout.
 class ConnectScreen extends ConsumerStatefulWidget {
   const ConnectScreen({super.key});
 
@@ -61,141 +58,115 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: MeshGradientBackground(
-        position: MeshPosition.center,
-        opacity: 0.5,
-        colors: [
-          AppColors.meshPink,
-          AppColors.meshPeach,
-          AppColors.meshOrange,
-        ],
-        child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              // Curved dome hero section
-              SliverToBoxAdapter(
-                child: _CurvedDomeHero(),
-              ),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            // Hero section
+            SliverToBoxAdapter(
+              child: _ConnectHero(),
+            ),
 
-              // Search bar
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: ConnectSearchBar(
-                    showFilterButton: true,
-                    activeFilterCount: filters.activeFilterCount,
-                    onFilterTap: () => AdvancedFilterSheet.show(context),
-                    onSearchSubmit: (query) {
-                      // Search is handled via provider
-                    },
-                  ),
+            // Search bar
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: ConnectSearchBar(
+                  showFilterButton: true,
+                  activeFilterCount: filters.activeFilterCount,
+                  onFilterTap: () => AdvancedFilterSheet.show(context),
+                  onSearchSubmit: (query) {
+                    // Search is handled via provider
+                  },
                 ),
               ),
+            ),
 
-              // Tab bar
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _TabBarDelegate(
-                  tabController: _tabController,
-                  filters: filters,
-                ),
+            // Tab bar
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _TabBarDelegate(
+                tabController: _tabController,
+                filters: filters,
               ),
-            ];
-          },
-          body: TabBarView(
-            controller: _tabController,
-            children: [
-              _TutorsTab(),
-              _StudyGroupsTab(),
-              _ResourcesTab(),
-              const QaSection(),
-            ],
-          ),
+            ),
+          ];
+        },
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _TutorsTab(),
+            _StudyGroupsTab(),
+            _ResourcesTab(),
+            const QaSection(),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Curved dome hero section with gradient background.
-class _CurvedDomeHero extends StatelessWidget {
+/// Clean hero section with coffee brown gradient.
+class _ConnectHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ClipPath(
-      clipper: _CurvedBottomClipper(),
-      child: Container(
-        height: 200,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary,
-              AppColors.primaryDark,
-              AppColors.darkBrown,
-            ],
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF54442B),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDark.withValues(alpha: 0.18),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
           ),
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Connect'.tr(context),
-                          style: AppTextStyles.headingLarge.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Learn together, grow together'.tr(context),
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Colors.white.withAlpha(200),
-                          ),
-                        ),
-                      ],
+        ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Connect'.tr(context),
+                    style: AppTextStyles.headingLarge.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Learn together, grow together'.tr(context),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white.withAlpha(180),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.people_rounded,
+                size: 28,
+                color: Colors.white,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
-
-/// Custom clipper for curved bottom edge.
-class _CurvedBottomClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 30);
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height + 15,
-      size.width,
-      size.height - 30,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
 /// Tab bar delegate for persistent header.
@@ -218,7 +189,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: AppColors.background.withAlpha(240),
+      color: AppColors.background,
       child: TabBar(
         controller: tabController,
         isScrollable: true,
@@ -227,6 +198,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
         unselectedLabelColor: AppColors.textSecondary,
         indicatorColor: AppColors.primary,
         indicatorWeight: 3,
+        dividerColor: AppColors.border.withAlpha(50),
         labelStyle: AppTextStyles.labelLarge.copyWith(
           fontWeight: FontWeight.w600,
         ),
@@ -635,7 +607,7 @@ class _ResourcesTab extends ConsumerWidget {
   }
 }
 
-/// Section header widget.
+/// Section header widget - clean card style with icon.
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -661,12 +633,7 @@ class _SectionHeader extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary.withAlpha(26),
-                      AppColors.primaryLight.withAlpha(26),
-                    ],
-                  ),
+                  color: AppColors.primary.withAlpha(20),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -697,28 +664,32 @@ class _SectionHeader extends StatelessWidget {
             ],
           ),
           if (onSeeAll != null)
-            GlassContainer(
-              blur: 8,
-              opacity: 0.6,
+            Material(
+              color: AppColors.primary.withAlpha(15),
               borderRadius: BorderRadius.circular(16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              onTap: onSeeAll,
-              child: Row(
-                children: [
-                  Text(
-                    'See all'.tr(context),
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
+              child: InkWell(
+                onTap: onSeeAll,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Row(
+                    children: [
+                      Text(
+                        'See all'.tr(context),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 12,
+                        color: AppColors.primary,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 12,
-                    color: AppColors.primary,
-                  ),
-                ],
+                ),
               ),
             ),
         ],
@@ -727,7 +698,7 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-/// Active filters display chip.
+/// Active filters display chip - clean card style.
 class _ActiveFiltersDisplay extends StatelessWidget {
   final VoidCallback onClear;
 
@@ -737,11 +708,22 @@ class _ActiveFiltersDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: GlassContainer(
-        blur: 10,
-        opacity: 0.6,
+      child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        borderRadius: BorderRadius.circular(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.border.withValues(alpha: 0.3),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(6),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Row(
           children: [
             Icon(
@@ -781,7 +763,7 @@ class _ActiveFiltersDisplay extends StatelessWidget {
   }
 }
 
-/// Empty state widget.
+/// Empty state widget - clean card.
 class _EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -799,10 +781,20 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      blur: 12,
-      opacity: 0.7,
+    return Container(
       padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           Container(
@@ -834,15 +826,30 @@ class _EmptyState extends StatelessWidget {
           ),
           if (showClearButton && onClear != null) ...[
             const SizedBox(height: 16),
-            GlassButton(
-              label: 'Clear Filters'.tr(context),
-              icon: Icons.filter_alt_off,
-              onPressed: onClear,
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              fullWidth: false,
-              height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+            Material(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: onClear,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.filter_alt_off, size: 16, color: Colors.white),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Clear Filters'.tr(context),
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ],
@@ -851,7 +858,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// Error state widget.
+/// Error state widget - clean card.
 class _ErrorState extends StatelessWidget {
   final String error;
   final VoidCallback onRetry;
@@ -863,10 +870,20 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      blur: 12,
-      opacity: 0.7,
+    return Container(
       padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           Container(
@@ -897,15 +914,30 @@ class _ErrorState extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          GlassButton(
-            label: 'Retry'.tr(context),
-            icon: Icons.refresh,
-            onPressed: onRetry,
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            fullWidth: false,
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+          Material(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: onRetry,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.refresh, size: 16, color: Colors.white),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Retry'.tr(context),
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -913,14 +945,24 @@ class _ErrorState extends StatelessWidget {
   }
 }
 
-/// Loading skeleton for tutor card.
+/// Loading skeleton for tutor card - clean card style.
 class _TutorCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      blur: 10,
-      opacity: 0.7,
+    return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -956,14 +998,24 @@ class _TutorCardSkeleton extends StatelessWidget {
   }
 }
 
-/// Loading skeleton for group card.
+/// Loading skeleton for group card - clean card style.
 class _GroupCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      blur: 10,
-      opacity: 0.7,
+    return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -999,14 +1051,24 @@ class _GroupCardSkeleton extends StatelessWidget {
   }
 }
 
-/// Loading skeleton for resource card.
+/// Loading skeleton for resource card - clean card style.
 class _ResourceCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      blur: 10,
-      opacity: 0.7,
+    return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

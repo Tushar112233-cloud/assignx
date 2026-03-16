@@ -12,6 +12,12 @@ import '../widgets/stats_widgets.dart';
 import '../widgets/transaction_widgets.dart';
 
 /// Main earnings screen with tabs for overview, transactions, and commission.
+///
+/// This is a layout-only stateful widget that manages the [TabController].
+/// Each tab body is a focused [ConsumerWidget] that watches only the
+/// provider it needs, minimizing unnecessary rebuilds:
+/// - Overview and Commission tabs watch [earningsProvider]
+/// - Transactions tab watches [transactionsProvider]
 class EarningsScreen extends ConsumerStatefulWidget {
   const EarningsScreen({super.key});
 
@@ -37,9 +43,6 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final earningsState = ref.watch(earningsProvider);
-    final transactionsState = ref.watch(transactionsProvider);
-
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -69,42 +72,21 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
         colors: MeshColors.warmColors,
         opacity: 0.4,
         child: SafeArea(
-          child: earningsState.isLoading && earningsState.summary == null
-              ? const Center(child: CircularProgressIndicator())
-              : TabBarView(
-              controller: _tabController,
-              children: [
-                // Overview Tab
-                _OverviewTab(
-                  state: earningsState,
-                  onPeriodChanged: (period) {
-                    ref.read(earningsProvider.notifier).changePeriod(period);
-                  },
-                  onWithdraw: () => _showWithdrawDialog(context),
-                  onRefresh: () async {
-                    await ref.read(earningsProvider.notifier).refresh();
-                  },
-                ),
-                // Transactions Tab
-                _TransactionsTab(
-                  state: transactionsState,
-                  onTransactionTap: (tx) => _showTransactionDetail(context, tx),
-                  onLoadMore: () =>
-                      ref.read(transactionsProvider.notifier).loadMore(),
-                  onFilterChanged: (filter) {
-                    ref.read(transactionsProvider.notifier).updateFilter(filter);
-                  },
-                ),
-                // Commission Tab
-                _CommissionTab(
-                  breakdown: earningsState.commissionBreakdown,
-                  period: earningsState.selectedPeriod,
-                  onPeriodChanged: (period) {
-                    ref.read(earningsProvider.notifier).changePeriod(period);
-                  },
-                ),
-              ],
-            ),
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              // Overview Tab -- watches earningsProvider
+              _EarningsOverviewTab(
+                onWithdraw: () => _showWithdrawDialog(context),
+              ),
+              // Transactions Tab -- watches transactionsProvider
+              _EarningsTransactionsTab(
+                onTransactionTap: (tx) => _showTransactionDetail(context, tx),
+              ),
+              // Commission Tab -- watches earningsProvider
+              const _EarningsCommissionTab(),
+            ],
+          ),
         ),
       ),
     );
@@ -124,6 +106,79 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => TransactionDetailSheet(transaction: tx),
+    );
+  }
+}
+
+/// Overview tab that watches only [earningsProvider].
+///
+/// Displays balance card, performance insights, earnings snapshot,
+/// stats cards, chart, and performance metrics.
+class _EarningsOverviewTab extends ConsumerWidget {
+  const _EarningsOverviewTab({this.onWithdraw});
+
+  final VoidCallback? onWithdraw;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(earningsProvider);
+
+    if (state.isLoading && state.summary == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return _OverviewTab(
+      state: state,
+      onPeriodChanged: (period) {
+        ref.read(earningsProvider.notifier).changePeriod(period);
+      },
+      onWithdraw: onWithdraw,
+      onRefresh: () async {
+        await ref.read(earningsProvider.notifier).refresh();
+      },
+    );
+  }
+}
+
+/// Transactions tab that watches only [transactionsProvider].
+///
+/// Displays transaction list with filters and load-more pagination.
+class _EarningsTransactionsTab extends ConsumerWidget {
+  const _EarningsTransactionsTab({required this.onTransactionTap});
+
+  final void Function(TransactionModel) onTransactionTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(transactionsProvider);
+
+    return _TransactionsTab(
+      state: state,
+      onTransactionTap: onTransactionTap,
+      onLoadMore: () => ref.read(transactionsProvider.notifier).loadMore(),
+      onFilterChanged: (filter) {
+        ref.read(transactionsProvider.notifier).updateFilter(filter);
+      },
+    );
+  }
+}
+
+/// Commission tab that watches only [earningsProvider].
+///
+/// Displays commission breakdown pie chart and detailed list.
+class _EarningsCommissionTab extends ConsumerWidget {
+  const _EarningsCommissionTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(earningsProvider);
+
+    return _CommissionTab(
+      breakdown: state.commissionBreakdown,
+      period: state.selectedPeriod,
+      onPeriodChanged: (period) {
+        ref.read(earningsProvider.notifier).changePeriod(period);
+      },
     );
   }
 }

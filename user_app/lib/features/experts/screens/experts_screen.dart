@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/expert_model.dart';
 import '../../../providers/experts_provider.dart';
 import '../../../core/translation/translation_extensions.dart';
@@ -878,10 +879,10 @@ class _FeaturedDoctorCard extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 34,
                       backgroundColor: _kTeal1.withAlpha(25),
-                      backgroundImage: doctor.avatar != null
+                      backgroundImage: isValidImageUrl(doctor.avatar)
                           ? NetworkImage(doctor.avatar!)
                           : null,
-                      child: doctor.avatar == null
+                      child: !isValidImageUrl(doctor.avatar)
                           ? Text(
                               doctor.initials,
                               style: AppTextStyles.headingMedium.copyWith(

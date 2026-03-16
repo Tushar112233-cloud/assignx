@@ -329,12 +329,9 @@ export async function submitFeedback(data: {
  * Update profile
  */
 export async function updateProfile(data: {
-  full_name?: string;
+  fullName?: string;
   phone?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  avatar_url?: string;
+  avatarUrl?: string;
 }) {
   const token = await getToken();
   if (!token) return { error: "Not authenticated" };
@@ -554,7 +551,7 @@ export async function uploadAvatar(base64Data: string, fileName: string) {
     // Update profile with new avatar URL
     await serverApiClient("/api/users/me", {
       method: "PUT",
-      body: JSON.stringify({ avatar_url: result.url }),
+      body: JSON.stringify({ avatarUrl: result.url }),
     }, token);
 
     revalidatePath("/profile");
@@ -581,7 +578,7 @@ export async function bookExpertSession(data: {
   if (!token) return { error: "Not authenticated" };
 
   try {
-    const result = await serverApiClient("/api/expert-bookings", {
+    const result = await serverApiClient("/api/experts/bookings", {
       method: "POST",
       body: JSON.stringify(data),
     }, token);
@@ -621,8 +618,8 @@ export async function markProjectComplete(projectId: string) {
   if (!token) return { error: "Not authenticated" };
 
   try {
-    await serverApiClient(`/api/projects/${projectId}/complete`, {
-      method: "POST",
+    await serverApiClient(`/api/projects/${projectId}/approve`, {
+      method: "PUT",
     }, token);
 
     revalidatePath(`/project/${projectId}`);
@@ -657,7 +654,9 @@ export async function getUserPreferences() {
 
   try {
     const result = await serverApiClient("/api/users/preferences", {}, token);
-    return result || { theme: "system", language: "en", notifications: {} };
+    // API returns { preferences: {...} }, unwrap it
+    const prefs = result?.preferences || result || {};
+    return { theme: "system", language: "en", notifications: {}, ...prefs };
   } catch {
     return { theme: "system", language: "en", notifications: {} };
   }

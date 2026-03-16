@@ -276,6 +276,21 @@ export default function ProjectWorkspacePage() {
     }
   }, [projectId])
 
+  /** Handle update progress percentage */
+  const handleUpdateProgress = useCallback(async (percentage: number) => {
+    try {
+      await apiClient(`/api/projects/${projectId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ progressPercentage: percentage }),
+      })
+      setProject((prev) => (prev ? { ...prev, progress_percentage: percentage } : null))
+      toast.success(`Progress updated to ${percentage}%`)
+    } catch (error) {
+      console.error('Error updating progress:', error)
+      toast.error('Failed to update progress')
+    }
+  }, [projectId])
+
   /** Handle start revision */
   const handleStartRevision = useCallback(async (revisionId: string) => {
     try {
@@ -366,6 +381,7 @@ export default function ProjectWorkspacePage() {
         onSendFile={handleSendFile}
         onStartRevision={handleStartRevision}
         onUpdateLiveDocUrl={handleUpdateLiveDocUrl}
+        onUpdateProgress={handleUpdateProgress}
       />
     </div>
     </div>

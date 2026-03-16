@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const { data, error, status } = await serverFetch(
-      "/api/payments/send-money",
+      "/api/wallets/transfer",
       token,
       { method: "POST", body: JSON.stringify(body) }
     );

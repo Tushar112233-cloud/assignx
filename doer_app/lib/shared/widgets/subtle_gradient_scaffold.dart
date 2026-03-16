@@ -15,7 +15,6 @@
 library;
 
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -218,13 +217,9 @@ class ModernGradientBackground extends StatelessWidget {
   /// Custom orbs to display. Falls back to [defaultOrbs] if null.
   final List<GradientOrb>? customOrbs;
 
-  /// Whether to apply a blur filter for smoother orb blending.
-  final bool useBlur;
-
   const ModernGradientBackground({
     super.key,
     this.customOrbs,
-    this.useBlur = true,
   });
 
   /// Default teal/cyan/mint orb pattern for the doer app.
@@ -291,25 +286,7 @@ class ModernGradientBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final orbs = customOrbs ?? defaultOrbs;
-
-    Widget content = Stack(children: orbs);
-
-    if (useBlur) {
-      content = Stack(
-        children: [
-          ...orbs,
-          // Apply blur for smoother blending
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-              child: Container(color: Colors.transparent),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return content;
+    return Stack(children: orbs);
   }
 }
 
@@ -583,17 +560,8 @@ class SubtleGradientScaffold extends StatelessWidget {
       bottomNavigationBar: bottomNavigationBar,
       body: Stack(
         children: [
-          // Gradient orbs with blur for smooth blending
-          if (showGradients) ...[
-            ...gradientOrbs,
-            // Blur layer for smooth blending
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-                child: Container(color: Colors.transparent),
-              ),
-            ),
-          ],
+          // Gradient orbs (decorative, no blur needed)
+          if (showGradients) ...gradientOrbs,
 
           // Actual content
           Positioned.fill(
@@ -619,15 +587,11 @@ class SubtleGradientBackground extends StatelessWidget {
   /// Override background color. Defaults to [AppColors.background].
   final Color? backgroundColor;
 
-  /// Whether to apply a blur filter for smoother blending.
-  final bool useBlur;
-
   const SubtleGradientBackground({
     super.key,
     required this.child,
     this.orbs,
     this.backgroundColor,
-    this.useBlur = true,
   });
 
   /// Standard teal/cyan/mint background.
@@ -647,13 +611,6 @@ class SubtleGradientBackground extends StatelessWidget {
       child: Stack(
         children: [
           ...gradientOrbs,
-          if (useBlur)
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-                child: Container(color: Colors.transparent),
-              ),
-            ),
           Positioned.fill(child: child),
         ],
       ),

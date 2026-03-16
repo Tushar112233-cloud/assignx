@@ -8,6 +8,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/marketplace_model.dart';
 import '../../../providers/marketplace_provider.dart';
 import '../widgets/comment_section.dart';
@@ -19,7 +20,7 @@ import '../widgets/report_button.dart';
 final postCommentsProvider =
     FutureProvider.autoDispose.family<List<CampusComment>, String>(
   (ref, postId) async {
-    final response = await ApiClient.get('/community/campus/$postId/comments');
+    final response = await ApiClient.get('/community/posts/$postId/comments');
     final list = response is List
         ? response
         : (response as Map<String, dynamic>)['comments'] as List? ?? [];
@@ -94,7 +95,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
 
   Future<void> _checkUserInteractions() async {
     try {
-      final response = await ApiClient.get('/community/campus/${widget.postId}/interactions');
+      final response = await ApiClient.get('/community/posts/${widget.postId}/interactions');
       if (response == null) return;
       final data = response as Map<String, dynamic>;
 
@@ -117,7 +118,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     });
 
     try {
-      await ApiClient.post('/community/campus/${widget.postId}/like', {});
+      await ApiClient.post('/community/posts/${widget.postId}/like');
     } catch (e) {
       // Revert on error
       if (mounted) {
@@ -136,7 +137,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     });
 
     try {
-      await ApiClient.post('/community/campus/${widget.postId}/save', {});
+      await ApiClient.post('/community/posts/${widget.postId}/save');
     } catch (e) {
       // Revert on error
       if (mounted) {
@@ -148,9 +149,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   Future<void> _addComment(String content, String? parentId) async {
-    await ApiClient.post('/community/campus/${widget.postId}/comments', {
+    await ApiClient.post('/community/posts/${widget.postId}/comments', {
       'content': content,
-      'parent_id': parentId,
+      'parentId': parentId,
     });
 
     // Refresh comments
@@ -691,10 +692,10 @@ class _AuthorCard extends StatelessWidget {
           CircleAvatar(
             radius: 20,
             backgroundColor: AppColors.avatarWarm,
-            backgroundImage: listing.userAvatar != null
+            backgroundImage: isValidImageUrl(listing.userAvatar)
                 ? NetworkImage(listing.userAvatar!)
                 : null,
-            child: listing.userAvatar == null
+            child: !isValidImageUrl(listing.userAvatar)
                 ? Text(
                     listing.userName.isNotEmpty
                         ? listing.userName[0].toUpperCase()

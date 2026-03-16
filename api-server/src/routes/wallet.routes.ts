@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { authenticate } from '../middleware/auth';
-import { paymentLimiter } from '../middleware/rateLimiter';
+// import { paymentLimiter } from '../middleware/rateLimiter';
 import { UserWallet, DoerWallet, SupervisorWallet, WalletTransaction, PayoutRequest } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
@@ -88,7 +88,7 @@ router.get('/me/transactions', authenticate, async (req: Request, res: Response,
 });
 
 // POST /wallets/transfer
-router.post('/transfer', authenticate, paymentLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/transfer', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -162,7 +162,7 @@ router.post('/transfer', authenticate, paymentLimiter, async (req: Request, res:
 });
 
 // POST /wallets/topup
-router.post('/topup', authenticate, paymentLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/topup', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -209,7 +209,7 @@ router.post('/topup', authenticate, paymentLimiter, async (req: Request, res: Re
 });
 
 // POST /wallets/payout-request
-router.post('/payout-request', authenticate, paymentLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/payout-request', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { amount, payoutMethod } = req.body;
     if (!amount || amount <= 0) throw new AppError('Invalid amount', 400);
@@ -299,7 +299,7 @@ router.get('/me/transactions/:id', authenticate, async (req: Request, res: Respo
 });
 
 // POST /wallets/me/withdraw - Request withdrawal
-router.post('/me/withdraw', authenticate, paymentLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/me/withdraw', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { amount, paymentMethod } = req.body;
     if (!amount || amount <= 0) throw new AppError('Invalid amount', 400);

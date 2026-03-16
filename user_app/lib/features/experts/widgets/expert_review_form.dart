@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
@@ -128,16 +129,11 @@ class _ExpertReviewFormState extends ConsumerState<ExpertReviewForm>
     setState(() => _isSubmitting = true);
 
     try {
-      // TODO: Implement expert review API endpoint
-      // await ApiClient.post('/experts/${widget.expertId}/reviews', {
-      //   'bookingId': widget.bookingId,
-      //   'rating': _rating,
-      //   'comment': _reviewController.text.trim(),
-      //   'tags': _selectedTags.toList(),
-      // });
-
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
+      await ApiClient.post('/experts/${widget.expertId}/review', {
+        'bookingId': widget.bookingId,
+        'rating': _rating,
+        'review': _reviewController.text.trim(),
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -31,9 +31,10 @@ export async function getSettings() {
 export async function updateSetting(key: string, value: unknown) {
   await verifyAdmin();
 
-  await serverFetch(`/api/admin/settings/${key}`, {
-    method: "PUT",
-    body: JSON.stringify({ value }),
+  // Use POST upsert-by-key endpoint; PUT /settings/:id expects a MongoDB ObjectId
+  await serverFetch(`/api/admin/settings`, {
+    method: "POST",
+    body: JSON.stringify({ key, value }),
   });
 
   return { success: true };
@@ -44,10 +45,13 @@ export async function updateSettings(
 ) {
   await verifyAdmin();
 
-  await serverFetch(`/api/admin/settings/batch`, {
-    method: "PUT",
-    body: JSON.stringify({ settings }),
-  });
+  // No batch endpoint exists; upsert each setting individually via POST
+  for (const s of settings) {
+    await serverFetch(`/api/admin/settings`, {
+      method: "POST",
+      body: JSON.stringify({ key: s.key, value: s.value }),
+    });
+  }
 
   return { success: true };
 }

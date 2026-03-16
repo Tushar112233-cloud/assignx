@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -208,26 +207,46 @@ class _CurvedDomeHero extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header row with title and create button
+                // Header row with back button, title and create button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
                       children: [
-                        Text(
-                          'Connect'.tr(context),
-                          style: AppTextStyles.headingLarge.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(20),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios_new,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Discover students & services'.tr(context),
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Colors.white.withAlpha(200),
-                          ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Connect'.tr(context),
+                              style: AppTextStyles.headingLarge.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Discover students & services'.tr(context),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Colors.white.withAlpha(200),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -309,21 +328,17 @@ class _GlassSearchBarState extends ConsumerState<_GlassSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white.withAlpha(_isFocused ? 51 : 38),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withAlpha(_isFocused ? 77 : 51),
-              width: 1,
-            ),
-          ),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(_isFocused ? 56 : 43),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withAlpha(_isFocused ? 77 : 51),
+          width: 1,
+        ),
+      ),
           child: Row(
             children: [
               Icon(
@@ -379,8 +394,6 @@ class _GlassSearchBarState extends ConsumerState<_GlassSearchBar> {
                 ),
             ],
           ),
-        ),
-      ),
     );
   }
 }
@@ -670,19 +683,15 @@ class _GlassSortOptionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface.withAlpha(242),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(
-              color: Colors.white.withAlpha(51),
-              width: 1,
-            ),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withAlpha(247),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(
+          color: Colors.white.withAlpha(51),
+          width: 1,
+        ),
+      ),
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -745,8 +754,6 @@ class _GlassSortOptionsSheet extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 }

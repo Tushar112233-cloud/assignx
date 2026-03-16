@@ -267,7 +267,7 @@ export const walletService = {
    */
   async getPaymentMethods(userId: string): Promise<PaymentMethod[]> {
     const result = await apiClient<{ paymentMethods: PaymentMethod[] }>(
-      `/api/wallets/payment-methods?user_id=${userId}&role_context=user`
+      `/api/users/me/payment-methods?role_context=user`
     )
     return result.paymentMethods || result as any
   },
@@ -276,7 +276,7 @@ export const walletService = {
    * Adds a new payment method.
    */
   async addPaymentMethod(paymentMethod: PaymentMethodInsert): Promise<PaymentMethod> {
-    const result = await apiClient<{ paymentMethod: PaymentMethod }>('/api/wallets/payment-methods', {
+    const result = await apiClient<{ paymentMethod: PaymentMethod }>('/api/users/me/payment-methods', {
       method: 'POST',
       body: JSON.stringify({ ...paymentMethod, role_context: 'user' }),
     })
@@ -287,27 +287,15 @@ export const walletService = {
    * Removes a payment method (soft delete).
    */
   async removePaymentMethod(paymentMethodId: string): Promise<void> {
-    await apiClient(`/api/wallets/payment-methods/${paymentMethodId}`, {
+    await apiClient(`/api/users/me/payment-methods/${paymentMethodId}`, {
       method: 'DELETE',
       body: JSON.stringify({ role_context: 'user' }),
     })
   },
 
   /**
-   * Sets a payment method as default.
-   */
-  async setDefaultPaymentMethod(
-    userId: string,
-    paymentMethodId: string
-  ): Promise<void> {
-    await apiClient(`/api/wallets/payment-methods/${paymentMethodId}/default`, {
-      method: 'PATCH',
-      body: JSON.stringify({ user_id: userId, role_context: 'user' }),
-    })
-  },
-
-  /**
    * Gets transaction summary for a period.
+   * Uses GET /api/wallets/earnings/summary since transaction-summary endpoint does not exist.
    */
   async getTransactionSummary(
     userId: string,
@@ -315,10 +303,14 @@ export const walletService = {
     toDate: string
   ): Promise<{ credits: number; debits: number }> {
     try {
-      const result = await apiClient<{ credits: number; debits: number }>(
-        `/api/wallets/transaction-summary?user_id=${userId}&wallet_type=user&from_date=${fromDate}&to_date=${toDate}`
+      const result = await apiClient<Record<string, any>>(
+        `/api/wallets/earnings/summary?user_id=${userId}&wallet_type=user&from_date=${fromDate}&to_date=${toDate}`
       )
-      return result
+      const summary = result.summary ?? result
+      return {
+        credits: summary.totalCredited ?? 0,
+        debits: summary.totalDebited ?? 0,
+      }
     } catch {
       return { credits: 0, debits: 0 }
     }

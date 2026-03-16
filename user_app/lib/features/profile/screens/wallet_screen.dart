@@ -761,10 +761,11 @@ class WalletScreen extends ConsumerWidget {
                                   try {
                                     if (recipientId == null) return;
 
-                                    await ApiClient.post('/wallet/transfer', {
-                                      'recipient_id': recipientId,
+                                    await ApiClient.post('/wallets/transfer', {
+                                      'toRole': 'user',
+                                      'toId': recipientId,
                                       'amount': selectedAmount,
-                                      'note': noteController.text.trim(),
+                                      'description': noteController.text.trim(),
                                     });
 
                                     if (context.mounted) {

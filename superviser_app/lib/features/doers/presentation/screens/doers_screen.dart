@@ -481,9 +481,11 @@ class _DoersList extends StatelessWidget {
           }
 
           final doer = doers[doerIndex];
-          return DoerCard(
-            doer: doer,
-            onTap: () => onDoerTap(doer),
+          return RepaintBoundary(
+            child: DoerCard(
+              doer: doer,
+              onTap: () => onDoerTap(doer),
+            ),
           );
         },
       ),

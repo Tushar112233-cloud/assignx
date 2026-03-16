@@ -125,10 +125,11 @@ export async function getUnreadCount(
   roomId: string
 ): Promise<number> {
   try {
-    const data = await apiClient<{ count: number }>(
-      `/api/chat/rooms/${roomId}/unread`
+    // Use the global unread endpoint and extract the count for this specific room
+    const data = await apiClient<{ total: number; byRoom: Record<string, number> }>(
+      `/api/chat/unread`
     )
-    return data.count || 0
+    return data.byRoom?.[roomId] || 0
   } catch {
     return 0
   }
@@ -137,10 +138,11 @@ export async function getUnreadCount(
 export async function getChatParticipants(
   roomId: string
 ): Promise<ChatParticipant[]> {
-  const data = await apiClient<{ participants: ChatParticipant[] }>(
-    `/api/chat/rooms/${roomId}/participants`
+  // Participants are embedded in the room document
+  const data = await apiClient<{ room: { participants: ChatParticipant[] } }>(
+    `/api/chat/rooms/${roomId}`
   )
-  return data.participants || []
+  return data.room?.participants || []
 }
 
 /**

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/extensions.dart';
 import '../../data/models/user_type.dart';
 import '../../features/profile/widgets/account_badge.dart';
 
@@ -216,7 +217,7 @@ class UserBadgeCard extends StatelessWidget {
     final avatar = CircleAvatar(
       radius: _config.avatarRadius,
       backgroundColor: AppColors.primaryLight,
-      child: avatarUrl != null
+      child: isValidImageUrl(avatarUrl)
           ? ClipOval(
               child: CachedNetworkImage(
                 imageUrl: avatarUrl!,
@@ -361,7 +362,7 @@ class UserAvatarWithBadge extends StatelessWidget {
     final avatar = CircleAvatar(
       radius: radius,
       backgroundColor: AppColors.primaryLight,
-      child: avatarUrl != null
+      child: isValidImageUrl(avatarUrl)
           ? ClipOval(
               child: CachedNetworkImage(
                 imageUrl: avatarUrl!,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/repositories/profile_repository.dart';
 import 'account_badge.dart';
 
@@ -108,7 +109,7 @@ class ProfileHero extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: profile.avatarUrl != null
+                        child: isValidImageUrl(profile.avatarUrl)
                             ? ClipOval(
                                 child: CachedNetworkImage(
                                   imageUrl: profile.avatarUrl!,
@@ -296,13 +297,20 @@ class CompactProfileHeader extends StatelessWidget {
                 CircleAvatar(
                   radius: 24,
                   backgroundColor: AppColors.primaryLight,
-                  child: profile.avatarUrl != null
+                  child: isValidImageUrl(profile.avatarUrl)
                       ? ClipOval(
                           child: CachedNetworkImage(
                             imageUrl: profile.avatarUrl!,
                             width: 48,
                             height: 48,
                             fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => Text(
+                              profile.initials,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         )
                       : Text(

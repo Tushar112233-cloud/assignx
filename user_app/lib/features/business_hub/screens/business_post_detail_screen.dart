@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/utils/extensions.dart';
 import '../../campus_connect/widgets/comment_section.dart';
 import '../../campus_connect/widgets/like_button.dart';
 import '../../campus_connect/widgets/save_button.dart';
@@ -569,10 +570,10 @@ class _AuthorCard extends StatelessWidget {
           CircleAvatar(
             radius: 20,
             backgroundColor: AppColors.avatarWarm,
-            backgroundImage: post.userAvatar != null
+            backgroundImage: isValidImageUrl(post.userAvatar)
                 ? NetworkImage(post.userAvatar!)
                 : null,
-            child: post.userAvatar == null
+            child: !isValidImageUrl(post.userAvatar)
                 ? Text(
                     post.userName.isNotEmpty
                         ? post.userName[0].toUpperCase()

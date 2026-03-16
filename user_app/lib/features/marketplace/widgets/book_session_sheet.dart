@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/tutor_model.dart';
 
 /// Bottom sheet for booking a session with a tutor.
@@ -123,7 +124,7 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
         createdAt: DateTime.now(),
       );
 
-      // TODO: Call API to book session
+      // Booking is handled via the onBookingComplete callback.
 
       // Show success message
       if (mounted) {
@@ -299,12 +300,20 @@ class _BookSessionSheetState extends State<BookSessionSheet> {
               borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
               color: AppColors.primaryLight.withAlpha(50),
             ),
-            child: widget.tutor.avatar != null
+            child: isValidImageUrl(widget.tutor.avatar)
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                     child: Image.network(
                       widget.tutor.avatar!,
                       fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Center(
+                        child: Text(
+                          widget.tutor.initials,
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
                     ),
                   )
                 : Center(

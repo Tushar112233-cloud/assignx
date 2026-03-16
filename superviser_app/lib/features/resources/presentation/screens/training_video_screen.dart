@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -77,21 +78,23 @@ class _TrainingVideoPlayerScreenState
               fit: StackFit.expand,
               children: [
                 // Video thumbnail/player
-                Image.network(
-                  video.thumbnailUrl,
+                CachedNetworkImage(
+                  imageUrl: video.thumbnailUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: video.category.color.withValues(alpha: 0.2),
-                      child: Center(
-                        child: Icon(
-                          video.category.icon,
-                          size: 64,
-                          color: video.category.color,
-                        ),
+                  placeholder: (context, url) => Container(
+                    color: video.category.color.withValues(alpha: 0.1),
+                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: video.category.color.withValues(alpha: 0.2),
+                    child: Center(
+                      child: Icon(
+                        video.category.icon,
+                        size: 64,
+                        color: video.category.color,
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
                 // Play/pause overlay
                 Center(

@@ -100,8 +100,10 @@ class _ConnectHubScreenState extends ConsumerState<ConnectHubScreen>
         _roleToTab(PortalRole.business),
     ];
 
-    // Fallback to Campus Connect if somehow empty
-    if (tabs.isEmpty) tabs.add(ConnectType.campusConnect);
+    // Fallback: if roles haven't loaded yet (empty set), show a loading indicator
+    if (tabs.isEmpty) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFF765341)));
+    }
 
     _updateTabs(tabs);
 
@@ -120,34 +122,57 @@ class _ConnectHubScreenState extends ConsumerState<ConnectHubScreen>
       children: [
         const DashboardAppBar(),
 
-        // Tab bar
+        // Clean segmented tab switcher
         Container(
-          color: AppColors.background,
+          margin: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: TabBar(
             controller: _tabController,
-            isScrollable: _tabs.length > 2,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textTertiary,
-            indicatorColor: AppColors.primary,
-            indicatorWeight: 3,
-            indicatorSize: TabBarIndicatorSize.label,
+            isScrollable: false,
+            labelColor: Colors.white,
+            unselectedLabelColor: AppColors.textSecondary,
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicator: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withAlpha(40),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            dividerHeight: 0,
             labelStyle: AppTextStyles.labelMedium.copyWith(
               fontWeight: FontWeight.w600,
-              fontSize: 13,
+              fontSize: 12,
             ),
             unselectedLabelStyle: AppTextStyles.labelMedium.copyWith(
               fontWeight: FontWeight.w500,
-              fontSize: 13,
+              fontSize: 12,
             ),
-            dividerColor: AppColors.border.withAlpha(50),
+            labelPadding: EdgeInsets.zero,
             tabs: _tabs.map((tab) {
               return Tab(
+                height: 38,
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(tab.icon, size: 18),
-                    const SizedBox(width: 6),
-                    Text(tab.label),
+                    Icon(tab.icon, size: 16),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        tab.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
               );

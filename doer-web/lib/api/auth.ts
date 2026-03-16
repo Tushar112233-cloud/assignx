@@ -142,8 +142,8 @@ export async function logout(): Promise<void> {
 
 export async function getCurrentUser(): Promise<AuthResponse['user'] | null> {
   try {
-    const data = await apiClient<{ user: AuthResponse['user'] }>('/api/auth/me')
-    return data.user
+    const data = await apiClient<AuthUser>('/api/auth/me')
+    return data || null
   } catch {
     return null
   }

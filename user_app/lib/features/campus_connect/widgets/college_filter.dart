@@ -115,7 +115,7 @@ class CollegeFilterNotifier extends StateNotifier<CollegeFilterState> {
     // Get user's college from profile
     _loadUserCollege();
 
-    // Load available colleges (mock data for now)
+    // Load available colleges
     _loadAvailableColleges();
   }
 
@@ -150,26 +150,10 @@ class CollegeFilterNotifier extends StateNotifier<CollegeFilterState> {
   }
 
   void _loadAvailableColleges() {
-    // Mock data - in production, this would come from API
-    state = state.copyWith(
-      availableColleges: [
-        'IIT Delhi',
-        'IIT Bombay',
-        'IIT Madras',
-        'IIT Kanpur',
-        'NIT Trichy',
-        'NIT Warangal',
-        'BITS Pilani',
-        'VIT Vellore',
-        'SRM Chennai',
-        'Manipal University',
-        'Delhi University',
-        'Mumbai University',
-        'Pune University',
-        'Anna University',
-        'Jadavpur University',
-      ],
-    );
+    // Colleges will be populated when a colleges API endpoint is available.
+    // For now, start with an empty list so the filter shows no options
+    // until colleges are loaded.
+    state = state.copyWith(availableColleges: []);
   }
 
   /// Set the filter mode.

@@ -120,25 +120,16 @@ export function useAuth() {
         if (!isMounted) return
 
         if (!doerData) {
-          // 404 = new signup, needs profile setup
-          const pathname = window.location.pathname
-          if (pathname !== '/profile-setup') {
-            logger.debug('Auth', 'No doer found, redirecting to profile-setup')
-            routerRef.current.push('/profile-setup')
-          }
+          // No doer record — registration may not have completed properly.
+          // Redirect to login so the user can re-authenticate.
+          logger.debug('Auth', 'No doer found, redirecting to login')
+          clearAuthRef.current()
+          window.location.href = ROUTES.login
           return
         }
 
         setDoerRef.current(doerData)
-        setOnboardedRef.current(doerData.onboardingCompleted ?? false)
-
-        // Redirect to onboarding if not completed
-        if (!doerData.onboardingCompleted) {
-          const pathname = window.location.pathname
-          if (pathname !== '/profile-setup' && pathname !== '/welcome') {
-            routerRef.current.push('/profile-setup')
-          }
-        }
+        setOnboardedRef.current(doerData.onboardingCompleted ?? true)
       } catch (error) {
         logger.error('Auth', 'Error during init:', error)
       } finally {
@@ -180,12 +171,10 @@ export function useAuth() {
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [])
 
-  const signUp = async (email: string, _password: string, fullName: string, phone: string) => {
-    return apiClient('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ email, fullName, phone, role: 'doer' }),
-      skipAuth: true,
-    })
+  const signUp = async (email: string, _password: string, _fullName: string, _phone: string) => {
+    // Registration is handled via send-otp -> doer-signup flow
+    const { sendOTP: sendOTPFn } = await import('@/lib/api/auth')
+    return sendOTPFn(email, 'signup', 'doer')
   }
 
   const signIn = async (email: string, _password: string) => {

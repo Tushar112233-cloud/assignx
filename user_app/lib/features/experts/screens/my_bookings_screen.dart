@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -110,7 +111,6 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
                   return _BookingsTab(
                     bookings: filteredBookings,
                     tabType: tab.id,
-                    onMessage: _handleMessage,
                     onReschedule: _handleReschedule,
                     onCancel: _handleCancel,
                     onJoin: _handleJoin,
@@ -218,13 +218,6 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
     );
   }
 
-  void _handleMessage(String bookingId) {
-    // Navigate to chat
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Opening chat...'.tr(context))),
-    );
-  }
-
   void _handleReschedule(String bookingId) {
     // Show reschedule dialog
     showDialog(
@@ -285,10 +278,20 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
   }
 
   void _handleJoin(String bookingId) {
-    // Open meeting link
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Opening video call...'.tr(context))),
-    );
+    // Find the booking's meet link and open it
+    final bookingsAsync = ref.read(userBookingsProvider);
+    final bookings = bookingsAsync.valueOrNull ?? [];
+    final booking = bookings.where((b) => b.id == bookingId).firstOrNull;
+    if (booking?.meetLink != null && booking!.meetLink!.isNotEmpty) {
+      launchUrl(Uri.parse(booking.meetLink!), mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Meet link not yet available. The admin will share it before your session.'.tr(context)),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+    }
   }
 
   void _handleLeaveReview(ConsultationBooking booking, Expert? expert) {
@@ -336,7 +339,6 @@ class _BookingTab {
 class _BookingsTab extends ConsumerWidget {
   final List<ConsultationBooking> bookings;
   final String tabType;
-  final Function(String) onMessage;
   final Function(String) onReschedule;
   final Function(String) onCancel;
   final Function(String) onJoin;
@@ -345,7 +347,6 @@ class _BookingsTab extends ConsumerWidget {
   const _BookingsTab({
     required this.bookings,
     required this.tabType,
-    required this.onMessage,
     required this.onReschedule,
     required this.onCancel,
     required this.onJoin,
@@ -380,7 +381,6 @@ class _BookingsTab extends ConsumerWidget {
                   booking: booking,
                   expert: expert,
                   onTap: () => context.push('/experts/${booking.expertId}'),
-                  onMessage: () => onMessage(booking.id),
                   onReschedule: () => onReschedule(booking.id),
                   onCancel: () => onCancel(booking.id),
                   onJoin: () => onJoin(booking.id),

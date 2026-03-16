@@ -53,9 +53,11 @@ enum TransactionType {
         return TransactionType.withdrawal;
       case 'top_up':
       case 'topUp':
+      case 'topup':
         return TransactionType.topUp;
       case 'project_payment':
       case 'projectPayment':
+      case 'project-payment':
         return TransactionType.projectPayment;
       case 'project_earning':
       case 'projectEarning':
@@ -68,6 +70,12 @@ enum TransactionType {
         return TransactionType.penalty;
       case 'reversal':
         return TransactionType.reversal;
+      case 'transfer_out':
+      case 'transferOut':
+        return TransactionType.debit;
+      case 'transfer_in':
+      case 'transferIn':
+        return TransactionType.credit;
       default:
         return TransactionType.debit;
     }

@@ -12,13 +12,19 @@ import '../storage/token_storage.dart';
 /// and provides convenience methods for all HTTP verbs.
 class ApiClient {
   /// Base URL for the API server.
-  /// Android emulator uses 10.0.2.2, iOS simulator uses localhost.
+  /// Override with --dart-define=API_BASE_URL=https://api.assignx.in
   static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+  /// Production API URL
+  static const String _productionUrl = 'https://api.assignx.in';
 
   static String get baseUrl {
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
-    // Real device via ADB reverse port forwarding
-    if (Platform.isAndroid) return 'http://localhost:4000';
+    // Use production URL for release builds, localhost for debug
+    const isRelease = bool.fromEnvironment('dart.vm.product');
+    if (isRelease) return _productionUrl;
+    // Debug: localhost for simulators/emulators
+    if (Platform.isAndroid) return 'http://10.0.2.2:4000';
     return 'http://localhost:4000';
   }
 

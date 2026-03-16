@@ -976,10 +976,13 @@ class ProfileNotifier extends Notifier<ProfileState> {
   /// Updates [ProfileState.bankDetails] with loaded bank details.
   Future<void> _loadBankDetails() async {
     try {
-      final response = await ApiClient.get('/doer/bank-details');
+      final response = await ApiClient.get('/doers/me');
 
-      if (response != null && response is Map<String, dynamic> && (response['account_number'] != null || response['accountNumber'] != null)) {
-        state = state.copyWith(bankDetails: BankDetails.fromJson(response));
+      if (response != null && response is Map<String, dynamic>) {
+        final bankData = response['bankDetails'] ?? response['bank_details'];
+        if (bankData != null && bankData is Map<String, dynamic> && (bankData['accountNumber'] != null || bankData['account_number'] != null)) {
+          state = state.copyWith(bankDetails: BankDetails.fromJson(bankData));
+        }
       }
     } catch (e) {
       if (kDebugMode) {
@@ -1019,12 +1022,16 @@ class ProfileNotifier extends Notifier<ProfileState> {
   /// Updates [ProfileState.notificationPreferences] with loaded preferences.
   Future<void> _loadNotificationPreferences() async {
     try {
-      final response = await ApiClient.get('/doers/me/preferences');
+      // Preferences are stored on the doer document, already loaded via /doers/me
+      final response = await ApiClient.get('/doers/me');
 
       if (response != null && response is Map<String, dynamic>) {
-        state = state.copyWith(
-          notificationPreferences: NotificationPreferences.fromJson(response),
-        );
+        final prefs = response['notificationPreferences'] as Map<String, dynamic>?;
+        if (prefs != null) {
+          state = state.copyWith(
+            notificationPreferences: NotificationPreferences.fromJson(prefs),
+          );
+        }
       }
     } catch (e) {
       if (kDebugMode) {
@@ -1080,7 +1087,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
         skills: skills,
       );
 
-      await ApiClient.put('/doers/me', updatedProfile.toJson());
+      await ApiClient.put('/doers/${updatedProfile.id}', updatedProfile.toJson());
 
       state = state.copyWith(
         profile: updatedProfile,
@@ -1132,9 +1139,10 @@ class ProfileNotifier extends Notifier<ProfileState> {
     try {
       // Upload avatar via API
       final response = await ApiClient.uploadFile(
-        '/uploads/avatar',
+        '/upload',
         imageFile,
-        fieldName: 'avatar',
+        fieldName: 'file',
+        folder: 'assignx/avatars',
       );
 
       if (response == null || response is! Map<String, dynamic>) {
@@ -1146,6 +1154,13 @@ class ProfileNotifier extends Notifier<ProfileState> {
       }
 
       final avatarUrl = response['url'] as String? ?? response['avatarUrl'] as String?;
+
+      if (avatarUrl != null) {
+        // Save avatar URL to doer profile
+        await ApiClient.put('/doers/${state.profile!.id}', {
+          'avatarUrl': avatarUrl,
+        });
+      }
 
       // Update local state
       final updatedProfile = state.profile!.copyWith(avatarUrl: avatarUrl);
@@ -1183,7 +1198,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(profile: updatedProfile);
 
     try {
-      await ApiClient.put('/doers/me/availability', {
+      await ApiClient.put('/doers/${state.profile!.id}', {
         'isAvailable': isAvailable,
       });
     } catch (e) {
@@ -1216,7 +1231,11 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(notificationPreferences: preferences);
 
     try {
-      await ApiClient.put('/doers/me/preferences', preferences.toJson());
+      if (state.profile != null) {
+        await ApiClient.put('/doers/${state.profile!.id}', {
+          'notificationPreferences': preferences.toJson(),
+        });
+      }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ProfileNotifier.updateNotificationPreferences error: $e');

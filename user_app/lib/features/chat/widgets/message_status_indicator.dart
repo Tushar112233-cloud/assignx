@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -219,18 +217,15 @@ class _MessageStatusIndicatorState extends State<MessageStatusIndicator>
   }
 
   Widget _buildFullIndicator(_StatusIndicatorConfig config) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: config.backgroundColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: config.borderColor),
-          ),
-          child: Column(
+    // Lightweight alternative to BackdropFilter - simple container with border.
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: config.backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: config.borderColor),
+      ),
+      child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -316,8 +311,6 @@ class _MessageStatusIndicatorState extends State<MessageStatusIndicator>
               ],
             ],
           ),
-        ),
-      ),
     );
   }
 }
@@ -366,25 +359,23 @@ class PendingApprovalBanner extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.warning.withValues(alpha: 0.2),
-                AppColors.warning.withValues(alpha: 0.1),
-              ],
-            ),
-            border: Border(
-              bottom: BorderSide(
-                color: AppColors.warning.withValues(alpha: 0.3),
-              ),
-            ),
+    // Lightweight alternative to BackdropFilter.
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.warning.withValues(alpha: 0.2),
+            AppColors.warning.withValues(alpha: 0.1),
+          ],
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.warning.withValues(alpha: 0.3),
           ),
-          child: Row(
+        ),
+      ),
+      child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(6),
@@ -425,8 +416,6 @@ class PendingApprovalBanner extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

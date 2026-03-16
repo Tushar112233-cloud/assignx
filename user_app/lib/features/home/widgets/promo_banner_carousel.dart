@@ -8,6 +8,7 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/banner_model.dart';
 import '../../../providers/home_provider.dart';
 
@@ -135,11 +136,32 @@ class _BannerCard extends StatelessWidget {
             children: [
               // Background image
               Positioned.fill(
-                child: Image.network(
-                  _getImageUrl(),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
+                child: isValidImageUrl(_getImageUrl())
+                  ? Image.network(
+                      _getImageUrl(),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppColors.primary,
+                                AppColors.primary.withAlpha(200),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: AppColors.shimmerBase,
+                        );
+                      },
+                    )
+                  : Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -150,15 +172,7 @@ class _BannerCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                    );
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: AppColors.shimmerBase,
-                    );
-                  },
-                ),
+                    ),
               ),
 
               // Gradient overlay for text readability

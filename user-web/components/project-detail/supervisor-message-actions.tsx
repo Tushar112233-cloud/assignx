@@ -67,7 +67,7 @@ export function SupervisorMessageActions({
 
     try {
       await apiClient(`/api/chat/messages/${messageId}/approve`, {
-        method: "POST",
+        method: "PUT",
         body: JSON.stringify({ supervisorId }),
       })
 
@@ -91,7 +91,7 @@ export function SupervisorMessageActions({
 
     try {
       await apiClient(`/api/chat/messages/${messageId}/reject`, {
-        method: "POST",
+        method: "PUT",
         body: JSON.stringify({
           supervisorId,
           reason: rejectReason.trim(),
@@ -246,7 +246,7 @@ export function SupervisorMessageActionsCompact({
 
     try {
       await apiClient(`/api/chat/messages/${messageId}/approve`, {
-        method: "POST",
+        method: "PUT",
         body: JSON.stringify({ supervisorId }),
       })
 
@@ -265,7 +265,7 @@ export function SupervisorMessageActionsCompact({
 
     try {
       await apiClient(`/api/chat/messages/${messageId}/reject`, {
-        method: "POST",
+        method: "PUT",
         body: JSON.stringify({
           supervisorId,
           reason: rejectReason.trim(),

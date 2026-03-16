@@ -27,8 +27,6 @@
 /// - [AppColors.shimmerBase] and [AppColors.shimmerHighlight] for colors
 library;
 
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -196,29 +194,23 @@ class SkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: AppColors.surface.withAlpha(230),
-            borderRadius: BorderRadius.circular(borderRadius),
-            border: Border.all(
-              color: Colors.white.withAlpha(51),
-              width: 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(8),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.surface.withAlpha(230),
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: Colors.white.withAlpha(51),
+          width: 1.0,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
     )
         .animate(onPlay: (controller) => controller.repeat())
@@ -250,28 +242,24 @@ class SkeletonProjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(20.0),
-          decoration: BoxDecoration(
-            color: AppColors.surface.withAlpha(230),
-            borderRadius: BorderRadius.circular(borderRadius),
-            border: Border.all(
-              color: Colors.white.withAlpha(51),
-              width: 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(8),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withAlpha(230),
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: Colors.white.withAlpha(51),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          child: const Column(
+        ],
+      ),
+      child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Top row: avatar + title + badge
@@ -328,8 +316,6 @@ class SkeletonProjectCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
     )
         .animate(onPlay: (controller) => controller.repeat())
         .shimmer(
@@ -359,80 +345,74 @@ class SkeletonStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface.withAlpha(230),
-            borderRadius: BorderRadius.circular(borderRadius),
-            border: Border.all(
-              color: Colors.white.withAlpha(51),
-              width: 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(8),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Gradient accent strip (matches AppStatCard)
-              Container(
-                height: 4,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.shimmerBase,
-                      AppColors.shimmerBase.withAlpha(150),
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(borderRadius),
-                    topRight: Radius.circular(borderRadius),
-                  ),
-                ),
-              ),
-              // Card content
-              const Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Row(
-                  children: [
-                    // Icon circle placeholder
-                    SkeletonCircle(size: 40),
-                    SizedBox(width: AppSpacing.md),
-                    // Value and label lines
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SkeletonLoader(
-                            width: 60,
-                            height: 12,
-                            borderRadius: AppSpacing.radiusXs,
-                          ),
-                          SizedBox(height: AppSpacing.xs),
-                          SkeletonLoader(
-                            width: 80,
-                            height: 18,
-                            borderRadius: AppSpacing.radiusXs,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withAlpha(230),
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: Colors.white.withAlpha(51),
+          width: 1.0,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Gradient accent strip (matches AppStatCard)
+          Container(
+            height: 4,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.shimmerBase,
+                  AppColors.shimmerBase.withAlpha(150),
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(borderRadius),
+                topRight: Radius.circular(borderRadius),
+              ),
+            ),
+          ),
+          // Card content
+          const Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Row(
+              children: [
+                // Icon circle placeholder
+                SkeletonCircle(size: 40),
+                SizedBox(width: AppSpacing.md),
+                // Value and label lines
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SkeletonLoader(
+                        width: 60,
+                        height: 12,
+                        borderRadius: AppSpacing.radiusXs,
+                      ),
+                      SizedBox(height: AppSpacing.xs),
+                      SkeletonLoader(
+                        width: 80,
+                        height: 18,
+                        borderRadius: AppSpacing.radiusXs,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     )
         .animate(onPlay: (controller) => controller.repeat())

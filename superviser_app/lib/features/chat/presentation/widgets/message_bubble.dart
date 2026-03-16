@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
@@ -301,12 +302,18 @@ class _FileAttachment extends StatelessWidget {
         onTap: onTap,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            message.fileUrl!,
+          child: CachedNetworkImage(
+            imageUrl: message.fileUrl!,
             width: 200,
             height: 150,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
+            placeholder: (_, __) => Container(
+              width: 200,
+              height: 150,
+              color: Colors.grey.withValues(alpha: 0.1),
+              child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+            errorWidget: (_, __, ___) => Container(
               width: 200,
               height: 150,
               color: Colors.grey.withValues(alpha: 0.2),

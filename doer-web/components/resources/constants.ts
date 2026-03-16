@@ -1,10 +1,10 @@
 /**
- * Resources components shared constants and mock data
+ * Resources components shared constants
  * @module components/resources/constants
  */
 
 import { Globe, BookOpen, FileText, Newspaper } from 'lucide-react'
-import type { ReferenceStyleType, FormatTemplate, TemplateCategory } from '@/types/database'
+import type { ReferenceStyleType, TemplateCategory } from '@/types/database'
 
 /**
  * Reference style options for citation builder
@@ -32,116 +32,6 @@ export const sourceTypes = [
  * Source type values
  */
 export type SourceTypeValue = (typeof sourceTypes)[number]['value']
-
-/**
- * Mock templates for FormatTemplates demo
- */
-export const mockTemplates: FormatTemplate[] = [
-  {
-    id: '1',
-    name: 'Research Paper Template',
-    description: 'Standard academic research paper format with proper margins, headings, and citation placeholders.',
-    category: 'document',
-    file_url: '/templates/research-paper.docx',
-    preview_url: '/templates/previews/research-paper.png',
-    file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    file_size: 45678,
-    download_count: 1234,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Essay Template',
-    description: 'Simple essay template with introduction, body paragraphs, and conclusion structure.',
-    category: 'document',
-    file_url: '/templates/essay.docx',
-    preview_url: '/templates/previews/essay.png',
-    file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    file_size: 32456,
-    download_count: 2567,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    name: 'Business Report Template',
-    description: 'Professional business report format with executive summary, charts, and recommendations.',
-    category: 'document',
-    file_url: '/templates/business-report.docx',
-    preview_url: '/templates/previews/business-report.png',
-    file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    file_size: 67890,
-    download_count: 987,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    name: 'Academic Presentation',
-    description: 'Clean academic presentation template with slide layouts for research presentations.',
-    category: 'presentation',
-    file_url: '/templates/academic-ppt.pptx',
-    preview_url: '/templates/previews/academic-ppt.png',
-    file_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    file_size: 234567,
-    download_count: 567,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '5',
-    name: 'Business Pitch Deck',
-    description: 'Modern pitch deck template for business proposals and startup presentations.',
-    category: 'presentation',
-    file_url: '/templates/pitch-deck.pptx',
-    preview_url: '/templates/previews/pitch-deck.png',
-    file_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    file_size: 345678,
-    download_count: 432,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '6',
-    name: 'Data Analysis Template',
-    description: 'Excel template with pre-built formulas for common statistical analysis.',
-    category: 'spreadsheet',
-    file_url: '/templates/data-analysis.xlsx',
-    preview_url: '/templates/previews/data-analysis.png',
-    file_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    file_size: 123456,
-    download_count: 789,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '7',
-    name: 'Budget Tracker',
-    description: 'Financial tracking template with income, expenses, and visualization charts.',
-    category: 'spreadsheet',
-    file_url: '/templates/budget-tracker.xlsx',
-    preview_url: '/templates/previews/budget-tracker.png',
-    file_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    file_size: 98765,
-    download_count: 654,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '8',
-    name: 'Case Study Template',
-    description: 'Structured case study format with problem, analysis, and recommendations sections.',
-    category: 'document',
-    file_url: '/templates/case-study.docx',
-    preview_url: '/templates/previews/case-study.png',
-    file_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    file_size: 54321,
-    download_count: 876,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-]
 
 /**
  * Category color mapping for templates

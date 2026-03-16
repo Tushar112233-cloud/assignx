@@ -20,7 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { TicketReplyForm } from "./ticket-reply-form";
 import { TicketAssignDialog } from "./ticket-assign-dialog";
@@ -69,39 +69,31 @@ function getPriorityVariant(priority: string) {
   }
 }
 
-interface MessageSender {
-  full_name: string | null;
-  avatar_url: string | null;
-}
-
 interface TicketMessage {
-  id: string;
+  _id: string;
   message: string;
-  sender_type: string;
-  sender: MessageSender | null;
-  is_internal: boolean;
-  created_at: string;
+  senderRole: string;
+  senderName: string | null;
+  isInternal?: boolean;
+  createdAt: string;
 }
 
 function MessageBubble({ message }: { message: TicketMessage }) {
-  const sender = message.sender;
-  const isAdmin = message.sender_type === "admin";
-  const initials = sender?.full_name
-    ? sender.full_name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-    : "?";
+  const isAdmin = message.senderRole === "admin";
+  const senderName = message.senderName || "Unknown";
+  const initials = senderName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase();
 
   return (
     <div
       className={`flex gap-3 ${isAdmin ? "flex-row-reverse" : ""} ${
-        message.is_internal ? "opacity-70" : ""
+        message.isInternal ? "opacity-70" : ""
       }`}
     >
       <Avatar className="size-8 shrink-0">
-        <AvatarImage src={sender?.avatar_url ?? undefined} />
         <AvatarFallback className="text-xs">{initials}</AvatarFallback>
       </Avatar>
       <div
@@ -109,9 +101,9 @@ function MessageBubble({ message }: { message: TicketMessage }) {
       >
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">
-            {sender?.full_name || "Unknown"}
+            {senderName}
           </span>
-          {message.is_internal && (
+          {message.isInternal && (
             <Badge variant="outline" className="text-xs gap-1">
               <IconLock className="size-3" />
               Internal
@@ -123,12 +115,12 @@ function MessageBubble({ message }: { message: TicketMessage }) {
             isAdmin
               ? "bg-primary/10 border border-primary/20"
               : "bg-muted border"
-          } ${message.is_internal ? "border-dashed border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20" : ""}`}
+          } ${message.isInternal ? "border-dashed border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20" : ""}`}
         >
           <p className="whitespace-pre-wrap text-left">{message.message}</p>
         </div>
         <p className="text-xs text-muted-foreground">
-          {formatDistanceToNow(new Date(message.created_at), {
+          {formatDistanceToNow(new Date(message.createdAt), {
             addSuffix: true,
           })}
         </p>
@@ -137,34 +129,19 @@ function MessageBubble({ message }: { message: TicketMessage }) {
   );
 }
 
-interface TicketProfile {
-  full_name: string | null;
-  email: string | null;
-  avatar_url?: string | null;
-}
-
-interface TicketProject {
-  id: string;
-  title: string;
-  status: string | null;
-}
-
 interface TicketDetail {
-  id: string;
+  _id?: string;
+  id?: string;
   subject: string;
   description: string | null;
   status: string;
   priority: string;
-  ticket_number: string | null;
-  created_at: string;
-  first_response_at: string | null;
-  resolved_at: string | null;
-  satisfaction_rating: number | null;
-  resolution_notes: string | null;
-  assigned_to: string | null;
-  assigned_admin: TicketProfile | null;
-  requester: TicketProfile | null;
-  project: TicketProject | null;
+  createdAt: string;
+  resolvedAt?: string | null;
+  resolutionNotes?: string | null;
+  assignedTo: string | null;
+  raisedById?: string | null;
+  userName?: string | null;
 }
 
 interface AdminListItem {
@@ -185,18 +162,18 @@ export function TicketDetailView({
   admins: AdminListItem[];
 }) {
   const router = useRouter();
+  const ticketId = ticket._id || ticket.id || "";
   const [resolving, setResolving] = React.useState(false);
   const [resolutionNotes, setResolutionNotes] = React.useState("");
   const [showResolve, setShowResolve] = React.useState(false);
 
-  const assignedProfile = ticket.assigned_admin;
-  const requester = ticket.requester;
+  const requesterName = ticket.userName || "User";
   const isResolved = ticket.status === "resolved" || ticket.status === "closed";
 
   async function handleResolve() {
     setResolving(true);
     try {
-      await resolveTicket(ticket.id, resolutionNotes);
+      await resolveTicket(ticketId, resolutionNotes);
       toast.success("Ticket resolved");
       setShowResolve(false);
       router.refresh();
@@ -225,7 +202,7 @@ export function TicketDetailView({
           </div>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-sm text-muted-foreground font-mono">
-              {ticket.ticket_number || ticket.id.slice(0, 8)}
+              {ticketId.slice(0, 8)}
             </span>
             <Badge
               variant={getStatusVariant(ticket.status)}
@@ -240,13 +217,13 @@ export function TicketDetailView({
         </div>
         <div className="flex items-center gap-2">
           <TicketAssignDialog
-            ticketId={ticket.id}
+            ticketId={ticketId}
             admins={admins}
-            currentAssignee={ticket.assigned_to ?? undefined}
+            currentAssignee={ticket.assignedTo ?? undefined}
           >
             <Button variant="outline" size="sm">
               <IconUserPlus className="size-4 mr-1" />
-              {assignedProfile ? "Reassign" : "Assign"}
+              {ticket.assignedTo ? "Reassign" : "Assign"}
             </Button>
           </TicketAssignDialog>
           {!isResolved && (
@@ -306,18 +283,17 @@ export function TicketDetailView({
                 <>
                   <div className="flex gap-3">
                     <Avatar className="size-8 shrink-0">
-                      <AvatarImage src={requester?.avatar_url ?? undefined} />
                       <AvatarFallback className="text-xs">
-                        {requester?.full_name
-                          ?.split(" ")
+                        {requesterName
+                          .split(" ")
                           .map((n: string) => n[0])
                           .join("")
-                          .toUpperCase() || "?"}
+                          .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="space-y-1">
                       <span className="text-sm font-medium">
-                        {requester?.full_name || "User"}
+                        {requesterName}
                       </span>
                       <div className="rounded-lg bg-muted border p-3 text-sm">
                         <p className="whitespace-pre-wrap">
@@ -325,7 +301,7 @@ export function TicketDetailView({
                         </p>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(ticket.created_at), {
+                        {formatDistanceToNow(new Date(ticket.createdAt), {
                           addSuffix: true,
                         })}
                       </p>
@@ -336,13 +312,13 @@ export function TicketDetailView({
               )}
 
               {messages.map((msg) => (
-                <MessageBubble key={msg.id} message={msg} />
+                <MessageBubble key={msg._id} message={msg} />
               ))}
 
               {!isResolved && (
                 <>
                   <Separator />
-                  <TicketReplyForm ticketId={ticket.id} />
+                  <TicketReplyForm ticketId={ticketId} />
                 </>
               )}
             </CardContent>
@@ -375,90 +351,51 @@ export function TicketDetailView({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Requester</span>
                 <span className="font-medium">
-                  {requester?.full_name || "-"}
+                  {requesterName}
                 </span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Assigned To</span>
                 <span className="font-medium">
-                  {assignedProfile?.full_name || "Unassigned"}
+                  {ticket.assignedTo
+                    ? admins.find((a) => a.id === ticket.assignedTo)?.full_name ||
+                      ticket.assignedTo.slice(0, 8) + "..."
+                    : "Unassigned"}
                 </span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Created</span>
                 <span>
-                  {format(new Date(ticket.created_at), "dd MMM yyyy, HH:mm")}
+                  {format(new Date(ticket.createdAt), "dd MMM yyyy, HH:mm")}
                 </span>
               </div>
-              {ticket.first_response_at && (
-                <>
-                  <Separator />
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">First Response</span>
-                    <span>
-                      {format(
-                        new Date(ticket.first_response_at),
-                        "dd MMM yyyy, HH:mm"
-                      )}
-                    </span>
-                  </div>
-                </>
-              )}
-              {ticket.resolved_at && (
+              {ticket.resolvedAt && (
                 <>
                   <Separator />
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Resolved</span>
                     <span>
                       {format(
-                        new Date(ticket.resolved_at),
+                        new Date(ticket.resolvedAt),
                         "dd MMM yyyy, HH:mm"
                       )}
                     </span>
                   </div>
                 </>
               )}
-              {ticket.satisfaction_rating && (
-                <>
-                  <Separator />
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Satisfaction</span>
-                    <span>{ticket.satisfaction_rating}/5</span>
-                  </div>
-                </>
-              )}
             </CardContent>
           </Card>
 
-          {ticket.project && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Related Project</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm">
-                <Link
-                  href={`/projects/${ticket.project.id}`}
-                  className="font-medium hover:underline"
-                >
-                  {ticket.project.title}
-                </Link>
-                <p className="text-muted-foreground mt-1">
-                  Status: {ticket.project.status?.replace(/_/g, " ")}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {ticket.resolution_notes && (
+          {ticket.resolutionNotes && (
             <Card>
               <CardHeader>
                 <CardTitle>Resolution Notes</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm whitespace-pre-wrap">
-                  {ticket.resolution_notes}
+                  {ticket.resolutionNotes}
                 </p>
               </CardContent>
             </Card>

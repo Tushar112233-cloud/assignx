@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/question_model.dart';
 
 /// Card for displaying a question in the Q&A section.
@@ -308,7 +309,7 @@ class QuestionCard extends StatelessWidget {
       );
     }
 
-    if (question.author.avatarUrl != null) {
+    if (isValidImageUrl(question.author.avatarUrl)) {
       return ClipOval(
         child: CachedNetworkImage(
           imageUrl: question.author.avatarUrl!,

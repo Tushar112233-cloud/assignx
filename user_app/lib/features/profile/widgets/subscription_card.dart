@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../providers/profile_provider.dart';
@@ -41,53 +42,71 @@ final userRolesProvider =
 class UserRolesNotifier extends StateNotifier<Set<PortalRole>> {
   final Ref ref;
 
-  UserRolesNotifier(this.ref) : super({PortalRole.student}) {
+  UserRolesNotifier(this.ref) : super({}) {
     _loadRoles();
   }
 
   Future<void> _loadRoles() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getStringList('user_roles');
-    if (saved != null && saved.isNotEmpty) {
-      state = saved
-          .map((r) => PortalRole.values.where((e) => e.name == r).firstOrNull)
-          .whereType<PortalRole>()
-          .toSet();
-    } else {
-      // Default: derive from profile user_type
-      final profile = ref.read(userProfileProvider).valueOrNull;
+    // 1. Get the primary role from DB profile (source of truth)
+    PortalRole primary = PortalRole.student;
+    try {
+      final profile = await ref.read(userProfileProvider.future);
       final userType = profile?.userType?.toDbString();
-      if (userType == 'professional') {
-        state = {PortalRole.professional};
-      } else {
-        state = {PortalRole.student};
+      if (userType == 'business') primary = PortalRole.business;
+      else if (userType == 'professional') primary = PortalRole.professional;
+    } catch (_) {}
+
+    // 2. Try to fetch saved roles from API (MongoDB)
+    try {
+      final response = await ApiClient.get('/users/me/preferences');
+      final data = response as Map<String, dynamic>? ?? {};
+      final rolesMap = data['roles'] as Map<String, dynamic>?;
+      if (rolesMap != null) {
+        final roles = <PortalRole>{primary}; // always include primary
+        if (rolesMap['student'] == true) roles.add(PortalRole.student);
+        if (rolesMap['professional'] == true) roles.add(PortalRole.professional);
+        if (rolesMap['business'] == true) roles.add(PortalRole.business);
+        state = roles;
+        return;
       }
-    }
+    } catch (_) {}
+
+    // 3. Fallback: just the primary role
+    state = {primary};
   }
 
   PortalRole get primaryRole {
     final profile = ref.read(userProfileProvider).valueOrNull;
     final userType = profile?.userType?.toDbString();
-    return userType == 'professional'
-        ? PortalRole.professional
-        : PortalRole.student;
+    if (userType == 'business') return PortalRole.business;
+    if (userType == 'professional') return PortalRole.professional;
+    return PortalRole.student;
   }
 
   Future<void> toggleRole(PortalRole role, bool enabled) async {
-    if (role == primaryRole && !enabled) return; // can't remove primary
+    if (role == primaryRole && !enabled) return;
 
     final newRoles = Set<PortalRole>.from(state);
     if (enabled) {
       newRoles.add(role);
     } else {
-      if (newRoles.length <= 1) return; // keep at least one
+      if (newRoles.length <= 1) return;
       newRoles.remove(role);
     }
     state = newRoles;
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-        'user_roles', newRoles.map((r) => r.name).toList());
+    // Save to MongoDB via API
+    try {
+      await ApiClient.put('/users/me/preferences', {
+        'roles': {
+          'student': newRoles.contains(PortalRole.student),
+          'professional': newRoles.contains(PortalRole.professional),
+          'business': newRoles.contains(PortalRole.business),
+        },
+      });
+    } catch (e) {
+      debugPrint('Failed to save roles: $e');
+    }
   }
 }
 

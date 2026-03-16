@@ -1,7 +1,8 @@
 /// Main dashboard screen for the supervisor app.
 ///
 /// This file contains:
-/// - [DashboardScreen]: The main dashboard widget
+/// - [DashboardScreen]: The main dashboard widget (layout-only)
+/// - Focused ConsumerWidget children that each watch a single provider
 /// - Supporting private widgets for sections, errors, and quick actions
 ///
 /// The dashboard displays new requests awaiting quotes and paid requests
@@ -26,15 +27,13 @@ import '../../../notifications/presentation/providers/notifications_provider.dar
 
 /// The main dashboard screen for supervisors.
 ///
-/// Displays two main sections:
-/// 1. **New Requests**: Projects with "submitted" status awaiting quotes
-/// 2. **Ready to Assign**: Paid projects ready for doer assignment
+/// This is a layout-only widget that composes focused ConsumerWidget children.
+/// Each child watches only the provider it needs, minimizing unnecessary rebuilds.
 ///
-/// Features include:
-/// - Pull-to-refresh for reloading data
-/// - Subject/field filtering via horizontal chips
-/// - Quick actions FAB for common tasks
-/// - Navigation to notifications
+/// Children:
+/// - [_UserGreetingSection]: watches [authProvider]
+/// - [_NotificationButton]: watches [unreadNotificationCountProvider]
+/// - [_DashboardContentSection]: watches [dashboardProvider]
 ///
 /// ## Usage
 ///
@@ -45,17 +44,6 @@ import '../../../notifications/presentation/providers/notifications_provider.dar
 ///   builder: (context, state) => const DashboardScreen(),
 /// )
 /// ```
-///
-/// ## State Management
-///
-/// Uses [dashboardProvider] for state management. The provider
-/// automatically loads data on initialization.
-///
-/// See also:
-/// - [DashboardState] for the state structure
-/// - [RequestCard] for request display
-/// - [QuoteFormSheet] for creating quotes
-/// - [DoerSelectionSheet] for assigning doers
 class DashboardScreen extends ConsumerStatefulWidget {
   /// Creates a new [DashboardScreen] instance.
   const DashboardScreen({super.key});
@@ -66,16 +54,11 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 /// State class for [DashboardScreen].
 ///
-/// Manages navigation and action sheet display.
+/// Manages navigation and action sheet display. The build method is
+/// layout-only -- provider watches are delegated to child ConsumerWidgets.
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
-    final dashboardState = ref.watch(dashboardProvider);
-    final unreadNotifs = ref.watch(unreadNotificationCountProvider);
-    final authState = ref.watch(authProvider);
-    final userName = authState.user?.fullName ?? 'Supervisor'.tr(context);
-    final firstName = userName.split(' ').first;
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: RefreshIndicator(
@@ -86,175 +69,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             SliverToBoxAdapter(
               child: SizedBox(height: MediaQuery.of(context).padding.top + 8),
             ),
-            // Top bar: notification button
+            // Top bar: notification button (watches unreadNotificationCountProvider)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
                     const Spacer(),
-                    _GlassNotificationButton(
-                      count: unreadNotifs,
-                      onTap: _openNotifications,
-                    ),
+                    _NotificationButton(onTap: _openNotifications),
                   ],
                 ),
               ),
             ),
-            // Greeting
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _getGreeting(context),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppColors.textSecondaryLight,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      firstName,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimaryLight,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
+            // Greeting (watches authProvider)
+            const SliverToBoxAdapter(
+              child: _UserGreetingSection(),
             ),
-            // Status pills row
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                child: Row(
-                  children: [
-                    _GlassStatusPill(
-                      label: 'Active'.tr(context),
-                      count: dashboardState.filteredNewRequests.length +
-                          dashboardState.filteredPaidRequests.length,
-                      color: AppColors.statusInProgress,
-                    ),
-                    const SizedBox(width: 10),
-                    _GlassStatusPill(
-                      label: 'Pending'.tr(context),
-                      count: dashboardState.filteredNewRequests.length,
-                      color: AppColors.statusPending,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Quick action CTA card
-            SliverToBoxAdapter(
-              child: _QuickActionCta(
-                onTap: _showQuickActions,
-              ),
-            ),
-            // KPI stat cards
-            SliverToBoxAdapter(
-              child: _GlassKpiCardsRow(
-                newRequestsCount: dashboardState.filteredNewRequests.length,
-                paidRequestsCount: dashboardState.filteredPaidRequests.length,
-              ),
-            ),
-            // Field filter
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: FieldFilter(
-                  selectedField: dashboardState.selectedSubject,
-                  onFieldSelected: (field) {
-                    ref.read(dashboardProvider.notifier).filterBySubject(field);
-                  },
-                ),
-              ),
-            ),
-            // Error message
-            if (dashboardState.error != null)
-              SliverToBoxAdapter(
-                child: _ErrorBanner(
-                  message: dashboardState.error!,
-                  onDismiss: () {
-                    ref.read(dashboardProvider.notifier).clearError();
-                  },
-                ),
-              ),
-            // Loading indicator
-            if (dashboardState.isLoading)
-              const SliverToBoxAdapter(
-                child: LinearProgressIndicator(),
-              ),
-            // New Requests section
-            SliverToBoxAdapter(
-              child: _SectionHeader(
-                title: 'New Requests'.tr(context),
-                subtitle: 'Awaiting your quote'.tr(context),
-                count: dashboardState.filteredNewRequests.length,
-                icon: Icons.fiber_new,
-                iconColor: Colors.blue,
-              ),
-            ),
-            if (dashboardState.filteredNewRequests.isEmpty)
-              SliverToBoxAdapter(
-                child: _EmptySection(
-                  message: 'No new requests'.tr(context),
-                  icon: Icons.inbox_outlined,
-                ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final request = dashboardState.filteredNewRequests[index];
-                    return RequestCard(
-                      request: request,
-                      onTap: () => _viewRequestDetails(request),
-                      actionLabel: 'Analyze & Quote'.tr(context),
-                      onAction: () => _showQuoteForm(request),
-                    );
-                  },
-                  childCount: dashboardState.filteredNewRequests.length,
-                ),
-              ),
-            // Paid Requests section
-            SliverToBoxAdapter(
-              child: _SectionHeader(
-                title: 'Ready to Assign'.tr(context),
-                subtitle: 'Paid and awaiting doer'.tr(context),
-                count: dashboardState.filteredPaidRequests.length,
-                icon: Icons.assignment_ind,
-                iconColor: AppColors.success,
-              ),
-            ),
-            if (dashboardState.filteredPaidRequests.isEmpty)
-              SliverToBoxAdapter(
-                child: _EmptySection(
-                  message: 'No requests ready for assignment'.tr(context),
-                  icon: Icons.check_circle_outline,
-                ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final request = dashboardState.filteredPaidRequests[index];
-                    return RequestCard(
-                      request: request,
-                      onTap: () => _viewRequestDetails(request),
-                      actionLabel: 'Assign Doer'.tr(context),
-                      onAction: () => _showDoerSelection(request),
-                    );
-                  },
-                  childCount: dashboardState.filteredPaidRequests.length,
-                ),
-              ),
-            // Recent Activity Feed
-            SliverToBoxAdapter(
-              child: _RecentActivitySection(),
+            // All dashboard-data-dependent content (watches dashboardProvider)
+            _DashboardContentSection(
+              onViewRequestDetails: _viewRequestDetails,
+              onShowQuoteForm: _showQuoteForm,
+              onShowDoerSelection: _showDoerSelection,
+              onShowQuickActions: _showQuickActions,
             ),
             // Bottom padding for floating nav bar clearance
             const SliverToBoxAdapter(
@@ -273,30 +109,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  /// Returns greeting based on time of day.
-  String _getGreeting(BuildContext context) {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good Morning,'.tr(context);
-    } else if (hour < 17) {
-      return 'Good Afternoon,'.tr(context);
-    } else {
-      return 'Good Evening,'.tr(context);
-    }
-  }
-
   /// Opens the notifications screen.
   void _openNotifications() {
     context.pushNamed(RouteNames.notifications);
   }
 
   /// Shows request details in a dialog.
-  ///
-  /// Displays basic information about the request including subject,
-  /// budget, deadline, and status.
-  ///
-  /// Parameters:
-  /// - [request]: The request to display details for
   void _viewRequestDetails(RequestModel request) {
     showDialog(
       context: context,
@@ -358,6 +176,236 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     showModalBottomSheet(
       context: context,
       builder: (context) => _QuickActionsSheet(),
+    );
+  }
+}
+
+/// Notification button that watches only [unreadNotificationCountProvider].
+///
+/// Isolates notification badge rebuilds from the rest of the dashboard.
+class _NotificationButton extends ConsumerWidget {
+  const _NotificationButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(unreadNotificationCountProvider);
+
+    return _GlassNotificationButton(
+      count: count,
+      onTap: onTap,
+    );
+  }
+}
+
+/// User greeting section that watches only [authProvider].
+///
+/// Isolates auth state rebuilds from dashboard data changes.
+class _UserGreetingSection extends ConsumerWidget {
+  const _UserGreetingSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final userName = authState.user?.fullName ?? 'Supervisor'.tr(context);
+    final firstName = userName.split(' ').first;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _getGreeting(context),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            firstName,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimaryLight,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Returns greeting based on time of day.
+  String _getGreeting(BuildContext context) {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good Morning,'.tr(context);
+    } else if (hour < 17) {
+      return 'Good Afternoon,'.tr(context);
+    } else {
+      return 'Good Evening,'.tr(context);
+    }
+  }
+}
+
+/// Dashboard content section that watches only [dashboardProvider].
+///
+/// Contains status pills, KPI cards, field filter, request lists, and
+/// recent activity. All of these depend on the dashboard state.
+class _DashboardContentSection extends ConsumerWidget {
+  const _DashboardContentSection({
+    required this.onViewRequestDetails,
+    required this.onShowQuoteForm,
+    required this.onShowDoerSelection,
+    required this.onShowQuickActions,
+  });
+
+  final void Function(RequestModel) onViewRequestDetails;
+  final void Function(RequestModel) onShowQuoteForm;
+  final void Function(RequestModel) onShowDoerSelection;
+  final VoidCallback onShowQuickActions;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dashboardState = ref.watch(dashboardProvider);
+
+    return SliverMainAxisGroup(
+      slivers: [
+        // Status pills row
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Row(
+              children: [
+                _GlassStatusPill(
+                  label: 'Active'.tr(context),
+                  count: dashboardState.filteredNewRequests.length +
+                      dashboardState.filteredPaidRequests.length,
+                  color: AppColors.statusInProgress,
+                ),
+                const SizedBox(width: 10),
+                _GlassStatusPill(
+                  label: 'Pending'.tr(context),
+                  count: dashboardState.filteredNewRequests.length,
+                  color: AppColors.statusPending,
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Quick action CTA card
+        SliverToBoxAdapter(
+          child: _QuickActionCta(
+            onTap: onShowQuickActions,
+          ),
+        ),
+        // KPI stat cards
+        SliverToBoxAdapter(
+          child: _GlassKpiCardsRow(
+            newRequestsCount: dashboardState.filteredNewRequests.length,
+            paidRequestsCount: dashboardState.filteredPaidRequests.length,
+          ),
+        ),
+        // Field filter
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: FieldFilter(
+              selectedField: dashboardState.selectedSubject,
+              onFieldSelected: (field) {
+                ref.read(dashboardProvider.notifier).filterBySubject(field);
+              },
+            ),
+          ),
+        ),
+        // Error message
+        if (dashboardState.error != null)
+          SliverToBoxAdapter(
+            child: _ErrorBanner(
+              message: dashboardState.error!,
+              onDismiss: () {
+                ref.read(dashboardProvider.notifier).clearError();
+              },
+            ),
+          ),
+        // Loading indicator
+        if (dashboardState.isLoading)
+          const SliverToBoxAdapter(
+            child: LinearProgressIndicator(),
+          ),
+        // New Requests section
+        SliverToBoxAdapter(
+          child: _SectionHeader(
+            title: 'New Requests'.tr(context),
+            subtitle: 'Awaiting your quote'.tr(context),
+            count: dashboardState.filteredNewRequests.length,
+            icon: Icons.fiber_new,
+            iconColor: Colors.blue,
+          ),
+        ),
+        if (dashboardState.filteredNewRequests.isEmpty)
+          SliverToBoxAdapter(
+            child: _EmptySection(
+              message: 'No new requests'.tr(context),
+              icon: Icons.inbox_outlined,
+            ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final request = dashboardState.filteredNewRequests[index];
+                return RepaintBoundary(
+                  child: RequestCard(
+                    request: request,
+                    onTap: () => onViewRequestDetails(request),
+                    actionLabel: 'Analyze & Quote'.tr(context),
+                    onAction: () => onShowQuoteForm(request),
+                  ),
+                );
+              },
+              childCount: dashboardState.filteredNewRequests.length,
+            ),
+          ),
+        // Paid Requests section
+        SliverToBoxAdapter(
+          child: _SectionHeader(
+            title: 'Ready to Assign'.tr(context),
+            subtitle: 'Paid and awaiting doer'.tr(context),
+            count: dashboardState.filteredPaidRequests.length,
+            icon: Icons.assignment_ind,
+            iconColor: AppColors.success,
+          ),
+        ),
+        if (dashboardState.filteredPaidRequests.isEmpty)
+          SliverToBoxAdapter(
+            child: _EmptySection(
+              message: 'No requests ready for assignment'.tr(context),
+              icon: Icons.check_circle_outline,
+            ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final request = dashboardState.filteredPaidRequests[index];
+                return RepaintBoundary(
+                  child: RequestCard(
+                    request: request,
+                    onTap: () => onViewRequestDetails(request),
+                    actionLabel: 'Assign Doer'.tr(context),
+                    onAction: () => onShowDoerSelection(request),
+                  ),
+                );
+              },
+              childCount: dashboardState.filteredPaidRequests.length,
+            ),
+          ),
+        // Recent Activity Feed
+        SliverToBoxAdapter(
+          child: _RecentActivitySection(),
+        ),
+      ],
     );
   }
 }

@@ -33,7 +33,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { mockSkills, proficiencyConfig } from './constants'
+import { proficiencyConfig } from './constants'
 import type { SkillWithVerification } from '@/types/database'
 
 /**
@@ -65,7 +65,7 @@ const itemVariants = {
  * Displays skills with verification status
  */
 export function SkillVerification({
-  skills = mockSkills,
+  skills = [],
   onRequestVerification,
   isLoading,
   className,
@@ -80,7 +80,7 @@ export function SkillVerification({
     verified: skills.filter((s) => s.is_verified).length,
     pending: skills.filter((s) => !s.is_verified).length,
   }
-  const verificationPercentage = (stats.verified / stats.total) * 100
+  const verificationPercentage = stats.total > 0 ? (stats.verified / stats.total) * 100 : 0
 
   /** Handle verification request */
   const handleRequestVerification = async () => {
@@ -195,6 +195,15 @@ export function SkillVerification({
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
+          {skills.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
+                <Sparkles className="h-8 w-8 text-blue-300" />
+              </div>
+              <p className="text-muted-foreground font-medium">No skills added yet</p>
+              <p className="text-sm text-muted-foreground/70 mt-1">Add skills to your profile to get matched with projects</p>
+            </div>
+          ) : (
           <div className="w-full space-y-2.5">
             <AnimatePresence>
               {skills.map((skill, index) => {
@@ -252,6 +261,7 @@ export function SkillVerification({
               })}
             </AnimatePresence>
           </div>
+          )}
         </CardContent>
       </Card>
 

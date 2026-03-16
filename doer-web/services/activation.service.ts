@@ -11,7 +11,8 @@ import type {
 export const activationService = {
   async getActivationStatus(doerId: string): Promise<DoerActivation | null> {
     try {
-      return await apiClient<DoerActivation>(`/api/doers/${doerId}/activation`)
+      const data = await apiClient<{ activation: DoerActivation | null }>(`/api/doers/${doerId}/activation`)
+      return data.activation || null
     } catch (err) {
       logger.error('Activation', 'Error fetching activation status:', err)
       return null
@@ -19,12 +20,13 @@ export const activationService = {
   },
 
   async createActivation(doerId: string): Promise<DoerActivation | null> {
+    // The activation record is created server-side during doer signup.
+    // Just fetch the existing one (or return null if not yet created).
     try {
-      return await apiClient<DoerActivation>(`/api/doers/${doerId}/activation`, {
-        method: 'POST',
-      })
+      const data = await apiClient<{ activation: DoerActivation | null }>(`/api/doers/${doerId}/activation`)
+      return data.activation || null
     } catch (err) {
-      logger.error('Activation', 'Error creating activation:', err)
+      logger.error('Activation', 'Error fetching activation:', err)
       return null
     }
   },
@@ -39,10 +41,10 @@ export const activationService = {
     }
   },
 
-  async getTrainingProgress(doerId: string): Promise<TrainingProgress[]> {
+  async getTrainingProgress(_doerId: string): Promise<TrainingProgress[]> {
     try {
       const data = await apiClient<{ progress: TrainingProgress[] }>(
-        `/api/training/progress?doer_id=${doerId}`
+        `/api/training/progress`
       )
       return data.progress || []
     } catch (err) {
@@ -52,27 +54,29 @@ export const activationService = {
   },
 
   async updateTrainingProgress(
-    doerId: string,
+    _doerId: string,
     moduleId: string,
     progress: Partial<TrainingProgress>
   ): Promise<TrainingProgress | null> {
     try {
-      return await apiClient<TrainingProgress>(`/api/training/progress/${moduleId}`, {
+      // API expects { progress: <number> } where progress >= 100 triggers completion
+      const progressValue = progress.progress_percentage || 0
+      const data = await apiClient<{ progress: TrainingProgress }>(`/api/training/progress/${moduleId}`, {
         method: 'PUT',
         body: JSON.stringify({
-          doer_id: doerId,
-          ...progress,
+          progress: progressValue,
         }),
       })
+      return data.progress || null
     } catch (err) {
       logger.error('Activation', 'Error updating training progress:', err)
       return null
     }
   },
 
-  async completeTraining(doerId: string): Promise<boolean> {
+  async completeTraining(_doerId: string): Promise<boolean> {
     try {
-      await apiClient(`/api/doers/${doerId}/activation/complete-training`, {
+      await apiClient(`/api/training/complete`, {
         method: 'POST',
       })
       return true
@@ -95,26 +99,38 @@ export const activationService = {
   },
 
   async validateQuizAnswers(
-    answers: Record<string, number>
+    answers: Record<string, number>,
+    moduleId?: string
   ): Promise<{ correctCount: number; totalQuestions: number }> {
+    // Validation is done server-side during quiz attempt submission.
+    // Submit the attempt and extract the score from the response.
     try {
-      return await apiClient<{ correctCount: number; totalQuestions: number }>(
-        '/api/training/quiz/validate',
+      // Transform Record<questionId, selectedAnswer> to array format expected by API
+      const answersArray = Object.entries(answers).map(([questionId, selectedAnswer]) => ({
+        questionId,
+        selectedAnswer,
+      }))
+
+      const result = await apiClient<{ attempt: { score: number; totalQuestions: number; passed: boolean } }>(
+        '/api/training/quiz/attempt',
         {
           method: 'POST',
-          body: JSON.stringify({ answers, role: 'doer' }),
+          body: JSON.stringify({ answers: answersArray, moduleId }),
         }
       )
+      const attempt = result.attempt
+      const correctCount = Math.round((attempt.score / 100) * attempt.totalQuestions)
+      return { correctCount, totalQuestions: attempt.totalQuestions }
     } catch (err) {
       logger.error('Activation', 'Error validating quiz answers:', err)
       return { correctCount: 0, totalQuestions: 0 }
     }
   },
 
-  async getQuizAttempts(doerId: string): Promise<QuizAttempt[]> {
+  async getQuizAttempts(_doerId: string): Promise<QuizAttempt[]> {
     try {
       const data = await apiClient<{ attempts: QuizAttempt[] }>(
-        `/api/training/quiz/attempts?doer_id=${doerId}`
+        `/api/training/quiz/attempts`
       )
       return data.attempts || []
     } catch (err) {
@@ -124,25 +140,33 @@ export const activationService = {
   },
 
   async submitQuizAttempt(
-    doerId: string,
+    _doerId: string,
     _score: number,
     _totalQuestions: number,
-    answers: Record<string, number>
+    answers: Record<string, number>,
+    moduleId?: string
   ): Promise<{ attempt: QuizAttempt | null; passed: boolean; rateLimited?: boolean; retryAfterMinutes?: number }> {
     try {
-      return await apiClient<{
-        attempt: QuizAttempt | null
-        passed: boolean
-        rateLimited?: boolean
-        retryAfterMinutes?: number
+      // Transform Record<questionId, selectedAnswer> to array format expected by API
+      const answersArray = Object.entries(answers).map(([questionId, selectedAnswer]) => ({
+        questionId,
+        selectedAnswer,
+      }))
+
+      const data = await apiClient<{
+        attempt: QuizAttempt & { passed: boolean }
       }>('/api/training/quiz/attempt', {
         method: 'POST',
         body: JSON.stringify({
-          doer_id: doerId,
-          answers,
-          role: 'doer',
+          moduleId,
+          answers: answersArray,
         }),
       })
+
+      return {
+        attempt: data.attempt || null,
+        passed: data.attempt?.passed ?? false,
+      }
     } catch (err) {
       logger.error('Activation', 'Error submitting quiz attempt:', err)
       return { attempt: null, passed: false }
@@ -163,11 +187,11 @@ export const activationService = {
       await apiClient(`/api/doers/${doerId}/bank-details`, {
         method: 'PUT',
         body: JSON.stringify({
-          bank_account_name: bankDetails.accountHolderName,
-          bank_account_number: bankDetails.accountNumber,
-          bank_ifsc_code: bankDetails.ifscCode,
-          bank_name: bankDetails.bankName,
-          upi_id: bankDetails.upiId,
+          accountName: bankDetails.accountHolderName,
+          accountNumber: bankDetails.accountNumber,
+          ifscCode: bankDetails.ifscCode,
+          bankName: bankDetails.bankName,
+          upiId: bankDetails.upiId,
         }),
       })
       return true
@@ -179,8 +203,8 @@ export const activationService = {
 
   async isFullyActivated(doerId: string): Promise<boolean> {
     try {
-      const data = await apiClient<DoerActivation>(`/api/doers/${doerId}/activation`)
-      return data?.is_fully_activated ?? false
+      const data = await apiClient<{ activation: DoerActivation | null }>(`/api/doers/${doerId}/activation`)
+      return data?.activation?.is_fully_activated ?? false
     } catch {
       return false
     }

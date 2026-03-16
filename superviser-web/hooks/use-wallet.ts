@@ -41,7 +41,10 @@ export function useWallet(): UseWalletReturn {
         return
       }
 
-      const data = await apiFetch<WalletWithTransactions>("/api/wallets/me?type=supervisor")
+      const response = await apiFetch<{ wallet: WalletWithTransactions } | WalletWithTransactions>("/api/wallets/me")
+
+      // API wraps response in { wallet: ... }
+      const data = (response as { wallet: WalletWithTransactions }).wallet || response as WalletWithTransactions
 
       if (data) {
         // Sort transactions by date
@@ -140,11 +143,11 @@ export function useTransactions(options: UseTransactionsOptions = {}): UseTransa
       const params = new URLSearchParams()
       params.set("type", "supervisor")
       params.set("limit", String(limit))
-      params.set("offset", String(offset))
+      params.set("page", String(Math.floor(offset / limit) + 1))
 
       if (type) {
         const types = Array.isArray(type) ? type.join(",") : type
-        params.set("transactionType", types)
+        params.set("type", types)
       }
       if (startDate) params.set("startDate", startDate.toISOString())
       if (endDate) params.set("endDate", endDate.toISOString())
@@ -217,11 +220,27 @@ export function useEarningsStats(): UseEarningsStatsReturn {
         return
       }
 
-      const data = await apiFetch<UseEarningsStatsReturn["stats"]>(
-        "/api/wallets/earnings/summary?type=supervisor"
-      )
+      const data = await apiFetch<{
+        summary: {
+          balance: number
+          totalCredited: number
+          totalDebited: number
+          totalWithdrawn: number
+          lockedAmount: number
+          thisMonthEarnings: number
+        }
+      }>("/api/wallets/earnings/summary?type=supervisor")
 
-      setStats(data)
+      const s = data.summary
+      setStats(s ? {
+        thisMonth: s.thisMonthEarnings || 0,
+        lastMonth: 0,
+        thisYear: s.totalCredited || 0,
+        allTime: s.totalCredited || 0,
+        pendingPayouts: s.lockedAmount || 0,
+        averagePerProject: 0,
+        monthlyGrowth: 0,
+      } : null)
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch earnings stats"))
     } finally {
@@ -266,11 +285,13 @@ export function usePayoutRequests() {
         return
       }
 
-      const data = await apiFetch<{ requests: PayoutRequest[] }>(
-        "/api/wallets/me/payouts"
+      // No dedicated payout-requests listing endpoint exists.
+      // Fetch withdrawal transactions as a proxy for payout history.
+      const data = await apiFetch<{ transactions: PayoutRequest[]; requests?: PayoutRequest[] }>(
+        "/api/wallets/me/transactions?type=withdrawal"
       )
 
-      setRequests(data.requests || [])
+      setRequests(data.requests || data.transactions || [])
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch payout requests"))
     } finally {

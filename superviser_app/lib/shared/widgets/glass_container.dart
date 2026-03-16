@@ -1,7 +1,5 @@
 library;
 
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -105,31 +103,29 @@ class _GlassContainerState extends State<GlassContainer>
     final radius = widget.borderRadius ?? BorderRadius.circular(AppSpacing.radiusLg);
     final isInteractive = widget.onTap != null || widget.onLongPress != null;
 
-    Widget glassWidget = ClipRRect(
-      borderRadius: radius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: widget.blur, sigmaY: widget.blur),
-        child: AnimatedContainer(
-          duration: widget.animationDuration,
-          curve: Curves.easeOutCubic,
-          padding: widget.padding,
-          decoration: BoxDecoration(
-            color: bgColor.withAlpha((widget.opacity * 255).round()),
-            borderRadius: radius,
-            border: Border.all(
-              color: bdrColor,
-              width: widget.borderWidth,
-            ),
-            boxShadow: widget.shadows ?? _defaultShadows,
-            gradient: widget.gradient,
-          ),
-          transform: _isPressed && widget.enableHoverEffect
-              ? _createPressTransform()
-              : Matrix4.identity(),
-          transformAlignment: Alignment.center,
-          child: widget.child,
+    // More opaque background + subtle border replaces expensive BackdropFilter blur
+    final effectiveOpacity = (widget.opacity * 255).round().clamp(0, 255);
+    final boostedOpacity = (effectiveOpacity + 25).clamp(0, 255);
+
+    Widget glassWidget = AnimatedContainer(
+      duration: widget.animationDuration,
+      curve: Curves.easeOutCubic,
+      padding: widget.padding,
+      decoration: BoxDecoration(
+        color: bgColor.withAlpha(boostedOpacity),
+        borderRadius: radius,
+        border: Border.all(
+          color: bdrColor,
+          width: widget.borderWidth,
         ),
+        boxShadow: widget.shadows ?? _defaultShadows,
+        gradient: widget.gradient,
       ),
+      transform: _isPressed && widget.enableHoverEffect
+          ? _createPressTransform()
+          : Matrix4.identity(),
+      transformAlignment: Alignment.center,
+      child: widget.child,
     );
 
     if (isInteractive) {
@@ -463,43 +459,39 @@ class _GlassButtonState extends State<GlassButton> {
             ],
           );
 
-    Widget button = ClipRRect(
-      borderRadius: radius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: widget.blur, sigmaY: widget.blur),
-        child: AnimatedContainer(
-          duration: widget.animationDuration,
-          curve: Curves.easeOutCubic,
-          height: widget.height,
-          padding: widget.padding ?? defaultPadding,
-          decoration: BoxDecoration(
-            color: bgColor.withAlpha(
-              _isDisabled
-                  ? ((widget.opacity * 255) * 0.6).round()
-                  : (widget.opacity * 255).round(),
-            ),
-            borderRadius: radius,
-            border: Border.all(
-              color: bdrColor,
-              width: widget.borderWidth,
-            ),
-            boxShadow: widget.shadows ??
-                [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(8),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-            gradient: widget.gradient,
-          ),
-          transform: _isPressed
-              ? _createPressTransform()
-              : Matrix4.identity(),
-          transformAlignment: Alignment.center,
-          child: Center(child: buttonContent),
+    // More opaque background + subtle border replaces expensive BackdropFilter blur
+    final baseAlpha = (widget.opacity * 255).round();
+    final buttonAlpha = _isDisabled
+        ? (baseAlpha * 0.6).round().clamp(0, 255)
+        : (baseAlpha + 25).clamp(0, 255);
+
+    Widget button = AnimatedContainer(
+      duration: widget.animationDuration,
+      curve: Curves.easeOutCubic,
+      height: widget.height,
+      padding: widget.padding ?? defaultPadding,
+      decoration: BoxDecoration(
+        color: bgColor.withAlpha(buttonAlpha),
+        borderRadius: radius,
+        border: Border.all(
+          color: bdrColor,
+          width: widget.borderWidth,
         ),
+        boxShadow: widget.shadows ??
+            [
+              BoxShadow(
+                color: Colors.black.withAlpha(8),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+        gradient: widget.gradient,
       ),
+      transform: _isPressed
+          ? _createPressTransform()
+          : Matrix4.identity(),
+      transformAlignment: Alignment.center,
+      child: Center(child: buttonContent),
     );
 
     button = GestureDetector(
@@ -508,10 +500,7 @@ class _GlassButtonState extends State<GlassButton> {
       onTapCancel: _handleTapCancel,
       onTap: _isDisabled ? null : widget.onPressed,
       onLongPress: _isDisabled ? null : widget.onLongPress,
-      child: Opacity(
-        opacity: _isDisabled ? 0.6 : 1.0,
-        child: button,
-      ),
+      child: _isDisabled ? Opacity(opacity: 0.6, child: button) : button,
     );
 
     return Container(

@@ -18,180 +18,15 @@ import {
   Clock,
   Users,
   Calendar,
-  MessageCircle,
+  Video,
   X,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useBookingStore } from "@/stores";
-import { MOCK_EXPERTS } from "@/lib/data/experts";
+import { fetchExperts, fetchExpertById } from "@/lib/data/experts";
 import type { Expert, ExpertSpecialization } from "@/types/expert";
-
-/**
- * Academic expert mock data - replaces medical doctors
- */
-const ACADEMIC_EXPERTS: Expert[] = [
-  {
-    id: "acad-001",
-    name: "Dr. Sarah Mitchell",
-    designation: "PhD, English Literature",
-    bio: "Published researcher and academic writing coach with 10+ years of experience in thesis editing, research papers, literature reviews, and dissertation guidance across all disciplines.",
-    verified: true,
-    rating: 4.9,
-    reviewCount: 187,
-    totalSessions: 620,
-    specializations: ["academic_writing", "research_methodology"],
-    pricePerSession: 499,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 30 min",
-    languages: ["English", "Hindi"],
-    education: "Oxford University",
-    experience: "10 years",
-    featured: true,
-    createdAt: new Date("2024-01-15"),
-  },
-  {
-    id: "acad-002",
-    name: "Prof. Rahul Verma",
-    designation: "M.Sc, IIT Delhi",
-    bio: "Expert mathematician specializing in statistics, probability, linear algebra, and calculus. Helps students with competitive exam prep (GATE, GRE), coursework, and research methodology.",
-    verified: true,
-    rating: 4.8,
-    reviewCount: 134,
-    totalSessions: 480,
-    specializations: ["mathematics", "data_analysis"],
-    pricePerSession: 399,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 20 min",
-    languages: ["English", "Hindi"],
-    education: "IIT Delhi",
-    experience: "8 years",
-    featured: true,
-    createdAt: new Date("2024-02-10"),
-  },
-  {
-    id: "acad-003",
-    name: "Priya Nair",
-    designation: "M.Tech, Data Science",
-    bio: "Data science expert specializing in Python, R, SPSS, Tableau, and machine learning. Helps with data analysis projects, visualization dashboards, and statistical modeling.",
-    verified: true,
-    rating: 4.9,
-    reviewCount: 203,
-    totalSessions: 550,
-    specializations: ["data_analysis", "programming"],
-    pricePerSession: 599,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 15 min",
-    languages: ["English", "Hindi", "Malayalam"],
-    education: "IISc Bangalore",
-    experience: "6 years",
-    featured: true,
-    createdAt: new Date("2024-01-20"),
-  },
-  {
-    id: "acad-004",
-    name: "Dr. Kavita Singh",
-    designation: "PhD, Biotechnology",
-    bio: "Biotechnology researcher with extensive lab experience. Guides students through science projects, lab reports, research methodology, and scientific paper writing.",
-    verified: true,
-    rating: 4.7,
-    reviewCount: 98,
-    totalSessions: 340,
-    specializations: ["science", "research_methodology"],
-    pricePerSession: 449,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 30 min",
-    languages: ["English", "Hindi"],
-    education: "AIIMS Delhi",
-    experience: "9 years",
-    featured: true,
-    createdAt: new Date("2024-03-01"),
-  },
-  {
-    id: "acad-005",
-    name: "Amit Sharma",
-    designation: "B.Tech, Computer Science",
-    bio: "Full-stack developer and CS tutor specializing in algorithms, data structures, web development, and system design. Helps with coding assignments, projects, and interview prep.",
-    verified: true,
-    rating: 4.8,
-    reviewCount: 156,
-    totalSessions: 420,
-    specializations: ["programming", "engineering"],
-    pricePerSession: 549,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 15 min",
-    languages: ["English", "Hindi"],
-    education: "IIT Bombay",
-    experience: "5 years",
-    featured: false,
-    createdAt: new Date("2024-04-05"),
-  },
-  {
-    id: "acad-006",
-    name: "Prof. Arjun Reddy",
-    designation: "MBA, IIM Ahmedabad",
-    bio: "Former McKinsey consultant turned professor. Specializes in business strategy, case study preparation, MBA admissions coaching, and startup advisory.",
-    verified: true,
-    rating: 4.7,
-    reviewCount: 89,
-    totalSessions: 340,
-    specializations: ["business"],
-    pricePerSession: 799,
-    currency: "INR",
-    availability: "busy",
-    responseTime: "< 1 hour",
-    languages: ["English", "Hindi", "Telugu"],
-    education: "IIM Ahmedabad",
-    experience: "14 years",
-    featured: false,
-    createdAt: new Date("2024-03-15"),
-  },
-  {
-    id: "acad-007",
-    name: "Adv. Sanjay Kapoor",
-    designation: "LLM, Supreme Court Advocate",
-    bio: "Senior advocate with 18 years of experience. Provides guidance on legal research, case analysis, moot court preparation, and law dissertation writing.",
-    verified: true,
-    rating: 4.6,
-    reviewCount: 67,
-    totalSessions: 210,
-    specializations: ["law"],
-    pricePerSession: 999,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 2 hours",
-    languages: ["English", "Hindi"],
-    education: "National Law School, Bangalore",
-    experience: "18 years",
-    featured: false,
-    createdAt: new Date("2024-04-05"),
-  },
-  {
-    id: "acad-008",
-    name: "Dr. Meera Iyer",
-    designation: "MBBS, MD (Research)",
-    bio: "Medical researcher specializing in clinical research methodology, biostatistics, medical paper writing, and evidence-based medicine assignments.",
-    verified: true,
-    rating: 4.8,
-    reviewCount: 112,
-    totalSessions: 380,
-    specializations: ["medicine", "research_methodology"],
-    pricePerSession: 649,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 30 min",
-    languages: ["English", "Hindi", "Tamil"],
-    education: "CMC Vellore",
-    experience: "11 years",
-    featured: false,
-    createdAt: new Date("2024-02-28"),
-  },
-];
 
 /**
  * Category filter options
@@ -579,15 +414,37 @@ export default function ExpertsPage() {
   const [selectedCategory, setSelectedCategory] = useState<
     ExpertSpecialization | "all"
   >("all");
+  const [allExperts, setAllExperts] = useState<Expert[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Booking store
   const bookings = useBookingStore((s) => s.bookings);
+  const fetchBookings = useBookingStore((s) => s.fetchBookings);
   const updateBookingStatus = useBookingStore((s) => s.updateBookingStatus);
+
+  // Fetch experts from API on mount
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    fetchExperts()
+      .then(({ experts }) => {
+        if (!cancelled) setAllExperts(experts);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Fetch bookings from API on mount
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
   // Featured experts for carousel
   const featuredExperts = useMemo(() => {
-    return ACADEMIC_EXPERTS.filter((e) => e.featured);
-  }, []);
+    return allExperts.filter((e) => e.featured);
+  }, [allExperts]);
 
   // Active bookings count
   const activeBookingsCount = useMemo(() => {
@@ -598,7 +455,7 @@ export default function ExpertsPage() {
 
   // Filtered experts
   const filteredExperts = useMemo(() => {
-    let result = [...ACADEMIC_EXPERTS];
+    let result = [...allExperts];
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -617,7 +474,7 @@ export default function ExpertsPage() {
     }
 
     return result;
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, allExperts]);
 
   // Navigation handlers
   const handleExpertClick = useCallback(
@@ -635,10 +492,6 @@ export default function ExpertsPage() {
   );
 
   // Booking action handlers
-  const handleMessage = useCallback((_bookingId: string) => {
-    toast.info("Messaging feature coming soon!");
-  }, []);
-
   const handleReschedule = useCallback((_bookingId: string) => {
     toast.info("Rescheduling feature coming soon!");
   }, []);
@@ -710,21 +563,7 @@ export default function ExpertsPage() {
               )}
             </div>
 
-            {/* Stats Pills */}
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/15 dark:border-teal-500/20 text-xs font-medium text-teal-700 dark:text-teal-400">
-                <CheckCircle className="h-3 w-3" />
-                500+ Verified
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/15 dark:border-amber-500/20 text-xs font-medium text-amber-700 dark:text-amber-400">
-                <Star className="h-3 w-3 fill-current" />
-                4.9 Rating
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/15 dark:border-emerald-500/20 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                <Clock className="h-3 w-3" />
-                24/7 Available
-              </span>
-            </div>
+            {/* Stats Pills - populated from real data in production */}
           </div>
 
           {/* ===== TABS ===== */}
@@ -803,7 +642,12 @@ export default function ExpertsPage() {
                 </p>
 
                 {/* Expert Cards Grid */}
-                {filteredExperts.length === 0 ? (
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Loader2 className="h-8 w-8 animate-spin text-teal-600 mb-4" />
+                    <p className="text-sm text-muted-foreground">Loading experts...</p>
+                  </div>
+                ) : filteredExperts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <div
                       className={cn(
@@ -881,12 +725,10 @@ export default function ExpertsPage() {
                     className="space-y-4"
                   >
                     {bookings.map((booking) => {
-                      // Find expert from both lists
-                      const expert =
-                        ACADEMIC_EXPERTS.find(
-                          (e) => e.id === booking.expertId
-                        ) ||
-                        MOCK_EXPERTS.find((e) => e.id === booking.expertId);
+                      // Find expert from loaded experts list
+                      const expert = allExperts.find(
+                        (e) => e.id === booking.expertId
+                      );
 
                       const bookingDate = new Date(booking.date);
                       const isUpcoming =
@@ -956,24 +798,21 @@ export default function ExpertsPage() {
                               <div className="flex items-center gap-2">
                                 {isUpcoming && (
                                   <>
-                                    {booking.meetLink && (
+                                    {booking.meetLink ? (
                                       <button
                                         onClick={() =>
                                           handleJoinSession(booking.id)
                                         }
-                                        className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium transition-colors"
+                                        className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium transition-colors flex items-center gap-1.5"
                                       >
+                                        <Video className="h-3 w-3" />
                                         Join
                                       </button>
+                                    ) : (
+                                      <span className="px-2.5 py-1 rounded-full text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10">
+                                        Meet link pending
+                                      </span>
                                     )}
-                                    <button
-                                      onClick={() =>
-                                        handleMessage(booking.id)
-                                      }
-                                      className="h-8 w-8 rounded-lg bg-foreground/5 hover:bg-foreground/10 flex items-center justify-center transition-colors"
-                                    >
-                                      <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                                    </button>
                                     <button
                                       onClick={() =>
                                         handleCancelBooking(booking.id)

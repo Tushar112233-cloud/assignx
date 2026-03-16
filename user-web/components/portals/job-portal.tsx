@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Search,
@@ -14,120 +14,16 @@ import {
   Building2,
   Upload,
   Users,
+  FileText,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  ArrowLeft,
 } from "lucide-react";
 import { LiveStatsBadge } from "@/components/campus-connect/live-stats-badge";
 import { cn } from "@/lib/utils";
-import type { JobListing, JobCategory, JobType } from "@/types/portals";
-
-/**
- * Mock job listings for initial display
- */
-const MOCK_JOBS: JobListing[] = [
-  {
-    id: "1",
-    title: "Frontend Engineer",
-    company: "TechFlow",
-    location: "Bangalore, India",
-    type: "full-time",
-    category: "engineering",
-    salary: "12-18 LPA",
-    description: "Build modern web applications with React and Next.js",
-    postedAt: "2d ago",
-    isRemote: true,
-    tags: ["React", "TypeScript", "Next.js"],
-  },
-  {
-    id: "2",
-    title: "Product Design Intern",
-    company: "DesignLab",
-    location: "Mumbai, India",
-    type: "internship",
-    category: "design",
-    salary: "25K/mo",
-    description: "Join our design team to create beautiful user experiences",
-    postedAt: "1d ago",
-    isRemote: false,
-    tags: ["Figma", "UI/UX", "Prototyping"],
-  },
-  {
-    id: "3",
-    title: "Data Analyst",
-    company: "DataPulse",
-    location: "Hyderabad, India",
-    type: "full-time",
-    category: "data",
-    salary: "8-14 LPA",
-    description: "Analyze large datasets and build insightful dashboards",
-    postedAt: "3d ago",
-    isRemote: true,
-    tags: ["Python", "SQL", "Tableau"],
-  },
-  {
-    id: "4",
-    title: "Marketing Manager",
-    company: "GrowthHQ",
-    location: "Delhi, India",
-    type: "full-time",
-    category: "marketing",
-    salary: "10-16 LPA",
-    description: "Lead marketing campaigns and drive brand awareness",
-    postedAt: "5d ago",
-    isRemote: false,
-    tags: ["SEO", "Content", "Analytics"],
-  },
-  {
-    id: "5",
-    title: "Backend Developer",
-    company: "CloudNine",
-    location: "Pune, India",
-    type: "contract",
-    category: "engineering",
-    salary: "15-22 LPA",
-    description: "Design and implement scalable microservices architecture",
-    postedAt: "1d ago",
-    isRemote: true,
-    tags: ["Node.js", "PostgreSQL", "AWS"],
-  },
-  {
-    id: "6",
-    title: "Sales Executive",
-    company: "SalesForce India",
-    location: "Chennai, India",
-    type: "full-time",
-    category: "sales",
-    salary: "6-10 LPA + Commission",
-    description: "Drive enterprise sales and build client relationships",
-    postedAt: "4d ago",
-    isRemote: false,
-    tags: ["B2B", "CRM", "Negotiation"],
-  },
-  {
-    id: "7",
-    title: "Product Manager",
-    company: "InnovateTech",
-    location: "Bangalore, India",
-    type: "full-time",
-    category: "product",
-    salary: "18-28 LPA",
-    description: "Define product strategy and roadmap for SaaS platform",
-    postedAt: "6h ago",
-    isRemote: true,
-    tags: ["Strategy", "Agile", "Analytics"],
-  },
-  {
-    id: "8",
-    title: "Finance Analyst",
-    company: "FinEdge",
-    location: "Mumbai, India",
-    type: "part-time",
-    category: "finance",
-    salary: "5-8 LPA",
-    description: "Financial modeling and investment analysis",
-    postedAt: "2d ago",
-    isRemote: false,
-    tags: ["Excel", "Modeling", "Valuation"],
-  },
-];
+import { apiClient } from "@/lib/api/client";
+import type { JobListing, JobCategory, JobType, JobApplicationEntry } from "@/types/portals";
 
 const CATEGORIES: { value: JobCategory | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -231,7 +127,7 @@ function distributeIntoColumns<T>(items: T[], colCount: number): T[][] {
   return columns;
 }
 
-/** Reactive column count: 3 ≥1024px, 2 ≥640px, 1 mobile */
+/** Reactive column count: 3 >=1024px, 2 >=640px, 1 mobile */
 function useColumnCount(): number {
   const [cols, setCols] = useState<number | null>(null);
   useEffect(() => {
@@ -259,14 +155,37 @@ const fadeInUp = {
 
 const HERO_SPARKLE_INDICES = [0, 1, 2, 3, 4, 5];
 
-/**
- * JobCard — glassmorphism card for a single job listing.
- * Color-tinted per job type; masonry-safe (no fixed height).
- */
-function JobCard({ job }: { job: JobListing }) {
+// ============================================================================
+// Application Status Badge
+// ============================================================================
+
+const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
+  applied: { bg: "bg-blue-500/15", text: "text-blue-600 dark:text-blue-400" },
+  reviewing: { bg: "bg-amber-500/15", text: "text-amber-600 dark:text-amber-400" },
+  shortlisted: { bg: "bg-emerald-500/15", text: "text-emerald-600 dark:text-emerald-400" },
+  rejected: { bg: "bg-red-500/15", text: "text-red-600 dark:text-red-400" },
+};
+
+// ============================================================================
+// JobCard
+// ============================================================================
+
+function JobCard({
+  job,
+  onApply,
+  appliedJobIds,
+  isApplying,
+}: {
+  job: JobListing;
+  onApply: (jobId: string) => void;
+  appliedJobIds: Set<string>;
+  isApplying: string | null;
+}) {
   const prefersReducedMotion = useReducedMotion();
   const theme = JOB_TYPE_THEME[job.type];
   const companyInitial = job.company.charAt(0).toUpperCase();
+  const hasApplied = appliedJobIds.has(job.id);
+  const currentlyApplying = isApplying === job.id;
 
   return (
     <motion.div
@@ -281,7 +200,7 @@ function JobCard({ job }: { job: JobListing }) {
         theme.hoverShadow
       )}
     >
-      {/* Avatar row: avatar initial + type pill + remote badge */}
+      {/* Avatar row */}
       <div className="flex items-center justify-between gap-2">
         <div
           className={cn(
@@ -289,7 +208,11 @@ function JobCard({ job }: { job: JobListing }) {
             theme.avatar
           )}
         >
-          {companyInitial}
+          {job.companyLogo ? (
+            <img src={job.companyLogo} alt={job.company} className="h-10 w-10 rounded-full object-cover" />
+          ) : (
+            companyInitial
+          )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <span
@@ -320,7 +243,7 @@ function JobCard({ job }: { job: JobListing }) {
         {job.title}
       </h3>
 
-      {/* Company · Location */}
+      {/* Company + Location */}
       <p className="text-xs text-muted-foreground flex items-center gap-1">
         <Building2 className="h-3 w-3 shrink-0" aria-hidden="true" />
         <span className="truncate">{job.company}</span>
@@ -330,10 +253,12 @@ function JobCard({ job }: { job: JobListing }) {
       </p>
 
       {/* Salary */}
-      <p className={cn("text-xs font-semibold flex items-center gap-1", theme.salary)}>
-        <DollarSign className="h-3 w-3" aria-hidden="true" />
-        {job.salary}
-      </p>
+      {job.salary && (
+        <p className={cn("text-xs font-semibold flex items-center gap-1", theme.salary)}>
+          <DollarSign className="h-3 w-3" aria-hidden="true" />
+          {job.salary}
+        </p>
+      )}
 
       {/* Description */}
       <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
@@ -341,45 +266,84 @@ function JobCard({ job }: { job: JobListing }) {
       </p>
 
       {/* Skill chips */}
-      <div className="flex flex-wrap gap-1.5">
-        {job.tags.map((tag) => (
-          <span
-            key={tag}
-            className="px-2 py-0.5 rounded-md bg-muted/50 border border-border/40 text-[10px] font-medium text-muted-foreground"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
+      {job.tags && job.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {job.tags.map((tag) => (
+            <span
+              key={tag}
+              className="px-2 py-0.5 rounded-md bg-muted/50 border border-border/40 text-[10px] font-medium text-muted-foreground"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
 
-      {/* Footer: posted time + apply button */}
+      {/* Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-border/40">
         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
           <Clock className="h-3 w-3" aria-hidden="true" />
           {job.postedAt}
         </span>
-        <button
-          type="button"
-          className={cn(
-            "flex items-center gap-1 text-white text-[11px] font-medium px-3 py-1 rounded-lg transition-all",
-            "sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100",
-            theme.button
+        <div className="flex items-center gap-1.5">
+          {job.applyUrl && (
+            <a
+              href={job.applyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-muted-foreground text-[11px] font-medium px-2 py-1 rounded-lg hover:text-foreground transition-colors"
+            >
+              <ExternalLink className="h-3 w-3" aria-hidden="true" />
+              Link
+            </a>
           )}
-        >
-          <ExternalLink className="h-3 w-3" aria-hidden="true" />
-          Apply
-        </button>
+          {hasApplied ? (
+            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium px-3 py-1">
+              <CheckCircle2 className="h-3 w-3" />
+              Applied
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onApply(job.id)}
+              disabled={currentlyApplying}
+              className={cn(
+                "flex items-center gap-1 text-white text-[11px] font-medium px-3 py-1 rounded-lg transition-all",
+                "sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100",
+                "disabled:opacity-50",
+                theme.button
+              )}
+            >
+              {currentlyApplying ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Briefcase className="h-3 w-3" aria-hidden="true" />
+              )}
+              Apply
+            </button>
+          )}
+        </div>
       </div>
     </motion.div>
   );
 }
 
-/**
- * JobPortalHero - Premium hero banner for the Professional jobs tab
- * Displays animated stats, headline, and CTA buttons
- */
-function JobPortalHero() {
-  const prefersReducedMotion = useReducedMotion()
+// ============================================================================
+// JobPortalHero
+// ============================================================================
+
+function JobPortalHero({
+  stats,
+  onUploadResume,
+  resumeUrl,
+  isUploading,
+}: {
+  stats: { activeJobs: number; topCompanies: number; hiredThisMonth: number };
+  onUploadResume: () => void;
+  resumeUrl: string | null;
+  isUploading: boolean;
+}) {
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <motion.div
@@ -390,38 +354,22 @@ function JobPortalHero() {
     >
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-        {/* Orb 1 */}
         <motion.div
           className="absolute -top-20 -left-20 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl"
-          animate={prefersReducedMotion ? {} : {
-            scale: [1, 1.2, 1],
-            opacity: [0.5, 0.8, 0.5],
-          }}
+          animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
           transition={prefersReducedMotion ? {} : { duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
         />
-        {/* Orb 2 */}
         <motion.div
           className="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"
-          animate={prefersReducedMotion ? {} : {
-            scale: [1, 1.2, 1],
-            opacity: [0.5, 0.8, 0.5],
-          }}
+          animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
           transition={prefersReducedMotion ? {} : { duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
         />
-        {/* Orb 3 */}
         <motion.div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-violet-500/15 rounded-full blur-3xl"
-          animate={prefersReducedMotion ? {} : {
-            scale: [1, 1.2, 1],
-            opacity: [0.5, 0.8, 0.5],
-          }}
+          animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
           transition={prefersReducedMotion ? {} : { duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
         />
-
-        {/* Grid overlay */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0d_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0d_1px,transparent_1px)] bg-[size:50px_50px]" />
-
-        {/* Sparkle particles */}
         {!prefersReducedMotion && (
           <>
             {HERO_SPARKLE_INDICES.map((i) => (
@@ -433,16 +381,8 @@ function JobPortalHero() {
                   top: `${25 + (i % 3) * 25}%`,
                   backgroundColor: i % 2 === 0 ? 'rgb(129 140 248 / 0.6)' : 'rgb(96 165 250 / 0.5)',
                 }}
-                animate={{
-                  opacity: [0, 1, 0],
-                  scale: [0, 1, 0],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  delay: i * 0.5,
-                  ease: 'easeInOut',
-                }}
+                animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
+                transition={{ duration: 3, repeat: Infinity, delay: i * 0.5, ease: 'easeInOut' }}
               />
             ))}
           </>
@@ -451,14 +391,12 @@ function JobPortalHero() {
 
       {/* Content */}
       <div className="relative z-10 p-6 md:p-8 lg:p-12">
-        {/* Stats row */}
         <motion.div variants={fadeInUp} className="flex flex-wrap gap-2.5 mb-6">
-          <LiveStatsBadge value={2847} label="Active Jobs" icon={Briefcase} color="blue" />
-          <LiveStatsBadge value={340} label="Top Companies" icon={Building2} color="violet" />
-          <LiveStatsBadge value={156} label="Hired This Month" icon={Users} color="blue" autoIncrement={false} />
+          <LiveStatsBadge value={stats.activeJobs} label="Active Jobs" icon={Briefcase} color="blue" autoIncrement={false} />
+          <LiveStatsBadge value={stats.topCompanies} label="Top Companies" icon={Building2} color="violet" autoIncrement={false} />
+          <LiveStatsBadge value={stats.hiredThisMonth} label="Applied This Month" icon={Users} color="blue" autoIncrement={false} />
         </motion.div>
 
-        {/* Headline */}
         <motion.h1
           variants={fadeInUp}
           className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4"
@@ -469,7 +407,6 @@ function JobPortalHero() {
           </span>
         </motion.h1>
 
-        {/* Subheading */}
         <motion.p
           variants={fadeInUp}
           className="text-sm md:text-base text-slate-300/90 max-w-xl leading-relaxed mb-6"
@@ -477,26 +414,227 @@ function JobPortalHero() {
           Connect with top companies, discover opportunities, and land the role you&apos;ve been working toward.
         </motion.p>
 
-        {/* CTA Buttons */}
-        <motion.div variants={fadeInUp} className="flex flex-wrap gap-3">
-          <button type="button" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5 transition-all text-sm">
+        <motion.div variants={fadeInUp} className="flex flex-wrap gap-3 items-center">
+          <button
+            type="button"
+            onClick={() => document.getElementById("job-search-input")?.focus()}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5 transition-all text-sm"
+          >
             <Briefcase className="h-4 w-4" aria-hidden="true" />
             Browse Jobs
           </button>
-          <button type="button" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 backdrop-blur-sm text-white font-medium transition-all text-sm">
-            <Upload className="h-4 w-4" aria-hidden="true" />
-            Upload Resume
+          <button
+            type="button"
+            onClick={onUploadResume}
+            disabled={isUploading}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 backdrop-blur-sm text-white font-medium transition-all text-sm disabled:opacity-50"
+          >
+            {isUploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Upload className="h-4 w-4" aria-hidden="true" />
+            )}
+            {resumeUrl ? "Update Resume" : "Upload Resume"}
           </button>
+          {resumeUrl && (
+            <span className="flex items-center gap-1 text-emerald-400 text-xs">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Resume uploaded
+            </span>
+          )}
         </motion.div>
       </div>
     </motion.div>
-  )
+  );
 }
 
-/**
- * Job Portal component
- * Search, filter, and browse job listings with category chips and type filters
- */
+// ============================================================================
+// My Applications View
+// ============================================================================
+
+function MyApplicationsView({
+  applications,
+  loading,
+  onBack,
+}: {
+  applications: JobApplicationEntry[];
+  loading: boolean;
+  onBack: () => void;
+}) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Jobs
+        </button>
+        <h2 className="text-lg font-semibold">My Applications ({applications.length})</h2>
+      </div>
+
+      {applications.length === 0 ? (
+        <div className="text-center py-16">
+          <div className="relative inline-flex mb-4">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/20 to-blue-500/20 rounded-full blur-xl" />
+            <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg">
+              <FileText className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <p className="text-sm font-medium text-foreground mb-1">No applications yet</p>
+          <p className="text-xs text-muted-foreground">Start applying to jobs to track your applications here</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {applications.map((app) => {
+            const statusStyle = STATUS_STYLES[app.status] || STATUS_STYLES.applied;
+            return (
+              <div
+                key={app.id}
+                className="rounded-xl border border-border/50 bg-background/80 backdrop-blur-sm p-4 space-y-2"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold truncate">{app.job?.title || "Job"}</h3>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <Building2 className="h-3 w-3 shrink-0" />
+                      {app.job?.company || "Company"}
+                      {app.job?.location && (
+                        <>
+                          <span className="mx-0.5">·</span>
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          {app.job.location}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-medium capitalize", statusStyle.bg, statusStyle.text)}>
+                    {app.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Applied {new Date(app.created_at).toLocaleDateString()}
+                  </span>
+                  <a
+                    href={app.resumeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    <FileText className="h-3 w-3" />
+                    View Resume
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Apply Modal
+// ============================================================================
+
+function ApplyModal({
+  jobTitle,
+  resumeUrl,
+  onConfirm,
+  onCancel,
+  isSubmitting,
+}: {
+  jobTitle: string;
+  resumeUrl: string | null;
+  onConfirm: (coverLetter: string) => void;
+  onCancel: () => void;
+  isSubmitting: boolean;
+}) {
+  const [coverLetter, setCoverLetter] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="w-full max-w-md rounded-2xl border border-border/50 bg-background p-6 shadow-xl space-y-4"
+      >
+        <h3 className="text-lg font-semibold">Apply to {jobTitle}</h3>
+
+        {!resumeUrl ? (
+          <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4">
+            <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
+              Please upload your resume first using the &quot;Upload Resume&quot; button in the hero section.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" />
+              Resume attached
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground" htmlFor="cover-letter">
+                Cover Letter (optional)
+              </label>
+              <textarea
+                id="cover-letter"
+                value={coverLetter}
+                onChange={(e) => setCoverLetter(e.target.value)}
+                placeholder="Tell them why you're a great fit..."
+                className="w-full rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5 text-sm resize-none h-28 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+          </>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Cancel
+          </button>
+          {resumeUrl && (
+            <button
+              type="button"
+              onClick={() => onConfirm(coverLetter)}
+              disabled={isSubmitting}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 disabled:opacity-50 transition-all"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Briefcase className="h-4 w-4" />
+              )}
+              Submit Application
+            </button>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Main JobPortal Component
+// ============================================================================
+
 export function JobPortal() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<JobCategory | "all">("all");
@@ -504,30 +642,195 @@ export function JobPortal() {
   const [remoteOnly, setRemoteOnly] = useState(false);
   const colCount = useColumnCount();
 
-  const filtered = useMemo(() => {
-    return MOCK_JOBS.filter((job) => {
-      if (search && !job.title.toLowerCase().includes(search.toLowerCase()) && !job.company.toLowerCase().includes(search.toLowerCase())) {
-        return false;
+  // Data state
+  const [jobs, setJobs] = useState<JobListing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ activeJobs: 0, topCompanies: 0, hiredThisMonth: 0 });
+
+  // Resume state
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Application state
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
+  const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
+  const [applyModalJob, setApplyModalJob] = useState<JobListing | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // My Applications view
+  const [showApplications, setShowApplications] = useState(false);
+  const [applications, setApplications] = useState<JobApplicationEntry[]>([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
+
+  // Fetch jobs from API
+  const fetchJobs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (selectedCategory !== "all") params.set("category", selectedCategory);
+      if (selectedType !== "all") params.set("type", selectedType);
+      if (remoteOnly) params.set("remote", "true");
+      if (search) params.set("search", search);
+
+      const data = await apiClient<{ jobs: JobListing[]; total: number }>(
+        `/api/jobs?${params.toString()}`
+      );
+      setJobs(data.jobs || []);
+    } catch (err) {
+      console.error("Failed to fetch jobs:", err);
+      setJobs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCategory, selectedType, remoteOnly, search]);
+
+  // Fetch stats
+  useEffect(() => {
+    apiClient<{ activeJobs: number; topCompanies: number; hiredThisMonth: number }>("/api/jobs/stats")
+      .then(setStats)
+      .catch(() => {});
+  }, []);
+
+  // Fetch jobs when filters change
+  useEffect(() => {
+    const timeout = setTimeout(fetchJobs, search ? 300 : 0);
+    return () => clearTimeout(timeout);
+  }, [fetchJobs]);
+
+  // Fetch user's existing applications to know which jobs they applied to
+  useEffect(() => {
+    apiClient<{ applications: JobApplicationEntry[] }>("/api/jobs/my-applications")
+      .then((data) => {
+        const ids = new Set((data.applications || []).map((a) => a.jobId || (a.job as any)?.id));
+        setAppliedJobIds(ids);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Load saved resume URL from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("job-portal-resume-url");
+    if (saved) setResumeUrl(saved);
+  }, []);
+
+  // Upload resume handler
+  const handleUploadResume = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "resumes");
+
+      const result = await apiClient<{ url: string }>("/api/upload", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
+
+      if (result.url) {
+        setResumeUrl(result.url);
+        localStorage.setItem("job-portal-resume-url", result.url);
       }
-      if (selectedCategory !== "all" && job.category !== selectedCategory) return false;
-      if (selectedType !== "all" && job.type !== selectedType) return false;
-      if (remoteOnly && !job.isRemote) return false;
-      return true;
-    });
-  }, [search, selectedCategory, selectedType, remoteOnly]);
+    } catch (err) {
+      console.error("Failed to upload resume:", err);
+      alert("Failed to upload resume. Please try again.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, []);
+
+  // Apply to job
+  const handleApplyClick = useCallback((jobId: string) => {
+    const job = jobs.find((j) => j.id === jobId);
+    if (job) setApplyModalJob(job);
+  }, [jobs]);
+
+  const handleConfirmApply = useCallback(async (coverLetter: string) => {
+    if (!applyModalJob || !resumeUrl) return;
+
+    setIsSubmitting(true);
+    try {
+      await apiClient(`/api/jobs/${applyModalJob.id}/apply`, {
+        method: "POST",
+        body: JSON.stringify({ resumeUrl, coverLetter: coverLetter || undefined }),
+      });
+
+      setAppliedJobIds((prev) => new Set([...prev, applyModalJob.id]));
+      setApplyModalJob(null);
+    } catch (err: any) {
+      alert(err.message || "Failed to apply. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [applyModalJob, resumeUrl]);
+
+  // Fetch my applications
+  const handleShowApplications = useCallback(async () => {
+    setShowApplications(true);
+    setApplicationsLoading(true);
+    try {
+      const data = await apiClient<{ applications: JobApplicationEntry[] }>("/api/jobs/my-applications");
+      setApplications(data.applications || []);
+    } catch {
+      setApplications([]);
+    } finally {
+      setApplicationsLoading(false);
+    }
+  }, []);
+
+  // Client-side filtering (already server-filtered, this is for instant feedback)
+  const filtered = useMemo(() => jobs, [jobs]);
 
   const columns = useMemo(
     () => distributeIntoColumns(filtered, colCount),
     [filtered, colCount]
   );
 
+  // My Applications view
+  if (showApplications) {
+    return (
+      <div className="space-y-6">
+        <MyApplicationsView
+          applications={applications}
+          loading={applicationsLoading}
+          onBack={() => setShowApplications(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <JobPortalHero />
+      {/* Hidden file input for resume upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      <JobPortalHero
+        stats={stats}
+        onUploadResume={handleUploadResume}
+        resumeUrl={resumeUrl}
+        isUploading={isUploading}
+      />
+
       {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
+          id="job-search-input"
           type="text"
           placeholder="Search jobs, companies..."
           value={search}
@@ -584,20 +887,42 @@ export function JobPortal() {
           <Wifi className="h-3 w-3" aria-hidden="true" />
           Remote
         </button>
+
+        <div className="h-5 w-px bg-border/40 hidden sm:block" />
+
+        {/* My Applications Button */}
+        <button
+          type="button"
+          onClick={handleShowApplications}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-border/40 bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          <FileText className="h-3 w-3" aria-hidden="true" />
+          My Applications
+        </button>
       </div>
 
       {/* Results Count */}
       <p className="text-xs text-muted-foreground">
-        {filtered.length} job{filtered.length !== 1 ? "s" : ""} found
+        {loading ? "Loading..." : `${filtered.length} job${filtered.length !== 1 ? "s" : ""} found`}
       </p>
 
       {/* Masonry job grid */}
-      {filtered.length > 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : filtered.length > 0 ? (
         <div className="-ml-4 flex w-auto items-start">
           {columns.map((col, colIdx) => (
             <div key={colIdx} className="pl-4 flex-1 min-w-0 flex flex-col gap-4">
               {col.map((job) => (
-                <JobCard key={job.id} job={job} />
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  onApply={handleApplyClick}
+                  appliedJobIds={appliedJobIds}
+                  isApplying={applyingJobId}
+                />
               ))}
             </div>
           ))}
@@ -625,6 +950,17 @@ export function JobPortal() {
             Clear all filters
           </button>
         </div>
+      )}
+
+      {/* Apply Modal */}
+      {applyModalJob && (
+        <ApplyModal
+          jobTitle={applyModalJob.title}
+          resumeUrl={resumeUrl}
+          onConfirm={handleConfirmApply}
+          onCancel={() => setApplyModalJob(null)}
+          isSubmitting={isSubmitting}
+        />
       )}
     </div>
   );

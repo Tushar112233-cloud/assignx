@@ -98,10 +98,10 @@ class EarningsRepository {
     try {
       final params = <String, String>{
         'limit': '$limit',
-        'offset': '$offset',
+        'page': '${(offset ~/ limit) + 1}',
       };
       if (filter?.types != null && filter!.types!.isNotEmpty) {
-        params['types'] = filter.types!.map((t) => t.id).join(',');
+        params['type'] = filter.types!.map((t) => t.id).join(',');
       }
       if (filter?.statuses != null && filter!.statuses!.isNotEmpty) {
         params['statuses'] = filter.statuses!.map((s) => s.id).join(',');

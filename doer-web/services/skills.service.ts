@@ -9,8 +9,9 @@ import type { Skill, SkillWithVerification, ExperienceLevel } from '@/types/data
 
 export async function getDoerSkills(doerId: string): Promise<SkillWithVerification[]> {
   try {
-    const data = await apiClient<{ skills: SkillWithVerification[] }>(`/api/doers/${doerId}/skills`)
-    return data.skills || []
+    // Doer skills are embedded in the doer document; fetch via doer profile
+    const doer = await apiClient<{ skills: SkillWithVerification[] }>(`/api/doers/me`)
+    return doer.skills || []
   } catch {
     return []
   }
@@ -22,9 +23,14 @@ export async function addDoerSkill(
   proficiencyLevel: ExperienceLevel
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // The API expects { skills: [...] } to replace the full skills array
+    // First get existing skills, then add the new one
+    const doer = await apiClient<{ skills: any[] }>(`/api/doers/me`)
+    const existingSkills = doer.skills || []
+    const newSkills = [...existingSkills, { skillId, proficiencyLevel }]
     await apiClient(`/api/doers/${doerId}/skills`, {
       method: 'POST',
-      body: JSON.stringify({ skill_id: skillId, proficiency_level: proficiencyLevel }),
+      body: JSON.stringify({ skills: newSkills }),
     })
     return { success: true }
   } catch (err) {
@@ -37,8 +43,14 @@ export async function removeDoerSkill(
   skillId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await apiClient(`/api/doers/${doerId}/skills/${skillId}`, {
-      method: 'DELETE',
+    // The API replaces skills entirely; fetch current, remove target, re-post
+    const doer = await apiClient<{ skills: any[] }>(`/api/doers/me`)
+    const existingSkills = (doer.skills || []).filter(
+      (s: any) => (s.skillId || s.skill_id || s.id) !== skillId
+    )
+    await apiClient(`/api/doers/${doerId}/skills`, {
+      method: 'POST',
+      body: JSON.stringify({ skills: existingSkills }),
     })
     return { success: true }
   } catch (err) {

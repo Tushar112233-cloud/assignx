@@ -310,7 +310,7 @@ class ApiAuthRepository implements AuthRepository {
     LoggerService.info('AuthRepository: Adding doer skills', data: {'doerId': doerId, 'count': skillIds.length});
 
     await ApiClient.post('/doers/$doerId/skills', {
-      'skillIds': skillIds,
+      'skills': skillIds,
     });
   }
 
@@ -319,8 +319,7 @@ class ApiAuthRepository implements AuthRepository {
     LoggerService.info('AuthRepository: Adding doer subjects', data: {'doerId': doerId, 'count': subjectIds.length});
 
     await ApiClient.post('/doers/$doerId/subjects', {
-      'subjectIds': subjectIds,
-      'primarySubjectId': primarySubjectId,
+      'subjects': subjectIds,
     });
   }
 
@@ -454,7 +453,7 @@ class ApiAuthRepository implements AuthRepository {
 
     try {
       final response = await ApiClient.get(
-        '/access-requests/check',
+        '/auth/access-status',
         queryParams: {
           'email': email.toLowerCase().trim(),
           'role': role,

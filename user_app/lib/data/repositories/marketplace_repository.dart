@@ -154,7 +154,9 @@ class MarketplaceRepository {
     try {
       final response = await ApiClient.get('/marketplace/listings/$id');
       if (response == null) return null;
-      return _fromApiResponse(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final listingData = data['listing'] as Map<String, dynamic>? ?? data;
+      return _fromApiResponse(listingData);
     } catch (e) {
       _logger.e('Error fetching listing: $e');
       return null;
@@ -183,7 +185,9 @@ class MarketplaceRepository {
         'images': images,
         'locationText': location,
       });
-      return _fromApiResponse(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final listingData = data['listing'] as Map<String, dynamic>? ?? data;
+      return _fromApiResponse(listingData);
     } catch (e) {
       _logger.e('Error creating listing: $e');
       rethrow;
@@ -293,7 +297,7 @@ class MarketplaceRepository {
           .toList();
     } catch (e) {
       _logger.e('Error fetching tutors: $e');
-      return _getMockTutors();
+      return [];
     }
   }
 
@@ -305,8 +309,7 @@ class MarketplaceRepository {
       return _tutorFromApiResponse(response as Map<String, dynamic>);
     } catch (e) {
       _logger.e('Error fetching tutor: $e');
-      final mockTutors = _getMockTutors();
-      return mockTutors.firstWhere((t) => t.id == id, orElse: () => mockTutors.first);
+      return null;
     }
   }
 
@@ -323,7 +326,7 @@ class MarketplaceRepository {
           .toList();
     } catch (e) {
       _logger.e('Error fetching featured tutors: $e');
-      return _getMockTutors().take(limit).toList();
+      return [];
     }
   }
 
@@ -425,39 +428,6 @@ class MarketplaceRepository {
       _logger.e('Error submitting review: $e');
       rethrow;
     }
-  }
-
-  /// Get mock tutors for development/demo purposes.
-  List<Tutor> _getMockTutors() {
-    return [
-      Tutor(
-        id: 'tutor-1', userId: 'user-1', name: 'Priya Sharma', avatar: null,
-        bio: 'Experienced math tutor with 5+ years of teaching experience.',
-        subjects: ['Mathematics', 'Calculus', 'Statistics', 'Algebra'],
-        qualifications: ['M.Sc. Mathematics', 'B.Ed.', 'GATE qualified'],
-        hourlyRate: 500, rating: 4.8, reviewCount: 124, sessionsCompleted: 350,
-        isAvailable: true, isVerified: true, university: 'IIT Delhi', responseTimeMinutes: 15,
-        createdAt: DateTime.now().subtract(const Duration(days: 365)),
-      ),
-      Tutor(
-        id: 'tutor-2', userId: 'user-2', name: 'Rahul Verma', avatar: null,
-        bio: 'Physics enthusiast helping students understand complex concepts.',
-        subjects: ['Physics', 'Mechanics', 'Thermodynamics'],
-        qualifications: ['M.Sc. Physics', 'PhD Candidate'],
-        hourlyRate: 450, rating: 4.6, reviewCount: 89, sessionsCompleted: 210,
-        isAvailable: true, isVerified: true, university: 'BITS Pilani', responseTimeMinutes: 30,
-        createdAt: DateTime.now().subtract(const Duration(days: 200)),
-      ),
-      Tutor(
-        id: 'tutor-3', userId: 'user-3', name: 'Ananya Patel', avatar: null,
-        bio: 'Programming tutor specializing in Python, Java, and web development.',
-        subjects: ['Programming', 'Python', 'Java', 'Data Structures'],
-        qualifications: ['B.Tech Computer Science', 'AWS Certified'],
-        hourlyRate: 600, rating: 4.9, reviewCount: 156, sessionsCompleted: 420,
-        isAvailable: true, isVerified: true, university: 'NIT Trichy', responseTimeMinutes: 10,
-        createdAt: DateTime.now().subtract(const Duration(days: 180)),
-      ),
-    ];
   }
 
   // ============================================================
@@ -566,7 +536,7 @@ class MarketplaceRepository {
           .toList();
     } catch (e) {
       _logger.e('Error fetching questions: $e');
-      return _getMockQuestions();
+      return [];
     }
   }
 
@@ -575,11 +545,12 @@ class MarketplaceRepository {
     try {
       final response = await ApiClient.get('/connect/questions/$id');
       if (response == null) return null;
-      return _questionFromApiResponse(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final questionData = data['question'] as Map<String, dynamic>? ?? data;
+      return _questionFromApiResponse(questionData);
     } catch (e) {
       _logger.e('Error fetching question: $e');
-      final mockQuestions = _getMockQuestions();
-      return mockQuestions.firstWhere((q) => q.id == id, orElse: () => mockQuestions.first);
+      return null;
     }
   }
 
@@ -599,7 +570,9 @@ class MarketplaceRepository {
         'tags': tags,
         'isAnonymous': isAnonymous,
       });
-      return _questionFromApiResponse(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final questionData = data['question'] as Map<String, dynamic>? ?? data;
+      return _questionFromApiResponse(questionData);
     } catch (e) {
       _logger.e('Error submitting question: $e');
       return Question(
@@ -624,7 +597,9 @@ class MarketplaceRepository {
       final response = await ApiClient.post('/connect/questions/$questionId/answers', {
         'content': content,
       });
-      return _answerFromApiResponse(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final answerData = data['answer'] as Map<String, dynamic>? ?? data;
+      return _answerFromApiResponse(answerData);
     } catch (e) {
       _logger.e('Error submitting answer: $e');
       return Answer(
@@ -663,29 +638,4 @@ class MarketplaceRepository {
     }
   }
 
-  /// Get mock questions for development/demo purposes.
-  List<Question> _getMockQuestions() {
-    return [
-      Question(
-        id: 'q-1',
-        title: 'How do I properly cite a website in APA 7 format?',
-        content: "I'm working on a research paper and need to cite several websites.",
-        subject: ProjectSubject.other,
-        tags: ['APA', 'citations', 'research'],
-        author: const QuestionAuthor(id: 'user-1', name: 'StudentResearcher', isVerified: false),
-        upvotes: 23, downvotes: 2, answerCount: 5, viewCount: 156,
-        isAnswered: true, createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      Question(
-        id: 'q-2',
-        title: 'Best approach for multiple regression analysis?',
-        content: 'Working on a statistics project.',
-        subject: ProjectSubject.mathematics,
-        tags: ['statistics', 'regression'],
-        author: const QuestionAuthor(id: 'user-2', name: 'DataNerd42', isVerified: true),
-        upvotes: 15, downvotes: 0, answerCount: 3, viewCount: 89,
-        isAnswered: false, createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-    ];
-  }
 }

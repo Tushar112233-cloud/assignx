@@ -14,9 +14,7 @@ export async function markModuleComplete(moduleId: string) {
   await apiClient(`/api/training/progress/${moduleId}`, {
     method: 'PUT',
     body: JSON.stringify({
-      status: 'completed',
-      progress_percentage: 100,
-      completed_at: new Date().toISOString(),
+      progress: 100,
     }),
   })
 }

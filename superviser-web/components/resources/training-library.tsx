@@ -226,12 +226,12 @@ export function TrainingLibrary() {
       if (user) {
         try {
           const progressData = await apiFetch<{ progress: any[] }>(
-            `/api/training/progress/${user.id}`
+            `/api/training/progress`
           )
 
           if (progressData.progress) {
             progressMap = progressData.progress.reduce((acc: any, p: any) => {
-              acc[p.module_id] = { status: p.status || "not_started", completed_at: p.completed_at }
+              acc[p.moduleId] = { status: p.completed === true ? "completed" : (p.status || "not_started"), completed_at: p.completedAt }
               return acc
             }, {} as Record<string, { status: string; completed_at: string | null }>)
           }
@@ -319,11 +319,10 @@ export function TrainingLibrary() {
         return
       }
 
-      await apiFetch(`/api/training/progress/${user.id}/${videoId}`, {
+      await apiFetch(`/api/training/progress/${videoId}`, {
         method: "PUT",
         body: JSON.stringify({
-          status: "completed",
-          progress_percentage: 100,
+          progress: 100,
         }),
       })
 

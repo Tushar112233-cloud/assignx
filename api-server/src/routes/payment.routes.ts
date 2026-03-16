@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 import { authenticate } from '../middleware/auth';
-import { paymentLimiter } from '../middleware/rateLimiter';
+// import { paymentLimiter } from '../middleware/rateLimiter';
 import { Project, UserWallet, DoerWallet, SupervisorWallet, WalletTransaction } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
@@ -29,7 +29,7 @@ function getWalletType(role: string): 'user' | 'doer' | 'supervisor' {
 const router = Router();
 
 // POST /payments/create-order
-router.post('/create-order', authenticate, paymentLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/create-order', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { amount, projectId, notes } = req.body;
     if (!amount || amount <= 0) throw new AppError('Invalid amount', 400);
@@ -76,7 +76,7 @@ router.post('/create-order', authenticate, paymentLimiter, async (req: Request, 
 });
 
 // POST /payments/verify
-router.post('/verify', authenticate, paymentLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/verify', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, project_id } = req.body;
 
@@ -123,7 +123,7 @@ router.post('/verify', authenticate, paymentLimiter, async (req: Request, res: R
 });
 
 // POST /payments/wallet-pay
-router.post('/wallet-pay', authenticate, paymentLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/wallet-pay', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -184,7 +184,7 @@ router.post('/wallet-pay', authenticate, paymentLimiter, async (req: Request, re
 });
 
 // POST /payments/partial-pay
-router.post('/partial-pay', authenticate, paymentLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/partial-pay', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {

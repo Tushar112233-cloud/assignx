@@ -34,10 +34,15 @@ export async function getDoerProfile(): Promise<{
   stats: DoerStats | null
 }> {
   try {
+    // First get the doer record (which includes the doer's id)
+    const doer = await apiClient<Doer>('/api/doers/me')
+    if (!doer?.id) return { doer: null, stats: null }
+
+    // Then fetch the full profile with stats using the doer's id
     const data = await apiClient<{
       doer: Doer | null
       stats: DoerStats | null
-    }>('/api/doers/me/full')
+    }>(`/api/doers/by-id/${doer.id}/full`)
     return data
   } catch {
     return { doer: null, stats: null }
@@ -49,9 +54,23 @@ export async function updateDoerProfile(
   updates: DoerUpdatePayload
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await apiClient('/api/doers/me', {
+    // Get the doer's ID since PUT requires /doers/:id
+    const doer = await apiClient<{ id: string }>('/api/doers/me')
+    if (!doer?.id) throw new Error('Doer profile not found')
+
+    // Map snake_case field names to camelCase for the API
+    const apiUpdates: Record<string, unknown> = {}
+    if (updates.full_name !== undefined) apiUpdates.fullName = updates.full_name
+    if (updates.phone !== undefined) apiUpdates.phone = updates.phone
+    if (updates.avatar_url !== undefined) apiUpdates.avatarUrl = updates.avatar_url
+    if (updates.qualification !== undefined) apiUpdates.qualification = updates.qualification
+    if (updates.university_name !== undefined) apiUpdates.universityName = updates.university_name
+    if (updates.experience_level !== undefined) apiUpdates.experienceLevel = updates.experience_level
+    if (updates.bio !== undefined) apiUpdates.bio = updates.bio
+
+    await apiClient(`/api/doers/${doer.id}`, {
       method: 'PUT',
-      body: JSON.stringify(updates),
+      body: JSON.stringify(apiUpdates),
     })
     return { success: true }
   } catch (err) {
@@ -66,10 +85,13 @@ export async function uploadAvatar(
   try {
     const data = await apiUpload<{ url: string }>('/api/upload', file, 'avatars')
 
-    // Update profile with new avatar URL
-    await apiClient('/api/doers/me', {
+    // Get doer ID, then update profile with new avatar URL
+    const doer = await apiClient<{ id: string }>('/api/doers/me')
+    if (!doer?.id) throw new Error('Doer profile not found')
+
+    await apiClient(`/api/doers/${doer.id}`, {
       method: 'PUT',
-      body: JSON.stringify({ avatar_url: data.url }),
+      body: JSON.stringify({ avatarUrl: data.url }),
     })
 
     return { success: true, url: data.url }

@@ -37,6 +37,9 @@ class ProfileRepository {
   }
 
   /// Update user profile.
+  ///
+  /// Note: `avatarUrl` is not in the API's allowedFields for PUT /users/me.
+  /// To update avatar, use the POST /users/avatar endpoint instead.
   Future<UserProfile> updateProfile({
     String? fullName,
     String? phone,
@@ -51,15 +54,24 @@ class ProfileRepository {
 
       if (fullName != null) updates['fullName'] = fullName;
       if (phone != null) updates['phone'] = phone;
-      if (avatarUrl != null) updates['avatarUrl'] = avatarUrl;
       if (city != null) updates['city'] = city;
       if (state != null) updates['state'] = state;
       if (userType != null) updates['userType'] = userType.toDbString();
 
+      // Handle avatar separately if provided — the PUT /users/me endpoint
+      // does not include avatarUrl in allowedFields. For now, include it
+      // and let the API ignore it if not supported. The dedicated avatar
+      // upload endpoint (POST /users/avatar) is the proper way to update it.
+      if (avatarUrl != null) updates['avatarUrl'] = avatarUrl;
+
       final response = await ApiClient.put('/users/me', updates);
       final data = response as Map<String, dynamic>;
-      // PUT returns { profile: {...} } wrapped
-      final profileData = data.containsKey('email') ? data : (data['profile'] as Map<String, dynamic>? ?? data);
+      // PUT /users/me returns { user: {...} }
+      final profileData = data.containsKey('email')
+          ? data
+          : (data['user'] as Map<String, dynamic>? ??
+              data['profile'] as Map<String, dynamic>? ??
+              data);
       return UserProfile.fromJson(profileData);
     } catch (e) {
       _logger.e('Error updating profile: $e');
@@ -82,14 +94,16 @@ class ProfileRepository {
   }
 
   /// Get wallet transactions.
+  ///
+  /// The API uses page-based pagination: `?page=1&limit=20`.
   Future<List<WalletTransaction>> getTransactions({
     int limit = 20,
-    int offset = 0,
+    int page = 1,
   }) async {
     try {
       final response = await ApiClient.get('/wallets/me/transactions', queryParams: {
         'limit': limit.toString(),
-        'offset': offset.toString(),
+        'page': page.toString(),
       });
       final list = response is List ? response : (response as Map<String, dynamic>)['transactions'] as List? ?? [];
       return list
@@ -184,10 +198,9 @@ class ProfileRepository {
     try {
       final response = await ApiClient.get('/projects', queryParams: {
         'status': 'completed',
-        'countOnly': 'true',
       });
       if (response is Map<String, dynamic>) {
-        return response['count'] as int? ?? 0;
+        return response['total'] as int? ?? 0;
       }
       if (response is List) return response.length;
       return 0;
@@ -225,6 +238,7 @@ class ProfileRepository {
   }) async {
     try {
       final queryParams = <String, String>{
+        'role': 'user',
         'limit': limit.toString(),
         'offset': offset.toString(),
       };
@@ -245,7 +259,9 @@ class ProfileRepository {
   Future<SupportTicket> getSupportTicket(String ticketId) async {
     try {
       final response = await ApiClient.get('/support/tickets/$ticketId');
-      return SupportTicket.fromJson(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final ticketData = data['ticket'] as Map<String, dynamic>? ?? data;
+      return SupportTicket.fromJson(ticketData);
     } catch (e) {
       _logger.e('Error fetching support ticket: $e');
       rethrow;
@@ -263,8 +279,11 @@ class ProfileRepository {
         'subject': subject,
         'description': description,
         'category': category.dbValue,
+        'sourceRole': 'user',
       });
-      return SupportTicket.fromJson(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final ticketData = data['ticket'] as Map<String, dynamic>? ?? data;
+      return SupportTicket.fromJson(ticketData);
     } catch (e) {
       _logger.e('Error creating support ticket: $e');
       rethrow;
@@ -280,7 +299,14 @@ class ProfileRepository {
       final response = await ApiClient.post('/support/tickets/$ticketId/messages', {
         'message': message,
       });
-      return TicketResponse.fromJson(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      // API returns the full updated ticket; extract the latest message
+      final ticketData = data['ticket'] as Map<String, dynamic>? ?? data;
+      final messages = ticketData['messages'] as List<dynamic>?;
+      if (messages != null && messages.isNotEmpty) {
+        return TicketResponse.fromJson(messages.last as Map<String, dynamic>);
+      }
+      return TicketResponse.fromJson(ticketData);
     } catch (e) {
       _logger.e('Error adding ticket response: $e');
       rethrow;
@@ -297,7 +323,9 @@ class ProfileRepository {
   /// Get FAQs with optional category filter.
   Future<List<FAQ>> getFAQs({FAQCategory? category}) async {
     try {
-      final queryParams = <String, String>{};
+      final queryParams = <String, String>{
+        'role': 'user',
+      };
       if (category != null) queryParams['category'] = category.dbValue;
 
       final response = await ApiClient.get('/support/faqs', queryParams: queryParams);

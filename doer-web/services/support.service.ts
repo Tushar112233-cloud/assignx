@@ -19,24 +19,25 @@ export async function createSupportTicket(
   ticket: CreateTicketPayload
 ): Promise<{ success: boolean; error?: string; ticket?: SupportTicket }> {
   try {
-    const data = await apiClient<SupportTicket>('/api/support/tickets', {
+    const data = await apiClient<{ ticket: SupportTicket }>('/api/support/tickets', {
       method: 'POST',
       body: JSON.stringify({
-        ...ticket,
+        subject: ticket.subject,
+        description: ticket.description,
+        category: ticket.category,
         priority: ticket.priority || 'medium',
-        source_role: 'doer',
       }),
     })
-    return { success: true, ticket: data }
+    return { success: true, ticket: data.ticket }
   } catch (err) {
     return { success: false, error: (err as Error).message }
   }
 }
 
-export async function getSupportTickets(userId: string): Promise<SupportTicket[]> {
+export async function getSupportTickets(_userId: string): Promise<SupportTicket[]> {
   try {
     const data = await apiClient<{ tickets: SupportTicket[] }>(
-      '/api/support/tickets?source_role=doer'
+      '/api/support/tickets'
     )
     return data.tickets || []
   } catch {

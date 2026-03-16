@@ -34,7 +34,7 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
 // PUT /users/me
 router.put('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const allowedFields = ['fullName', 'phone', 'onboardingStep', 'onboardingCompleted', 'userType',
+    const allowedFields = ['fullName', 'phone', 'avatarUrl', 'onboardingStep', 'onboardingCompleted', 'userType',
       'universityId', 'courseId', 'semester', 'yearOfStudy', 'studentIdNumber',
       'expectedGraduationYear', 'collegeEmail', 'preferredSubjects',
       'professionalType', 'industryId', 'jobTitle', 'companyName', 'linkedinUrl',

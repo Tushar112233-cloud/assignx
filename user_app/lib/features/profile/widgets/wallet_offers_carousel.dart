@@ -51,7 +51,7 @@ class WalletOffersCarousel extends StatefulWidget {
   /// Callback when an offer is applied.
   final void Function(WalletOffer offer)? onApplyOffer;
 
-  /// Custom list of offers. If null, uses sample offers.
+  /// Custom list of offers. If null or empty, the widget is hidden.
   final List<WalletOffer>? offers;
 
   const WalletOffersCarousel({
@@ -70,43 +70,11 @@ class _WalletOffersCarouselState extends State<WalletOffersCarousel> {
   int _currentPage = 0;
   bool _isUserScrolling = false;
 
-  /// Sample offers for demonstration.
-  static final List<WalletOffer> _sampleOffers = [
-    WalletOffer(
-      icon: Icons.celebration_rounded,
-      title: 'First Project Discount',
-      discountPercent: 10,
-      code: 'FIRST10',
-      expiryDate: DateTime.now().add(const Duration(days: 7)),
-      gradientColors: const [Color(0xFF10B981), Color(0xFF059669)],
-    ),
-    WalletOffer(
-      icon: Icons.support_agent_rounded,
-      title: 'Free Consultation',
-      discountPercent: 100,
-      code: 'CONSULT100',
-      expiryDate: DateTime.now().add(const Duration(days: 14)),
-      gradientColors: const [Color(0xFF3B82F6), Color(0xFF6366F1)],
-    ),
-    WalletOffer(
-      icon: Icons.account_balance_wallet_rounded,
-      title: 'Cashback on Top-up',
-      discountPercent: 5,
-      code: 'CASH500',
-      expiryDate: DateTime.now().add(const Duration(days: 3)),
-      gradientColors: const [Color(0xFFF59E0B), Color(0xFFF97316)],
-    ),
-    WalletOffer(
-      icon: Icons.star_rounded,
-      title: 'Premium Member Bonus',
-      discountPercent: 15,
-      code: 'PREMIUM15',
-      expiryDate: DateTime.now().add(const Duration(days: 30)),
-      gradientColors: const [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
-    ),
-  ];
+  /// Empty default list. Offers should be provided via the [offers] parameter
+  /// from the API or promotional configuration.
+  static final List<WalletOffer> _defaultOffers = [];
 
-  List<WalletOffer> get _offers => widget.offers ?? _sampleOffers;
+  List<WalletOffer> get _offers => widget.offers ?? _defaultOffers;
 
   @override
   void initState() {
@@ -175,6 +143,10 @@ class _WalletOffersCarouselState extends State<WalletOffersCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    if (_offers.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

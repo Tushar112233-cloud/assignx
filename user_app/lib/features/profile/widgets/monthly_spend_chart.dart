@@ -59,7 +59,7 @@ class SpendChartData {
 /// - Category breakdown (Projects, Consultations, Top-ups)
 /// - Collapsible design
 class MonthlySpendChart extends StatefulWidget {
-  /// Chart data. If null, uses sample data.
+  /// Chart data. If null, shows empty state with no spending data.
   final SpendChartData? data;
 
   /// Whether to start expanded.
@@ -83,40 +83,14 @@ class _MonthlySpendChartState extends State<MonthlySpendChart>
   late Animation<double> _barAnimation;
   bool _isExpanded = false;
 
-  /// Sample data for demonstration.
-  static final SpendChartData _sampleData = SpendChartData(
-    monthlyData: [
-      const MonthlySpendData(month: 'Aug', amount: 2400),
-      const MonthlySpendData(month: 'Sep', amount: 3200),
-      const MonthlySpendData(month: 'Oct', amount: 2800),
-      const MonthlySpendData(month: 'Nov', amount: 4100),
-      const MonthlySpendData(month: 'Dec', amount: 3500),
-      const MonthlySpendData(month: 'Jan', amount: 2950, isCurrentMonth: true),
-    ],
-    categories: [
-      SpendCategory(
-        name: 'Projects',
-        amount: 1850,
-        color: AppColors.primary,
-        icon: Icons.work_outline_rounded,
-      ),
-      SpendCategory(
-        name: 'Consultations',
-        amount: 650,
-        color: const Color(0xFF3B82F6),
-        icon: Icons.support_agent_rounded,
-      ),
-      SpendCategory(
-        name: 'Top-ups',
-        amount: 450,
-        color: const Color(0xFF10B981),
-        icon: Icons.account_balance_wallet_rounded,
-      ),
-    ],
-    totalThisMonth: 2950,
+  /// Default empty state data when no real data is provided.
+  static const SpendChartData _emptyData = SpendChartData(
+    monthlyData: [],
+    categories: [],
+    totalThisMonth: 0,
   );
 
-  SpendChartData get _data => widget.data ?? _sampleData;
+  SpendChartData get _data => widget.data ?? _emptyData;
 
   @override
   void initState() {
@@ -312,26 +286,51 @@ class _MonthlySpendChartState extends State<MonthlySpendChart>
                       color: AppColors.border.withValues(alpha: 0.5),
                     ),
 
-                    // Bar chart
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: AnimatedBuilder(
-                        animation: _barAnimation,
-                        builder: (context, child) {
-                          return _BarChart(
-                            data: _data.monthlyData,
-                            maxAmount: _data.maxAmount,
-                            animationValue: _barAnimation.value,
-                          );
-                        },
+                    if (_data.monthlyData.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.bar_chart_rounded,
+                                size: 40,
+                                color: AppColors.textTertiary,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No spending data yet',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.textTertiary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else ...[
+                      // Bar chart
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: AnimatedBuilder(
+                          animation: _barAnimation,
+                          builder: (context, child) {
+                            return _BarChart(
+                              data: _data.monthlyData,
+                              maxAmount: _data.maxAmount,
+                              animationValue: _barAnimation.value,
+                            );
+                          },
+                        ),
                       ),
-                    ),
 
-                    // Category breakdown
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                      child: _CategoryBreakdown(categories: _data.categories),
-                    ),
+                      // Category breakdown
+                      if (_data.categories.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                          child: _CategoryBreakdown(categories: _data.categories),
+                        ),
+                    ],
                   ],
                 ),
               ),

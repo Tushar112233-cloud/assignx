@@ -194,7 +194,7 @@ export const projectService = {
    */
   async updateProject(projectId: string, updates: ProjectUpdate): Promise<Project> {
     const result = await apiClient<{ project: Project }>(`/api/projects/${projectId}`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify(updates),
     })
     return result.project || result as any
@@ -227,7 +227,7 @@ export const projectService = {
    */
   async approveProject(projectId: string, feedback?: string, grade?: string): Promise<Project> {
     const result = await apiClient<{ project: Project }>(`/api/projects/${projectId}/approve`, {
-      method: 'POST',
+      method: 'PUT',
       body: JSON.stringify({ feedback, grade }),
     })
     return result.project || result as any
@@ -237,7 +237,7 @@ export const projectService = {
    * Requests revision for a project.
    */
   async requestRevision(projectId: string, feedback: string): Promise<ProjectRevision> {
-    const result = await apiClient<{ revision: ProjectRevision }>(`/api/projects/${projectId}/revision`, {
+    const result = await apiClient<{ revision: ProjectRevision }>(`/api/projects/${projectId}/revisions`, {
       method: 'POST',
       body: JSON.stringify({ feedback }),
     })
@@ -266,19 +266,20 @@ export const projectService = {
    * Gets all available reference styles.
    */
   async getReferenceStyles(): Promise<any[]> {
-    const result = await apiClient<{ referenceStyles: any[] }>('/api/reference-styles')
-    return result.referenceStyles || result as any
+    const result = await apiClient<{ styles: any[] }>('/api/reference-styles')
+    return result.styles || result as any
   },
 
   /**
    * Gets projects count by status.
+   * Derives total from GET /api/projects since /counts endpoint does not exist.
    */
   async getProjectCounts(userId: string): Promise<Record<string, number>> {
     try {
-      const result = await apiClient<{ counts: Record<string, number> }>(
-        `/api/projects/counts?userId=${userId}`
+      const result = await apiClient<{ projects: ProjectWithDetails[]; total: number }>(
+        `/api/projects?userId=${userId}&limit=1`
       )
-      return result.counts || { total: 0 }
+      return { total: result.total ?? 0 }
     } catch {
       return { total: 0 }
     }

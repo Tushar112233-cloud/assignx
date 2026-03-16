@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { apiLimiter } from '../middleware/rateLimiter';
+// Rate limiting disabled for dev
+// import { apiLimiter } from '../middleware/rateLimiter';
 import authRoutes from './auth.routes';
 import uploadRoutes from './upload.routes';
 import userRoutes from './user.routes';
@@ -20,10 +21,12 @@ import paymentRoutes from './payment.routes';
 import resourcesRoutes from './resources.routes';
 import connectRoutes from './connect.routes';
 import accessRequestRoutes from './access-request.routes';
+import jobRoutes from './job.routes';
+import investorRoutes from './investor.routes';
 
 const router = Router();
 
-router.use(apiLimiter);
+// router.use(apiLimiter);
 
 router.use('/auth', authRoutes);
 router.use('/upload', uploadRoutes);
@@ -47,5 +50,7 @@ router.use('/payments', paymentRoutes);
 router.use('/resources', resourcesRoutes);
 router.use('/connect', connectRoutes);
 router.use('/access-requests', accessRequestRoutes);
+router.use('/jobs', jobRoutes);
+router.use('/investors', investorRoutes);
 
 export default router;

@@ -31,7 +31,9 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * Sample project data for preview
+ * INTENTIONAL LANDING PAGE ILLUSTRATION DATA
+ * These are demo/placeholder items shown on the marketing landing page
+ * to illustrate what the dashboard looks like. They are NOT real data.
  */
 const sampleProjects = [
   {
@@ -64,7 +66,8 @@ const sampleProjects = [
 ];
 
 /**
- * Sample chat messages for preview
+ * INTENTIONAL LANDING PAGE ILLUSTRATION DATA
+ * Demo chat messages shown on the marketing landing page preview.
  */
 const sampleMessages = [
   {
@@ -405,9 +408,10 @@ export function PreviewDashboard({ variant = "full" }: { variant?: "full" | "com
 
       {/* Stats row */}
       <div className="px-5 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-        <StatPill icon={FolderKanban} label="Active" value={3} highlight />
-        <StatPill icon={Clock} label="Pending" value={2} highlight />
-        <StatPill icon={Wallet} label="Wallet" value="$250" />
+        {/* INTENTIONAL LANDING PAGE ILLUSTRATION - demo stats for preview */}
+        <StatPill icon={FolderKanban} label="Active" value="-" highlight />
+        <StatPill icon={Clock} label="Pending" value="-" highlight />
+        <StatPill icon={Wallet} label="Wallet" value="-" />
       </div>
 
       {/* Main content */}
@@ -482,6 +486,8 @@ export function PreviewDashboard({ variant = "full" }: { variant?: "full" | "com
 
 /**
  * TimelinePreview - Shows project timeline preview
+ * INTENTIONAL LANDING PAGE ILLUSTRATION DATA
+ * Demo milestones shown on the marketing landing page.
  */
 export function TimelinePreview() {
   const milestones = [

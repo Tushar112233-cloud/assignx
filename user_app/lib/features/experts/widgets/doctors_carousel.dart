@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/expert_model.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/experts_provider.dart';
@@ -301,7 +302,7 @@ class _DoctorCard extends StatelessWidget {
                   child: CircleAvatar(
                     radius: 32,
                     backgroundColor: AppColors.success.withAlpha(30),
-                    backgroundImage: expert.avatar != null
+                    backgroundImage: isValidImageUrl(expert.avatar)
                         ? NetworkImage(expert.avatar!)
                         : null,
                     child: expert.avatar == null

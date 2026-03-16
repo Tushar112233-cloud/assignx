@@ -43,7 +43,8 @@ import {
 import { apiFetch } from "@/lib/api/client"
 import { sendSupervisorOTP, supervisorSignup } from "@/lib/api/auth"
 import { professionalProfileSchema, bankingSchema } from "@/lib/validations/auth"
-import { QUALIFICATIONS, EXPERTISE_AREAS, INDIAN_BANKS } from "@/lib/constants"
+import { QUALIFICATIONS, INDIAN_BANKS } from "@/lib/constants"
+import { useSubjects } from "@/lib/hooks/use-subjects"
 
 // ---------- Step schemas ----------
 
@@ -122,6 +123,7 @@ function Stepper({ current }: { current: number }) {
 
 export function RegisterForm() {
   const router = useRouter()
+  const { subjects: apiSubjects, isLoading: subjectsLoading } = useSubjects()
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -178,6 +180,21 @@ export function RegisterForm() {
     setIsLoading(true)
     try {
       const trimmed = data.email.trim().toLowerCase()
+
+      // Check if email is registered on another platform
+      const crossCheck = await apiFetch<{ available: boolean; conflictingRole: string | null }>(
+        "/api/auth/check-account",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: trimmed, role: "supervisor" }),
+        }
+      ).catch(() => null)
+
+      if (crossCheck && !crossCheck.available) {
+        setError(`This email is already registered as a ${crossCheck.conflictingRole}. Each role requires a unique email.`)
+        return
+      }
 
       // Check if email already has a request
       const existing = await apiFetch<{ id?: string; status?: string } | null>(
@@ -266,7 +283,7 @@ export function RegisterForm() {
     INDIAN_BANKS.find((b) => b.value === value)?.label || value
 
   const getExpertiseLabels = (values: string[]) =>
-    values.map((v) => EXPERTISE_AREAS.find((e) => e.value === v)?.label || v)
+    values.map((v) => apiSubjects.find((s) => s._id === v)?.name || v)
 
   // ---------- Render ----------
 
@@ -418,32 +435,39 @@ export function RegisterForm() {
                     Expertise areas
                   </FormLabel>
                   <FormControl>
-                    <div className="flex flex-wrap gap-2">
-                      {EXPERTISE_AREAS.map((area) => {
-                        const selected = field.value?.includes(area.value)
-                        return (
-                          <button
-                            key={area.value}
-                            type="button"
-                            onClick={() => {
-                              const current = field.value || []
-                              if (selected) {
-                                field.onChange(current.filter((v: string) => v !== area.value))
-                              } else {
-                                field.onChange([...current, area.value])
-                              }
-                            }}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                              selected
-                                ? "bg-[#F97316] text-white border-[#F97316]"
-                                : "bg-gray-50 text-gray-600 border-gray-200 hover:border-[#F97316]/50 hover:text-[#F97316]"
-                            }`}
-                          >
-                            {area.label}
-                          </button>
-                        )
-                      })}
-                    </div>
+                    {subjectsLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                        <span className="ml-2 text-sm text-gray-400">Loading subjects...</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {apiSubjects.map((subject) => {
+                          const selected = field.value?.includes(subject._id)
+                          return (
+                            <button
+                              key={subject._id}
+                              type="button"
+                              onClick={() => {
+                                const current = field.value || []
+                                if (selected) {
+                                  field.onChange(current.filter((v: string) => v !== subject._id))
+                                } else {
+                                  field.onChange([...current, subject._id])
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                                selected
+                                  ? "bg-[#F97316] text-white border-[#F97316]"
+                                  : "bg-gray-50 text-gray-600 border-gray-200 hover:border-[#F97316]/50 hover:text-[#F97316]"
+                              }`}
+                            >
+                              {subject.name}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
                   </FormControl>
                   <FormMessage />
                 </FormItem>

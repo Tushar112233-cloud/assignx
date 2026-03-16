@@ -69,10 +69,10 @@ class CommunityRepository {
     try {
       final response = await ApiClient.post('/community/business-hub', {
         'category': category.name,
-        'industry': type.name,
+        'postType': type.name,
         'title': title,
         'content': description,
-        'images': images,
+        'imageUrls': images,
       });
 
       return CommunityPost.fromJson(response as Map<String, dynamic>);
@@ -112,7 +112,7 @@ class CommunityRepository {
   Future<void> reportPost(String postId, String reason,
       {String? details}) async {
     try {
-      await ApiClient.post('/community/business-hub/$postId/report', {
+      await ApiClient.post('/community/posts/$postId/report', {
         'reason': reason,
         if (details != null) 'details': details,
       });

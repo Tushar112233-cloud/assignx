@@ -78,18 +78,6 @@ const experienceOptions: { value: ExperienceLevel; label: string; description: s
   { value: 'pro', label: 'Professional', description: '3+ years experience' },
 ]
 
-/** Mock skills for demo */
-const mockSkills: Skill[] = [
-  { id: '1', name: 'Essay Writing', category: 'Writing', is_active: true },
-  { id: '2', name: 'Research', category: 'Research', is_active: true },
-  { id: '3', name: 'Data Analysis', category: 'Analytics', is_active: true },
-  { id: '4', name: 'PowerPoint', category: 'Presentation', is_active: true },
-  { id: '5', name: 'Academic Editing', category: 'Writing', is_active: true },
-  { id: '6', name: 'Literature Review', category: 'Research', is_active: true },
-  { id: '7', name: 'Case Studies', category: 'Writing', is_active: true },
-  { id: '8', name: 'Statistics', category: 'Analytics', is_active: true },
-]
-
 /**
  * Edit Profile component
  * Form for updating user profile information
@@ -97,8 +85,8 @@ const mockSkills: Skill[] = [
 export function EditProfile({
   profile,
   doer,
-  skills = mockSkills,
-  selectedSkills = ['1', '2', '3'],
+  skills = [],
+  selectedSkills = [],
   onSave,
   onCancel,
   isLoading,
@@ -325,32 +313,38 @@ export function EditProfile({
               <CardDescription className="text-slate-500">Select the skills you have experience with</CardDescription>
             </CardHeader>
             <CardContent className="px-6 pb-6">
-              <div className="flex flex-wrap gap-2.5 max-w-full">
-                {skills.map((skill) => (
-                  <Badge
-                    key={skill.id}
-                    variant={formData.skills.includes(skill.id) ? 'default' : 'outline'}
-                    className={cn(
-                      'cursor-pointer transition-all rounded-lg px-3.5 py-1.5 text-sm font-medium',
-                      formData.skills.includes(skill.id)
-                        ? 'bg-[#5A7CFF] hover:bg-[#5A7CFF]/90 text-white border-[#5A7CFF]'
-                        : 'hover:bg-[#EEF2FF] hover:border-[#5A7CFF] border-slate-200 text-slate-600'
-                    )}
-                    onClick={() => toggleSkill(skill.id)}
-                  >
-                    {skill.name}
-                    {formData.skills.includes(skill.id) && (
-                      <X className="h-3.5 w-3.5 ml-1.5" />
-                    )}
-                  </Badge>
-                ))}
-              </div>
-              <p className="text-xs text-slate-500 mt-4 flex items-center gap-1.5">
-                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#EEF2FF] text-[#5A7CFF] text-xs font-semibold">
-                  {formData.skills.length}
-                </span>
-                skills selected
-              </p>
+              {skills.length === 0 ? (
+                <p className="text-sm text-slate-500 py-4">No skills available. Skills will appear here once configured.</p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-2.5 max-w-full">
+                    {skills.map((skill) => (
+                      <Badge
+                        key={skill.id}
+                        variant={formData.skills.includes(skill.id) ? 'default' : 'outline'}
+                        className={cn(
+                          'cursor-pointer transition-all rounded-lg px-3.5 py-1.5 text-sm font-medium',
+                          formData.skills.includes(skill.id)
+                            ? 'bg-[#5A7CFF] hover:bg-[#5A7CFF]/90 text-white border-[#5A7CFF]'
+                            : 'hover:bg-[#EEF2FF] hover:border-[#5A7CFF] border-slate-200 text-slate-600'
+                        )}
+                        onClick={() => toggleSkill(skill.id)}
+                      >
+                        {skill.name}
+                        {formData.skills.includes(skill.id) && (
+                          <X className="h-3.5 w-3.5 ml-1.5" />
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-4 flex items-center gap-1.5">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#EEF2FF] text-[#5A7CFF] text-xs font-semibold">
+                      {formData.skills.length}
+                    </span>
+                    skills selected
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

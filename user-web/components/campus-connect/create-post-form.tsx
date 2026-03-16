@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -158,14 +158,14 @@ export function CreatePostForm() {
   const [isCheckingVerification, setIsCheckingVerification] = useState(true);
 
   // Check verification on mount
-  useState(() => {
+  useEffect(() => {
     async function check() {
       const { isVerified: verified } = await checkCollegeVerification();
       setIsVerified(verified);
       setIsCheckingVerification(false);
     }
     check();
-  });
+  }, []);
 
   // Handle image selection
   const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

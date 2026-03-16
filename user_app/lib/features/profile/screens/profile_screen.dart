@@ -4,20 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/api/api_client.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/widgets/dashboard_app_bar.dart';
-import '../../../shared/widgets/glass_container.dart';
 import '../widgets/account_upgrade_card.dart';
 import '../widgets/app_info_footer.dart';
 import '../widgets/avatar_upload_dialog.dart';
-import '../widgets/preferences_section.dart';
-import '../widgets/subscription_card.dart';
 
 /// Sage green accent color for the profile page.
 const Color _sageGreen = Color(0xFF6B8F71);
@@ -25,7 +22,16 @@ const Color _sageGreen = Color(0xFF6B8F71);
 /// Sage green light background tint.
 const Color _sageGreenLight = Color(0xFFE8F0E9);
 
-/// Main profile screen with hero section, stats, and settings.
+/// Main profile screen matching the user website design.
+///
+/// Structure:
+/// - Profile header (avatar, name, email, joined date, edit button)
+/// - Stats grid (Balance, Projects, Referrals, Earned)
+/// - Add Money to Wallet banner
+/// - Refer & Earn section with referral code
+/// - Settings navigation list (clickable rows that open dialogs/pages)
+/// - Danger Zone (Delete Account)
+/// - App Info Footer
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -41,10 +47,7 @@ class ProfileScreen extends ConsumerWidget {
       body: profileAsync.when(
         data: (profile) => Column(
           children: [
-            // Unified Dashboard App Bar (dark theme)
             const DashboardAppBar(),
-
-            // Scrollable content
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.only(bottom: 100),
@@ -53,13 +56,8 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     const SizedBox(height: 16),
 
-                    // Profile Card
-                    _buildProfileCard(
-                      context,
-                      ref,
-                      profile: profile,
-                    ),
-
+                    // Profile Header Card
+                    _buildProfileHeader(context, ref, profile: profile),
                     const SizedBox(height: 16),
 
                     // Stats Grid (2x2)
@@ -69,37 +67,24 @@ class ProfileScreen extends ConsumerWidget {
                         ref,
                         balance: wallet.balance,
                         projects: projectsAsync.valueOrNull ?? 0,
-                        referrals: referralAsync.valueOrNull?.totalReferrals ?? 0,
-                        earned: referralAsync.valueOrNull?.totalEarnings ?? 0,
+                        referrals:
+                            referralAsync.valueOrNull?.totalReferrals ?? 0,
+                        earned:
+                            referralAsync.valueOrNull?.totalEarnings ?? 0,
                       ),
                       loading: () => _buildStatsGrid(
-                        context,
-                        ref,
-                        balance: 0,
-                        projects: 0,
-                        referrals: 0,
-                        earned: 0,
+                        context, ref,
+                        balance: 0, projects: 0, referrals: 0, earned: 0,
                       ),
                       error: (e, s) => _buildStatsGrid(
-                        context,
-                        ref,
-                        balance: 0,
-                        projects: 0,
-                        referrals: 0,
-                        earned: 0,
+                        context, ref,
+                        balance: 0, projects: 0, referrals: 0, earned: 0,
                       ),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // Account Role Card
-                    const SubscriptionCard(),
-
                     const SizedBox(height: 16),
 
                     // Add Money Banner
                     _buildAddMoneyBanner(context, ref),
-
                     const SizedBox(height: 16),
 
                     // Refer & Earn Card
@@ -113,17 +98,10 @@ class ProfileScreen extends ConsumerWidget {
                       loading: () => const SizedBox.shrink(),
                       error: (e, s) => const SizedBox.shrink(),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // Preferences Section
-                    const PreferencesSection(),
-
                     const SizedBox(height: 24),
 
-                    // Settings Section
-                    _buildSettingsSection(context, ref, profile),
-
+                    // Settings Navigation List
+                    _buildSettingsNavList(context, ref, profile),
                     const SizedBox(height: 24),
 
                     // App Info Footer
@@ -153,96 +131,82 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds the main profile card with gradient-bordered avatar, name, and edit button.
-  Widget _buildProfileCard(
+  // ============================================================
+  // PROFILE HEADER
+  // ============================================================
+
+  /// Profile header with avatar, name, email, joined date, and edit button.
+  Widget _buildProfileHeader(
     BuildContext context,
     WidgetRef ref, {
     required dynamic profile,
   }) {
     final joinDate = DateFormat('MMMM yyyy').format(profile.createdAt);
 
-    return GlassCard(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(24),
-      elevation: 2,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         children: [
-          // Avatar with gradient border and camera overlay
+          // Avatar with camera overlay
           GestureDetector(
             onTap: () => _showAvatarOptions(context, ref),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Gradient border ring
                 Container(
-                  width: 114,
-                  height: 114,
+                  width: 96,
+                  height: 96,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        _sageGreen,
-                        AppColors.primary,
-                        AppColors.accent,
-                      ],
+                    border: Border.all(
+                      color: AppColors.border,
+                      width: 2,
                     ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(3),
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(2),
-                        child: profile.avatarUrl != null
-                            ? ClipOval(
-                                child: Image.network(
-                                  profile.avatarUrl!,
-                                  width: 104,
-                                  height: 104,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (ctx, err, stack) =>
-                                      _buildInitials(profile.initials),
-                                ),
-                              )
-                            : _buildInitials(profile.initials),
-                      ),
-                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: isValidImageUrl(profile.avatarUrl)
+                        ? ClipOval(
+                            child: Image.network(
+                              profile.avatarUrl!,
+                              width: 88,
+                              height: 88,
+                              fit: BoxFit.cover,
+                              errorBuilder: (ctx, err, stack) =>
+                                  _buildInitials(profile.initials),
+                            ),
+                          )
+                        : _buildInitials(profile.initials),
                   ),
                 ),
                 // Camera icon overlay
                 Positioned(
                   bottom: 0,
-                  left: 0,
                   right: 0,
-                  child: Center(
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: _sageGreen,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _sageGreen.withAlpha(60),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt_outlined,
-                        size: 14,
-                        color: Colors.white,
-                      ),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_outlined,
+                      size: 14,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -252,26 +216,24 @@ class ProfileScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
-          // Name row with account type badge
+          // Name with account type badge
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
                 child: Text(
-                  (profile.fullName ?? 'User').toUpperCase(),
+                  profile.fullName ?? 'User',
                   style: AppTextStyles.headingMedium.copyWith(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
-                    letterSpacing: 0.5,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
-              // Account type badge (Student/Professional/Business)
               _buildAccountTypeBadge(
                 AccountType.fromDbString(
                     profile.userType?.toDbString() ?? 'student'),
@@ -279,19 +241,13 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
-          // Email row with verification badge
+          // Email with verification badge
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.email_outlined,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   profile.email,
@@ -302,7 +258,6 @@ class ProfileScreen extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // Email verification badge (OAuth users are verified)
               if (profile.isVerified) ...[
                 const SizedBox(width: 6),
                 const Icon(
@@ -314,63 +269,41 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
 
-          // Join date row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.calendar_today_outlined,
-                size: 14,
-                color: AppColors.textTertiary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Joined $joinDate',
-                style: AppTextStyles.bodySmall.copyWith(
-                  fontSize: 13,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
+          // Joined date
+          Text(
+            'Joined $joinDate',
+            style: AppTextStyles.bodySmall.copyWith(
+              fontSize: 13,
+              color: AppColors.textTertiary,
+            ),
           ),
 
           const SizedBox(height: 16),
 
           // Edit Profile button
-          OutlinedButton(
-            onPressed: () => context.push('/profile/edit'),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(
-                color: _sageGreen.withAlpha(120),
-                width: 1.5,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.edit_outlined,
-                  size: 16,
-                  color: _sageGreen,
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => context.push('/profile/edit'),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.border, width: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Edit Profile',
-                  style: AppTextStyles.labelMedium.copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: _sageGreen,
-                  ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              icon: const Icon(Icons.edit_outlined, size: 16,
+                  color: AppColors.textSecondary),
+              label: Text(
+                'Edit Profile',
+                style: AppTextStyles.labelMedium.copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
                 ),
-              ],
+              ),
             ),
           ),
         ],
@@ -378,54 +311,37 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds initials avatar widget with a warm gradient background
-  /// and a person icon for a polished default look.
+  /// Initials avatar fallback.
   Widget _buildInitials(String initials) {
-    return Center(
-      child: Container(
-        width: 104,
-        height: 104,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF5EDE4), // warm cream
-              Color(0xFFE8DDD1), // light peach
-            ],
-          ),
-        ),
-        child: const Icon(
+    return Container(
+      width: 88,
+      height: 88,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.surfaceVariant,
+      ),
+      child: const Center(
+        child: Icon(
           Icons.person_rounded,
-          size: 48,
-          color: AppColors.accent, // warm brown from palette
+          size: 40,
+          color: AppColors.accent,
         ),
       ),
     );
   }
 
-  /// Builds the account type badge matching web design.
-  /// Shows Student (blue), Professional (purple), or Business (amber) badge.
+  /// Account type badge (Student/Professional/Business).
   Widget _buildAccountTypeBadge(AccountType accountType) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: accountType.backgroundColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: accountType.color.withAlpha(50),
-          width: 1,
-        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            accountType.icon,
-            size: 12,
-            color: accountType.color,
-          ),
+          Icon(accountType.icon, size: 12, color: accountType.color),
           const SizedBox(width: 4),
           Text(
             accountType.displayName,
@@ -440,7 +356,11 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds the 2x2 bento-style stats grid with glass cards.
+  // ============================================================
+  // STATS GRID
+  // ============================================================
+
+  /// 2x2 stats grid: Balance, Projects, Referrals, Earned.
   Widget _buildStatsGrid(
     BuildContext context,
     WidgetRef ref, {
@@ -453,11 +373,10 @@ class ProfileScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
-          // Top row
           Row(
             children: [
               Expanded(
-                child: _buildStatCard(
+                child: _StatCard(
                   icon: Icons.account_balance_wallet_outlined,
                   iconColor: _sageGreen,
                   iconBgColor: _sageGreenLight,
@@ -468,40 +387,36 @@ class ProfileScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildStatCard(
+                child: _StatCard(
                   icon: Icons.check_circle_outline,
                   iconColor: AppColors.primary,
                   iconBgColor: AppColors.surfaceLight,
                   value: projects.toString(),
                   label: 'Projects',
-                  onTap: () {},
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          // Bottom row
           Row(
             children: [
               Expanded(
-                child: _buildStatCard(
+                child: _StatCard(
                   icon: Icons.people_outline,
-                  iconColor: AppColors.accent,
-                  iconBgColor: AppColors.surfaceVariant,
+                  iconColor: AppColors.info,
+                  iconBgColor: AppColors.infoLight,
                   value: referrals.toString(),
                   label: 'Referrals',
-                  onTap: () {},
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildStatCard(
+                child: _StatCard(
                   icon: Icons.card_giftcard,
                   iconColor: AppColors.warning,
                   iconBgColor: AppColors.warningLight,
                   value: '\u20B9${earned.toStringAsFixed(0)}',
                   label: 'Earned',
-                  onTap: () {},
                 ),
               ),
             ],
@@ -511,81 +426,21 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds a single bento-style stat card with glass effect.
-  Widget _buildStatCard({
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBgColor,
-    required String value,
-    required String label,
-    VoidCallback? onTap,
-  }) {
-    return GlassCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(16),
-      elevation: 1,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Top row with icon and arrow
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: iconBgColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: iconColor,
-                ),
-              ),
-              const Icon(
-                Icons.arrow_outward,
-                size: 14,
-                color: AppColors.textTertiary,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Value
-          Text(
-            value,
-            style: AppTextStyles.headingMedium.copyWith(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          // Label
-          Text(
-            label,
-            style: AppTextStyles.caption.copyWith(
-              fontSize: 12,
-              color: AppColors.textTertiary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // ============================================================
+  // ADD MONEY BANNER
+  // ============================================================
 
-  /// Builds the Add Money to Wallet banner with sage green accent.
   Widget _buildAddMoneyBanner(BuildContext context, WidgetRef ref) {
-    return GlassCard(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(16),
-      elevation: 1,
-      backgroundColor: _sageGreenLight,
-      borderColor: _sageGreen.withAlpha(40),
+      decoration: BoxDecoration(
+        color: _sageGreenLight,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _sageGreen.withAlpha(40)),
+      ),
       child: Row(
         children: [
-          // Plus icon
           Container(
             width: 36,
             height: 36,
@@ -593,14 +448,9 @@ class ProfileScreen extends ConsumerWidget {
               color: _sageGreen.withAlpha(30),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              Icons.add,
-              size: 20,
-              color: _sageGreen,
-            ),
+            child: Icon(Icons.add, size: 20, color: _sageGreen),
           ),
           const SizedBox(width: 12),
-          // Text content
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -624,7 +474,6 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
           ),
-          // Top Up button
           GestureDetector(
             onTap: () => _showTopUpSheet(context, ref),
             child: Container(
@@ -646,11 +495,8 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Icon(
-                    Icons.arrow_outward,
-                    size: 14,
-                    color: Colors.white,
-                  ),
+                  const Icon(Icons.arrow_outward, size: 14,
+                      color: Colors.white),
                 ],
               ),
             ),
@@ -660,21 +506,34 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds the Refer & Earn card with glass styling.
+  // ============================================================
+  // REFERRAL CARD
+  // ============================================================
+
   Widget _buildReferralCard(
     BuildContext context, {
     required String code,
     required int referrals,
     required double earned,
   }) {
-    return GlassCard(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(20),
-      elevation: 2,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
+          // Header
           Row(
             children: [
               Container(
@@ -684,11 +543,8 @@ class ProfileScreen extends ConsumerWidget {
                   color: AppColors.warningLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
-                  Icons.card_giftcard,
-                  size: 20,
-                  color: AppColors.warning,
-                ),
+                child: const Icon(Icons.card_giftcard, size: 20,
+                    color: AppColors.warning),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -750,11 +606,8 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     );
                   },
-                  child: const Icon(
-                    Icons.copy_outlined,
-                    size: 20,
-                    color: AppColors.textSecondary,
-                  ),
+                  child: const Icon(Icons.copy_outlined, size: 20,
+                      color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -762,10 +615,9 @@ class ProfileScreen extends ConsumerWidget {
 
           const SizedBox(height: 12),
 
-          // Action buttons row
+          // Action buttons
           Row(
             children: [
-              // Copy Code button
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
@@ -778,20 +630,14 @@ class ProfileScreen extends ConsumerWidget {
                     );
                   },
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(
-                      color: AppColors.border,
-                      width: 1.5,
-                    ),
+                    side: const BorderSide(color: AppColors.border, width: 1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  icon: const Icon(
-                    Icons.copy_outlined,
-                    size: 16,
-                    color: AppColors.textPrimary,
-                  ),
+                  icon: const Icon(Icons.copy_outlined, size: 16,
+                      color: AppColors.textPrimary),
                   label: Text(
                     'Copy Code',
                     style: AppTextStyles.labelMedium.copyWith(
@@ -803,7 +649,6 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // Share button
               Expanded(
                 flex: 2,
                 child: ElevatedButton.icon(
@@ -825,8 +670,7 @@ class ProfileScreen extends ConsumerWidget {
                   label: Text(
                     'Share',
                     style: AppTextStyles.labelMedium.copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 13, fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -836,7 +680,7 @@ class ProfileScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
-          // Referral stats row
+          // Referral stats
           Row(
             children: [
               Expanded(
@@ -849,11 +693,8 @@ class ProfileScreen extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.people_outline,
-                        size: 18,
-                        color: AppColors.textTertiary,
-                      ),
+                      const Icon(Icons.people_outline, size: 18,
+                          color: AppColors.textTertiary),
                       const SizedBox(width: 8),
                       Text(
                         referrals.toString(),
@@ -867,8 +708,7 @@ class ProfileScreen extends ConsumerWidget {
                       Text(
                         'Referrals',
                         style: AppTextStyles.caption.copyWith(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
+                          fontSize: 12, color: AppColors.textTertiary,
                         ),
                       ),
                     ],
@@ -886,11 +726,8 @@ class ProfileScreen extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.account_balance_wallet_outlined,
-                        size: 18,
-                        color: AppColors.textTertiary,
-                      ),
+                      const Icon(Icons.account_balance_wallet_outlined,
+                          size: 18, color: AppColors.textTertiary),
                       const SizedBox(width: 8),
                       Text(
                         '\u20B9${earned.toStringAsFixed(0)}',
@@ -904,8 +741,7 @@ class ProfileScreen extends ConsumerWidget {
                       Text(
                         'Earned',
                         style: AppTextStyles.caption.copyWith(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
+                          fontSize: 12, color: AppColors.textTertiary,
                         ),
                       ),
                     ],
@@ -919,14 +755,23 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds the settings section with glass card items.
-  Widget _buildSettingsSection(
+  // ============================================================
+  // SETTINGS NAVIGATION LIST
+  // ============================================================
+
+  /// Settings navigation list matching the user website design.
+  /// Simple rows with icon + title + description + chevron.
+  Widget _buildSettingsNavList(
       BuildContext context, WidgetRef ref, dynamic profile) {
+    final currentType = AccountType.fromDbString(
+        profile.userType?.toDbString() ?? 'student');
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Section Title
           Text(
             'Settings',
             style: AppTextStyles.headingSmall.copyWith(
@@ -936,266 +781,124 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          // Personal Information
-          _buildSettingsItem(
-            icon: Icons.person_outline,
-            title: 'Personal Information',
-            subtitle: 'Name, photo, contact',
-            onTap: () => context.push('/profile/edit'),
-          ),
-          const SizedBox(height: 10),
-          // Academic Details
-          _buildSettingsItem(
-            icon: Icons.school_outlined,
-            title: 'Academic Details',
-            subtitle: 'University and course info',
-            onTap: () => context.push('/profile/edit'),
-          ),
-          const SizedBox(height: 10),
-          // Switch Account Type - uses actual account role from profile
-          _buildUpgradeSettingsItem(
-            context: context,
-            currentType: AccountType.fromDbString(
-                profile.userType?.toDbString() ?? 'student'),
-          ),
-          const SizedBox(height: 10),
-          // Security Settings
-          _buildSettingsItem(
-            icon: Icons.security_outlined,
-            title: 'Security',
-            subtitle: 'Password, 2FA, sessions',
-            onTap: () => context.push('/profile/security'),
-          ),
-          const SizedBox(height: 10),
-          // My Roles
-          _buildSettingsItem(
-            icon: Icons.badge_outlined,
-            title: 'My Roles',
-            subtitle: 'Manage your portal access',
-            onTap: () => context.push('/settings'),
-          ),
-          const SizedBox(height: 10),
-          // App Settings
-          _buildSettingsItem(
-            icon: Icons.settings_outlined,
-            title: 'App Settings',
-            subtitle: 'Notifications, theme, language',
-            onTap: () => context.push('/settings'),
-          ),
-          const SizedBox(height: 24),
-          // Additional settings
-          _buildSettingsItem(
-            icon: Icons.help_outline,
-            title: 'Help & Support',
-            subtitle: 'FAQ, Contact us',
-            onTap: () => context.push('/profile/help'),
-          ),
-          const SizedBox(height: 10),
-          _buildSettingsItem(
-            icon: Icons.description_outlined,
-            title: 'Terms & Conditions',
-            subtitle: 'Read our terms',
-            onTap: () => _launchUrl('https://assignx.in/terms'),
-          ),
-          const SizedBox(height: 10),
-          _buildSettingsItem(
-            icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
-            subtitle: 'Your data privacy',
-            onTap: () => _launchUrl('https://assignx.in/privacy'),
-          ),
-          const SizedBox(height: 24),
-          // Logout
-          _buildSettingsItem(
-            icon: Icons.logout,
-            title: 'Log Out',
-            subtitle: 'Sign out of your account',
-            onTap: () => _showLogoutDialog(context, ref),
-            isDestructive: true,
-          ),
-          const SizedBox(height: 10),
-          // Deactivate Account
-          _buildSettingsItem(
-            icon: Icons.pause_circle_outline,
-            title: 'Deactivate Account',
-            subtitle: 'Temporarily disable your account',
-            onTap: () => _showDeactivateDialog(context, ref),
-            isDestructive: true,
-          ),
-          const SizedBox(height: 10),
-          // Delete Account
-          _buildSettingsItem(
-            icon: Icons.delete_forever_outlined,
-            title: 'Delete Account',
-            subtitle: 'Permanently delete all data',
-            onTap: () => _showDeleteAccountDialog(context, ref),
-            isDestructive: true,
-          ),
-        ],
-      ),
-    );
-  }
 
-  /// Builds a single settings item with glass card styling.
-  Widget _buildSettingsItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    bool isDestructive = false,
-  }) {
-    final iconColor =
-        isDestructive ? AppColors.error : AppColors.textTertiary;
-
-    return GlassCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(16),
-      elevation: 1,
-      child: Row(
-        children: [
+          // Settings card container
           Container(
-            width: 40,
-            height: 40,
             decoration: BoxDecoration(
-              color: isDestructive
-                  ? AppColors.errorLight
-                  : AppColors.surfaceVariant,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: iconColor,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.labelLarge.copyWith(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: isDestructive
-                        ? AppColors.error
-                        : AppColors.textPrimary,
-                  ),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(10),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    fontSize: 13,
-                    color: AppColors.textTertiary,
-                  ),
+              ],
+            ),
+            child: Column(
+              children: [
+                _SettingsNavRow(
+                  icon: Icons.person_outline,
+                  title: 'Personal Information',
+                  subtitle: 'Name, photo, contact details',
+                  onTap: () => context.push('/profile/edit'),
+                ),
+                const _SettingsDivider(),
+                _SettingsNavRow(
+                  icon: Icons.school_outlined,
+                  title: 'Academic Information',
+                  subtitle: 'University and course info',
+                  onTap: () => context.push('/profile/edit'),
+                ),
+                const _SettingsDivider(),
+                _SettingsNavRow(
+                  icon: Icons.security_outlined,
+                  title: 'Security',
+                  subtitle: 'Password, 2FA, sessions',
+                  onTap: () => context.push('/profile/security'),
+                ),
+                const _SettingsDivider(),
+                _SettingsNavRow(
+                  icon: Icons.payment_outlined,
+                  title: 'Payment Methods',
+                  subtitle: 'Manage your payment options',
+                  onTap: () => context.push('/profile/payment-methods'),
+                ),
+                const _SettingsDivider(),
+                // Switch Account Type — opens role toggle dialog
+                _SettingsNavRow(
+                  icon: Icons.auto_awesome,
+                  title: 'Switch Account Type',
+                  subtitle: 'Manage your roles (Student, Professional, Business)',
+                  onTap: () => _showRoleToggleDialog(context, ref, profile),
+                ),
+                const _SettingsDivider(),
+                _SettingsNavRow(
+                  icon: Icons.settings_outlined,
+                  title: 'App Settings',
+                  subtitle: 'Notifications, theme, language',
+                  onTap: () => context.push('/settings'),
+                ),
+                const _SettingsDivider(),
+                _SettingsNavRow(
+                  icon: Icons.help_outline,
+                  title: 'Help & Support',
+                  subtitle: 'FAQ, contact us',
+                  onTap: () => context.push('/profile/help'),
                 ),
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right,
-            color: AppColors.textTertiary,
-            size: 20,
+
+          const SizedBox(height: 24),
+
+          // Danger Zone
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.error.withAlpha(60),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(10),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Log Out
+                _SettingsNavRow(
+                  icon: Icons.logout,
+                  title: 'Log Out',
+                  subtitle: 'Sign out of your account',
+                  isDestructive: true,
+                  onTap: () => _showLogoutDialog(context, ref),
+                ),
+                const _SettingsDivider(),
+                // Delete Account
+                _SettingsNavRow(
+                  icon: Icons.delete_forever_outlined,
+                  title: 'Delete Account',
+                  subtitle: 'Permanently delete all data',
+                  isDestructive: true,
+                  onTap: () => _showDeleteAccountDialog(context, ref),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// Builds the switch account type settings item with special styling.
-  Widget _buildUpgradeSettingsItem({
-    required BuildContext context,
-    required AccountType currentType,
-  }) {
-    // Don't show if user is already at highest tier
-    if (currentType.canUpgradeTo.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final nextTier = currentType.canUpgradeTo.first;
-
-    return GestureDetector(
-      onTap: () =>
-          context.push('/profile/upgrade?type=${currentType.toDbString()}'),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              nextTier.backgroundColor,
-              nextTier.backgroundColor.withAlpha(180),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: nextTier.color.withAlpha(60),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.auto_awesome,
-                size: 20,
-                color: nextTier.color,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Switch Account Type',
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Switch to ${nextTier.displayName} role',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: nextTier.color,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Switch',
-                style: AppTextStyles.labelSmall.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // ============================================================
+  // DIALOGS / ACTIONS
+  // ============================================================
 
   void _showAvatarOptions(BuildContext context, WidgetRef ref) async {
     final result = await showAvatarOptionsSheet(context);
@@ -1218,9 +921,7 @@ class ProfileScreen extends ConsumerWidget {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => Padding(
           padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
+            left: 20, right: 20, top: 20,
             bottom: MediaQuery.of(context).viewInsets.bottom + 20,
           ),
           child: Column(
@@ -1229,8 +930,7 @@ class ProfileScreen extends ConsumerWidget {
             children: [
               Center(
                 child: Container(
-                  width: 40,
-                  height: 4,
+                  width: 40, height: 4,
                   decoration: BoxDecoration(
                     color: AppColors.border,
                     borderRadius: BorderRadius.circular(2),
@@ -1241,8 +941,7 @@ class ProfileScreen extends ConsumerWidget {
               Text(
                 'Add Money to Wallet',
                 style: AppTextStyles.headingSmall.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 18, fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 20),
@@ -1255,8 +954,7 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () => setState(() => selectedAmount = amount),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 14,
+                        horizontal: 24, vertical: 14,
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
@@ -1305,17 +1003,13 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         title: const Text('Log Out'),
         content: const Text('Are you sure you want to log out?'),
         actions: [
@@ -1336,69 +1030,6 @@ class ProfileScreen extends ConsumerWidget {
               style: AppTextStyles.labelMedium
                   .copyWith(color: AppColors.error),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeactivateDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text('Deactivate Account'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Deactivating your account will:',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text('- Hide your profile from other users'),
-            const Text('- Pause all active projects'),
-            const SizedBox(height: 8),
-            Text(
-              'You can reactivate anytime by logging back in.',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              try {
-                await ApiClient.post('/users/me/deactivate', {});
-                await ref.read(authStateProvider.notifier).signOut();
-                if (context.mounted) {
-                  context.go('/login');
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed: ${e.toString()}')),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.warning,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Deactivate'),
           ),
         ],
       ),
@@ -1497,6 +1128,309 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// PRIVATE WIDGETS
+// ============================================================
+
+/// Stat card for the 2x2 stats grid.
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBgColor;
+  final String value;
+  final String label;
+  final VoidCallback? onTap;
+
+  const _StatCard({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBgColor,
+    required this.value,
+    required this.label,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(8),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: iconBgColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 18, color: iconColor),
+                ),
+                if (onTap != null)
+                  const Icon(Icons.arrow_outward, size: 14,
+                      color: AppColors.textTertiary),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: AppTextStyles.headingMedium.copyWith(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: AppTextStyles.caption.copyWith(
+                fontSize: 12,
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Shows a dialog for toggling user roles (Student, Professional, Business)
+/// matching the user-web's "My Roles" dialog.
+void _showRoleToggleDialog(BuildContext context, WidgetRef ref, dynamic profile) {
+  showDialog(
+    context: context,
+    builder: (ctx) => _RoleToggleDialog(profile: profile),
+  );
+}
+
+class _RoleToggleDialog extends ConsumerStatefulWidget {
+  final dynamic profile;
+  const _RoleToggleDialog({required this.profile});
+
+  @override
+  ConsumerState<_RoleToggleDialog> createState() => _RoleToggleDialogState();
+}
+
+class _RoleToggleDialogState extends ConsumerState<_RoleToggleDialog> {
+  late Set<String> _activeRoles;
+  late String _primaryRole;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.profile;
+    // UserProfile uses userType (a UserType enum), not userRoles
+    _primaryRole = p.userType?.toDbString() ?? 'professional';
+    _activeRoles = {_primaryRole};
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const roles = [
+      ('student', 'Student', 'Access Campus Connect', Icons.school),
+      ('professional', 'Professional', 'Access Job Portal', Icons.work_outline),
+      ('business', 'Business', 'Access Business Portal & VC', Icons.business),
+    ];
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Row(
+        children: [
+          Icon(Icons.people_outline, size: 22, color: Color(0xFF765341)),
+          const SizedBox(width: 10),
+          const Text('My Roles', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Toggle portal access for your account',
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+          ...roles.map((r) {
+            final (role, label, desc, icon) = r;
+            final isActive = _activeRoles.contains(role);
+            final isPrimary = _primaryRole == role;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF765341).withAlpha(20),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, size: 18, color: const Color(0xFF765341)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                            if (isPrimary) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF765341).withAlpha(20),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text('Primary', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFF765341))),
+                              ),
+                            ],
+                          ],
+                        ),
+                        Text(desc, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: isActive,
+                    activeColor: const Color(0xFF765341),
+                    onChanged: isPrimary ? null : (enabled) {
+                      setState(() {
+                        if (enabled) {
+                          _activeRoles.add(role);
+                        } else {
+                          _activeRoles.remove(role);
+                        }
+                      });
+                      // TODO: Sync with API (addUserRole/removeUserRole)
+                    },
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Done', style: TextStyle(color: Color(0xFF765341))),
+        ),
+      ],
+    );
+  }
+}
+
+/// A single row in the settings navigation list.
+class _SettingsNavRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  const _SettingsNavRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor = isDestructive ? AppColors.error : AppColors.textSecondary;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: isDestructive
+                    ? AppColors.errorLight
+                    : AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: iconColor),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.labelLarge.copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: isDestructive
+                          ? AppColors.error
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontSize: 13,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: isDestructive
+                  ? AppColors.error.withAlpha(120)
+                  : AppColors.textTertiary,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Thin divider for settings list.
+class _SettingsDivider extends StatelessWidget {
+  const _SettingsDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Divider(
+        height: 1,
+        color: AppColors.border.withAlpha(60),
       ),
     );
   }

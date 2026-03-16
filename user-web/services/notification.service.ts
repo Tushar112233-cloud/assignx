@@ -110,7 +110,7 @@ export const notificationService = {
    */
   async markAsRead(notificationId: string): Promise<void> {
     await apiClient(`/api/notifications/${notificationId}/read`, {
-      method: 'PATCH',
+      method: 'PUT',
     })
   },
 
@@ -119,7 +119,7 @@ export const notificationService = {
    */
   async markAllAsRead(userId: string): Promise<void> {
     await apiClient(`/api/notifications/read-all`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify({ userId, targetRole: 'user' }),
     })
   },
@@ -135,9 +135,10 @@ export const notificationService = {
 
   /**
    * Deletes all read notifications.
+   * Uses DELETE /api/notifications/all since clear-read endpoint does not exist.
    */
   async clearReadNotifications(userId: string): Promise<void> {
-    await apiClient(`/api/notifications/clear-read`, {
+    await apiClient(`/api/notifications/all`, {
       method: 'DELETE',
       body: JSON.stringify({ userId, targetRole: 'user' }),
     })

@@ -13,8 +13,6 @@
 /// ```
 library;
 
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -233,11 +231,10 @@ class ModernGradientBackground extends StatelessWidget {
       content = Stack(
         children: [
           ...orbs,
-          // Apply blur for smooth blending
+          // Semi-transparent overlay for smooth blending (replaces expensive BackdropFilter)
           Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-              child: Container(color: Colors.transparent),
+            child: Container(
+              color: GradientColors.background.withAlpha(30),
             ),
           ),
         ],
@@ -352,11 +349,10 @@ class SubtleGradientScaffold extends StatelessWidget {
           // Gradient orbs with blur for smooth blending
           if (showGradients) ...[
             ...gradientOrbs,
-            // Blur layer for smooth blending
+            // Semi-transparent overlay for smooth blending (replaces expensive BackdropFilter)
             Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-                child: Container(color: Colors.transparent),
+              child: Container(
+                color: (backgroundColor ?? AppColors.background).withAlpha(30),
               ),
             ),
           ],

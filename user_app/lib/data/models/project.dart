@@ -306,12 +306,21 @@ class Project {
       return DateTime.tryParse(value.toString());
     }
 
+    // Helper to safely parse bool from any type.
+    bool _parseBool(dynamic v, [bool fallback = false]) {
+      if (v == null) return fallback;
+      if (v is bool) return v;
+      if (v is String) return v.toLowerCase() == 'true' || v == '1';
+      if (v is num) return v != 0;
+      return fallback;
+    }
+
     // Extract nested sub-documents (MongoDB Mongoose style).
-    final pricing = json['pricing'] as Map<String, dynamic>? ?? {};
-    final payment = json['payment'] as Map<String, dynamic>? ?? {};
-    final delivery = json['delivery'] as Map<String, dynamic>? ?? {};
-    final qualityCheck = json['qualityCheck'] as Map<String, dynamic>? ?? {};
-    final userApproval = json['userApproval'] as Map<String, dynamic>? ?? {};
+    final pricing = json['pricing'] is Map<String, dynamic> ? json['pricing'] as Map<String, dynamic> : <String, dynamic>{};
+    final payment = json['payment'] is Map<String, dynamic> ? json['payment'] as Map<String, dynamic> : <String, dynamic>{};
+    final delivery = json['delivery'] is Map<String, dynamic> ? json['delivery'] as Map<String, dynamic> : <String, dynamic>{};
+    final qualityCheck = json['qualityCheck'] is Map<String, dynamic> ? json['qualityCheck'] as Map<String, dynamic> : (json['quality_check'] is Map<String, dynamic> ? json['quality_check'] as Map<String, dynamic> : <String, dynamic>{});
+    final userApproval = json['userApproval'] is Map<String, dynamic> ? json['userApproval'] as Map<String, dynamic> : (json['user_approval'] is Map<String, dynamic> ? json['user_approval'] as Map<String, dynamic> : <String, dynamic>{});
 
     // Extract subject info from populated subjectId.
     final subjectRaw = json['subjectId'] ?? json['subject_id'];
@@ -359,7 +368,7 @@ class Project {
           .toList(),
       deadline: _parseDate(json['deadline']) ?? DateTime.now(),
       originalDeadline: _parseDate(json['original_deadline'] ?? json['originalDeadline']),
-      deadlineExtended: (json['deadline_extended'] ?? json['deadlineExtended']) as bool? ?? false,
+      deadlineExtended: _parseBool(json['deadline_extended'] ?? json['deadlineExtended']),
       deadlineExtensionReason: (json['deadline_extension_reason'] ?? json['deadlineExtensionReason']) as String?,
       status: ProjectStatusX.fromString((json['status'] ?? '').toString()),
       statusUpdatedAt: _parseDate(json['status_updated_at'] ?? json['statusUpdatedAt']),
@@ -373,7 +382,7 @@ class Project {
       supervisorCommission: _parseDouble(json['supervisor_commission'] ?? json['supervisorCommission'] ?? pricing['supervisorCommission']),
       platformFee: _parseDouble(json['platform_fee'] ?? json['platformFee'] ?? pricing['platformFee']),
       // Payment: check nested payment object, then flat fields.
-      isPaid: (json['is_paid'] ?? json['isPaid'] ?? payment['isPaid']) as bool? ?? false,
+      isPaid: _parseBool(json['is_paid'] ?? json['isPaid'] ?? payment['isPaid']),
       paidAt: _parseDate(json['paid_at'] ?? json['paidAt'] ?? payment['paidAt']),
       paymentId: (json['payment_id'] ?? json['paymentId'] ?? payment['paymentId']) as String?,
       // Delivery: check nested delivery object, then flat fields.
@@ -386,12 +395,12 @@ class Project {
       plagiarismReportUrl: (json['plagiarism_report_url'] ?? json['plagiarismReportUrl'] ?? qualityCheck['plagiarismReportUrl']) as String?,
       plagiarismScore: _parseDouble(json['plagiarism_score'] ?? json['plagiarismScore'] ?? qualityCheck['plagiarismScore']),
       liveDocumentUrl: (json['live_document_url'] ?? json['liveDocumentUrl']) as String?,
-      progressPercentage: (json['progress_percentage'] ?? json['progressPercentage']) as int? ?? 0,
+      progressPercentage: int.tryParse((json['progress_percentage'] ?? json['progressPercentage'] ?? 0).toString()) ?? 0,
       // Completion: check nested delivery object for completedAt, then flat fields.
       completedAt: _parseDate(json['completed_at'] ?? json['completedAt'] ?? delivery['completedAt']),
       completionNotes: (json['completion_notes'] ?? json['completionNotes']) as String?,
       // User approval: check nested userApproval object, then flat fields.
-      userApproved: (json['user_approved'] ?? json['userApproved'] ?? userApproval['approved']) as bool?,
+      userApproved: _parseBool(json['user_approved'] ?? json['userApproved'] ?? userApproval['approved']),
       userApprovedAt: _parseDate(json['user_approved_at'] ?? json['userApprovedAt'] ?? userApproval['approvedAt']),
       userFeedback: (json['user_feedback'] ?? json['userFeedback'] ?? userApproval['feedback']) as String?,
       userGrade: (json['user_grade'] ?? json['userGrade'] ?? userApproval['grade']) as String?,

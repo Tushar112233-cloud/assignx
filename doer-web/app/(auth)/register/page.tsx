@@ -18,8 +18,9 @@ import { sendOTP, doerSignup } from '@/lib/api/auth'
 import { QUALIFICATION_OPTIONS, EXPERIENCE_LEVELS } from '@/lib/constants'
 import {
   doerEmailNameSchema, doerProfileSchema, doerBankingSchema,
-  INDIAN_BANKS, SKILL_AREAS,
+  INDIAN_BANKS,
 } from '@/lib/validations/auth'
+import { useSubjects } from '@/lib/hooks/use-subjects'
 
 const STEPS = [
   { label: 'Email', icon: Mail },
@@ -31,6 +32,7 @@ const STEPS = [
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { subjects: apiSubjects, isLoading: subjectsLoading } = useSubjects()
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -111,15 +113,36 @@ export default function RegisterPage() {
       setIsLoading(true)
       setError(null)
       try {
+        const trimmedEmail = email.trim().toLowerCase()
+
+        // Check if email is registered on another platform
+        try {
+          const crossCheck = await apiClient<{ exists: boolean; role?: string }>(
+            '/api/auth/check-account',
+            {
+              skipAuth: true,
+              method: 'POST',
+              body: JSON.stringify({ email: trimmedEmail, role: 'doer' }),
+            }
+          )
+          if (crossCheck.exists && crossCheck.role && crossCheck.role !== 'doer') {
+            setError(`This email is already registered as a ${crossCheck.role}. Each role requires a unique email.`)
+            return
+          }
+        } catch {
+          // If check-account fails (e.g. 404), continue with registration
+        }
+
+        // Check if already has an access request
         const existing = await apiClient<{ id: string; status: string }>(
-          `/api/access-requests/check?email=${encodeURIComponent(email.trim().toLowerCase())}&role=doer`,
+          `/api/access-requests/check?email=${encodeURIComponent(trimmedEmail)}&role=doer`,
           { skipAuth: true }
         )
         if (existing) {
           const s = existing.status
           if (s === 'approved') { setError('This email is already approved. Please sign in instead.'); return }
           if (s === 'rejected') { setError('This email was not approved. Please contact support.'); return }
-          if (s === 'pending') { router.push(`/pending?email=${encodeURIComponent(email.trim().toLowerCase())}`); return }
+          if (s === 'pending') { router.push(`/pending?email=${encodeURIComponent(trimmedEmail)}`); return }
         }
       } catch { /* 404 = no existing request, continue */ } finally { setIsLoading(false) }
     }
@@ -280,19 +303,26 @@ export default function RegisterPage() {
               <Label className="text-sm font-medium text-slate-700">
                 Skill areas <span className="font-normal text-slate-400">({skills.length} selected)</span>
               </Label>
-              <div className="flex flex-wrap gap-2">
-                {SKILL_AREAS.map(skill => (
-                  <button key={skill.value} type="button" onClick={() => toggleSkill(skill.value)}
-                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-                      skills.includes(skill.value)
-                        ? 'bg-[#5A7CFF] text-white'
-                        : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                    }`}>
-                    {skill.label}
-                    {skills.includes(skill.value) && <X className="h-3 w-3" />}
-                  </button>
-                ))}
-              </div>
+              {subjectsLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                  <span className="ml-2 text-sm text-slate-400">Loading subjects...</span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {apiSubjects.map(subject => (
+                    <button key={subject._id} type="button" onClick={() => toggleSkill(subject._id)}
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                        skills.includes(subject._id)
+                          ? 'bg-[#5A7CFF] text-white'
+                          : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                      }`}>
+                      {subject.name}
+                      {skills.includes(subject._id) && <X className="h-3 w-3" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -367,7 +397,7 @@ export default function RegisterPage() {
                   <div className="flex flex-wrap gap-1 mt-1">
                     {skills.map(s => (
                       <span key={s} className="inline-block rounded-full bg-[#EEF2FF] px-2 py-0.5 text-xs font-medium text-[#5A7CFF]">
-                        {SKILL_AREAS.find(sa => sa.value === s)?.label}
+                        {apiSubjects.find(sub => sub._id === s)?.name ?? s}
                       </span>
                     ))}
                   </div>

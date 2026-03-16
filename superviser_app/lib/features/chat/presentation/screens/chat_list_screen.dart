@@ -92,104 +92,155 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             ? const Center(child: CircularProgressIndicator())
             : state.chatRooms.isEmpty
                 ? const ChatListEmptyState()
-                : ListView(
-                    children: [
-                      const SizedBox(height: 8),
-
-                      // Glass search bar
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: GlassContainer(
-                          blur: 12,
-                          opacity: 0.6,
-                          borderRadius: BorderRadius.circular(14),
-                          borderColor: Colors.white.withAlpha(60),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.search,
-                                color: AppColors.textSecondaryLight,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: TextField(
-                                  controller: _searchController,
-                                  decoration: InputDecoration(
-                                    hintText: 'Search conversations...'.tr(context),
-                                    hintStyle: TextStyle(
-                                      color: AppColors.textTertiaryLight,
-                                      fontSize: 14,
-                                    ),
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                                  ),
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Category filter chips
-                      _CategoryChips(
-                        selected: _selectedCategory,
-                        unreadCount: state.unreadRooms.length,
-                        onSelected: (category) {
-                          setState(() => _selectedCategory = category);
-                        },
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Unread count badge
-                      if (state.totalUnread > 0)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          child: GlassContainer(
-                            blur: 10,
-                            opacity: 0.15,
-                            borderRadius: BorderRadius.circular(12),
-                            borderColor: AppColors.accent.withAlpha(40),
-                            backgroundColor: AppColors.accent,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            child: Row(
-                              children: [
-                                Icon(Icons.mark_email_unread_outlined, color: AppColors.accent, size: 18),
-                                const SizedBox(width: 10),
-                                Flexible(
-                                  child: Text(
-                                    '${state.totalUnread} ${'unread messages'.tr(context)}',
-                                    style: TextStyle(
-                                      color: AppColors.accent,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                      // Filtered chat list
-                      ..._buildFilteredList(filteredRooms),
-                      const SizedBox(height: 100),
-                    ],
+                : _ChatListBody(
+                    filteredRooms: filteredRooms,
+                    state: state,
+                    selectedCategory: _selectedCategory,
+                    searchController: _searchController,
+                    onCategorySelected: (category) {
+                      setState(() => _selectedCategory = category);
+                    },
                   ),
       ),
     );
   }
+}
 
-  /// Builds the filtered list of chat room tiles.
-  List<Widget> _buildFilteredList(List rooms) {
+/// The scrollable body of the chat list, using [ListView.builder] for
+/// lazy rendering of potentially large chat room lists.
+class _ChatListBody extends StatelessWidget {
+  const _ChatListBody({
+    required this.filteredRooms,
+    required this.state,
+    required this.selectedCategory,
+    required this.searchController,
+    required this.onCategorySelected,
+  });
+
+  final List filteredRooms;
+  final dynamic state;
+  final String selectedCategory;
+  final TextEditingController searchController;
+  final ValueChanged<String> onCategorySelected;
+
+  @override
+  Widget build(BuildContext context) {
+    // Build the flat list of items: header widgets + filtered room tiles.
+    final items = _buildItems(context);
+
+    return ListView.builder(
+      itemCount: items.length,
+      itemBuilder: (context, index) => items[index],
+    );
+  }
+
+  /// Constructs the full list of widgets in display order:
+  /// search bar, category chips, unread badge, section headers, and room tiles.
+  List<Widget> _buildItems(BuildContext context) {
+    final items = <Widget>[];
+
+    // Top spacing
+    items.add(const SizedBox(height: 8));
+
+    // Glass search bar
+    items.add(
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: GlassContainer(
+          blur: 12,
+          opacity: 0.6,
+          borderRadius: BorderRadius.circular(14),
+          borderColor: Colors.white.withAlpha(60),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          child: Row(
+            children: [
+              Icon(
+                Icons.search,
+                color: AppColors.textSecondaryLight,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search conversations...'.tr(context),
+                    hintStyle: TextStyle(
+                      color: AppColors.textTertiaryLight,
+                      fontSize: 14,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    items.add(const SizedBox(height: 12));
+
+    // Category filter chips
+    items.add(
+      _CategoryChips(
+        selected: selectedCategory,
+        unreadCount: state.unreadRooms.length,
+        onSelected: onCategorySelected,
+      ),
+    );
+
+    items.add(const SizedBox(height: 8));
+
+    // Unread count badge
+    if (state.totalUnread > 0) {
+      items.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: GlassContainer(
+            blur: 10,
+            opacity: 0.15,
+            borderRadius: BorderRadius.circular(12),
+            borderColor: AppColors.accent.withAlpha(40),
+            backgroundColor: AppColors.accent,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                Icon(Icons.mark_email_unread_outlined, color: AppColors.accent, size: 18),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    '${state.totalUnread} ${'unread messages'.tr(context)}',
+                    style: TextStyle(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Filtered chat list items
+    items.addAll(_buildFilteredList(context, filteredRooms));
+
+    // Bottom padding for floating nav bar clearance
+    items.add(const SizedBox(height: 100));
+
+    return items;
+  }
+
+  /// Builds the filtered list of chat room tiles with section headers.
+  List<Widget> _buildFilteredList(BuildContext context, List rooms) {
     if (rooms.isEmpty) {
       return [
         Padding(

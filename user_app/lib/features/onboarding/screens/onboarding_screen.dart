@@ -716,7 +716,7 @@ class _BottomContent extends StatelessWidget {
           if (!isLastPage) ...[
             const SizedBox(height: 16),
             GestureDetector(
-              onTap: () => GoRouter.of(context).go(RouteNames.signin),
+              onTap: () => GoRouter.of(context).go(RouteNames.login),
               child: Text(
                 'Already have an account? Sign in'.tr(context),
                 style: AppTextStyles.bodySmall.copyWith(

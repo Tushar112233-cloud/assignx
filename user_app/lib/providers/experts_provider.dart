@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/api/api_client.dart';
 import '../data/models/expert_model.dart';
 
 /// Provider for expert filters.
@@ -99,90 +101,178 @@ class ExpertFilterNotifier extends StateNotifier<ExpertFilterState> {
   }
 }
 
-/// Provider for experts list.
+/// Provider for experts list from the API.
 final expertsProvider = FutureProvider.autoDispose<List<Expert>>((ref) async {
   final filters = ref.watch(expertFilterProvider);
 
-  // Simulate API call with mock data
-  await Future.delayed(const Duration(milliseconds: 500));
+  try {
+    // Build query parameters for server-side filtering
+    final queryParams = <String, String>{};
+    if (filters.searchQuery != null && filters.searchQuery!.isNotEmpty) {
+      queryParams['search'] = filters.searchQuery!;
+    }
+    if (filters.specialization != null) {
+      queryParams['specialization'] = filters.specialization!.value;
+    }
+    if (filters.availability != null) {
+      queryParams['availability'] = filters.availability!.value;
+    }
+    if (filters.minRating != null) {
+      queryParams['minRating'] = filters.minRating.toString();
+    }
+    if (filters.maxPrice != null) {
+      queryParams['maxPrice'] = filters.maxPrice.toString();
+    }
 
-  var experts = _mockExperts;
+    final response = await ApiClient.get(
+      '/experts',
+      queryParams: queryParams.isNotEmpty ? queryParams : null,
+    );
 
-  // Apply filters
-  if (filters.specialization != null) {
-    experts = experts
-        .where((e) => e.specializations.contains(filters.specialization))
+    final data = response as Map<String, dynamic>;
+    final list = data['experts'] as List<dynamic>? ?? [];
+
+    var experts = list
+        .map((json) => Expert.fromJson(json as Map<String, dynamic>))
         .toList();
-  }
 
-  if (filters.searchQuery != null && filters.searchQuery!.isNotEmpty) {
-    final query = filters.searchQuery!.toLowerCase();
-    experts = experts
-        .where((e) =>
-            e.name.toLowerCase().contains(query) ||
-            e.designation.toLowerCase().contains(query) ||
-            e.specializations.any((s) => s.label.toLowerCase().contains(query)))
-        .toList();
-  }
+    // Apply client-side filters as fallback in case the API doesn't support them
+    if (filters.searchQuery != null && filters.searchQuery!.isNotEmpty) {
+      final query = filters.searchQuery!.toLowerCase();
+      experts = experts
+          .where((e) =>
+              e.name.toLowerCase().contains(query) ||
+              e.designation.toLowerCase().contains(query) ||
+              e.specializations
+                  .any((s) => s.label.toLowerCase().contains(query)))
+          .toList();
+    }
 
-  if (filters.minRating != null) {
-    experts = experts.where((e) => e.rating >= filters.minRating!).toList();
-  }
+    if (filters.minRating != null) {
+      experts = experts.where((e) => e.rating >= filters.minRating!).toList();
+    }
 
-  if (filters.maxPrice != null) {
-    experts =
-        experts.where((e) => e.pricePerSession <= filters.maxPrice!).toList();
-  }
+    if (filters.maxPrice != null) {
+      experts = experts
+          .where((e) => e.pricePerSession <= filters.maxPrice!)
+          .toList();
+    }
 
-  if (filters.availability != null) {
-    experts =
-        experts.where((e) => e.availability == filters.availability).toList();
-  }
+    if (filters.availability != null) {
+      experts = experts
+          .where((e) => e.availability == filters.availability)
+          .toList();
+    }
 
-  return experts;
+    return experts;
+  } catch (e) {
+    debugPrint('Failed to fetch experts: $e');
+    rethrow;
+  }
 });
 
 /// Provider for featured experts.
 final featuredExpertsProvider =
     FutureProvider.autoDispose<List<Expert>>((ref) async {
-  await Future.delayed(const Duration(milliseconds: 300));
-  return _mockExperts.where((e) => e.rating >= 4.5 && e.verified).take(5).toList();
+  try {
+    final response = await ApiClient.get(
+      '/experts',
+      queryParams: {'featured': 'true'},
+    );
+    final data = response as Map<String, dynamic>;
+    final list = data['experts'] as List<dynamic>? ?? [];
+    final experts = list
+        .map((json) => Expert.fromJson(json as Map<String, dynamic>))
+        .toList();
+
+    // Fallback: if API doesn't filter by featured, do it client-side
+    if (experts.any((e) => e.featured)) {
+      return experts.where((e) => e.featured).take(5).toList();
+    }
+    // Otherwise return top-rated verified experts
+    return experts
+        .where((e) => e.rating >= 4.5 && e.verified)
+        .take(5)
+        .toList();
+  } catch (e) {
+    debugPrint('Failed to fetch featured experts: $e');
+    rethrow;
+  }
 });
 
-/// Provider for single expert detail.
+/// Provider for single expert detail from the API.
 final expertDetailProvider =
     FutureProvider.autoDispose.family<Expert?, String>((ref, expertId) async {
-  await Future.delayed(const Duration(milliseconds: 300));
-  return _mockExperts.firstWhere(
-    (e) => e.id == expertId,
-    orElse: () => _mockExperts.first,
-  );
+  try {
+    final response = await ApiClient.get('/experts/$expertId');
+    final data = response as Map<String, dynamic>;
+    final expertJson = data['expert'] as Map<String, dynamic>?;
+    if (expertJson == null) return null;
+    return Expert.fromJson(expertJson);
+  } catch (e) {
+    debugPrint('Failed to fetch expert detail: $e');
+    rethrow;
+  }
 });
 
 /// Provider for expert reviews.
+///
+/// Currently returns an empty list since there is no dedicated review-listing
+/// endpoint. Reviews can be added once `GET /api/experts/:id/reviews` exists.
 final expertReviewsProvider =
     FutureProvider.autoDispose.family<List<ExpertReview>, String>(
         (ref, expertId) async {
-  await Future.delayed(const Duration(milliseconds: 300));
-  return _mockReviews.where((r) => r.expertId == expertId).toList();
+  // No review-listing endpoint yet; return empty list.
+  return [];
 });
 
-/// Provider for user bookings.
+/// Provider for user bookings from the API.
 final userBookingsProvider =
     FutureProvider.autoDispose<List<ConsultationBooking>>((ref) async {
-  await Future.delayed(const Duration(milliseconds: 300));
-  return _mockBookings;
+  try {
+    final response = await ApiClient.get('/experts/bookings/me');
+    final data = response as Map<String, dynamic>;
+    final list = data['bookings'] as List<dynamic>? ?? [];
+    return list
+        .map((json) =>
+            ConsultationBooking.fromJson(json as Map<String, dynamic>))
+        .toList();
+  } catch (e) {
+    debugPrint('Failed to fetch user bookings: $e');
+    rethrow;
+  }
 });
 
 /// Provider for available time slots.
+///
+/// Fetches slots from the API which includes booked-slot information.
+/// Falls back to client-side generation if the API call fails.
 final availableSlotsProvider = FutureProvider.autoDispose
     .family<List<ExpertTimeSlot>, ({String expertId, DateTime date})>(
         (ref, params) async {
-  await Future.delayed(const Duration(milliseconds: 200));
+  try {
+    final dateStr =
+        '${params.date.year}-${params.date.month.toString().padLeft(2, '0')}-${params.date.day.toString().padLeft(2, '0')}';
+    final response = await ApiClient.get(
+      '/experts/${params.expertId}/availability',
+      queryParams: {'date': dateStr},
+    );
+    final data = response as Map<String, dynamic>;
+    final slotsJson = data['slots'] as List<dynamic>? ?? [];
+    if (slotsJson.isNotEmpty) {
+      return slotsJson
+          .map((json) =>
+              ExpertTimeSlot.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+  } catch (e) {
+    debugPrint('Failed to fetch availability from API, falling back: $e');
+  }
+  // Fallback to client-side generation
   return _generateTimeSlots(params.date);
 });
 
-/// Generate mock time slots for a date.
+/// Generate time slots for a date (fallback when API is unavailable).
 List<ExpertTimeSlot> _generateTimeSlots(DateTime date) {
   final slots = <ExpertTimeSlot>[];
   final times = [
@@ -199,235 +289,23 @@ List<ExpertTimeSlot> _generateTimeSlots(DateTime date) {
 
   for (var i = 0; i < times.length; i++) {
     final (time, display) = times[i];
+    // For past dates/times, mark as unavailable
+    final now = DateTime.now();
+    final slotDateTime = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      int.parse(time.split(':')[0]),
+    );
+    final isAvailable = slotDateTime.isAfter(now);
+
     slots.add(ExpertTimeSlot(
       id: '${date.toIso8601String().split('T')[0]}-$time',
       time: time,
       displayTime: display,
-      available: i % 3 != 0, // Some slots unavailable
+      available: isAvailable,
     ));
   }
 
   return slots;
 }
-
-// Mock data
-final _mockExperts = [
-  Expert(
-    id: 'exp-1',
-    userId: 'user-1',
-    name: 'Dr. Priya Sharma',
-    avatar: null,
-    designation: 'PhD, Research Methodology',
-    bio:
-        'Expert in qualitative and quantitative research methods with 10+ years of experience helping students design robust research frameworks.',
-    specializations: [
-      ExpertSpecialization.researchMethodology,
-      ExpertSpecialization.academicWriting,
-      ExpertSpecialization.statistics,
-    ],
-    qualifications: ['PhD in Research Methods', 'M.Phil Statistics'],
-    pricePerSession: 1500,
-    rating: 4.9,
-    reviewCount: 156,
-    totalSessions: 420,
-    availability: ExpertAvailability.available,
-    verified: true,
-    responseTime: 'Within 2 hours',
-    languages: ['English', 'Hindi'],
-    experienceYears: 12,
-    institution: 'IIT Delhi',
-    createdAt: DateTime.now().subtract(const Duration(days: 365)),
-  ),
-  Expert(
-    id: 'exp-2',
-    userId: 'user-2',
-    name: 'Prof. Rajesh Kumar',
-    avatar: null,
-    designation: 'Senior Data Analyst',
-    bio:
-        'Specializing in statistical analysis, machine learning, and data visualization. Published researcher with expertise in SPSS, R, and Python.',
-    specializations: [
-      ExpertSpecialization.dataAnalysis,
-      ExpertSpecialization.statistics,
-      ExpertSpecialization.programming,
-    ],
-    qualifications: ['M.Tech Data Science', 'Certified Data Analyst'],
-    pricePerSession: 1200,
-    rating: 4.8,
-    reviewCount: 89,
-    totalSessions: 310,
-    availability: ExpertAvailability.available,
-    verified: true,
-    responseTime: 'Within 4 hours',
-    languages: ['English', 'Hindi', 'Telugu'],
-    experienceYears: 8,
-    institution: 'BITS Pilani',
-    createdAt: DateTime.now().subtract(const Duration(days: 200)),
-  ),
-  Expert(
-    id: 'exp-3',
-    userId: 'user-3',
-    name: 'Dr. Anita Desai',
-    avatar: null,
-    designation: 'Academic Writing Expert',
-    bio:
-        'Former university professor with expertise in thesis writing, academic publishing, and literature reviews. Helped 500+ students complete their dissertations.',
-    specializations: [
-      ExpertSpecialization.academicWriting,
-      ExpertSpecialization.technicalWriting,
-      ExpertSpecialization.researchMethodology,
-    ],
-    qualifications: ['PhD English Literature', 'MA Academic Writing'],
-    pricePerSession: 1800,
-    rating: 4.7,
-    reviewCount: 234,
-    totalSessions: 580,
-    availability: ExpertAvailability.busy,
-    verified: true,
-    responseTime: 'Within 6 hours',
-    languages: ['English'],
-    experienceYears: 15,
-    institution: 'University of Delhi',
-    createdAt: DateTime.now().subtract(const Duration(days: 500)),
-  ),
-  Expert(
-    id: 'exp-4',
-    userId: 'user-4',
-    name: 'Vikram Patel',
-    avatar: null,
-    designation: 'Software Engineer & Mentor',
-    bio:
-        'Full-stack developer with experience at top tech companies. Specializes in helping students with programming assignments and career guidance.',
-    specializations: [
-      ExpertSpecialization.programming,
-      ExpertSpecialization.careerCounseling,
-      ExpertSpecialization.engineering,
-    ],
-    qualifications: ['B.Tech Computer Science', 'AWS Certified'],
-    pricePerSession: 1000,
-    rating: 4.6,
-    reviewCount: 67,
-    totalSessions: 180,
-    availability: ExpertAvailability.available,
-    verified: false,
-    responseTime: 'Within 12 hours',
-    languages: ['English', 'Hindi', 'Gujarati'],
-    experienceYears: 6,
-    institution: 'Google',
-    createdAt: DateTime.now().subtract(const Duration(days: 100)),
-  ),
-  Expert(
-    id: 'exp-5',
-    userId: 'user-5',
-    name: 'Dr. Meera Nair',
-    avatar: null,
-    designation: 'Business Strategy Consultant',
-    bio:
-        'MBA from IIM-A with 20 years of industry experience. Expert in case studies, business plans, and management projects.',
-    specializations: [
-      ExpertSpecialization.business,
-      ExpertSpecialization.careerCounseling,
-    ],
-    qualifications: ['MBA IIM Ahmedabad', 'CFA Level 2'],
-    pricePerSession: 2500,
-    rating: 4.9,
-    reviewCount: 112,
-    totalSessions: 350,
-    availability: ExpertAvailability.available,
-    verified: true,
-    responseTime: 'Within 24 hours',
-    languages: ['English', 'Malayalam'],
-    experienceYears: 20,
-    institution: 'McKinsey & Company',
-    createdAt: DateTime.now().subtract(const Duration(days: 400)),
-  ),
-  Expert(
-    id: 'exp-6',
-    userId: 'user-6',
-    name: 'Prof. Suresh Iyer',
-    avatar: null,
-    designation: 'Mathematics Expert',
-    bio:
-        'Professor of Applied Mathematics with expertise in calculus, linear algebra, and mathematical modeling. Patient teacher who simplifies complex concepts.',
-    specializations: [
-      ExpertSpecialization.mathematics,
-      ExpertSpecialization.engineering,
-      ExpertSpecialization.statistics,
-    ],
-    qualifications: ['PhD Mathematics', 'M.Sc Applied Mathematics'],
-    pricePerSession: 900,
-    rating: 4.5,
-    reviewCount: 198,
-    totalSessions: 620,
-    availability: ExpertAvailability.available,
-    verified: true,
-    responseTime: 'Within 3 hours',
-    languages: ['English', 'Hindi', 'Tamil'],
-    experienceYears: 18,
-    institution: 'IISc Bangalore',
-    createdAt: DateTime.now().subtract(const Duration(days: 600)),
-  ),
-];
-
-final _mockReviews = [
-  ExpertReview(
-    id: 'rev-1',
-    expertId: 'exp-1',
-    userId: 'student-1',
-    userName: 'Rahul M.',
-    rating: 5.0,
-    comment:
-        'Dr. Sharma helped me design my entire research framework. Her guidance was invaluable for my thesis.',
-    createdAt: DateTime.now().subtract(const Duration(days: 10)),
-  ),
-  ExpertReview(
-    id: 'rev-2',
-    expertId: 'exp-1',
-    userId: 'student-2',
-    userName: 'Sneha K.',
-    rating: 4.8,
-    comment:
-        'Very knowledgeable and patient. Explained complex concepts in simple terms.',
-    createdAt: DateTime.now().subtract(const Duration(days: 25)),
-  ),
-  ExpertReview(
-    id: 'rev-3',
-    expertId: 'exp-2',
-    userId: 'student-3',
-    userName: 'Amit P.',
-    rating: 5.0,
-    comment:
-        'Professor Kumar is amazing with data analysis. He helped me complete my SPSS work in just one session.',
-    createdAt: DateTime.now().subtract(const Duration(days: 15)),
-  ),
-];
-
-final _mockBookings = [
-  ConsultationBooking(
-    id: 'book-1',
-    expertId: 'exp-1',
-    userId: 'current-user',
-    date: DateTime.now().add(const Duration(days: 2)),
-    startTime: '14:00',
-    endTime: '15:00',
-    sessionType: ExpertSessionType.oneHour,
-    topic: 'Research methodology discussion',
-    totalAmount: 1500,
-    status: BookingStatus.upcoming,
-    meetLink: 'https://meet.google.com/abc-defg-hij',
-    createdAt: DateTime.now().subtract(const Duration(days: 1)),
-  ),
-  ConsultationBooking(
-    id: 'book-2',
-    expertId: 'exp-2',
-    userId: 'current-user',
-    date: DateTime.now().subtract(const Duration(days: 5)),
-    startTime: '10:00',
-    endTime: '11:00',
-    sessionType: ExpertSessionType.oneHour,
-    topic: 'SPSS data analysis help',
-    totalAmount: 1200,
-    status: BookingStatus.completed,
-    createdAt: DateTime.now().subtract(const Duration(days: 10)),
-  ),
-];

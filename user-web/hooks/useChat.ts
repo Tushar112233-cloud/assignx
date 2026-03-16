@@ -67,19 +67,33 @@ export function useChat(projectId: string | null, userId: string | null) {
 
         // Subscribe to real-time updates
         unsubscribeRef.current = chatService.subscribeToRoom(room.id, async (newMessage) => {
+          // Only show messages that are approved or from current user.
+          // Doer messages start as 'pending' and need supervisor approval.
+          const msgApproval = (newMessage as any).approvalStatus || (newMessage as any).approval_status
+          const isSenderCurrentUser = newMessage.sender_id === userId || (newMessage as any).senderId === userId
+          if (msgApproval === 'pending' && !isSenderCurrentUser) {
+            // Pending message from someone else — skip (user shouldn't see it)
+            return
+          }
+          if (msgApproval === 'rejected' && !isSenderCurrentUser) {
+            return
+          }
+
           // Fetch the complete message with sender info
           try {
             const messagesWithSender = await chatService.getMessages(room.id, 1)
             const fullMessage = messagesWithSender.find(m => m.id === newMessage.id)
 
+            // If API didn't return the message (filtered out), skip it
+            if (!fullMessage) return
+
             setState((prev) => {
-              // Avoid duplicate messages
               if (prev.messages.some(m => m.id === newMessage.id)) {
                 return prev
               }
               return {
                 ...prev,
-                messages: [...prev.messages, fullMessage || newMessage],
+                messages: [...prev.messages, fullMessage],
               }
             })
 
@@ -89,16 +103,18 @@ export function useChat(projectId: string | null, userId: string | null) {
             }
           } catch (error) {
             console.error("Error fetching new message:", error)
-            // Fallback to raw message if fetch fails
-            setState((prev) => {
-              if (prev.messages.some(m => m.id === newMessage.id)) {
-                return prev
-              }
-              return {
-                ...prev,
-                messages: [...prev.messages, newMessage],
-              }
-            })
+            // Only add the raw message if it's from the current user (safe to show)
+            if (isSenderCurrentUser) {
+              setState((prev) => {
+                if (prev.messages.some(m => m.id === newMessage.id)) {
+                  return prev
+                }
+                return {
+                  ...prev,
+                  messages: [...prev.messages, newMessage],
+                }
+              })
+            }
           }
         })
       } catch (error: any) {

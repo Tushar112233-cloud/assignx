@@ -41,10 +41,17 @@ export function AccountSettings({ profile, userId }: AccountSettingsProps) {
     setIsLoading(true)
 
     try {
-      await apiClient('/api/doers/me', {
+      // Get the doer's ID for the PUT endpoint
+      const doer = await apiClient<{ id: string }>('/api/doers/me')
+      if (!doer?.id) {
+        toast.error('Doer profile not found')
+        return
+      }
+
+      await apiClient(`/api/doers/${doer.id}`, {
         method: 'PUT',
         body: JSON.stringify({
-          full_name: formData.fullName || null,
+          fullName: formData.fullName || null,
           phone: formData.phone || null,
         }),
       })

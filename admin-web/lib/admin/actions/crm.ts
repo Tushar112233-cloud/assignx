@@ -167,7 +167,7 @@ export async function updateFaq(
 ) {
   await verifyAdmin();
 
-  await serverFetch(`/api/admin/crm/faqs/${id}`, {
+  await serverFetch(`/api/admin/faqs/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
@@ -185,7 +185,7 @@ export async function createFaq(data: {
 }) {
   await verifyAdmin();
 
-  return serverFetch(`/api/admin/crm/faqs`, {
+  return serverFetch(`/api/admin/faqs`, {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -230,7 +230,7 @@ export async function getCustomerNotes(customerId: string) {
 export async function sendCustomerNotification(customerId: string, title: string, body: string) {
   await verifyAdmin();
 
-  await serverFetch(`/api/notifications`, {
+  await serverFetch(`/api/admin/notifications`, {
     method: "POST",
     body: JSON.stringify({
       recipientId: customerId,

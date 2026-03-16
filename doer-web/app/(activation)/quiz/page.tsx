@@ -133,12 +133,14 @@ export default function QuizPage() {
         return
       }
 
-      // Submit quiz attempt
+      // Submit quiz attempt — extract moduleId from fetched questions
+      const quizModuleId = questions.length > 0 ? (questions[0] as any).moduleId : undefined
       const { passed, rateLimited, retryAfterMinutes } = await activationService.submitQuizAttempt(
         doer.id,
         result.correctAnswers,
         result.totalQuestions,
-        result.answers
+        result.answers,
+        quizModuleId
       )
 
       if (!isMountedRef.current) return
@@ -199,12 +201,14 @@ export default function QuizPage() {
       if (!isMountedRef.current) return
 
       if (doer) {
-        // Submit failed quiz attempt
+        // Submit failed quiz attempt — extract moduleId from fetched questions
+        const quizModuleId = questions.length > 0 ? (questions[0] as any).moduleId : undefined
         const { rateLimited, retryAfterMinutes } = await activationService.submitQuizAttempt(
           doer.id,
           result.correctAnswers,
           result.totalQuestions,
-          result.answers
+          result.answers,
+          quizModuleId
         )
 
         if (!isMountedRef.current) return

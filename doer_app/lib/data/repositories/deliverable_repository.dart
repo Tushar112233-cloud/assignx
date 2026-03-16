@@ -69,8 +69,9 @@ class DeliverableRepository {
     try {
       final file = File(filePath);
       final response = await ApiClient.uploadFile(
-        '/uploads/deliverables',
+        '/upload',
         file,
+        folder: 'assignx/deliverables',
         extraFields: {
           'projectId': projectId,
           'fileName': fileName,

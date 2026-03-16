@@ -65,7 +65,7 @@ final qaFilterProvider =
 /// Provider that fetches Q&A questions from the API with filters applied.
 ///
 /// Calls the `/community/connect/questions` endpoint, applying status and
-/// subject filters from [qaFilterProvider]. Falls back to mock data when
+/// subject filters from [qaFilterProvider]. Falls back to an empty list when
 /// the API is unavailable or the query fails.
 final connectQuestionsProvider =
     FutureProvider.autoDispose<List<Question>>((ref) async {
@@ -96,138 +96,10 @@ final connectQuestionsProvider =
         .map((json) => Question.fromJson(json as Map<String, dynamic>))
         .toList();
   } catch (_) {
-    // API may not be available -- serve mock data for development.
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _filterMockQuestions(filters);
+    // API unavailable -- return empty list.
+    return [];
   }
 });
-
-/// Apply filters against mock data for offline/development use.
-List<Question> _filterMockQuestions(QaFilterState filters) {
-  var questions = List<Question>.from(_mockQuestions);
-
-  if (filters.status == QaStatusFilter.answered) {
-    questions = questions.where((q) => q.isAnswered).toList();
-  } else if (filters.status == QaStatusFilter.unanswered) {
-    questions = questions.where((q) => !q.isAnswered).toList();
-  }
-
-  if (filters.subject != null) {
-    questions = questions.where((q) => q.subject == filters.subject).toList();
-  }
-
-  return questions;
-}
-
-// ============================================================
-// MOCK DATA
-// ============================================================
-
-final _mockQuestions = [
-  Question(
-    id: 'q1',
-    title: 'How to solve second-order differential equations?',
-    body:
-        'I am struggling with second-order linear ODEs with constant coefficients. '
-        'Can someone explain the characteristic equation method step by step? '
-        'Especially when we get complex roots.',
-    subject: 'Mathematics',
-    authorId: 'u1',
-    authorName: 'Priya Sharma',
-    answerCount: 3,
-    upvotes: 12,
-    createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-    isAnswered: true,
-  ),
-  Question(
-    id: 'q2',
-    title: 'Best resources for learning dynamic programming?',
-    body:
-        'I can solve basic DP problems but I find it hard to identify the '
-        'substructure in medium/hard problems. What resources or approaches '
-        'helped you get better at DP?',
-    subject: 'Data Structures',
-    authorId: 'u2',
-    authorName: 'Rahul Verma',
-    answerCount: 5,
-    upvotes: 24,
-    createdAt: DateTime.now().subtract(const Duration(hours: 12)),
-    isAnswered: true,
-  ),
-  Question(
-    id: 'q3',
-    title: 'Difference between supervised and unsupervised learning?',
-    body:
-        'I understand the basic definitions but I get confused about when to '
-        'use which approach. Can someone give practical examples from '
-        'real-world applications?',
-    subject: 'Machine Learning',
-    authorId: 'u3',
-    authorName: 'Ananya Patel',
-    answerCount: 2,
-    upvotes: 8,
-    createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    isAnswered: true,
-  ),
-  Question(
-    id: 'q4',
-    title: 'Newton\'s third law in non-inertial frames?',
-    body:
-        'Does Newton\'s third law still hold in non-inertial (accelerating) '
-        'reference frames? How do pseudo forces factor in?',
-    subject: 'Physics',
-    authorId: 'u4',
-    authorName: 'Vikram Singh',
-    answerCount: 0,
-    upvotes: 5,
-    createdAt: DateTime.now().subtract(const Duration(days: 2)),
-    isAnswered: false,
-  ),
-  Question(
-    id: 'q5',
-    title: 'How does supply and demand affect cryptocurrency?',
-    body:
-        'Traditional supply-demand models assume physical goods. How do these '
-        'principles apply to digital assets like Bitcoin where supply is '
-        'algorithmically capped?',
-    subject: 'Economics',
-    authorId: 'u5',
-    authorName: 'Sneha Gupta',
-    answerCount: 1,
-    upvotes: 15,
-    createdAt: DateTime.now().subtract(const Duration(days: 3)),
-    isAnswered: false,
-  ),
-  Question(
-    id: 'q6',
-    title: 'Explain SN1 vs SN2 reaction mechanisms',
-    body:
-        'I always mix up the conditions that favor SN1 over SN2. Can someone '
-        'provide a clear comparison table or mnemonic?',
-    subject: 'Chemistry',
-    authorId: 'u6',
-    authorName: 'Amit Kumar',
-    answerCount: 4,
-    upvotes: 18,
-    createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 6)),
-    isAnswered: true,
-  ),
-  Question(
-    id: 'q7',
-    title: 'Tips for improving English academic writing?',
-    body:
-        'My professor keeps marking my essays for "unclear argumentation". '
-        'What strategies or books would help me structure academic '
-        'arguments better?',
-    subject: 'English',
-    authorId: 'u7',
-    authorName: 'Meera Joshi',
-    answerCount: 0,
-    upvotes: 3,
-    createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-    isAnswered: false,
-  ),
-];
 
 // ============================================================
 // QA SECTION WIDGET
@@ -871,41 +743,34 @@ class _QuestionDetailSheet extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
 
                   // Answers placeholder
-                  if (question.answerCount == 0)
-                    GlassCard(
-                      blur: 8,
-                      opacity: 0.6,
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.question_answer_outlined,
-                            size: 40,
+                  GlassCard(
+                    blur: 8,
+                    opacity: 0.6,
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.question_answer_outlined,
+                          size: 40,
+                          color: AppColors.textTertiary,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'No answers yet'.tr(context),
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Be the first to help!'.tr(context),
+                          style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textTertiary,
                           ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            'No answers yet'.tr(context),
-                            style: AppTextStyles.labelLarge.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Be the first to help!'.tr(context),
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    // Mock answer cards for demonstration
-                    ...List.generate(
-                      question.answerCount.clamp(0, 3),
-                      (index) => _buildMockAnswer(context, index),
+                        ),
+                      ],
                     ),
+                  ),
 
                   const SizedBox(height: AppSpacing.xxl),
                 ],
@@ -950,72 +815,6 @@ class _QuestionDetailSheet extends StatelessWidget {
     );
   }
 
-  /// Build a placeholder answer card for the detail view.
-  Widget _buildMockAnswer(BuildContext context, int index) {
-    final mockAuthors = ['Rahul Verma', 'Ananya Patel', 'Dr. Priya Sharma'];
-    final mockBodies = [
-      'Great question! The characteristic equation method works by assuming a solution of the form e^(rx). Substituting into the ODE gives you a polynomial in r that you can solve.',
-      'I found the Khan Academy series on this topic really helpful. They walk through complex roots with clear examples.',
-      'For complex roots a +/- bi, the general solution takes the form e^(ax)(C1 cos(bx) + C2 sin(bx)). This comes from Euler\'s formula.',
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: GlassCard(
-        blur: 8,
-        opacity: 0.7,
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Answer author row
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 12,
-                  backgroundColor: AppColors.avatarWarm,
-                  child: Text(
-                    mockAuthors[index % mockAuthors.length][0],
-                    style: AppTextStyles.labelSmall.copyWith(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  mockAuthors[index % mockAuthors.length],
-                  style: AppTextStyles.labelMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '${index + 1}d ago',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textTertiary,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.sm),
-
-            // Answer body
-            Text(
-              mockBodies[index % mockBodies.length],
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ============================================================

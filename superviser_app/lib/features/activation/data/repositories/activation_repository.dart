@@ -8,9 +8,15 @@ class ActivationRepository {
   /// Fetches training modules for the current user.
   Future<List<TrainingModule>> getTrainingModules() async {
     try {
-      final response = await ApiClient.get('/supervisors/me/modules');
-      if (response != null && response is List) {
-        return response
+      final response = await ApiClient.get('/training/modules?role=supervisor');
+      final modulesList = response is List
+          ? response
+          : (response is Map<String, dynamic>
+              ? response['modules'] as List?
+              : null);
+
+      if (modulesList != null && modulesList.isNotEmpty) {
+        return modulesList
             .map((json) => TrainingModule.fromJson(json as Map<String, dynamic>))
             .toList();
       }
@@ -39,13 +45,15 @@ class ActivationRepository {
 
   /// Marks a training module as complete.
   Future<void> markModuleComplete(String moduleId) async {
-    await ApiClient.put('/supervisors/me/modules/$moduleId/complete');
+    await ApiClient.put('/training/progress/$moduleId', {
+      'progress': 100,
+    });
   }
 
   /// Fetches the supervisor quiz.
   Future<Quiz> getQuiz(String quizId) async {
     try {
-      final response = await ApiClient.get('/supervisor/activation/quiz/$quizId');
+      final response = await ApiClient.get('/training/quiz?moduleId=$quizId');
       if (response != null) {
         // Parse quiz from API response if available
         return defaultSupervisorQuiz;
@@ -58,7 +66,10 @@ class ActivationRepository {
 
   /// Submits quiz result.
   Future<void> submitQuizResult(QuizResult result) async {
-    await ApiClient.post('/supervisor/activation/quiz/submit', result.toJson());
+    await ApiClient.post('/training/quiz/attempt', {
+      'moduleId': result.quizId,
+      'answers': result.toJson()['answers'] ?? [],
+    });
 
     // If passed, mark the quiz module as complete
     if (result.passed) {
@@ -70,10 +81,11 @@ class ActivationRepository {
   Future<int> getQuizAttempts(String quizId) async {
     try {
       final response = await ApiClient.get(
-        '/supervisor/activation/quiz/$quizId/attempts',
+        '/training/quiz/attempts?moduleId=$quizId',
       );
       if (response is Map<String, dynamic>) {
-        return response['count'] as int? ?? 0;
+        final attempts = response['attempts'] as List?;
+        return attempts?.length ?? 0;
       }
       if (response is List) {
         return response.length;
@@ -92,6 +104,9 @@ class ActivationRepository {
 
   /// Activates the supervisor account.
   Future<void> activateSupervisor() async {
-    await ApiClient.post('/supervisor/activation/activate', {});
+    await ApiClient.put('/supervisors/me/activation', {
+      'trainingCompleted': true,
+      'quizPassed': true,
+    });
   }
 }

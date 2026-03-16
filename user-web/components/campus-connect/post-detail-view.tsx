@@ -484,48 +484,65 @@ export function PostDetailView({ postId }: PostDetailViewProps) {
           </div>
 
         {/* Images */}
-        {post.imageUrls.length > 0 && (
-          <div className="mb-6 space-y-3">
-            {/* Main Image */}
-            <motion.div
-              className="relative aspect-video rounded-2xl overflow-hidden bg-muted"
-              layoutId={`post-image-${postId}`}
-            >
-              <Image
-                src={post.imageUrls[selectedImageIndex]}
-                alt={post.title}
-                fill
-                className="object-cover"
-                priority
-              />
-            </motion.div>
+        {(() => {
+          const imageUrls = Array.isArray(post.imageUrls) ? post.imageUrls : [];
+          if (imageUrls.length === 0) return null;
 
-            {/* Image Thumbnails */}
-            {post.imageUrls.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {post.imageUrls.map((url, index) => (
-                  <button
-                    key={url}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={cn(
-                      "relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border-2 transition-colors",
-                      selectedImageIndex === index
-                        ? "border-primary"
-                        : "border-transparent hover:border-border"
-                    )}
-                  >
-                    <Image
-                      src={url}
-                      alt={`Image ${index + 1}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+          // Ensure selectedImageIndex is within bounds
+          const safeIndex = selectedImageIndex < imageUrls.length ? selectedImageIndex : 0;
+
+          return (
+            <div className="mb-6 space-y-3">
+              {/* Main Image */}
+              <motion.div
+                className="relative aspect-video rounded-2xl overflow-hidden bg-muted"
+                layoutId={`post-image-${postId}`}
+              >
+                <Image
+                  src={imageUrls[safeIndex]}
+                  alt={post.title}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+
+                {/* Image counter overlay */}
+                {imageUrls.length > 1 && (
+                  <div className="absolute top-3 right-3">
+                    <Badge className="bg-black/60 text-white border-0 text-xs backdrop-blur-sm">
+                      {safeIndex + 1} / {imageUrls.length}
+                    </Badge>
+                  </div>
+                )}
+              </motion.div>
+
+              {/* Image Thumbnails */}
+              {imageUrls.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {imageUrls.map((url, index) => (
+                    <button
+                      key={url}
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={cn(
+                        "relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border-2 transition-colors",
+                        safeIndex === index
+                          ? "border-primary"
+                          : "border-transparent hover:border-border"
+                      )}
+                    >
+                      <Image
+                        src={url}
+                        alt={`Image ${index + 1}`}
+                        fill
+                        className="object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Content */}
           <div className="prose prose-sm dark:prose-invert max-w-none mb-6">

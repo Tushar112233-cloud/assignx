@@ -91,12 +91,11 @@ export default function ProjectDetailPage() {
     severity: "minor" | "major" | "critical"
   ) => {
     try {
-      await apiFetch(`/api/projects/${projectId}/revision`, {
+      await apiFetch(`/api/projects/${projectId}/revisions`, {
         method: "POST",
         body: JSON.stringify({
           feedback,
-          severity,
-          requestedByType: "supervisor",
+          specificChanges: severity,
         }),
       })
 

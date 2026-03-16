@@ -490,7 +490,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
           ),
           GestureDetector(
-            onTap: () => context.go(RouteNames.signin),
+            onTap: () => context.go(RouteNames.userType),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(

@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../shared/widgets/glass_container.dart';
 
 /// Data model representing a Q&A question.
@@ -283,10 +284,10 @@ class QuestionCard extends StatelessWidget {
                 backgroundColor: question.authorName.isEmpty
                     ? AppColors.avatarGray
                     : AppColors.avatarWarm,
-                backgroundImage: question.authorAvatar != null
+                backgroundImage: isValidImageUrl(question.authorAvatar)
                     ? NetworkImage(question.authorAvatar!)
                     : null,
-                child: question.authorAvatar == null
+                child: !isValidImageUrl(question.authorAvatar)
                     ? Text(
                         question.authorInitials,
                         style: AppTextStyles.labelSmall.copyWith(

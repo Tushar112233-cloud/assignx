@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Search,
@@ -14,81 +14,15 @@ import {
   DollarSign,
   Users,
   Ticket,
+  Upload,
+  XCircle,
+  Loader2,
+  X,
 } from "lucide-react";
 import { LiveStatsBadge } from "@/components/campus-connect/live-stats-badge";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api/client";
 import type { InvestorCard, FundingStage, PitchDeck } from "@/types/portals";
-
-/**
- * Mock investor data
- */
-const MOCK_INVESTORS: InvestorCard[] = [
-  {
-    id: "1",
-    name: "Priya Sharma",
-    firm: "Nexus Venture Partners",
-    fundingStages: ["seed", "series-a"],
-    sectors: ["Tech", "SaaS", "EdTech"],
-    ticketSize: "$500K - $5M",
-    portfolio: 45,
-    bio: "Early-stage investor focused on India's tech ecosystem. Backed 3 unicorns.",
-  },
-  {
-    id: "2",
-    name: "Rahul Mehta",
-    firm: "Sequoia Capital India",
-    fundingStages: ["series-a", "series-b"],
-    sectors: ["Fintech", "Healthcare", "AI/ML"],
-    ticketSize: "$2M - $20M",
-    portfolio: 80,
-    bio: "Investing in transformative startups building for the next billion users.",
-  },
-  {
-    id: "3",
-    name: "Ananya Gupta",
-    firm: "Blume Ventures",
-    fundingStages: ["pre-seed", "seed"],
-    sectors: ["D2C", "Gaming", "Web3"],
-    ticketSize: "$100K - $2M",
-    portfolio: 120,
-    bio: "Micro-VC investing in bold founders. Love consumer and creator economy.",
-  },
-  {
-    id: "4",
-    name: "Vikram Reddy",
-    firm: "Accel India",
-    fundingStages: ["seed", "series-a", "series-b"],
-    sectors: ["Enterprise", "Cloud", "DevTools"],
-    ticketSize: "$1M - $15M",
-    portfolio: 60,
-    bio: "Focused on India-born global SaaS companies. Partner at Accel since 2018.",
-  },
-  {
-    id: "5",
-    name: "Meera Jain",
-    firm: "Titan Capital",
-    fundingStages: ["pre-seed", "seed"],
-    sectors: ["EdTech", "HealthTech", "Sustainability"],
-    ticketSize: "$50K - $1M",
-    portfolio: 200,
-    bio: "Angel investor and ecosystem builder. Strong focus on impact-driven startups.",
-  },
-  {
-    id: "6",
-    name: "Arjun Das",
-    firm: "Peak XV Partners",
-    fundingStages: ["series-b", "series-c", "growth"],
-    sectors: ["Fintech", "Logistics", "Commerce"],
-    ticketSize: "$10M - $100M",
-    portfolio: 35,
-    bio: "Growth-stage investor. Helping companies scale from Series B to IPO.",
-  },
-];
-
-const MOCK_DECKS: PitchDeck[] = [
-  { id: "1", name: "AssignX Series A Deck.pdf", uploadedAt: "2 days ago", status: "reviewed" },
-  { id: "2", name: "Q1 2026 Update.pdf", uploadedAt: "1 week ago", status: "shortlisted" },
-];
 
 const FUNDING_STAGES: { value: FundingStage | "all"; label: string }[] = [
   { value: "all", label: "All Stages" },
@@ -189,6 +123,7 @@ const DECK_STATUS_STYLES: Record<PitchDeck["status"], { color: string; icon: Rea
   pending: { color: "text-amber-600 dark:text-amber-400", icon: Clock },
   reviewed: { color: "text-blue-600 dark:text-blue-400", icon: CheckCircle },
   shortlisted: { color: "text-emerald-600 dark:text-emerald-400", icon: Star },
+  rejected: { color: "text-red-600 dark:text-red-400", icon: XCircle },
 };
 
 const BUSINESS_SPARKLE_INDICES = [0, 1, 2, 3, 4, 5];
@@ -237,8 +172,21 @@ function useColumnCount(): number {
   return cols ?? 1;
 }
 
+/** Format a date string to a human-readable relative or absolute date */
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 /**
- * InvestorTile — glassmorphism card for a single investor.
+ * InvestorTile -- glassmorphism card for a single investor.
  * Color-tinted per primary funding stage; masonry-safe (no fixed height).
  */
 function InvestorTile({ investor }: { investor: InvestorCard }) {
@@ -338,7 +286,15 @@ function InvestorTile({ investor }: { investor: InvestorCard }) {
  * BusinessPortalHero - Premium hero section for the Business tab
  * Displays animated background orbs, live stats badges, headline, and CTA buttons
  */
-function BusinessPortalHero() {
+function BusinessPortalHero({
+  stats,
+  onPitchClick,
+  onFindClick,
+}: {
+  stats: { activeInvestors: number; fundedStartups: number };
+  onPitchClick: () => void;
+  onFindClick: () => void;
+}) {
   const prefersReducedMotion = useReducedMotion();
 
   return (
@@ -407,9 +363,9 @@ function BusinessPortalHero() {
       <div className="relative z-10 p-6 md:p-8 lg:p-12">
         {/* Stats row */}
         <motion.div variants={heroFadeInUp} className="flex flex-wrap gap-2.5 mb-6">
-          <LiveStatsBadge value={1240} label="Active Investors" icon={TrendingUp} color="amber" />
-          <LiveStatsBadge value={89} label="Funded Startups" icon={Building2} color="blue" autoIncrement={false} />
-          <LiveStatsBadge value={4} label="Avg Raise ($M)" icon={DollarSign} color="emerald" autoIncrement={false} />
+          <LiveStatsBadge value={stats.activeInvestors} label="Active Investors" icon={TrendingUp} color="amber" autoIncrement={false} />
+          <LiveStatsBadge value={stats.fundedStartups} label="Funded Startups" icon={Building2} color="blue" autoIncrement={false} />
+          <LiveStatsBadge value={0} label="Avg Raise ($M)" icon={DollarSign} color="emerald" autoIncrement={false} />
         </motion.div>
 
         {/* Headline */}
@@ -435,6 +391,7 @@ function BusinessPortalHero() {
         <motion.div variants={heroFadeInUp} className="flex flex-wrap gap-3">
           <button
             type="button"
+            onClick={onPitchClick}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-medium shadow-lg shadow-orange-500/25 hover:-translate-y-0.5 transition-all text-sm"
           >
             <Rocket className="h-4 w-4" aria-hidden="true" />
@@ -442,6 +399,7 @@ function BusinessPortalHero() {
           </button>
           <button
             type="button"
+            onClick={onFindClick}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 backdrop-blur-sm text-white font-medium transition-all text-sm"
           >
             <Search className="h-4 w-4" aria-hidden="true" />
@@ -450,6 +408,171 @@ function BusinessPortalHero() {
         </motion.div>
       </div>
     </motion.div>
+  );
+}
+
+/**
+ * PitchDeckUploadModal - Modal for uploading a pitch deck PDF
+ */
+function PitchDeckUploadModal({
+  open,
+  onClose,
+  onUploaded,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onUploaded: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    if (selected.size > 25 * 1024 * 1024) {
+      setError("File must be under 25MB");
+      return;
+    }
+    setFile(selected);
+    setError("");
+    if (!title) {
+      setTitle(selected.name.replace(/\.[^/.]+$/, ""));
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!title.trim()) {
+      setError("Title is required");
+      return;
+    }
+    if (!file) {
+      setError("Please select a file");
+      return;
+    }
+
+    setUploading(true);
+    setError("");
+
+    try {
+      // Step 1: Upload file to Cloudinary via the upload endpoint
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "pitch-decks");
+
+      const uploadResult = await apiClient<{ url: string; publicId: string }>(
+        "/api/upload",
+        { method: "POST", body: formData, isFormData: true }
+      );
+
+      // Step 2: Create the pitch deck record
+      await apiClient("/api/investors/pitch-decks", {
+        method: "POST",
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || undefined,
+          fileUrl: uploadResult.url,
+        }),
+      });
+
+      setTitle("");
+      setDescription("");
+      setFile(null);
+      onUploaded();
+      onClose();
+    } catch (err: any) {
+      setError(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-background border border-border rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-foreground">Upload Pitch Deck</h3>
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-medium text-foreground mb-1 block">Title *</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. My Startup Pitch Deck"
+              className="w-full px-3 py-2 rounded-lg border border-border/50 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-foreground mb-1 block">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of your pitch..."
+              rows={2}
+              className="w-full px-3 py-2 rounded-lg border border-border/50 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-foreground mb-1 block">File *</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.pptx,.ppt"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full border-2 border-dashed border-border/50 rounded-lg p-4 flex flex-col items-center gap-1 hover:border-orange-500/50 hover:bg-orange-500/5 transition-colors"
+            >
+              <Upload className="h-5 w-5 text-muted-foreground" />
+              <span className="text-xs text-foreground font-medium">
+                {file ? file.name : "Click to select file"}
+              </span>
+              <span className="text-[10px] text-muted-foreground">PDF, PPTX up to 25MB</span>
+            </button>
+          </div>
+
+          {error && (
+            <p className="text-xs text-red-500 font-medium">{error}</p>
+          )}
+        </div>
+
+        <div className="flex gap-2 justify-end pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={uploading}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={uploading}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 transition-all disabled:opacity-50 flex items-center gap-2"
+          >
+            {uploading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {uploading ? "Uploading..." : "Upload"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -463,8 +586,91 @@ export function BusinessPortal() {
   const [selectedSector, setSelectedSector] = useState("All");
   const colCount = useColumnCount();
 
+  // API state
+  const [investors, setInvestors] = useState<InvestorCard[]>([]);
+  const [decks, setDecks] = useState<PitchDeck[]>([]);
+  const [stats, setStats] = useState({ activeInvestors: 0, fundedStartups: 0 });
+  const [loading, setLoading] = useState(true);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const pitchSectionRef = useRef<HTMLDivElement>(null);
+
+  /** Fetch investors from API */
+  const fetchInvestors = useCallback(async () => {
+    try {
+      const data = await apiClient<{
+        investors: any[];
+        total: number;
+      }>("/api/investors");
+
+      const mapped: InvestorCard[] = (data.investors || []).map((inv: any) => ({
+        id: inv.id || inv._id,
+        name: inv.name,
+        firm: inv.firm,
+        avatar: inv.avatar || inv.avatar_url || undefined,
+        fundingStages: inv.fundingStages || inv.funding_stages || [],
+        sectors: inv.sectors || [],
+        ticketSize: inv.ticketSize || inv.ticket_size_formatted || "Undisclosed",
+        portfolio: inv.portfolio || inv.dealCount || inv.deal_count || 0,
+        bio: inv.bio || "",
+      }));
+
+      setInvestors(mapped);
+    } catch (err) {
+      console.error("Failed to fetch investors:", err);
+    }
+  }, []);
+
+  /** Fetch user's pitch decks from API */
+  const fetchDecks = useCallback(async () => {
+    try {
+      const data = await apiClient<{ pitchDecks: any[] }>("/api/investors/pitch-decks/my");
+
+      const mapped: PitchDeck[] = (data.pitchDecks || []).map((d: any) => ({
+        id: d.id || d._id,
+        name: d.title || d.name,
+        uploadedAt: d.uploadedAt || d.uploaded_at || d.created_at || "",
+        status: d.status || "pending",
+        fileUrl: d.fileUrl || d.file_url || undefined,
+        description: d.description || undefined,
+        feedback: d.feedback || undefined,
+      }));
+
+      setDecks(mapped);
+    } catch (err) {
+      console.error("Failed to fetch pitch decks:", err);
+    }
+  }, []);
+
+  /** Fetch hero stats */
+  const fetchStats = useCallback(async () => {
+    try {
+      const data = await apiClient<{
+        activeInvestors: number;
+        fundedStartups: number;
+      }>("/api/investors/stats");
+      setStats({
+        activeInvestors: data.activeInvestors || 0,
+        fundedStartups: data.fundedStartups || 0,
+      });
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([fetchInvestors(), fetchDecks(), fetchStats()]);
+      setLoading(false);
+    };
+    loadData();
+  }, [fetchInvestors, fetchDecks, fetchStats]);
+
+  /** Client-side filtering of already-fetched investors */
   const filtered = useMemo(() => {
-    return MOCK_INVESTORS.filter((inv) => {
+    return investors.filter((inv) => {
       if (search && !inv.name.toLowerCase().includes(search.toLowerCase()) && !inv.firm.toLowerCase().includes(search.toLowerCase())) {
         return false;
       }
@@ -472,21 +678,35 @@ export function BusinessPortal() {
       if (selectedSector !== "All" && !inv.sectors.includes(selectedSector)) return false;
       return true;
     });
-  }, [search, selectedStage, selectedSector]);
+  }, [investors, search, selectedStage, selectedSector]);
 
   const columns = useMemo(
     () => distributeIntoColumns(filtered, colCount),
     [filtered, colCount]
   );
 
+  const handlePitchClick = () => {
+    setUploadModalOpen(true);
+  };
+
+  const handleFindClick = () => {
+    searchInputRef.current?.focus();
+    searchInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   return (
     <div className="space-y-6">
-      <BusinessPortalHero />
+      <BusinessPortalHero
+        stats={stats}
+        onPitchClick={handlePitchClick}
+        onFindClick={handleFindClick}
+      />
 
       {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
         <input
+          ref={searchInputRef}
           type="text"
           placeholder="Search investors, firms..."
           value={search}
@@ -538,7 +758,12 @@ export function BusinessPortal() {
           <span className="text-xs text-muted-foreground font-normal">({filtered.length})</span>
         </h2>
 
-        {filtered.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+            <span className="ml-2 text-sm text-muted-foreground">Loading investors...</span>
+          </div>
+        ) : filtered.length > 0 ? (
           <div className="-ml-4 flex w-auto items-start">
             {columns.map((col, colIdx) => (
               <div key={colIdx} className="pl-4 flex-1 min-w-0 flex flex-col gap-4">
@@ -574,7 +799,7 @@ export function BusinessPortal() {
       </div>
 
       {/* Pitch Deck Section */}
-      <div className="space-y-3">
+      <div className="space-y-3" ref={pitchSectionRef}>
         <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <FileText className="h-4 w-4 text-primary" aria-hidden="true" />
           Pitch Decks
@@ -583,24 +808,31 @@ export function BusinessPortal() {
         {/* Upload Zone */}
         <button
           type="button"
+          onClick={() => setUploadModalOpen(true)}
           className="w-full border-2 border-dashed border-orange-500/30 bg-orange-500/5 rounded-xl p-6 flex flex-col items-center gap-2 hover:border-orange-500/50 hover:bg-orange-500/10 transition-colors group"
         >
           <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-sm">
             <Rocket className="h-5 w-5 text-white" aria-hidden="true" />
           </div>
           <span className="text-xs font-medium text-foreground">Drop your pitch deck here</span>
-          <span className="text-[10px] text-muted-foreground">Pitch to 1,240+ active investors · PDF, PPTX up to 25MB</span>
+          <span className="text-[10px] text-muted-foreground">Upload your pitch deck - PDF, PPTX up to 25MB</span>
         </button>
 
         {/* Deck List */}
         <div className="space-y-2">
-          {MOCK_DECKS.map((deck) => {
+          {decks.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-4">
+              No pitch decks uploaded yet
+            </p>
+          ) : decks.map((deck) => {
             const StatusConfig = DECK_STATUS_STYLES[deck.status];
             const borderColor =
               deck.status === "shortlisted"
                 ? "border-l-emerald-500"
                 : deck.status === "reviewed"
                 ? "border-l-blue-500"
+                : deck.status === "rejected"
+                ? "border-l-red-500"
                 : "border-l-amber-500";
             return (
               <div
@@ -614,10 +846,15 @@ export function BusinessPortal() {
                   <FileText className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{deck.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{deck.uploadedAt}</p>
+                    <p className="text-[10px] text-muted-foreground">{formatDate(deck.uploadedAt)}</p>
+                    {deck.feedback && (
+                      <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5 truncate">
+                        Feedback: {deck.feedback}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <div className={cn("flex items-center gap-1 text-xs font-medium", StatusConfig.color)}>
+                <div className={cn("flex items-center gap-1 text-xs font-medium shrink-0", StatusConfig.color)}>
                   <StatusConfig.icon className="h-3.5 w-3.5" aria-hidden="true" />
                   <span className="capitalize">{deck.status}</span>
                 </div>
@@ -626,6 +863,16 @@ export function BusinessPortal() {
           })}
         </div>
       </div>
+
+      {/* Upload Modal */}
+      <PitchDeckUploadModal
+        open={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onUploaded={() => {
+          fetchDecks();
+          fetchStats();
+        }}
+      />
     </div>
   );
 }

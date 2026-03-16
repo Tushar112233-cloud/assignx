@@ -234,27 +234,27 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
   }
 
   /// Check if account exists.
-  Future<bool> checkAccount(String email) async {
-    return await _authRepository.checkAccount(email);
+  Future<bool> checkAccount(String email, {String role = 'user'}) async {
+    return await _authRepository.checkAccount(email, role: role);
   }
 
   /// Send OTP for login or signup.
+  ///
+  /// [role] defaults to 'user' since the API requires it.
   Future<void> sendOTP({
     required String email,
     required String purpose,
-    String? role,
+    String role = 'user',
   }) async {
     state = AsyncValue.data(state.valueOrNull?.copyWith(isLoading: true) ??
         const AuthStateData(isLoading: true));
 
     try {
-      if (role != null) {
-        final userType = UserType.values.firstWhere(
-          (t) => t.toDbString() == role,
-          orElse: () => UserType.student,
-        );
-        setPreSignInRole(userType);
-      }
+      final userType = UserType.values.firstWhere(
+        (t) => t.toDbString() == role,
+        orElse: () => UserType.student,
+      );
+      setPreSignInRole(userType);
 
       await _authRepository.sendOTP(email: email, purpose: purpose, role: role);
 
@@ -271,11 +271,13 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
   }
 
   /// Verify OTP token.
+  ///
+  /// [role] defaults to 'user' since the API requires it.
   Future<bool> verifyOtp({
     required String email,
     required String token,
     required String purpose,
-    String? role,
+    String role = 'user',
   }) async {
     state = AsyncValue.data(state.valueOrNull?.copyWith(isLoading: true) ??
         const AuthStateData(isLoading: true));

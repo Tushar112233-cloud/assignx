@@ -524,7 +524,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               subtitle: Text('PDF, DOC, DOCX, ZIP'.tr(context)),
               onTap: () {
                 Navigator.pop(context);
-                _mockAddFile();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('File picker coming soon'.tr(context)),
+                  ),
+                );
               },
             ),
             ListTile(
@@ -557,25 +561,4 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     );
   }
 
-  void _mockAddFile() async {
-    // Mock adding a file - in production, use file_picker package
-    final fileName = 'document_${DateTime.now().second}.docx';
-    final fileSize = 125000 + (DateTime.now().millisecond * 100);
-
-    final success = await ref.read(workspaceProvider(widget.projectId)).addFile(
-          filePath: '/mock/path/$fileName', // Mock path
-          fileName: fileName,
-          fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          fileSizeBytes: fileSize,
-        );
-
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('File uploaded successfully'.tr(context)),
-          backgroundColor: AppColors.success,
-        ),
-      );
-    }
-  }
 }

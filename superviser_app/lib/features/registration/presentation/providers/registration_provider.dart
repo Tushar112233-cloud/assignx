@@ -213,10 +213,10 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
       }
 
       final response = await ApiClient.uploadFile(
-        '/uploads/cv',
+        '/upload',
         file,
         fieldName: 'file',
-        folder: 'supervisor-cvs',
+        folder: 'assignx/supervisor-cvs',
       );
 
       final url = (response as Map<String, dynamic>?)?['url'] as String?;

@@ -71,23 +71,26 @@ export default function ReviewsPage() {
     if (doer?.id) {
       const fetchReviews = async () => {
         try {
-          const reviewsData = await apiClient<any[]>(
-            `/api/doers/${doer.id}/reviews?is_public=true&sort=-created_at&populate=project,reviewer`
+          const reviewsResponse = await apiClient<{ reviews: any[]; total: number }>(
+            `/api/doers/${doer.id}/reviews`
           )
 
           // Transform data to match Review type
-          const transformedReviews: Review[] = (reviewsData || []).map((r) => ({
+          // API returns `rating` (single number) and `review` (text), not separate category ratings
+          const transformedReviews: Review[] = (reviewsResponse.reviews || []).map((r) => ({
             id: r.id,
-            overall_rating: r.overall_rating,
-            quality_rating: r.quality_rating,
-            timeliness_rating: r.timeliness_rating,
-            communication_rating: r.communication_rating,
-            review_text: r.review_text,
+            overall_rating: r.rating ?? r.overall_rating ?? 0,
+            quality_rating: r.rating ?? r.quality_rating ?? 0,
+            timeliness_rating: r.rating ?? r.timeliness_rating ?? 0,
+            communication_rating: r.rating ?? r.communication_rating ?? 0,
+            review_text: r.review ?? r.review_text ?? '',
             created_at: r.created_at,
             project: Array.isArray(r.project) ? r.project[0] || undefined : r.project || undefined,
             reviewer: Array.isArray(r.reviewer)
               ? r.reviewer[0] || undefined
-              : r.reviewer || undefined,
+              : r.reviewer
+                ? { full_name: r.reviewer_name, avatar_url: r.reviewer_avatar }
+                : undefined,
           }))
           setReviews(transformedReviews)
         } catch (err) {

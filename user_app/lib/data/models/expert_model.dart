@@ -53,8 +53,20 @@ class Expert {
   /// Experience in years.
   final int experienceYears;
 
+  /// Experience description from API (free-form string).
+  final String? experience;
+
+  /// Education description from API (free-form string).
+  final String? education;
+
   /// Institution or organization.
   final String? institution;
+
+  /// Currency for pricing.
+  final String currency;
+
+  /// Whether the expert is featured.
+  final bool featured;
 
   /// Created timestamp.
   final DateTime createdAt;
@@ -80,7 +92,11 @@ class Expert {
     this.responseTime = 'Within 24 hours',
     this.languages = const ['English'],
     this.experienceYears = 0,
+    this.experience,
+    this.education,
     this.institution,
+    this.currency = 'INR',
+    this.featured = false,
     required this.createdAt,
     this.lastActiveAt,
   });
@@ -133,8 +149,12 @@ class Expert {
       responseTime: (json['response_time'] ?? json['responseTime']) as String? ?? 'Within 24 hours',
       languages:
           (json['languages'] as List<dynamic>?)?.cast<String>() ?? ['English'],
-      experienceYears: (json['experience_years'] ?? json['experienceYears']) as int? ?? 0,
+      experienceYears: _parseExperienceYears(json),
+      experience: (json['experience'] as String?),
+      education: (json['education'] as String?),
       institution: json['institution'] as String?,
+      currency: json['currency'] as String? ?? 'INR',
+      featured: json['featured'] as bool? ?? false,
       createdAt: (json['created_at'] ?? json['createdAt']) != null
           ? DateTime.tryParse((json['created_at'] ?? json['createdAt']).toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -142,6 +162,23 @@ class Expert {
           ? DateTime.tryParse((json['last_active_at'] ?? json['lastActiveAt']).toString())
           : null,
     );
+  }
+
+  /// Parse experience years from various possible formats.
+  static int _parseExperienceYears(Map<String, dynamic> json) {
+    // Try explicit experienceYears / experience_years first
+    final explicit = json['experience_years'] ?? json['experienceYears'];
+    if (explicit is int) return explicit;
+    if (explicit is num) return explicit.toInt();
+    // Try parsing numeric value from experience string (e.g. "10 years")
+    final exp = json['experience'];
+    if (exp is int) return exp;
+    if (exp is num) return exp.toInt();
+    if (exp is String) {
+      final match = RegExp(r'(\d+)').firstMatch(exp);
+      if (match != null) return int.tryParse(match.group(1)!) ?? 0;
+    }
+    return 0;
   }
 
   /// Convert to JSON.
@@ -164,7 +201,11 @@ class Expert {
       'response_time': responseTime,
       'languages': languages,
       'experience_years': experienceYears,
+      'experience': experience,
+      'education': education,
       'institution': institution,
+      'currency': currency,
+      'featured': featured,
       'created_at': createdAt.toIso8601String(),
       'last_active_at': lastActiveAt?.toIso8601String(),
     };
@@ -189,7 +230,11 @@ class Expert {
     String? responseTime,
     List<String>? languages,
     int? experienceYears,
+    String? experience,
+    String? education,
     String? institution,
+    String? currency,
+    bool? featured,
     DateTime? createdAt,
     DateTime? lastActiveAt,
   }) {
@@ -211,7 +256,11 @@ class Expert {
       responseTime: responseTime ?? this.responseTime,
       languages: languages ?? this.languages,
       experienceYears: experienceYears ?? this.experienceYears,
+      experience: experience ?? this.experience,
+      education: education ?? this.education,
       institution: institution ?? this.institution,
+      currency: currency ?? this.currency,
+      featured: featured ?? this.featured,
       createdAt: createdAt ?? this.createdAt,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
     );

@@ -191,53 +191,6 @@ class AppBanner {
     );
   }
 
-  /// Mock banners for initial display and testing.
-  static List<AppBanner> get mockBanners => [
-        AppBanner(
-          id: '550e8400-e29b-41d4-a716-446655440001',
-          title: 'Get 20% Off',
-          subtitle: 'On your first project',
-          imageUrl: 'https://example.com/banners/promo-20-off.jpg',
-          ctaText: 'Start Now',
-          ctaUrl: '/add-project',
-          ctaAction: 'navigate',
-          targetUserTypes: ['student', 'professional'],
-          targetRoles: ['user'],
-          displayLocation: 'home',
-          displayOrder: 1,
-          startDate: DateTime.now(),
-          isActive: true,
-        ),
-        AppBanner(
-          id: '550e8400-e29b-41d4-a716-446655440002',
-          title: 'Free AI Report',
-          subtitle: 'With every project submission',
-          imageUrl: 'https://example.com/banners/ai-report.jpg',
-          ctaText: 'Learn More',
-          ctaUrl: 'https://example.com/ai-report-info',
-          ctaAction: 'open_url',
-          targetUserTypes: ['student'],
-          targetRoles: ['user'],
-          displayLocation: 'home',
-          displayOrder: 2,
-          isActive: true,
-        ),
-        AppBanner(
-          id: '550e8400-e29b-41d4-a716-446655440003',
-          title: 'Refer & Earn',
-          subtitle: 'Get \u20B9100 for each referral',
-          imageUrl: 'https://example.com/banners/referral.jpg',
-          ctaText: 'Share Now',
-          ctaUrl: '/profile',
-          ctaAction: 'navigate',
-          targetUserTypes: ['student', 'professional'],
-          targetRoles: ['user', 'doer'],
-          displayLocation: 'home',
-          displayOrder: 3,
-          isActive: true,
-        ),
-      ];
-
   /// Checks if the banner should be displayed based on current date.
   bool get isCurrentlyDisplayable {
     final now = DateTime.now();

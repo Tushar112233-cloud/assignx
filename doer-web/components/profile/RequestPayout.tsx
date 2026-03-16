@@ -35,7 +35,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { mockWallet } from './constants'
+import { emptyWallet } from './constants'
 import type { Wallet as WalletType, Doer } from '@/types/database'
 
 /**
@@ -61,7 +61,7 @@ interface RequestPayoutProps {
  * Allows users to request withdrawal of earnings
  */
 export function RequestPayout({
-  wallet = mockWallet,
+  wallet = emptyWallet,
   doer,
   minPayout = 500,
   processingFee = 0,

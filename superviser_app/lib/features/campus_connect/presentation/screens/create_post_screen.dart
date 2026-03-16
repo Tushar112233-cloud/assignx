@@ -1,7 +1,6 @@
 library;
 
-import 'dart:ui';
-
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -114,71 +113,65 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(204),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withAlpha(128),
-                width: 1,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(230),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withAlpha(128),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariantLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.close, size: 20),
               ),
             ),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () => context.pop(),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceVariantLight,
-                      borderRadius: BorderRadius.circular(10),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Create Post',
+                    style: AppTypography.labelLarge.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    child: const Icon(Icons.close, size: 20),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Create Post',
-                        style: AppTypography.labelLarge.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        'Step ${_currentStep + 1} of 3',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    'Step ${_currentStep + 1} of 3',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-                if (_currentStep == 2)
-                  GlassButton(
-                    label: 'Post',
-                    onPressed: _isSubmitting ? null : _handleSubmit,
-                    isLoading: _isSubmitting,
-                    blur: 10,
-                    opacity: 0.9,
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    fullWidth: false,
-                    height: 40,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    fontSize: 14,
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
+            if (_currentStep == 2)
+              GlassButton(
+                label: 'Post',
+                onPressed: _isSubmitting ? null : _handleSubmit,
+                isLoading: _isSubmitting,
+                blur: 10,
+                opacity: 0.9,
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                fullWidth: false,
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                fontSize: 14,
+              ),
+          ],
         ),
       ),
     );
@@ -686,16 +679,18 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
-            child: Image.network(
-              url,
+            child: CachedNetworkImage(
+              imageUrl: url,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: AppColors.surfaceVariantLight,
-                  child: const Icon(Icons.broken_image,
-                      color: AppColors.textTertiary),
-                );
-              },
+              placeholder: (context, imageUrl) => Container(
+                color: AppColors.surfaceVariantLight,
+                child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+              errorWidget: (context, imageUrl, error) => Container(
+                color: AppColors.surfaceVariantLight,
+                child: const Icon(Icons.broken_image,
+                    color: AppColors.textTertiary),
+              ),
             ),
           ),
           Positioned(
@@ -789,51 +784,44 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => ClipRRect(
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(24)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface.withAlpha(242),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ListTile(
-                    leading: const Icon(Icons.camera_alt),
-                    title: const Text('Take Photo'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickImage(ImageSource.camera);
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.photo_library),
-                    title: const Text('Choose from Gallery'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickImage(ImageSource.gallery);
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                ],
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface.withAlpha(250),
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Take Photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
         ),
       ),

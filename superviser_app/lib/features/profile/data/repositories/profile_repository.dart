@@ -45,9 +45,10 @@ class ProfileRepository {
   Future<String?> uploadAvatar(File imageFile) async {
     try {
       final response = await ApiClient.uploadFile(
-        '/uploads/avatar',
+        '/upload',
         imageFile,
-        fieldName: 'avatar',
+        fieldName: 'file',
+        folder: 'assignx/avatars',
       );
       if (response == null) return null;
       return (response as Map<String, dynamic>)['url'] as String?;
@@ -165,7 +166,7 @@ class ProfileRepository {
   Future<bool> blacklistDoer(String doerId, String reason) async {
     try {
       await ApiClient.post('/supervisors/me/blacklist', {
-        'doer_id': doerId,
+        'doerId': doerId,
         'reason': reason,
       });
       return true;

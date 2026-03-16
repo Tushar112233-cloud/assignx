@@ -37,7 +37,7 @@ export async function getTransactions(params: {
   if (params.dateFrom) query.set("dateFrom", params.dateFrom);
   if (params.dateTo) query.set("dateTo", params.dateTo);
   if (params.page) query.set("page", String(params.page));
-  if (params.perPage) query.set("perPage", String(params.perPage));
+  if (params.perPage) query.set("limit", String(params.perPage));
 
   try {
     return await serverFetch(`/api/admin/transactions?${query.toString()}`);

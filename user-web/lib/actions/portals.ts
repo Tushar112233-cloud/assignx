@@ -48,8 +48,8 @@ export async function addUserRole(role: PortalRole): Promise<{ success?: boolean
 
   try {
     await serverApiClient("/api/users/me", {
-      method: "POST",
-      body: JSON.stringify({ role }),
+      method: "PUT",
+      body: JSON.stringify({ addRole: role }),
     }, token);
 
     revalidatePath("/campus-connect");
@@ -69,8 +69,8 @@ export async function removeUserRole(role: PortalRole): Promise<{ success?: bool
 
   try {
     await serverApiClient("/api/users/me", {
-      method: "DELETE",
-      body: JSON.stringify({ role }),
+      method: "PUT",
+      body: JSON.stringify({ removeRole: role }),
     }, token);
 
     revalidatePath("/campus-connect");

@@ -1,36 +1,16 @@
-/// Timeline event for project progress matching project_timeline table.
+/// Timeline event for project progress.
 class ProjectTimelineEvent {
-  /// Unique identifier.
   final String id;
-
-  /// Project this event belongs to.
   final String projectId;
-
-  /// Type of milestone (e.g., 'submission', 'payment', 'delivery').
   final String milestoneType;
-
-  /// Display title for the milestone.
   final String milestoneTitle;
-
-  /// Optional description.
   final String? description;
-
-  /// Whether this milestone is completed.
   final bool isCompleted;
-
-  /// When the milestone was completed.
   final DateTime? completedAt;
-
-  /// Order in the timeline sequence.
   final int sequenceOrder;
-
-  /// Expected completion date.
   final DateTime? expectedAt;
-
-  /// When this record was created.
   final DateTime createdAt;
 
-  /// Creates a new [ProjectTimelineEvent].
   const ProjectTimelineEvent({
     required this.id,
     required this.projectId,
@@ -44,27 +24,96 @@ class ProjectTimelineEvent {
     required this.createdAt,
   });
 
-  /// Creates a [ProjectTimelineEvent] from JSON data.
+  static bool _parseBool(dynamic v) {
+    if (v == null) return false;
+    if (v is bool) return v;
+    if (v is String) return v.toLowerCase() == 'true' || v == '1';
+    if (v is num) return v != 0;
+    return false;
+  }
+
+  /// Status labels for display.
+  static const _statusLabels = {
+    'draft': 'Draft Created',
+    'submitted': 'Project Submitted',
+    'analyzing': 'Under Review',
+    'quoted': 'Quote Ready',
+    'payment_pending': 'Awaiting Payment',
+    'paid': 'Payment Successful',
+    'assigning': 'Finding Expert',
+    'assigned': 'Expert Assigned',
+    'in_progress': 'Work Started',
+    'submitted_for_qc': 'Submitted for QC',
+    'qc_in_progress': 'QC In Progress',
+    'qc_approved': 'QC Approved',
+    'qc_rejected': 'QC Needs Revision',
+    'delivered': 'Project Delivered',
+    'revision_requested': 'Revision Requested',
+    'in_revision': 'In Revision',
+    'completed': 'Project Completed',
+    'auto_approved': 'Auto-Approved',
+    'cancelled': 'Project Cancelled',
+  };
+
+  static String _titleFor(String status) {
+    return _statusLabels[status] ??
+        status.replaceAll('_', ' ').replaceAllMapped(
+          RegExp(r'(^|\s)\w'),
+          (m) => m.group(0)!.toUpperCase(),
+        );
+  }
+
+  /// Creates from API JSON — handles BOTH formats:
+  /// 1. Status history: { from_status, to_status, notes, created_at }
+  /// 2. Milestone format: { milestoneType, milestoneTitle, isCompleted, ... }
   factory ProjectTimelineEvent.fromJson(Map<String, dynamic> json) {
+    // Detect which format: status_history has 'to_status' or 'toStatus'
+    final toStatus = (json['to_status'] ?? json['toStatus']) as String?;
+
+    if (toStatus != null && toStatus.isNotEmpty) {
+      // Status history format from API
+      return ProjectTimelineEvent(
+        id: (json['id'] ?? json['_id'] ?? '').toString(),
+        projectId: (json['project_id'] ?? json['projectId'] ?? '').toString(),
+        milestoneType: toStatus,
+        milestoneTitle: _titleFor(toStatus),
+        description: (json['notes'] as String?) ?? (json['changed_by_name'] as String?),
+        isCompleted: true, // All status_history entries are completed events
+        completedAt: DateTime.tryParse(
+            (json['created_at'] ?? json['createdAt'] ?? '').toString()),
+        sequenceOrder: 0,
+        createdAt: DateTime.tryParse(
+                (json['created_at'] ?? json['createdAt'] ?? '').toString()) ??
+            DateTime.now(),
+      );
+    }
+
+    // Legacy milestone format
     return ProjectTimelineEvent(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       projectId: (json['project_id'] ?? json['projectId'] ?? '').toString(),
-      milestoneType: (json['milestone_type'] ?? json['milestoneType'] ?? '').toString(),
-      milestoneTitle: (json['milestone_title'] ?? json['milestoneTitle'] ?? '').toString(),
+      milestoneType:
+          (json['milestone_type'] ?? json['milestoneType'] ?? '').toString(),
+      milestoneTitle:
+          (json['milestone_title'] ?? json['milestoneTitle'] ?? '').toString(),
       description: json['description'] as String?,
-      isCompleted: (json['is_completed'] ?? json['isCompleted']) as bool? ?? false,
+      isCompleted: _parseBool(json['is_completed'] ?? json['isCompleted']),
       completedAt: (json['completed_at'] ?? json['completedAt']) != null
-          ? DateTime.tryParse((json['completed_at'] ?? json['completedAt']).toString())
+          ? DateTime.tryParse(
+              (json['completed_at'] ?? json['completedAt']).toString())
           : null,
-      sequenceOrder: (json['sequence_order'] ?? json['sequenceOrder'] ?? 0) as int,
+      sequenceOrder:
+          (json['sequence_order'] ?? json['sequenceOrder'] ?? 0) as int,
       expectedAt: (json['expected_at'] ?? json['expectedAt']) != null
-          ? DateTime.tryParse((json['expected_at'] ?? json['expectedAt']).toString())
+          ? DateTime.tryParse(
+              (json['expected_at'] ?? json['expectedAt']).toString())
           : null,
-      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      createdAt: DateTime.tryParse(
+              (json['created_at'] ?? json['createdAt'] ?? '').toString()) ??
+          DateTime.now(),
     );
   }
 
-  /// Converts this [ProjectTimelineEvent] to JSON.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -80,7 +129,6 @@ class ProjectTimelineEvent {
     };
   }
 
-  /// Creates a copy with modified fields.
   ProjectTimelineEvent copyWith({
     String? id,
     String? projectId,

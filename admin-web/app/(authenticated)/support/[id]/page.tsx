@@ -22,7 +22,7 @@ export default async function TicketDetailPage({
       <div className="flex flex-col gap-4 py-4">
         <TicketDetailView
           ticket={ticketData.ticket}
-          messages={ticketData.messages}
+          messages={ticketData.messages || ticketData.ticket?.messages || []}
           admins={admins}
         />
       </div>

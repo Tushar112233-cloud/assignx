@@ -55,25 +55,53 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final ChatRepository _repository;
   final String roomId;
   final String userId;
+  final String? projectId;
   StreamSubscription<ChatMessage>? _subscription;
 
   ChatNotifier({
     required ChatRepository repository,
     required this.roomId,
     required this.userId,
+    this.projectId,
   })  : _repository = repository,
         super(const ChatState()) {
     _initialize();
+  }
+
+  /// Deduplicates a list of messages by ID, keeping the last occurrence.
+  List<ChatMessage> _dedup(List<ChatMessage> msgs) {
+    final seen = <String>{};
+    final result = <ChatMessage>[];
+    // Iterate in reverse so we keep the latest version of each message
+    for (var i = msgs.length - 1; i >= 0; i--) {
+      if (seen.add(msgs[i].id)) {
+        result.add(msgs[i]);
+      }
+    }
+    return result.reversed.toList();
   }
 
   Future<void> _initialize() async {
     state = state.copyWith(isLoading: true);
 
     try {
-      // Load initial messages
-      final messages = await _repository.getMessages(roomId);
+      // Load initial messages and timeline events in parallel
+      final messagesFuture = _repository.getMessages(roomId);
+      final timelineFuture = projectId != null
+          ? _repository.getProjectTimeline(projectId!)
+          : Future.value(<Map<String, dynamic>>[]);
+
+      final results = await Future.wait([messagesFuture, timelineFuture]);
+      final messages = _dedup(results[0] as List<ChatMessage>);
+      final timelineRaw = results[1] as List<Map<String, dynamic>>;
+
+      final timelineEvents = timelineRaw
+          .map((e) => TimelineEvent.fromJson(e))
+          .toList();
+
       state = state.copyWith(
         messages: messages,
+        timelineEvents: timelineEvents,
         isLoading: false,
       );
 
@@ -82,6 +110,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       // Subscribe to new messages
       _subscription = _repository.subscribeToRoom(roomId).listen((message) {
+        // Deduplicate: skip if message id already exists
+        if (state.messages.any((m) => m.id == message.id)) return;
+
         state = state.copyWith(
           messages: [...state.messages, message],
         );
@@ -117,7 +148,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       );
 
       state = state.copyWith(
-        messages: [...state.messages, messageWithSender],
+        messages: _dedup([...state.messages, messageWithSender]),
         isSending: false,
       );
     } catch (e) {
@@ -141,8 +172,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
         before: oldestMessage.createdAt.toIso8601String(),
       );
 
+      // Merge and deduplicate
       state = state.copyWith(
-        messages: [...olderMessages, ...state.messages],
+        messages: _dedup([...olderMessages, ...state.messages]),
         isLoadingMore: false,
         hasMoreMessages: olderMessages.isNotEmpty,
       );
@@ -199,9 +231,62 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 }
 
+/// A single timeline event from the project's status history.
+class TimelineEvent {
+  final String fromStatus;
+  final String toStatus;
+  final String? changedBy;
+  final String? changedByName;
+  final String? notes;
+  final DateTime createdAt;
+
+  const TimelineEvent({
+    required this.fromStatus,
+    required this.toStatus,
+    this.changedBy,
+    this.changedByName,
+    this.notes,
+    required this.createdAt,
+  });
+
+  factory TimelineEvent.fromJson(Map<String, dynamic> json) {
+    final createdStr = (json['created_at'] ?? json['createdAt'] ?? '').toString();
+    return TimelineEvent(
+      fromStatus: (json['from_status'] ?? json['fromStatus'] ?? '').toString(),
+      toStatus: (json['to_status'] ?? json['toStatus'] ?? '').toString(),
+      changedBy: (json['changed_by'] ?? json['changedBy'])?.toString(),
+      changedByName: (json['changed_by_name'] ?? json['changedByName'])?.toString(),
+      notes: (json['notes'])?.toString(),
+      createdAt: DateTime.tryParse(createdStr) ?? DateTime.now(),
+    );
+  }
+}
+
+/// A union type representing either a chat message or a timeline event in
+/// the combined chat stream. Used by the ListView to render both types.
+class ChatStreamItem {
+  final ChatMessage? message;
+  final TimelineEvent? event;
+  final DateTime timestamp;
+
+  ChatStreamItem.fromMessage(ChatMessage msg)
+      : message = msg,
+        event = null,
+        timestamp = msg.createdAt;
+
+  ChatStreamItem.fromEvent(TimelineEvent evt)
+      : message = null,
+        event = evt,
+        timestamp = evt.createdAt;
+
+  bool get isMessage => message != null;
+  bool get isEvent => event != null;
+}
+
 /// State class for chat.
 class ChatState {
   final List<ChatMessage> messages;
+  final List<TimelineEvent> timelineEvents;
   final bool isLoading;
   final bool isSending;
   final bool isLoadingMore;
@@ -210,6 +295,7 @@ class ChatState {
 
   const ChatState({
     this.messages = const [],
+    this.timelineEvents = const [],
     this.isLoading = false,
     this.isSending = false,
     this.isLoadingMore = false,
@@ -219,6 +305,7 @@ class ChatState {
 
   ChatState copyWith({
     List<ChatMessage>? messages,
+    List<TimelineEvent>? timelineEvents,
     bool? isLoading,
     bool? isSending,
     bool? isLoadingMore,
@@ -227,6 +314,7 @@ class ChatState {
   }) {
     return ChatState(
       messages: messages ?? this.messages,
+      timelineEvents: timelineEvents ?? this.timelineEvents,
       isLoading: isLoading ?? this.isLoading,
       isSending: isSending ?? this.isSending,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
@@ -236,10 +324,14 @@ class ChatState {
   }
 }
 
+/// Parameter type for the chat notifier provider.
+/// Uses a record to pass both roomId and optional projectId.
+typedef ChatNotifierParams = ({String roomId, String? projectId});
+
 /// Provider for chat notifier with room context.
 final chatNotifierProvider =
-    StateNotifierProvider.autoDispose.family<ChatNotifier, ChatState, String>(
-        (ref, roomId) {
+    StateNotifierProvider.autoDispose.family<ChatNotifier, ChatState, ChatNotifierParams>(
+        (ref, params) {
   final repository = ref.watch(chatRepositoryProvider);
   final user = ref.watch(currentUserProvider);
 
@@ -249,7 +341,8 @@ final chatNotifierProvider =
 
   return ChatNotifier(
     repository: repository,
-    roomId: roomId,
+    roomId: params.roomId,
     userId: user.id,
+    projectId: params.projectId,
   );
 });

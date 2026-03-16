@@ -1005,4 +1005,58 @@ router.post('/:id/claim', authenticate, async (req: Request, res: Response, next
   }
 });
 
+// PUT /projects/:id/cancel — user (project owner) cancels their own project
+router.put('/:id/cancel', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) throw new AppError('Project not found', 404);
+
+    // Only the project owner can cancel
+    if (String(project.userId) !== req.user!.id) {
+      throw new AppError('Only the project owner can cancel this project', 403);
+    }
+
+    // Only allow cancellation for non-terminal statuses
+    const nonCancellableStatuses = ['completed', 'auto_approved', 'cancelled', 'refunded'];
+    if (nonCancellableStatuses.includes(project.status)) {
+      throw new AppError(`Cannot cancel a project with status "${project.status}"`, 400);
+    }
+
+    const oldStatus = project.status;
+    project.status = 'cancelled';
+    project.statusUpdatedAt = new Date();
+    project.statusHistory.push({
+      fromStatus: oldStatus,
+      toStatus: 'cancelled',
+      changedBy: req.user!.id as any,
+      notes: req.body.reason || 'Cancelled by user',
+      createdAt: new Date(),
+    });
+    await project.save();
+
+    // Notify supervisor and doer
+    const io = req.app.get('io');
+    const targets = [
+      { recipientId: project.supervisorId, recipientRole: 'supervisor' },
+      { recipientId: project.doerId, recipientRole: 'doer' },
+    ].filter(t => t.recipientId);
+
+    for (const target of targets) {
+      const notification = await Notification.create({
+        recipientId: target.recipientId,
+        recipientRole: target.recipientRole,
+        type: 'project_cancelled',
+        title: 'Project Cancelled',
+        message: `Project "${project.title}" has been cancelled by the client`,
+        data: { projectId: project._id },
+      });
+      if (io) io.to(`user:${target.recipientId}`).emit('notification:new', notification);
+    }
+
+    res.json({ project });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

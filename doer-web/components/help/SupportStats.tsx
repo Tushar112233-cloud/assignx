@@ -6,7 +6,7 @@ const stats = [
   {
     icon: Clock,
     label: "Average Response Time",
-    value: "< 2 hours",
+    value: "\u2014",
     description: "Typical first response",
     iconBg: "bg-[#E3E9FF]",
     iconColor: "text-[#4F6CF7]",
@@ -14,7 +14,7 @@ const stats = [
   {
     icon: CheckCircle,
     label: "Tickets Resolved",
-    value: "95%",
+    value: "\u2014",
     description: "First contact resolution",
     iconBg: "bg-green-500/10",
     iconColor: "text-green-600",
@@ -22,7 +22,7 @@ const stats = [
   {
     icon: Star,
     label: "Satisfaction Rating",
-    value: "4.8/5",
+    value: "\u2014",
     description: "Customer feedback score",
     iconBg: "bg-[#FFF1EC]",
     iconColor: "text-[#FF8B6A]",
@@ -30,7 +30,7 @@ const stats = [
   {
     icon: Headphones,
     label: "Support Agents",
-    value: "24/7",
+    value: "\u2014",
     description: "Always available",
     iconBg: "bg-[#EEF2FF]",
     iconColor: "text-[#6B5BFF]",

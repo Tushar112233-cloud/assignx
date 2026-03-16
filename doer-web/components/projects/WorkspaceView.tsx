@@ -92,6 +92,8 @@ interface WorkspaceViewProps {
   onStartRevision?: (revisionId: string) => void
   /** Callback to update live document URL */
   onUpdateLiveDocUrl?: (url: string) => Promise<void>
+  /** Callback to update progress percentage */
+  onUpdateProgress?: (percentage: number) => Promise<void>
 }
 
 /**
@@ -118,12 +120,15 @@ export function WorkspaceView({
   onSendFile,
   onStartRevision,
   onUpdateLiveDocUrl,
+  onUpdateProgress,
 }: WorkspaceViewProps) {
   const [activeTab, setActiveTab] = useState('details')
   const [isUploading, setIsUploading] = useState(false)
   const [liveDocUrl, setLiveDocUrl] = useState(project.live_document_url || '')
   const [isSavingDocUrl, setIsSavingDocUrl] = useState(false)
   const [docUrlError, setDocUrlError] = useState<string | null>(null)
+  const [progressValue, setProgressValue] = useState(project.progress_percentage ?? 0)
+  const [isSavingProgress, setIsSavingProgress] = useState(false)
 
   const timeInfo = getTimeRemaining(project.deadline)
   const hasRevision = project.status === 'revision_requested'
@@ -282,6 +287,63 @@ export function WorkspaceView({
           </div>
         </div>
       </motion.div>
+
+      {/* Work Progress Update */}
+      {onUpdateProgress && ['in_progress', 'in_revision'].includes(project.status) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.5 }}
+          className="rounded-[24px] bg-white/85 p-5 shadow-[0_16px_35px_rgba(30,58,138,0.08)]"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-900">Work Progress</h3>
+            <span className="text-2xl font-bold text-[#5B7CFF]">{progressValue}%</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={progressValue}
+            onChange={(e) => setProgressValue(Number(e.target.value))}
+            className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-[#5A7CFF] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#5A7CFF] [&::-webkit-slider-thumb]:shadow-md"
+          />
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex gap-1.5">
+              {[25, 50, 75, 100].map((val) => (
+                <button
+                  key={val}
+                  onClick={() => setProgressValue(val)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-full text-xs font-medium transition-all',
+                    progressValue === val
+                      ? 'bg-[#5A7CFF] text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  )}
+                >
+                  {val}%
+                </button>
+              ))}
+            </div>
+            <Button
+              size="sm"
+              disabled={isSavingProgress || progressValue === (project.progress_percentage ?? 0)}
+              onClick={async () => {
+                setIsSavingProgress(true)
+                try {
+                  await onUpdateProgress(progressValue)
+                } finally {
+                  setIsSavingProgress(false)
+                }
+              }}
+              className="rounded-full bg-[#5A7CFF] hover:bg-[#4A6AEF] text-white px-4"
+            >
+              {isSavingProgress ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update'}
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Main workspace tabs - Doer dashboard style */}
       <motion.div

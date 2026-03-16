@@ -48,6 +48,19 @@ router.post('/tickets', authenticate, async (req: Request, res: Response, next: 
   }
 });
 
+// GET /support/tickets/count — must be before :id to avoid "count" matching as an ID
+router.get('/tickets/count', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { status } = req.query;
+    const filter: Record<string, unknown> = { raisedById: req.user!.id, raisedByRole: req.user!.role };
+    if (status) filter.status = status;
+    const count = await SupportTicket.countDocuments(filter);
+    res.json({ count });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /support/tickets/:id
 router.get('/tickets/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -227,19 +240,6 @@ router.get('/tickets/:id/messages', authenticate, async (req: Request, res: Resp
 router.post('/tickets/:id/attachments', authenticate, async (req: Request, res: Response) => {
   // Stub: accept attachment metadata
   res.json({ url: '', success: true });
-});
-
-// GET /support/tickets/count
-router.get('/tickets/count', authenticate, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { status } = req.query;
-    const filter: Record<string, unknown> = { raisedById: req.user!.id, raisedByRole: req.user!.role };
-    if (status) filter.status = status;
-    const count = await SupportTicket.countDocuments(filter);
-    res.json({ count });
-  } catch (err) {
-    next(err);
-  }
 });
 
 export default router;

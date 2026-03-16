@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -165,10 +163,10 @@ class DockTooltip extends StatelessWidget {
   }
 }
 
-/// A macOS-style dock navigation bar with glass morphism effect.
+/// A macOS-style dock navigation bar.
 ///
 /// Features:
-/// - Glass morphism background with blur and saturation
+/// - Opaque dark background (no GPU-intensive BackdropFilter)
 /// - Icon magnification on hover/press
 /// - Spring animations for tap feedback
 /// - Active indicator with smooth transitions
@@ -246,37 +244,32 @@ class _DockNavigationState extends State<DockNavigation> {
   }
 
   Widget _buildDockContainer(bool isDark) {
-    // Always use dark/black navbar regardless of theme
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 6,
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A).withAlpha(240), // Dark/black navbar
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withAlpha(15),
-              width: 0.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(60),
-                blurRadius: 20,
-                spreadRadius: 0,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: _buildDockItems(true), // Always use dark mode styling for icons
-          ),
+    // Always use dark/black navbar regardless of theme.
+    // No BackdropFilter needed - background is near-opaque so blur is invisible.
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A).withAlpha(240), // Dark/black navbar
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withAlpha(15),
+          width: 0.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(60),
+            blurRadius: 20,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: _buildDockItems(true), // Always use dark mode styling for icons
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/project_model.dart';
+import '../../../data/models/subject.dart';
 import '../../../providers/project_provider.dart';
 import '../widgets/budget_display.dart';
 import '../widgets/file_attachment.dart';
@@ -50,7 +51,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
   bool _isSubmitting = false;
 
   // Form data
-  ProjectSubject? _subject;
+  Subject? _subject;
   ExpertiseLevel? _expertiseLevel;
   FeedbackType _feedbackType = FeedbackType.written;
   List<AttachmentFile> _attachments = [];
@@ -89,7 +90,7 @@ class _ExpertOpinionFormState extends ConsumerState<ExpertOpinionForm> {
             ? _contextController.text.trim()
             : null,
         serviceType: ServiceType.expertOpinion,
-        subjectId: _subject?.name,
+        subjectId: _subject?.id,
         deadline: DateTime.now().add(const Duration(days: 3)),
         specificInstructions: 'Question: ${_questionController.text.trim()}\n'
             'Expertise Level: ${_expertiseLevel?.title ?? 'Not selected'}\n'

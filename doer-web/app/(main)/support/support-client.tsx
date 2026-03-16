@@ -89,12 +89,16 @@ export function SupportClient({ userEmail }: SupportClientProps) {
     const loadProjects = async () => {
       try {
         // Get the doer's ID
-        const doerData = await apiClient<{ id: string }>(`/api/doers/me`)
-        if (!doerData) return
-        const data = await apiClient<Array<{ id: string; project_number: string; title: string }>>(
-          `/api/projects?doer_id=${doerData.id}&fields=id,project_number,title&sort=-created_at`
+        const projectsData = await apiClient<{ projects: Array<{ _id: string; id: string; projectNumber: string; project_number: string; title: string }> }>(
+          `/api/projects`
         )
-        if (data) setProjects(data.map((p: any) => ({ ...p, subject: p.title })) as any)
+        if (projectsData?.projects) {
+          setProjects(projectsData.projects.map((p: any) => ({
+            id: p.id || p._id,
+            project_number: p.project_number || p.projectNumber || '',
+            subject: p.title || 'Untitled',
+          })))
+        }
       } catch (error) {
         console.error('Error loading projects:', error)
       }
@@ -108,7 +112,7 @@ export function SupportClient({ userEmail }: SupportClientProps) {
     setTicketsLoading(true)
     try {
       const data = await apiClient<any>(
-        `/api/support/tickets?requester_id=${user.id}&sort=-created_at`
+        `/api/support/tickets`
       )
       if (data) {
         const ticketsList = Array.isArray(data) ? data : (data.tickets || [])
@@ -143,14 +147,10 @@ export function SupportClient({ userEmail }: SupportClientProps) {
       await apiClient('/api/support/tickets', {
         method: 'POST',
         body: JSON.stringify({
-          requester_id: user?.id,
           subject: subject.trim(),
           description: message.trim(),
           category,
           priority,
-          project_id: projectId || null,
-          status: 'open',
-          source_role: 'doer',
         }),
       })
 

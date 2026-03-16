@@ -22,7 +22,7 @@ export async function getProjects(params: {
   if (params.supervisorId) query.set("supervisorId", params.supervisorId);
   if (params.doerId) query.set("doerId", params.doerId);
   if (params.page) query.set("page", String(params.page));
-  if (params.perPage) query.set("perPage", String(params.perPage));
+  if (params.perPage) query.set("limit", String(params.perPage));
 
   return serverFetch(`/api/admin/projects?${query.toString()}`);
 }
@@ -55,16 +55,12 @@ export async function updateProjectQuote(
 ) {
   await verifyAdmin();
 
-  const platformFee = userQuote - doerPayout - (supervisorCommission || 0);
-
-  await serverFetch(`/api/projects/${projectId}`, {
-    method: "PUT",
+  await serverFetch(`/api/projects/${projectId}/quote`, {
+    method: "POST",
     body: JSON.stringify({
       userQuote,
       doerPayout,
-      supervisorCommission: supervisorCommission || 0,
-      platformFee,
-      status: "quoted",
+      ...(supervisorCommission ? { supervisorCommission } : {}),
     }),
   });
 

@@ -29,8 +29,6 @@
 /// - [AppSpacing] for spacing and border radius constants
 library;
 
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
@@ -188,9 +186,8 @@ class _AppButtonState extends State<AppButton>
         onTapUp: _handleTapUp,
         onTapCancel: _handleTapCancel,
         onTap: _isDisabled ? null : widget.onPressed,
-        child: Opacity(
-          opacity: _isDisabled ? 0.5 : 1.0,
-          child: SizedBox(
+        child: _wrapDisabled(
+          SizedBox(
             width: widget.isFullWidth ? double.infinity : null,
             height: _getHeight(),
             child: _buildButton(),
@@ -198,6 +195,12 @@ class _AppButtonState extends State<AppButton>
         ),
       ),
     );
+  }
+
+  /// Wraps the child with Opacity only when disabled, avoiding the
+  /// GPU cost of Opacity compositing when the button is enabled.
+  Widget _wrapDisabled(Widget child) {
+    return _isDisabled ? Opacity(opacity: 0.5, child: child) : child;
   }
 
   /// Returns the button height based on the selected size.
@@ -283,23 +286,17 @@ class _AppButtonState extends State<AppButton>
   ///
   /// Uses a glass morphism background with a teal border and teal text.
   Widget _buildSecondaryButton() {
-    return ClipRRect(
-      borderRadius: _pillRadius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: _getPadding(),
-          decoration: BoxDecoration(
-            color: Colors.white.withAlpha(25),
-            borderRadius: _pillRadius,
-            border: Border.all(
-              color: AppColors.accent.withAlpha(128),
-              width: 1.5,
-            ),
-          ),
-          child: Center(child: _buildChild(AppColors.accent)),
+    return Container(
+      padding: _getPadding(),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(25),
+        borderRadius: _pillRadius,
+        border: Border.all(
+          color: AppColors.accent.withAlpha(128),
+          width: 1.5,
         ),
       ),
+      child: Center(child: _buildChild(AppColors.accent)),
     );
   }
 

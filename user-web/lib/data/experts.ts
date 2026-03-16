@@ -1,448 +1,168 @@
 /**
  * Expert data helpers
- * In production, this data comes from the database
+ * Fetches expert data from the real API.
  */
 
+import { apiClient } from "@/lib/api/client";
 import type { Expert, ExpertReview, ConsultationBooking } from "@/types/expert";
 
 /**
- * Experts data - fetched from database in production
+ * Re-export empty arrays for backward compatibility with any imports
+ * that still reference them (e.g. type-only usage).
  */
-export const MOCK_EXPERTS: Expert[] = [
-  {
-    id: "b0000000-0000-4000-8000-000000000001",
-    name: "Dr. Ananya Sharma",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Ananya",
-    designation: "MBBS, MD (Internal Medicine)",
-    bio: "Experienced physician with 12+ years in internal medicine. Specializes in preventive healthcare, chronic disease management, and lifestyle medicine. Available for online consultations.",
-    verified: true,
-    rating: 4.9,
-    reviewCount: 142,
-    totalSessions: 580,
-    specializations: ["medicine"],
-    pricePerSession: 499,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 15 min",
-    languages: ["English", "Hindi"],
-    education: "AIIMS Delhi",
-    experience: "12 years",
-    featured: true,
-    createdAt: new Date("2024-01-15"),
-  },
-  {
-    id: "b0000000-0000-4000-8000-000000000002",
-    name: "Dr. Rajesh Gupta",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Rajesh",
-    designation: "BDS, MDS (Orthodontics)",
-    bio: "Leading orthodontist specializing in dental alignment, braces, and cosmetic dentistry. Offers virtual consultations for initial assessments and follow-ups.",
-    verified: true,
-    rating: 4.7,
-    reviewCount: 98,
-    totalSessions: 320,
-    specializations: ["medicine"],
-    pricePerSession: 399,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 30 min",
-    languages: ["English", "Hindi", "Punjabi"],
-    education: "Maulana Azad Institute of Dental Sciences",
-    experience: "8 years",
-    featured: true,
-    createdAt: new Date("2024-03-01"),
-  },
-  {
-    id: "b0000000-0000-4000-8000-000000000003",
-    name: "Prof. Vikram Mehta",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Vikram",
-    designation: "PhD Computer Science, IIT Bombay",
-    bio: "Professor of Computer Science specializing in machine learning, algorithms, and data structures. Helps students with academic projects, thesis guidance, and competitive programming.",
-    verified: true,
-    rating: 4.8,
-    reviewCount: 215,
-    totalSessions: 890,
-    specializations: ["programming", "data_analysis"],
-    pricePerSession: 699,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 1 hour",
-    languages: ["English", "Hindi"],
-    education: "IIT Bombay",
-    experience: "15 years",
-    featured: true,
-    createdAt: new Date("2024-02-10"),
-  },
-  {
-    id: "b0000000-0000-4000-8000-000000000004",
-    name: "Dr. Priya Nair",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Priya",
-    designation: "MBBS, MD (Dermatology)",
-    bio: "Board-certified dermatologist with expertise in skin conditions, hair loss treatments, and cosmetic dermatology. Provides detailed online assessments with personalized care plans.",
-    verified: true,
-    rating: 4.9,
-    reviewCount: 176,
-    totalSessions: 450,
-    specializations: ["medicine"],
-    pricePerSession: 599,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 20 min",
-    languages: ["English", "Hindi", "Malayalam"],
-    education: "CMC Vellore",
-    experience: "10 years",
-    featured: true,
-    createdAt: new Date("2024-01-20"),
-  },
-  {
-    id: "b0000000-0000-4000-8000-000000000005",
-    name: "Adv. Sanjay Kapoor",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Sanjay",
-    designation: "LLM, Supreme Court Advocate",
-    bio: "Senior advocate with 18 years of experience in corporate law, intellectual property, and contract disputes. Provides legal guidance and document review sessions.",
-    verified: true,
-    rating: 4.6,
-    reviewCount: 67,
-    totalSessions: 210,
-    specializations: ["law"],
-    pricePerSession: 999,
-    currency: "INR",
-    availability: "busy",
-    responseTime: "< 2 hours",
-    languages: ["English", "Hindi"],
-    education: "National Law School, Bangalore",
-    experience: "18 years",
-    featured: false,
-    createdAt: new Date("2024-04-05"),
-  },
-  {
-    id: "b0000000-0000-4000-8000-000000000006",
-    name: "Dr. Meera Iyer",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Meera",
-    designation: "PhD Mathematics, ISI Kolkata",
-    bio: "Expert in pure mathematics, statistics, and quantitative aptitude. Helps with competitive exam preparation (GATE, NET, GRE), thesis writing, and advanced coursework.",
-    verified: true,
-    rating: 4.8,
-    reviewCount: 134,
-    totalSessions: 620,
-    specializations: ["mathematics", "data_analysis"],
-    pricePerSession: 549,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 30 min",
-    languages: ["English", "Hindi", "Tamil"],
-    education: "ISI Kolkata",
-    experience: "11 years",
-    featured: false,
-    createdAt: new Date("2024-02-28"),
-  },
-  {
-    id: "b0000000-0000-4000-8000-000000000007",
-    name: "Prof. Arjun Reddy",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Arjun",
-    designation: "MBA, IIM Ahmedabad | Strategy Consultant",
-    bio: "Former McKinsey consultant turned professor. Specializes in business strategy, case study preparation, MBA admissions coaching, and startup advisory.",
-    verified: true,
-    rating: 4.7,
-    reviewCount: 89,
-    totalSessions: 340,
-    specializations: ["business"],
-    pricePerSession: 799,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 1 hour",
-    languages: ["English", "Hindi", "Telugu"],
-    education: "IIM Ahmedabad",
-    experience: "14 years",
-    featured: true,
-    createdAt: new Date("2024-03-15"),
-  },
-  {
-    id: "b0000000-0000-4000-8000-000000000008",
-    name: "Dr. Kavita Singh",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Kavita",
-    designation: "MBBS, MD (Psychiatry)",
-    bio: "Compassionate psychiatrist specializing in anxiety, depression, and student mental health. Offers confidential online therapy and counseling sessions in a safe, supportive environment.",
-    verified: true,
-    rating: 4.9,
-    reviewCount: 203,
-    totalSessions: 780,
-    specializations: ["medicine"],
-    pricePerSession: 699,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 15 min",
-    languages: ["English", "Hindi"],
-    education: "NIMHANS Bangalore",
-    experience: "13 years",
-    featured: true,
-    createdAt: new Date("2024-01-10"),
-  },
-  {
-    id: "exp-009",
-    name: "Prof. Deepak Joshi",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Deepak",
-    designation: "PhD Mechanical Engineering, IIT Delhi",
-    bio: "Professor of engineering with expertise in thermodynamics, fluid mechanics, and CAD/CAM. Helps with project design, FEA analysis, and competitive exam prep.",
-    verified: true,
-    rating: 4.5,
-    reviewCount: 56,
-    totalSessions: 180,
-    specializations: ["engineering", "science"],
-    pricePerSession: 449,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 45 min",
-    languages: ["English", "Hindi"],
-    education: "IIT Delhi",
-    experience: "9 years",
-    featured: false,
-    createdAt: new Date("2024-05-01"),
-  },
-  {
-    id: "exp-010",
-    name: "Dr. Neha Patel",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Neha",
-    designation: "PhD English Literature | Academic Writing Coach",
-    bio: "Published author and academic writing coach. Specializes in thesis editing, research paper writing, literature reviews, and dissertation guidance across all disciplines.",
-    verified: true,
-    rating: 4.8,
-    reviewCount: 167,
-    totalSessions: 520,
-    specializations: ["academic_writing", "research_methodology"],
-    pricePerSession: 399,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 30 min",
-    languages: ["English", "Hindi", "Gujarati"],
-    education: "JNU Delhi",
-    experience: "10 years",
-    featured: false,
-    createdAt: new Date("2024-03-20"),
-  },
-  {
-    id: "exp-011",
-    name: "Dr. Rohit Malhotra",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Rohit",
-    designation: "MBBS, MS (Ophthalmology)",
-    bio: "Eye specialist with expertise in vision correction, cataract assessment, and digital eye strain management. Offers preliminary online consultations and second opinions.",
-    verified: true,
-    rating: 4.6,
-    reviewCount: 72,
-    totalSessions: 250,
-    specializations: ["medicine"],
-    pricePerSession: 449,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 1 hour",
-    languages: ["English", "Hindi"],
-    education: "AIIMS Delhi",
-    experience: "7 years",
-    featured: false,
-    createdAt: new Date("2024-04-10"),
-  },
-  {
-    id: "exp-012",
-    name: "Prof. Aisha Khan",
-    avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=Aisha",
-    designation: "PhD Biotechnology | Research Advisor",
-    bio: "Biotechnology researcher with published work in genomics and molecular biology. Guides students through research methodology, lab protocols, and science project planning.",
-    verified: true,
-    rating: 4.7,
-    reviewCount: 93,
-    totalSessions: 310,
-    specializations: ["science", "research_methodology"],
-    pricePerSession: 549,
-    currency: "INR",
-    availability: "available",
-    responseTime: "< 45 min",
-    languages: ["English", "Hindi", "Urdu"],
-    education: "IISc Bangalore",
-    experience: "9 years",
-    featured: false,
-    createdAt: new Date("2024-02-15"),
-  },
-];
+export const MOCK_EXPERTS: Expert[] = [];
+export const MOCK_REVIEWS: ExpertReview[] = [];
+export const MOCK_BOOKINGS: ConsultationBooking[] = [];
 
 /**
- * Reviews data - fetched from database in production
+ * Fetch all experts from the API
  */
-export const MOCK_REVIEWS: ExpertReview[] = [
-  {
-    id: "rev-001",
-    expertId: "exp-001",
-    clientId: "user-001",
-    bookingId: "book-001",
-    rating: 5,
-    comment: "Dr. Sharma was incredibly thorough and patient. She explained my condition in simple terms and gave a very clear treatment plan. Highly recommend!",
-    clientName: "Rahul Kumar",
-    createdAt: new Date("2025-01-15"),
-    helpful: 12,
-  },
-  {
-    id: "rev-002",
-    expertId: "exp-001",
-    clientId: "user-002",
-    bookingId: "book-002",
-    rating: 5,
-    comment: "Best online consultation I've had. Very professional and knowledgeable. The follow-up was also excellent.",
-    clientName: "Sneha Mishra",
-    createdAt: new Date("2025-01-20"),
-    helpful: 8,
-  },
-  {
-    id: "rev-003",
-    expertId: "exp-003",
-    clientId: "user-003",
-    bookingId: "book-003",
-    rating: 5,
-    comment: "Prof. Mehta helped me debug my ML project in just one session. His approach to explaining complex algorithms is phenomenal.",
-    clientName: "Amit Verma",
-    createdAt: new Date("2025-02-01"),
-    helpful: 15,
-  },
-  {
-    id: "rev-004",
-    expertId: "exp-003",
-    clientId: "user-004",
-    bookingId: "book-004",
-    rating: 4,
-    comment: "Great session on data structures. He went beyond the syllabus to explain real-world applications. Would book again.",
-    clientName: "Pooja Reddy",
-    createdAt: new Date("2025-02-05"),
-    helpful: 6,
-  },
-  {
-    id: "rev-005",
-    expertId: "exp-004",
-    clientId: "user-005",
-    bookingId: "book-005",
-    rating: 5,
-    comment: "Dr. Nair diagnosed my skin issue accurately over video call and the prescribed treatment worked perfectly. Very convenient!",
-    clientName: "Tanvi Shah",
-    createdAt: new Date("2025-01-25"),
-    helpful: 10,
-  },
-  {
-    id: "rev-006",
-    expertId: "exp-008",
-    clientId: "user-006",
-    bookingId: "book-006",
-    rating: 5,
-    comment: "Dr. Kavita made me feel so comfortable during our session. She truly understands student stress and gave practical coping strategies.",
-    clientName: "Ankit Jain",
-    createdAt: new Date("2025-02-10"),
-    helpful: 20,
-  },
-  {
-    id: "rev-007",
-    expertId: "exp-007",
-    clientId: "user-007",
-    bookingId: "book-007",
-    rating: 5,
-    comment: "Prof. Reddy's case study approach is world-class. He helped me prepare for my MBA interviews and I got into my top choice.",
-    clientName: "Divya Menon",
-    createdAt: new Date("2025-01-30"),
-    helpful: 14,
-  },
-  {
-    id: "rev-008",
-    expertId: "exp-010",
-    clientId: "user-008",
-    bookingId: "book-008",
-    rating: 5,
-    comment: "Dr. Patel transformed my thesis draft. Her editing and structural suggestions were invaluable. My supervisor was impressed with the improvement.",
-    clientName: "Karthik Rajan",
-    createdAt: new Date("2025-02-08"),
-    helpful: 9,
-  },
-];
+export async function fetchExperts(): Promise<{ experts: Expert[]; total: number }> {
+  try {
+    const data = await apiClient<{ experts: Expert[]; total: number }>("/api/experts");
+    return { experts: data.experts || [], total: data.total || 0 };
+  } catch (error) {
+    console.error("Failed to fetch experts:", error);
+    return { experts: [], total: 0 };
+  }
+}
 
 /**
- * Bookings data - fetched from database in production
+ * Fetch expert by ID from the API
  */
-export const MOCK_BOOKINGS: ConsultationBooking[] = [
-  {
-    id: "book-100",
-    expertId: "b0000000-0000-4000-8000-000000000003",
-    clientId: "mock-user",
-    date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-    startTime: "14:00",
-    endTime: "15:00",
-    duration: 60,
-    topic: "Machine Learning Project Review",
-    notes: "Need help with model accuracy improvement",
-    status: "upcoming",
-    meetLink: "https://meet.google.com/abc-defg-hij",
-    totalAmount: 699,
-    expertAmount: 466,
-    platformFee: 233,
-    currency: "INR",
-    paymentStatus: "completed",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "book-101",
-    expertId: "b0000000-0000-4000-8000-000000000001",
-    clientId: "mock-user",
-    date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-    startTime: "10:00",
-    endTime: "11:00",
-    duration: 60,
-    topic: "General Health Checkup Discussion",
-    status: "upcoming",
-    meetLink: "https://meet.google.com/xyz-uvwx-rst",
-    totalAmount: 499,
-    expertAmount: 333,
-    platformFee: 166,
-    currency: "INR",
-    paymentStatus: "completed",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "book-102",
-    expertId: "b0000000-0000-4000-8000-000000000008",
-    clientId: "mock-user",
-    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-    startTime: "16:00",
-    endTime: "17:00",
-    duration: 60,
-    topic: "Stress Management Counseling",
-    status: "completed",
-    totalAmount: 699,
-    expertAmount: 466,
-    platformFee: 233,
-    currency: "INR",
-    paymentStatus: "completed",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-  },
-];
+export async function fetchExpertById(id: string): Promise<Expert | null> {
+  try {
+    const data = await apiClient<{ expert: Expert }>(`/api/experts/${id}`);
+    return data.expert || null;
+  } catch (error) {
+    console.error("Failed to fetch expert:", error);
+    return null;
+  }
+}
 
 /**
- * Get expert by ID
+ * Fetch reviews for an expert
+ */
+export async function fetchExpertReviews(expertId: string): Promise<ExpertReview[]> {
+  try {
+    const data = await apiClient<{ reviews: ExpertReview[] }>(`/api/experts/${expertId}/reviews`);
+    return data.reviews || [];
+  } catch (error) {
+    console.error("Failed to fetch reviews:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetch current user's bookings from the API
+ */
+export async function fetchUserBookings(): Promise<ConsultationBooking[]> {
+  try {
+    const data = await apiClient<{ bookings: ConsultationBooking[] }>("/api/experts/bookings/me");
+    return data.bookings || [];
+  } catch (error) {
+    console.error("Failed to fetch bookings:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetch available time slots for an expert on a specific date.
+ * Returns slots with booked ones marked as unavailable.
+ */
+export async function fetchExpertAvailability(
+  expertId: string,
+  date: string
+): Promise<{ slots: Array<{ id: string; time: string; displayTime: string; available: boolean }>; bookedCount: number }> {
+  try {
+    const data = await apiClient<{
+      slots: Array<{ id: string; time: string; displayTime: string; display_time: string; available: boolean }>;
+      bookedCount: number;
+    }>(`/api/experts/${expertId}/availability?date=${date}`);
+    const slots = (data.slots || []).map((s) => ({
+      id: s.id,
+      time: s.time,
+      displayTime: s.displayTime || s.display_time || s.time,
+      available: s.available,
+    }));
+    return { slots, bookedCount: data.bookedCount || 0 };
+  } catch (error) {
+    console.error("Failed to fetch expert availability:", error);
+    return { slots: [], bookedCount: 0 };
+  }
+}
+
+/**
+ * Create a Razorpay order for an expert booking
+ */
+export async function createExpertBookingOrder(
+  expertId: string,
+  amount: number
+): Promise<{ orderId: string; amount: number; currency: string; keyId: string } | null> {
+  try {
+    const data = await apiClient<{ orderId: string; amount: number; currency: string; keyId: string }>(
+      "/api/experts/bookings/create-order",
+      { method: "POST", body: JSON.stringify({ expertId, amount }) }
+    );
+    return data;
+  } catch (error) {
+    console.error("Failed to create booking order:", error);
+    return null;
+  }
+}
+
+/**
+ * Verify Razorpay payment and create expert booking
+ */
+export async function verifyExpertBookingPayment(data: {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+  expertId: string;
+  date: string;
+  time: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  topic: string;
+  notes: string;
+  amount: number;
+}): Promise<{ booking: any } | null> {
+  try {
+    const result = await apiClient<{ booking: any }>(
+      "/api/experts/bookings/verify-payment",
+      { method: "POST", body: JSON.stringify(data) }
+    );
+    return result;
+  } catch (error) {
+    console.error("Failed to verify expert booking payment:", error);
+    return null;
+  }
+}
+
+/**
+ * @deprecated Use fetchExpertById instead
  */
 export function getExpertById(id: string): Expert | undefined {
   return MOCK_EXPERTS.find((expert) => expert.id === id);
 }
 
 /**
- * Get reviews for an expert
+ * @deprecated Use fetchExpertReviews instead
  */
 export function getExpertReviews(expertId: string): ExpertReview[] {
   return MOCK_REVIEWS.filter((review) => review.expertId === expertId);
 }
 
 /**
- * Get user's bookings
+ * @deprecated Use fetchUserBookings instead
  */
 export function getUserBookings(userId: string): ConsultationBooking[] {
   return MOCK_BOOKINGS.filter((booking) => booking.clientId === userId);
 }
 
 /**
- * Get featured experts
+ * @deprecated Use fetchExperts with featured filter instead
  */
 export function getFeaturedExperts(): Expert[] {
   return MOCK_EXPERTS.filter((expert) => expert.featured);

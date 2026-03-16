@@ -185,7 +185,7 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
     if (_scrollController.position.pixels <=
             _scrollController.position.minScrollExtent + 100 &&
         _roomId != null) {
-      ref.read(chatNotifierProvider(_roomId!).notifier).loadMoreMessages();
+      ref.read(chatNotifierProvider((roomId: _roomId!, projectId: widget.projectId)).notifier).loadMoreMessages();
     }
   }
 
@@ -207,7 +207,7 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
 
     _stopTyping();
     _messageController.clear();
-    await ref.read(chatNotifierProvider(_roomId!).notifier).sendMessage(text);
+    await ref.read(chatNotifierProvider((roomId: _roomId!, projectId: widget.projectId)).notifier).sendMessage(text);
     _scrollToBottom();
   }
 
@@ -342,26 +342,52 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
         ),
       ),
       error: (error, _) => Scaffold(
-        body: _buildGradientBackground(
-          child: Center(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(widget.projectTitle ?? 'Chat', style: AppTextStyles.bodyMedium),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.error_outline,
+                Icon(
+                  Icons.chat_bubble_outline,
                   size: 64,
-                  color: Colors.white,
+                  color: Colors.grey[400],
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Failed to load chat'.tr(context),
-                  style: AppTextStyles.bodyLarge.copyWith(color: Colors.white),
+                  'Chat unavailable',
+                  style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'The chat room could not be loaded. This may happen if the project hasn\'t been assigned yet.',
+                  style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () =>
-                      ref.invalidate(projectChatRoomProvider(widget.projectId)),
-                  child: Text('Retry'.tr(context)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Go Back'),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () =>
+                          ref.invalidate(projectChatRoomProvider(widget.projectId)),
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -450,12 +476,13 @@ class _ChatContentState extends ConsumerState<_ChatContent>
     }
 
     // For non-supervisor users, only show approved messages
+    final effectiveStatus = message.effectiveApprovalStatus;
     final status = MessageApprovalStatusExtension.fromString(
-      message.approvalStatus,
+      effectiveStatus,
     );
 
     // If no approval status set (legacy messages), show them
-    if (message.approvalStatus == null) {
+    if (effectiveStatus == null) {
       return true;
     }
 
@@ -468,7 +495,7 @@ class _ChatContentState extends ConsumerState<_ChatContent>
 
     return messages.where((msg) {
       final status = MessageApprovalStatusExtension.fromString(
-        msg.approvalStatus,
+        msg.effectiveApprovalStatus,
       );
       return status == MessageApprovalStatus.pending;
     }).length;
@@ -476,7 +503,8 @@ class _ChatContentState extends ConsumerState<_ChatContent>
 
   @override
   Widget build(BuildContext context) {
-    final chatState = ref.watch(chatNotifierProvider(widget.roomId));
+    final chatParams = (roomId: widget.roomId, projectId: widget.projectId);
+    final chatState = ref.watch(chatNotifierProvider(chatParams));
     final currentUserId = ref.read(currentUserProvider)?.id ?? '';
 
     // Filter visible messages based on role
@@ -484,12 +512,36 @@ class _ChatContentState extends ConsumerState<_ChatContent>
         .where((msg) => _isMessageVisible(msg, currentUserId))
         .toList();
 
+    // Build combined stream: messages + timeline events, sorted by timestamp
+    final combinedItems = _buildCombinedStream(visibleMessages, chatState.timelineEvents);
+
+    // Pre-compute date separator indices for the combined list
+    final dateSeparatorIndices = <int>{};
+    for (var i = 0; i < combinedItems.length; i++) {
+      if (i == 0) {
+        dateSeparatorIndices.add(i);
+      } else {
+        final prevDate = combinedItems[i - 1].timestamp.toLocal();
+        final currDate = combinedItems[i].timestamp.toLocal();
+        if (prevDate.year != currDate.year ||
+            prevDate.month != currDate.month ||
+            prevDate.day != currDate.day) {
+          dateSeparatorIndices.add(i);
+        }
+      }
+    }
+
     // Count pending for supervisor
     final pendingCount = _countPendingMessages(chatState.messages);
 
-    ref.listen<ChatState>(chatNotifierProvider(widget.roomId), (prev, next) {
+    ref.listen<ChatState>(chatNotifierProvider(chatParams), (prev, next) {
       if (prev != null && next.messages.length > prev.messages.length) {
-        widget.onScrollToBottom();
+        // Only auto-scroll if user is near the bottom (within 200px)
+        if (widget.scrollController.hasClients) {
+          final pos = widget.scrollController.position;
+          final nearBottom = pos.maxScrollExtent - pos.pixels < 200;
+          if (nearBottom) widget.onScrollToBottom();
+        }
       }
     });
 
@@ -520,12 +572,12 @@ class _ChatContentState extends ConsumerState<_ChatContent>
                       ? const Center(
                           child: CircularProgressIndicator(color: _ChatColors.warmAccent),
                         )
-                      : visibleMessages.isEmpty
+                      : combinedItems.isEmpty
                           ? _EmptyChat()
                           : ListView.builder(
                               controller: widget.scrollController,
                               padding: const EdgeInsets.all(16),
-                              itemCount: visibleMessages.length +
+                              itemCount: combinedItems.length +
                                   (chatState.isLoadingMore ? 1 : 0),
                               itemBuilder: (context, index) {
                                 if (chatState.isLoadingMore && index == 0) {
@@ -540,30 +592,37 @@ class _ChatContentState extends ConsumerState<_ChatContent>
                                   );
                                 }
 
-                                final messageIndex =
+                                final itemIndex =
                                     chatState.isLoadingMore ? index - 1 : index;
-                                final message = visibleMessages[messageIndex];
-                                final showDate = messageIndex == 0 ||
-                                    !_isSameDay(
-                                      visibleMessages[messageIndex - 1].createdAt,
-                                      message.createdAt,
-                                    );
+                                final item = combinedItems[itemIndex];
+                                final showDate = dateSeparatorIndices.contains(itemIndex);
 
                                 return Column(
-                                  key: ValueKey(message.id),
+                                  key: ValueKey(
+                                    item.isMessage
+                                        ? 'msg_${item.message!.id}'
+                                        : 'evt_${item.event!.toStatus}_${item.timestamp.millisecondsSinceEpoch}',
+                                  ),
                                   children: [
                                     if (showDate)
-                                      _DateSeparator(date: message.createdAt),
-                                    _buildAnimatedMessage(
-                                      index: messageIndex,
-                                      child: _MessageBubble(
-                                        message: message,
-                                        isMe: message.isMe(currentUserId),
-                                        userRole: widget.userRole,
-                                        currentUserId: currentUserId,
-                                        roomId: widget.roomId,
+                                      _DateSeparator(date: item.timestamp),
+                                    if (item.isMessage)
+                                      _buildAnimatedMessage(
+                                        index: itemIndex,
+                                        child: _MessageBubble(
+                                          message: item.message!,
+                                          isMe: item.message!.isMe(currentUserId),
+                                          userRole: widget.userRole,
+                                          currentUserId: currentUserId,
+                                          roomId: widget.roomId,
+                                          projectId: widget.projectId,
+                                        ),
+                                      )
+                                    else
+                                      _buildAnimatedMessage(
+                                        index: itemIndex,
+                                        child: _TimelineEventCard(event: item.event!),
                                       ),
-                                    ),
                                   ],
                                 );
                               },
@@ -752,13 +811,15 @@ class _ChatContentState extends ConsumerState<_ChatContent>
   Widget _buildAnimatedMessage({required int index, required Widget child}) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 300 + (index * 50)),
+      // Fixed: Use constant duration to avoid jank with many messages.
+      // Previously scaled with index (300 + index*50 ms).
+      duration: const Duration(milliseconds: 200),
       curve: Curves.easeOut,
       builder: (context, value, child) {
         return Opacity(
           opacity: value,
           child: Transform.translate(
-            offset: Offset(0, 20 * (1 - value)),
+            offset: Offset(0, 12 * (1 - value)),
             child: child,
           ),
         );
@@ -820,8 +881,17 @@ class _ChatContentState extends ConsumerState<_ChatContent>
     );
   }
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
+  /// Builds a combined, timestamp-sorted list of messages and timeline events.
+  List<ChatStreamItem> _buildCombinedStream(
+    List<ChatMessage> messages,
+    List<TimelineEvent> events,
+  ) {
+    final items = <ChatStreamItem>[
+      ...messages.map((m) => ChatStreamItem.fromMessage(m)),
+      ...events.map((e) => ChatStreamItem.fromEvent(e)),
+    ];
+    items.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return items;
   }
 }
 
@@ -1073,19 +1143,249 @@ class _DateSeparator extends StatelessWidget {
   }
 
   String _formatDate(BuildContext context, DateTime date) {
+    final localDate = date.toLocal();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
-    final messageDate = DateTime(date.year, date.month, date.day);
+    final messageDate = DateTime(localDate.year, localDate.month, localDate.day);
 
     if (messageDate == today) {
       return 'Today'.tr(context);
     } else if (messageDate == yesterday) {
       return 'Yesterday'.tr(context);
     } else {
-      return '${date.day}/${date.month}/${date.year}';
+      return '${localDate.day}/${localDate.month}/${localDate.year}';
     }
   }
+}
+
+/// Renders a project timeline event (status change) as a centered card
+/// in the chat stream, matching the user-web inline activity cards.
+class _TimelineEventCard extends StatelessWidget {
+  final TimelineEvent event;
+
+  const _TimelineEventCard({required this.event});
+
+  @override
+  Widget build(BuildContext context) {
+    final config = _getStatusConfig(event.toStatus);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.85,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: config.backgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: config.borderColor, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: config.borderColor.withValues(alpha: 0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon and title row
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(config.icon, style: const TextStyle(fontSize: 18)),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      config.label,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: config.textColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Extra info (e.g. quote amount from notes)
+              if (config.showNotes && event.notes != null && event.notes!.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  event.notes!,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: config.textColor.withValues(alpha: 0.8),
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+
+              // Changed by info
+              if (event.changedByName != null && event.changedByName!.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'by ${event.changedByName}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: config.textColor.withValues(alpha: 0.6),
+                    fontSize: 10,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+
+              // Timestamp
+              const SizedBox(height: 4),
+              Text(
+                _formatEventTime(event.createdAt),
+                style: AppTextStyles.caption.copyWith(
+                  color: config.textColor.withValues(alpha: 0.5),
+                  fontSize: 10,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatEventTime(DateTime time) {
+    final local = time.toLocal();
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  _TimelineStatusConfig _getStatusConfig(String status) {
+    switch (status.toLowerCase()) {
+      case 'submitted':
+        return _TimelineStatusConfig(
+          icon: '\u{1F4E4}', // 📤
+          label: 'Project Submitted',
+          backgroundColor: _ChatColors.creamBackground,
+          borderColor: _ChatColors.borderColor,
+          textColor: _ChatColors.secondaryText,
+        );
+      case 'quoted':
+        return _TimelineStatusConfig(
+          icon: '\u{1F4B0}', // 💰
+          label: 'Quote Ready',
+          backgroundColor: const Color(0xFFFFF8E1),
+          borderColor: const Color(0xFFFFD54F),
+          textColor: const Color(0xFF8D6E00),
+          showNotes: true,
+        );
+      case 'paid':
+        return _TimelineStatusConfig(
+          icon: '\u{2705}', // ✅
+          label: 'Payment Successful',
+          backgroundColor: const Color(0xFFE8F5E9),
+          borderColor: const Color(0xFF81C784),
+          textColor: const Color(0xFF2E7D32),
+        );
+      case 'assigned':
+      case 'expert_joined':
+        return _TimelineStatusConfig(
+          icon: '\u{1F468}\u{200D}\u{1F4BB}', // 👨‍💻
+          label: status.toLowerCase() == 'assigned'
+              ? 'Expert Assigned'
+              : 'Expert Joined',
+          backgroundColor: const Color(0xFFF3E5F5),
+          borderColor: const Color(0xFFCE93D8),
+          textColor: const Color(0xFF6A1B9A),
+        );
+      case 'in_progress':
+        return _TimelineStatusConfig(
+          icon: '\u{26A1}', // ⚡
+          label: 'Work Started',
+          backgroundColor: const Color(0xFFE3F2FD),
+          borderColor: const Color(0xFF64B5F6),
+          textColor: const Color(0xFF1565C0),
+        );
+      case 'delivered':
+        return _TimelineStatusConfig(
+          icon: '\u{1F389}', // 🎉
+          label: 'Project Delivered',
+          backgroundColor: const Color(0xFFFFF3E0),
+          borderColor: const Color(0xFFFFB74D),
+          textColor: const Color(0xFFE65100),
+        );
+      case 'completed':
+        return _TimelineStatusConfig(
+          icon: '\u{2705}', // ✅
+          label: 'Project Completed',
+          backgroundColor: const Color(0xFFE8F5E9),
+          borderColor: const Color(0xFF66BB6A),
+          textColor: const Color(0xFF1B5E20),
+        );
+      case 'revision_requested':
+      case 'revision':
+        return _TimelineStatusConfig(
+          icon: '\u{1F504}', // 🔄
+          label: 'Revision Requested',
+          backgroundColor: const Color(0xFFFFF8E1),
+          borderColor: const Color(0xFFFFCA28),
+          textColor: const Color(0xFFF57F17),
+          showNotes: true,
+        );
+      case 'cancelled':
+        return _TimelineStatusConfig(
+          icon: '\u{274C}', // ❌
+          label: 'Project Cancelled',
+          backgroundColor: const Color(0xFFFFEBEE),
+          borderColor: const Color(0xFFEF9A9A),
+          textColor: const Color(0xFFC62828),
+        );
+      case 'on_hold':
+        return _TimelineStatusConfig(
+          icon: '\u{23F8}', // ⏸
+          label: 'Project On Hold',
+          backgroundColor: const Color(0xFFFFF3E0),
+          borderColor: const Color(0xFFFFCC80),
+          textColor: const Color(0xFFEF6C00),
+        );
+      default:
+        // Format unknown status into a readable label
+        final label = status
+            .replaceAll('_', ' ')
+            .split(' ')
+            .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
+            .join(' ');
+        return _TimelineStatusConfig(
+          icon: '\u{1F4CB}', // 📋
+          label: label,
+          backgroundColor: _ChatColors.creamBackground,
+          borderColor: _ChatColors.borderColor,
+          textColor: _ChatColors.secondaryText,
+        );
+    }
+  }
+}
+
+/// Configuration for timeline event card styling per status.
+class _TimelineStatusConfig {
+  final String icon;
+  final String label;
+  final Color backgroundColor;
+  final Color borderColor;
+  final Color textColor;
+  final bool showNotes;
+
+  const _TimelineStatusConfig({
+    required this.icon,
+    required this.label,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.textColor,
+    this.showNotes = false,
+  });
 }
 
 class _MessageBubble extends ConsumerWidget {
@@ -1094,6 +1394,7 @@ class _MessageBubble extends ConsumerWidget {
   final UserRole userRole;
   final String currentUserId;
   final String roomId;
+  final String? projectId;
 
   const _MessageBubble({
     required this.message,
@@ -1101,18 +1402,20 @@ class _MessageBubble extends ConsumerWidget {
     required this.userRole,
     required this.currentUserId,
     required this.roomId,
+    this.projectId,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Parse approval status
+    final effectiveStatus = message.effectiveApprovalStatus;
     final approvalStatus = MessageApprovalStatusExtension.fromString(
-      message.approvalStatus,
+      effectiveStatus,
     );
 
     // Determine what to show
     final showApprovalBadge =
-        message.approvalStatus != null &&
+        effectiveStatus != null &&
         approvalStatus != MessageApprovalStatus.approved;
 
     final showSupervisorActions =
@@ -1171,14 +1474,28 @@ class _MessageBubble extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (!isMe && message.sender != null) ...[
-                        Text(
-                          message.sender!.fullName,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: _ChatColors.warmAccent,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      // Sender name + role badge
+                      if (!isMe) ...[
+                        Builder(builder: (ctx) {
+                          final role = message.sender?.role ?? '';
+                          final isSup = role == 'supervisor';
+                          final isDoer = role == 'doer';
+                          final roleLabel = isSup ? 'supervisor' : isDoer ? 'expert' : 'user';
+                          final roleColor = isSup ? const Color(0xFF3B82F6) : isDoer ? const Color(0xFF10B981) : const Color(0xFF8B5CF6);
+                          final name = message.sender?.fullName ?? (isSup ? 'Supervisor' : isDoer ? 'Expert' : 'User');
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(name, style: AppTextStyles.labelSmall.copyWith(color: _ChatColors.warmAccent, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                decoration: BoxDecoration(color: roleColor.withAlpha(25), borderRadius: BorderRadius.circular(4)),
+                                child: Text(roleLabel, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: roleColor)),
+                              ),
+                            ],
+                          );
+                        }),
                         const SizedBox(height: 4),
                       ],
 
@@ -1288,6 +1605,7 @@ class _MessageBubble extends ConsumerWidget {
               _SupervisorActions(
                 messageId: message.id,
                 roomId: roomId,
+                projectId: projectId,
                 onAction: () {
                   // Refresh will happen via realtime subscription
                 },
@@ -1320,11 +1638,13 @@ class _MessageBubble extends ConsumerWidget {
 class _SupervisorActions extends ConsumerStatefulWidget {
   final String messageId;
   final String roomId;
+  final String? projectId;
   final VoidCallback? onAction;
 
   const _SupervisorActions({
     required this.messageId,
     required this.roomId,
+    this.projectId,
     this.onAction,
   });
 
@@ -1343,7 +1663,7 @@ class _SupervisorActionsState extends ConsumerState<_SupervisorActions> {
     try {
       // Call approval action
       await ref
-          .read(chatNotifierProvider(widget.roomId).notifier)
+          .read(chatNotifierProvider((roomId: widget.roomId, projectId: widget.projectId)).notifier)
           .approveMessage(widget.messageId);
 
       if (mounted) {
@@ -1421,7 +1741,7 @@ class _SupervisorActionsState extends ConsumerState<_SupervisorActions> {
 
     try {
       await ref
-          .read(chatNotifierProvider(widget.roomId).notifier)
+          .read(chatNotifierProvider((roomId: widget.roomId, projectId: widget.projectId)).notifier)
           .rejectMessage(widget.messageId, reason);
 
       if (mounted) {
@@ -1522,10 +1842,13 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-/// Extension to add approval-related fields to ChatMessage.
+/// Extension to derive approval status from the message's moderation status
+/// when the explicit approvalStatus field is not set.
 extension ChatMessageApprovalExtension on ChatMessage {
-  /// Get approval status string from the message's moderation status.
-  String? get approvalStatus {
+  /// Get effective approval status: prefer the explicit field, fall back to
+  /// deriving from the moderation [status] enum.
+  String? get effectiveApprovalStatus {
+    if (approvalStatus != null) return approvalStatus;
     switch (status) {
       case MessageStatus.pending:
         return 'pending';
@@ -1537,13 +1860,4 @@ extension ChatMessageApprovalExtension on ChatMessage {
         return 'pending';
     }
   }
-
-  /// Get approver name (from message metadata if available).
-  String? get approverName => null;
-
-  /// Get approved at timestamp (from message metadata if available).
-  DateTime? get approvedAt => null;
-
-  /// Get rejection reason (from message metadata if available).
-  String? get rejectionReason => null;
 }

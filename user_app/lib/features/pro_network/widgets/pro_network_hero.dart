@@ -3,14 +3,14 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lottie/lottie.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 
-/// Hero section for Pro Network with a premium dark navy/deep purple design.
+/// Hero section for Pro Network - Coffee Bean themed with indigo accent.
 ///
-/// Features a sophisticated gradient, professional stats, and action chips.
-/// Visually distinct from Campus Connect's warm orange theme.
+/// Clean design matching the overall app theme while maintaining
+/// a professional identity through subtle color accents.
 class ProNetworkHero extends StatelessWidget {
   final bool showAnimation;
 
@@ -23,38 +23,35 @@ class ProNetworkHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-      clipBehavior: Clip.antiAlias,
+      clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E1B4B).withAlpha(30),
-            blurRadius: 12,
+            color: AppColors.primaryDark.withAlpha(25),
+            blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          // Dark gradient background
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0F172A), // Deep navy
-                  Color(0xFF1E1B4B), // Dark indigo
-                  Color(0xFF312E81), // Deep purple
-                ],
-                stops: [0.0, 0.5, 1.0],
-              ),
-            ),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF2D1F14),
+              Color(0xFF54442B),
+              Color(0xFF3D2E1E),
+            ],
+            stops: [0.0, 0.5, 1.0],
           ),
+        ),
+        child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
 
-          // Decorative elements
+          // Subtle decorative circles
           Positioned(
             top: -25,
             right: -15,
@@ -63,7 +60,7 @@ class ProNetworkHero extends StatelessWidget {
               height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -75,13 +72,14 @@ class ProNetworkHero extends StatelessWidget {
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
+                color: Colors.white.withValues(alpha: 0.04),
               ),
             ),
           ),
+
           // Content
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(22),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -92,20 +90,19 @@ class ProNetworkHero extends StatelessWidget {
                       // "Pro Network" badge
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+                          horizontal: 10,
+                          vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1)
-                              .withValues(alpha: 0.25),
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 7,
-                              height: 7,
+                              width: 6,
+                              height: 6,
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Color(0xFF818CF8),
@@ -117,7 +114,7 @@ class ProNetworkHero extends StatelessWidget {
                               style: AppTextStyles.labelSmall.copyWith(
                                 color: const Color(0xFFC4B5FD),
                                 fontWeight: FontWeight.w800,
-                                fontSize: 11,
+                                fontSize: 10,
                                 letterSpacing: 1.5,
                               ),
                             ),
@@ -127,13 +124,13 @@ class ProNetworkHero extends StatelessWidget {
                           .animate()
                           .fadeIn(duration: 400.ms, delay: 100.ms)
                           .slideX(begin: -0.2, end: 0),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
 
                       // Title
                       Text(
                         'Pro Network',
-                        style: AppTextStyles.displayMedium.copyWith(
-                          fontSize: 26,
+                        style: AppTextStyles.headingMedium.copyWith(
+                          fontSize: 24,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
                           height: 1.2,
@@ -143,21 +140,21 @@ class ProNetworkHero extends StatelessWidget {
                           .animate()
                           .fadeIn(duration: 500.ms, delay: 200.ms)
                           .slideY(begin: 0.2, end: 0),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
 
                       // Subtitle
                       Text(
                         'Discover gigs, showcase skills, connect with professionals',
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        style: AppTextStyles.bodySmall.copyWith(
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
-                          color: const Color(0xFFA5B4FC),
+                          color: Colors.white.withValues(alpha: 0.65),
                           height: 1.5,
                         ),
                       )
                           .animate()
                           .fadeIn(duration: 500.ms, delay: 300.ms),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
                       // Quick action chips
                       _QuickActionChips()
@@ -168,40 +165,30 @@ class ProNetworkHero extends StatelessWidget {
                   ),
                 ),
 
-                // Animation or fallback icon
-                if (showAnimation) ...[
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: Lottie.asset(
-                      'assets/animations/computer.json',
-                      fit: BoxFit.contain,
-                      repeat: true,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1)
-                                .withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: const Icon(
-                            Icons.hub_rounded,
-                            size: 36,
-                            color: Color(0xFF818CF8),
-                          ),
-                        );
-                      },
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(duration: 600.ms, delay: 300.ms)
-                      .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1)),
-                ],
+                // Icon fallback
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.hub_rounded,
+                    size: 32,
+                    color: Color(0xFFC4B5FD),
+                  ),
+                )
+                    .animate()
+                    .fadeIn(duration: 600.ms, delay: 300.ms)
+                    .scale(
+                        begin: const Offset(0.8, 0.8),
+                        end: const Offset(1, 1)),
               ],
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -255,14 +242,14 @@ class _ActionChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 14, color: const Color(0xFFC4B5FD)),
+              Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.8)),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: AppTextStyles.labelMedium.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFFC4B5FD),
+                  color: Colors.white.withValues(alpha: 0.8),
                 ),
               ),
             ],

@@ -77,14 +77,16 @@ export const OTP_EXPIRY_SECONDS = 300 // 5 minutes
 export const API_ROUTES = {
   auth: {
     login: '/api/auth/login',
-    register: '/api/auth/register',
-    verifyOtp: '/api/auth/verify-otp',
+    sendOtp: '/api/auth/send-otp',
+    verify: '/api/auth/verify',
     logout: '/api/auth/logout',
+    devLogin: '/api/auth/dev-login',
+    doerSignup: '/api/auth/doer-signup',
   },
   doer: {
     profile: '/api/doers/me',
-    skills: '/api/doer/skills',
-    activation: '/api/doer/activation',
+    skills: '/api/doers',
+    activation: '/api/doers',
   },
 } as const
 

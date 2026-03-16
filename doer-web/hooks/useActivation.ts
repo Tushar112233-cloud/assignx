@@ -200,13 +200,13 @@ export function useActivation() {
   }, [store])
 
   const submitQuizAttempt = useCallback(
-    async (score: number, totalQuestions: number, answers: Record<string, number>) => {
+    async (score: number, totalQuestions: number, answers: Record<string, number>, moduleId?: string) => {
       if (!store.activation) return false
 
       const doerId = store.activation.doer_id
 
       try {
-        const result = await activationService.submitQuizAttempt(doerId, score, totalQuestions, answers)
+        const result = await activationService.submitQuizAttempt(doerId, score, totalQuestions, answers, moduleId)
 
         if (result.rateLimited) {
           store.setError(`Rate limited. Try again in ${result.retryAfterMinutes} minutes.`)

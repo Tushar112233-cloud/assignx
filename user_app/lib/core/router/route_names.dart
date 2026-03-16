@@ -10,10 +10,12 @@ class RouteNames {
 
   // Auth
   static const String login = '/login';
+  static const String userType = '/user-type';
   static const String signin = '/signin';
 static const String roleSelection = '/role-selection';
   static const String studentProfile = '/student-profile';
   static const String professionalProfile = '/professional-profile';
+  static const String profileCompletion = '/profile-completion';
   static const String signupSuccess = '/signup-success';
 
   // Main App

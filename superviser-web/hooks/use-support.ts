@@ -103,13 +103,14 @@ export function useTicket(ticketId: string): UseTicketReturn {
       setIsLoading(true)
       setError(null)
 
-      const data = await apiFetch<{
-        ticket: SupportTicketWithMessages
-        messages: TicketMessage[]
-      }>(`/api/support/tickets/${ticketId}`)
+      // The API returns ticket and messages from separate endpoints
+      const [ticketData, messagesData] = await Promise.all([
+        apiFetch<{ ticket: SupportTicketWithMessages }>(`/api/support/tickets/${ticketId}`),
+        apiFetch<{ messages: TicketMessage[] }>(`/api/support/tickets/${ticketId}/messages`),
+      ])
 
-      setTicket(data.ticket)
-      setMessages(data.messages || [])
+      setTicket(ticketData.ticket)
+      setMessages(messagesData.messages || [])
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch ticket"))
     } finally {
@@ -120,18 +121,22 @@ export function useTicket(ticketId: string): UseTicketReturn {
   const sendMessage = useCallback(async (content: string) => {
     if (!ticketId || !content.trim()) return
 
-    const data = await apiFetch<TicketMessage>(
+    const data = await apiFetch<{ ticket: SupportTicketWithMessages }>(
       `/api/support/tickets/${ticketId}/messages`,
       {
         method: "POST",
         body: JSON.stringify({
           message: content.trim(),
-          senderType: "supervisor",
         }),
       }
     )
 
-    setMessages(prev => [...prev, data])
+    // The API returns the full updated ticket; extract the last message
+    const ticketMessages = (data.ticket as any)?.messages || []
+    if (ticketMessages.length > 0) {
+      const lastMsg = ticketMessages[ticketMessages.length - 1]
+      setMessages(prev => [...prev, lastMsg])
+    }
   }, [ticketId])
 
   const updateStatus = useCallback(async (status: TicketStatus) => {
@@ -253,11 +258,22 @@ export function useTicketStats(): UseTicketStatsReturn {
       const user = getStoredUser()
       if (!user) return
 
-      const data = await apiFetch<UseTicketStatsReturn["stats"]>(
-        "/api/support/tickets/stats?role=supervisor"
-      )
+      // The API provides /support/tickets/count for individual status counts.
+      // Fetch total and open counts separately.
+      const [totalData, openData, inProgressData, resolvedData] = await Promise.all([
+        apiFetch<{ count: number }>("/api/support/tickets/count").catch(() => ({ count: 0 })),
+        apiFetch<{ count: number }>("/api/support/tickets/count?status=open").catch(() => ({ count: 0 })),
+        apiFetch<{ count: number }>("/api/support/tickets/count?status=in_progress").catch(() => ({ count: 0 })),
+        apiFetch<{ count: number }>("/api/support/tickets/count?status=resolved").catch(() => ({ count: 0 })),
+      ])
 
-      setStats(data)
+      setStats({
+        total: totalData.count,
+        open: openData.count,
+        inProgress: inProgressData.count,
+        resolved: resolvedData.count,
+        unreadCount: openData.count,
+      })
     } catch (err) {
       console.error("Failed to fetch ticket stats:", err)
     } finally {

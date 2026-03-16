@@ -52,10 +52,32 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
   Widget build(BuildContext context) {
     final postsAsync = ref.watch(businessHubPostsProvider);
 
+    final canPop = Navigator.of(context).canPop();
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
+      body: Stack(
+        children: [
+          CustomScrollView(
         slivers: [
+          // Back button (only shown when navigated to directly via route)
+          if (canPop)
+            SliverToBoxAdapter(
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                      onPressed: () => Navigator.of(context).pop(),
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           // Hero section
           const SliverToBoxAdapter(child: BusinessHubHero()),
 
@@ -172,7 +194,10 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
           ),
 
           // Bottom padding
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        ],
+      ),
+          // Business Hub posts are admin-managed — no create FAB for users
         ],
       ),
     );

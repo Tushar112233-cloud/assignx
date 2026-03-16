@@ -18,7 +18,7 @@ export async function getUsers(params: {
   if (params.userType) query.set("userType", params.userType);
   if (params.status) query.set("status", params.status);
   if (params.page) query.set("page", String(params.page));
-  if (params.perPage) query.set("perPage", String(params.perPage));
+  if (params.perPage) query.set("limit", String(params.perPage));
   if (params.sortBy) query.set("sortBy", params.sortBy);
   if (params.sortOrder) query.set("sortOrder", params.sortOrder);
 
@@ -30,9 +30,9 @@ export async function getUserById(userId: string) {
 
   const [profile, wallet, projects, activity] = await Promise.all([
     serverFetch(`/api/users/${userId}`),
-    serverFetch(`/api/wallets/by-user/${userId}`).catch(() => null),
+    serverFetch(`/api/admin/transactions/${userId}`).catch(() => null),
     serverFetch(`/api/projects?userId=${userId}&limit=10&sort=-createdAt`).catch(() => ({ data: [] })),
-    serverFetch(`/api/admin/activity-logs?userId=${userId}&limit=20`).catch(() => []),
+    serverFetch(`/api/admin/audit-logs?userId=${userId}&limit=20`).catch(() => []),
   ]);
 
   return {

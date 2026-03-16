@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/services/payment_service.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/expert_model.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/experts_provider.dart';
@@ -151,34 +154,107 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      final totalAmount =
+          expert.pricePerSession * _selectedSessionType.priceMultiplier;
 
+      // Step 1: Create Razorpay order for expert booking
+      final orderResponse = await ApiClient.post('/experts/bookings/create-order', {
+        'expertId': expert.id,
+        'amount': totalAmount,
+      });
+
+      final orderData = orderResponse as Map<String, dynamic>;
+      final orderId = orderData['orderId'] as String;
+      final keyId = orderData['keyId'] as String;
+      final amountInPaise = orderData['amount'] as int;
+
+      // Step 2: Open Razorpay checkout
+      final paymentService = PaymentService();
+      final dateStr = _selectedDate!.toIso8601String().split('T')[0];
+
+      paymentService.payCustomOrder(
+        orderId: orderId,
+        keyId: keyId,
+        amountInPaise: amountInPaise,
+        description: 'Consultation with ${expert.name}',
+        onSuccess: (result) async {
+          try {
+            // Step 3: Verify payment and create booking on server
+            await ApiClient.post('/experts/bookings/verify-payment', {
+              'razorpay_order_id': result.orderId ?? orderId,
+              'razorpay_payment_id': result.paymentId ?? '',
+              'razorpay_signature': result.signature ?? '',
+              'expertId': expert.id,
+              'date': dateStr,
+              'time': _selectedTimeSlot!.time,
+              'startTime': _selectedTimeSlot!.time,
+              'endTime': '',
+              'duration': _selectedSessionType.minutes,
+              'topic': _topic ?? '',
+              'notes': '',
+              'amount': totalAmount,
+              'sessionType': _selectedSessionType.displayName,
+            });
+
+            // Invalidate bookings cache so the list refreshes
+            ref.invalidate(userBookingsProvider);
+
+            if (mounted) {
+              setState(() => _isLoading = false);
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => _SuccessDialog(
+                  expert: expert,
+                  date: _selectedDate!,
+                  timeSlot: _selectedTimeSlot!,
+                  sessionType: _selectedSessionType,
+                ),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              setState(() => _isLoading = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Payment verified but booking failed: $e'),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            }
+          }
+        },
+        onError: (result) {
+          if (mounted) {
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Payment failed: ${result.errorMessage ?? 'Unknown error'}'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        },
+      );
+    } on ApiException catch (e) {
       if (mounted) {
-        // Show success dialog
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => _SuccessDialog(
-            expert: expert,
-            date: _selectedDate!,
-            timeSlot: _selectedTimeSlot!,
-            sessionType: _selectedSessionType,
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Booking failed: ${e.message}'),
+            backgroundColor: AppColors.error,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Booking failed: $e'),
             backgroundColor: AppColors.error,
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
       }
     }
   }
@@ -302,7 +378,7 @@ class _ExpertInfoCard extends StatelessWidget {
               radius: 28,
               backgroundColor: AppColors.primaryLight.withAlpha(50),
               backgroundImage:
-                  expert.avatar != null ? NetworkImage(expert.avatar!) : null,
+                  isValidImageUrl(expert.avatar) ? NetworkImage(expert.avatar!) : null,
               child: expert.avatar == null
                   ? Text(
                       expert.initials,
@@ -538,7 +614,7 @@ class _TopicInput extends StatelessWidget {
   }
 }
 
-/// Bottom booking bar.
+/// Bottom booking bar with Coffee Bean theme.
 class _BookingBar extends StatelessWidget {
   final Expert expert;
   final DateTime? selectedDate;
@@ -563,69 +639,129 @@ class _BookingBar extends StatelessWidget {
     final totalPrice = expert.pricePerSession * selectedSessionType.priceMultiplier;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.background,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.border.withAlpha(100),
+            width: 1,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withAlpha(8),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '\u20B9${totalPrice.toStringAsFixed(0)}',
-                  style: AppTextStyles.headingMedium.copyWith(
-                    fontWeight: FontWeight.bold,
+            // Session summary when date & time are selected
+            if (_canBook) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withAlpha(15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primary.withAlpha(40),
                   ),
                 ),
-                Text(
-                  'Total amount'.tr(context),
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textTertiary,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${DateFormat('EEE, MMM d').format(selectedDate!)} at ${selectedTimeSlot!.displayTime}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      selectedSessionType.displayName,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            // Price and confirm button row
+            Row(
+              children: [
+                // Price column
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '\u20B9${totalPrice.toStringAsFixed(0)}',
+                      style: AppTextStyles.headingMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Total amount'.tr(context),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 20),
+                // Confirm button
+                Expanded(
+                  child: Material(
+                    color: _canBook ? AppColors.primary : AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(14),
+                    elevation: _canBook ? 2 : 0,
+                    shadowColor: _canBook ? AppColors.primary.withAlpha(80) : Colors.transparent,
+                    child: InkWell(
+                      onTap: _canBook && !isLoading ? onConfirm : null,
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        alignment: Alignment.center,
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Text(
+                                _canBook
+                                    ? 'Pay & Confirm'.tr(context)
+                                    : 'Select date & time'.tr(context),
+                                style: AppTextStyles.buttonMedium.copyWith(
+                                  color: _canBook
+                                      ? Colors.white
+                                      : AppColors.textTertiary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
                   ),
                 ),
               ],
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Material(
-                color: _canBook ? AppColors.darkBrown : AppColors.neutralGray,
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  onTap: _canBook && !isLoading ? onConfirm : null,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    alignment: Alignment.center,
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            'Confirm Booking'.tr(context),
-                            style: AppTextStyles.buttonMedium.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                  ),
-                ),
-              ),
             ),
           ],
         ),
@@ -727,10 +863,10 @@ class _SuccessDialog extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  context.go('/home');
+                  context.go('/experts/my-bookings');
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.darkBrown,
+                  backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

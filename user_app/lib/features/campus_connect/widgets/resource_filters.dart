@@ -152,7 +152,7 @@ const List<ResourceTypeOption> resourceTypes = [
     id: 'projects',
     label: 'Projects',
     icon: Icons.folder_outlined,
-    description: 'Sample projects',
+    description: 'Project files',
   ),
 ];
 

@@ -90,26 +90,10 @@ interface AddUpiFormData {
 }
 
 // ---------------------------------------------------------------------------
-// Mock data -- replaced with real API calls in production
+// Payment methods - fetched from API in production, starts empty
 // ---------------------------------------------------------------------------
 
-const MOCK_METHODS: PaymentMethod[] = [
-  {
-    id: "card-1",
-    type: "card",
-    isDefault: true,
-    cardLast4: "4242",
-    cardBrand: "visa",
-    cardExpiry: "12/26",
-    cardholderName: "John Doe",
-  },
-  {
-    id: "upi-1",
-    type: "upi",
-    isDefault: false,
-    upiId: "john@okaxis",
-  },
-];
+const MOCK_METHODS: PaymentMethod[] = [];
 
 // ---------------------------------------------------------------------------
 // Helpers

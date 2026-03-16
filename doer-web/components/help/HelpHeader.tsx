@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, HelpCircle, Clock, CheckCircle2 } from "lucide-react";
+import { Search, HelpCircle } from "lucide-react";
 
 /**
  * Props for the HelpHeader component
@@ -12,16 +12,6 @@ interface HelpHeaderProps {
   onSearch?: (query: string) => void;
   /** Initial search query */
   initialQuery?: string;
-}
-
-/**
- * Stat item configuration
- */
-interface StatItem {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  color: string;
 }
 
 /**
@@ -54,24 +44,6 @@ export const HelpHeader: React.FC<HelpHeaderProps> = ({
       onSearch(searchQuery.trim());
     }
   };
-
-  /**
-   * Quick stats configuration
-   */
-  const stats: StatItem[] = [
-    {
-      icon: <Clock className="h-4 w-4" />,
-      label: "Response time",
-      value: "<2hrs",
-      color: "from-[#5A7CFF] to-[#5B86FF]",
-    },
-    {
-      icon: <CheckCircle2 className="h-4 w-4" />,
-      label: "Tickets resolved",
-      value: "95%",
-      color: "from-[#43D1C5] to-[#49C5FF]",
-    },
-  ];
 
   return (
     <motion.div
@@ -139,35 +111,6 @@ export const HelpHeader: React.FC<HelpHeaderProps> = ({
             </div>
           </motion.form>
 
-          {/* Quick stats pills */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="flex flex-wrap gap-3"
-          >
-            {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.6 + index * 0.1, duration: 0.4 }}
-                className="flex items-center gap-2 rounded-full border border-white/40 bg-white/70 px-4 py-2 backdrop-blur-xl shadow-[0_8px_20px_rgba(148,163,184,0.08)]"
-              >
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br ${stat.color} text-white shadow-lg`}
-                >
-                  {stat.icon}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-slate-600">{stat.label}</span>
-                  <span className="text-sm font-semibold text-slate-900">
-                    {stat.value}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
         </div>
 
         {/* Right content - 40% */}

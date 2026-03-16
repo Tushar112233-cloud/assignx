@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../providers/project_provider.dart';
 
 /// Grade entry dialog widget
 /// Allows users to enter their received grade after project completion
@@ -70,8 +71,11 @@ class _GradeEntryDialogState extends ConsumerState<GradeEntryDialog> {
     setState(() => _isSubmitting = true);
 
     try {
-      // In production: POST to API to save grade
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Save grade via API
+      await ref.read(projectNotifierProvider.notifier).updateFinalGrade(
+        widget.projectId,
+        _selectedGrade,
+      );
 
       widget.onSubmit?.call(
         _selectedGrade,

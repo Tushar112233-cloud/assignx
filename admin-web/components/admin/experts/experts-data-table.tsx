@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { IconPlus } from "@tabler/icons-react";
 
 type Expert = {
@@ -130,8 +131,52 @@ export function ExpertsDataTable({
   const [addForm, setAddForm] = useState({
     email: "", full_name: "", headline: "", designation: "",
     organization: "", category: "academic", hourly_rate: "500", bio: "", whatsapp_number: "",
+    avatar_url: "",
+    uploading_avatar: false,
+    availability_slots: [] as Array<{day: string; startTime: string; endTime: string}>,
   });
   const [addLoading, setAddLoading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File too large. Max 2MB.");
+      return;
+    }
+
+    setAddForm((f) => ({ ...f, uploading_avatar: true }));
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const token = document.cookie.split("admin-token=")[1]?.split(";")[0] || "";
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/upload`,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      const url = data.url || data.secure_url || data.fileUrl || "";
+      setAddForm((f) => ({ ...f, avatar_url: url, uploading_avatar: false }));
+      toast.success("Photo uploaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+      setAddForm((f) => ({ ...f, uploading_avatar: false }));
+    }
+    // Reset input so the same file can be re-selected
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  }, []);
 
   const updateParams = useCallback(
     (key: string, value: string | null) => {
@@ -428,6 +473,29 @@ export function ExpertsDataTable({
             <DialogTitle>Add New Expert</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 py-2">
+            {/* Profile Picture Upload */}
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
+                {addForm.avatar_url ? (
+                  <AvatarImage src={addForm.avatar_url} />
+                ) : null}
+                <AvatarFallback className="text-lg">{getInitials(addForm.full_name)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={addForm.uploading_avatar}
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  {addForm.uploading_avatar ? "Uploading..." : "Upload Photo"}
+                </Button>
+                <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                <p className="text-xs text-muted-foreground mt-1">JPG, PNG. Max 2MB.</p>
+              </div>
+            </div>
+
             {[
               { label: "Email *", key: "email", type: "email", placeholder: "expert@example.com" },
               { label: "Full Name *", key: "full_name", type: "text", placeholder: "Dr. Priya Sharma" },
@@ -442,7 +510,7 @@ export function ExpertsDataTable({
                 <Input
                   type={type}
                   placeholder={placeholder}
-                  value={addForm[key as keyof typeof addForm]}
+                  value={addForm[key as keyof typeof addForm] as string}
                   onChange={(e) => setAddForm((f) => ({ ...f, [key]: e.target.value }))}
                 />
               </div>
@@ -472,6 +540,67 @@ export function ExpertsDataTable({
                 rows={3}
               />
             </div>
+
+            {/* Availability Time Slots */}
+            <div className="grid gap-2">
+              <Label className="text-xs font-medium">Availability</Label>
+              {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => {
+                const slot = addForm.availability_slots.find((s) => s.day === day);
+                const isActive = !!slot;
+                return (
+                  <div key={day} className="flex items-center gap-2">
+                    <Checkbox
+                      checked={isActive}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setAddForm((f) => ({
+                            ...f,
+                            availability_slots: [...f.availability_slots, { day, startTime: "09:00", endTime: "17:00" }],
+                          }));
+                        } else {
+                          setAddForm((f) => ({
+                            ...f,
+                            availability_slots: f.availability_slots.filter((s) => s.day !== day),
+                          }));
+                        }
+                      }}
+                    />
+                    <span className="text-sm capitalize w-20">{day}</span>
+                    {isActive && (
+                      <>
+                        <Input
+                          type="time"
+                          value={slot!.startTime}
+                          className="w-28 h-7 text-xs"
+                          onChange={(e) =>
+                            setAddForm((f) => ({
+                              ...f,
+                              availability_slots: f.availability_slots.map((s) =>
+                                s.day === day ? { ...s, startTime: e.target.value } : s
+                              ),
+                            }))
+                          }
+                        />
+                        <span className="text-xs text-muted-foreground">to</span>
+                        <Input
+                          type="time"
+                          value={slot!.endTime}
+                          className="w-28 h-7 text-xs"
+                          onChange={(e) =>
+                            setAddForm((f) => ({
+                              ...f,
+                              availability_slots: f.availability_slots.map((s) =>
+                                s.day === day ? { ...s, endTime: e.target.value } : s
+                              ),
+                            }))
+                          }
+                        />
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialog(false)}>Cancel</Button>
@@ -490,10 +619,12 @@ export function ExpertsDataTable({
                     hourly_rate: Number(addForm.hourly_rate) || 500,
                     bio: addForm.bio || undefined,
                     whatsapp_number: addForm.whatsapp_number || undefined,
+                    avatar_url: addForm.avatar_url || undefined,
+                    availability_slots: addForm.availability_slots.length > 0 ? addForm.availability_slots : undefined,
                   });
                   toast.success("Expert added successfully");
                   setAddDialog(false);
-                  setAddForm({ email: "", full_name: "", headline: "", designation: "", organization: "", category: "academic", hourly_rate: "500", bio: "", whatsapp_number: "" });
+                  setAddForm({ email: "", full_name: "", headline: "", designation: "", organization: "", category: "academic", hourly_rate: "500", bio: "", whatsapp_number: "", avatar_url: "", uploading_avatar: false, availability_slots: [] });
                   router.refresh();
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : "Failed to add expert");

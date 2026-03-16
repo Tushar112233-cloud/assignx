@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useCallback, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -297,9 +297,8 @@ export function ApplicationsDataTable({
                 const isExpanded = expandedId === req._id;
                 const m = req.metadata || {};
                 return (
-                  <>
+                  <Fragment key={row.id}>
                     <TableRow
-                      key={row.id}
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => setExpandedId(isExpanded ? null : req._id)}
                     >
@@ -374,7 +373,7 @@ export function ApplicationsDataTable({
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 );
               })
             ) : (

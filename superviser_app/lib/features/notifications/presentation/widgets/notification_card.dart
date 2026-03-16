@@ -199,11 +199,13 @@ class NotificationList extends StatelessWidget {
           }
 
           final notification = notifications[index];
-          return NotificationCard(
-            notification: notification,
-            onTap: () => onNotificationTap(notification),
-            onDismiss: () => onDismiss?.call(notification),
-            onMarkAsRead: () => onMarkAsRead?.call(notification),
+          return RepaintBoundary(
+            child: NotificationCard(
+              notification: notification,
+              onTap: () => onNotificationTap(notification),
+              onDismiss: () => onDismiss?.call(notification),
+              onMarkAsRead: () => onMarkAsRead?.call(notification),
+            ),
           );
         },
       ),

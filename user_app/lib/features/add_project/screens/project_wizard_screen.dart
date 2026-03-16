@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/project_model.dart';
+import '../../../data/models/subject.dart';
 import '../../../providers/project_provider.dart';
 import '../widgets/budget_display.dart';
 import '../widgets/deadline_picker.dart';
@@ -63,7 +64,7 @@ class _ProjectWizardScreenState extends ConsumerState<ProjectWizardScreen> {
   bool _isSubmitting = false;
 
   ProjectType? _projectType;
-  ProjectSubject? _subject;
+  Subject? _subject;
   final _titleController = TextEditingController();
 
   final _descriptionController = TextEditingController();
@@ -174,7 +175,7 @@ class _ProjectWizardScreenState extends ConsumerState<ProjectWizardScreen> {
                 title: _titleController.text.trim(),
                 description: _descriptionController.text.trim(),
                 serviceType: _getServiceType(),
-                subjectId: _subject?.toDbString(),
+                subjectId: _subject?.id,
                 deadline:
                     _deadline ?? DateTime.now().add(const Duration(days: 7)),
                 wordCount: _wordCount,
@@ -526,7 +527,7 @@ class _ProjectWizardScreenState extends ConsumerState<ProjectWizardScreen> {
             onEdit: () => _goToStep(0),
             items: [
               _ReviewItem('Type', _projectType?.displayName ?? 'Not selected'),
-              _ReviewItem('Subject', _subject?.displayName ?? 'Not selected'),
+              _ReviewItem('Subject', _subject?.name ?? 'Not selected'),
               _ReviewItem(
                 'Title',
                 _titleController.text.isNotEmpty

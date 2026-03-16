@@ -23,9 +23,9 @@ export async function getTrainingModules(): Promise<TrainingModule[]> {
   }
 }
 
-export async function getTrainingProgress(doerId: string): Promise<TrainingProgress[]> {
+export async function getTrainingProgress(_doerId: string): Promise<TrainingProgress[]> {
   try {
-    const data = await apiClient<{ progress: TrainingProgress[] }>(`/api/training/progress?doer_id=${doerId}`)
+    const data = await apiClient<{ progress: TrainingProgress[] }>(`/api/training/progress`)
     return data.progress || []
   } catch (err) {
     console.error('Error fetching training progress:', err)
@@ -34,39 +34,28 @@ export async function getTrainingProgress(doerId: string): Promise<TrainingProgr
 }
 
 export async function updateTrainingProgress(
-  doerId: string,
+  _doerId: string,
   moduleId: string,
   progressPercentage: number,
-  isCompleted: boolean = false
+  _isCompleted: boolean = false
 ): Promise<TrainingProgress> {
-  return apiClient<TrainingProgress>(`/api/training/progress/${moduleId}`, {
+  // API expects { progress: <number> } where progress >= 100 triggers completion
+  const data = await apiClient<{ progress: TrainingProgress }>(`/api/training/progress/${moduleId}`, {
     method: 'PUT',
     body: JSON.stringify({
-      doer_id: doerId,
-      progress_percentage: progressPercentage,
-      status: isCompleted ? 'completed' : 'in_progress',
-      ...(isCompleted && { completed_at: new Date().toISOString() }),
+      progress: progressPercentage,
     }),
   })
+  return data.progress
 }
 
 export async function getFormatTemplates(): Promise<FormatTemplate[]> {
-  try {
-    const data = await apiClient<{ templates: FormatTemplate[] }>('/api/resources/templates')
-    return data.templates || []
-  } catch {
-    return []
-  }
+  // Templates are not available as an API endpoint; return empty array
+  return []
 }
 
-export async function incrementTemplateDownload(templateId: string): Promise<void> {
-  try {
-    await apiClient(`/api/resources/templates/${templateId}/download`, {
-      method: 'POST',
-    })
-  } catch {
-    // Non-critical
-  }
+export async function incrementTemplateDownload(_templateId: string): Promise<void> {
+  // No-op: template tracking endpoint not available
 }
 
 export async function generateCitation(

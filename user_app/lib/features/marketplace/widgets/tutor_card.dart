@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/tutor_model.dart';
 
 /// Card widget displaying tutor information in a compact format.
@@ -187,7 +188,7 @@ class TutorCard extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd - 1),
-            child: tutor.avatar != null
+            child: isValidImageUrl(tutor.avatar)
                 ? CachedNetworkImage(
                     imageUrl: tutor.avatar!,
                     fit: BoxFit.cover,

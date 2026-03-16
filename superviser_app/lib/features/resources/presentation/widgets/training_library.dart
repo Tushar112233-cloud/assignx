@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
@@ -555,18 +556,20 @@ class _ContinueWatchingItem extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.network(
-                      video.thumbnailUrl,
+                    CachedNetworkImage(
+                      imageUrl: video.thumbnailUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: video.category.color.withValues(alpha: 0.2),
-                          child: Icon(
-                            video.category.icon,
-                            color: video.category.color,
-                          ),
-                        );
-                      },
+                      placeholder: (context, url) => Container(
+                        color: video.category.color.withValues(alpha: 0.1),
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: video.category.color.withValues(alpha: 0.2),
+                        child: Icon(
+                          video.category.icon,
+                          color: video.category.color,
+                        ),
+                      ),
                     ),
                     Center(
                       child: Container(

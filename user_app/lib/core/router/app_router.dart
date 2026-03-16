@@ -9,6 +9,7 @@ import '../../features/add_project/screens/proofreading_form.dart';
 import '../../features/add_project/screens/report_request_form.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/signin_screen.dart';
+import '../../features/auth/screens/user_type_screen.dart';
 import '../../features/chat/screens/project_chat_screen.dart';
 import '../../features/experts/screens/booking_screen.dart';
 import '../../features/experts/screens/expert_detail_screen.dart';
@@ -23,6 +24,7 @@ import '../../features/marketplace/screens/item_detail_screen.dart';
 import '../../features/marketplace/screens/marketplace_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
+import '../../features/onboarding/screens/profile_completion_screen.dart';
 import '../../features/onboarding/screens/professional_profile_screen.dart';
 import '../../features/onboarding/screens/role_selection_screen.dart';
 import '../../features/onboarding/screens/signup_success_screen.dart';
@@ -96,11 +98,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final publicRoutes = [
         RouteNames.onboarding,
         RouteNames.login,
+        RouteNames.userType,
         RouteNames.signin,
       ];
 
       // Profile completion routes
       final profileRoutes = [
+        RouteNames.profileCompletion,
         RouteNames.roleSelection,
         RouteNames.studentProfile,
         RouteNames.professionalProfile,
@@ -115,10 +119,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      // If authenticated but no profile, go to role selection
+      // If authenticated but no profile, go to profile completion
       if (isAuthenticated && !hasProfile) {
         if (!profileRoutes.contains(currentPath)) {
-          return RouteNames.roleSelection;
+          return RouteNames.profileCompletion;
         }
         return null;
       }
@@ -161,12 +165,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
+      // User Type Selection - first step of signup
+      GoRoute(
+        path: RouteNames.userType,
+        name: 'userType',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const UserTypeScreen(),
+          state: state,
+        ),
+      ),
+
       // Sign In - for returning users
       GoRoute(
         path: RouteNames.signin,
         name: 'signin',
         pageBuilder: (context, state) => AppPageTransitions.fadeScale(
           child: const SignInScreen(),
+          state: state,
+        ),
+      ),
+
+      // Profile Completion - simple name + phone after signup
+      GoRoute(
+        path: RouteNames.profileCompletion,
+        name: 'profileCompletion',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const ProfileCompletionScreen(),
           state: state,
         ),
       ),
@@ -342,7 +366,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/campus-connect',
         name: 'campusConnect',
-        redirect: (context, state) => RouteNames.home, // Redirect to main shell
+        redirect: (context, state) {
+          // Only redirect if navigating to /campus-connect exactly (no sub-path)
+          final fullPath = state.uri.toString();
+          if (fullPath == '/campus-connect' || fullPath == '/campus-connect/') {
+            return RouteNames.home;
+          }
+          return null;
+        },
         routes: [
           GoRoute(
             path: 'create',

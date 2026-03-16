@@ -74,6 +74,12 @@ class ChatMessage {
   final ChatSender? sender;
   final MessageStatus status;
 
+  /// Approval workflow fields for supervisor-moderated chat.
+  final String? approvalStatus;
+  final String? approverName;
+  final DateTime? approvedAt;
+  final String? rejectionReason;
+
   const ChatMessage({
     required this.id,
     required this.chatRoomId,
@@ -86,6 +92,10 @@ class ChatMessage {
     required this.createdAt,
     this.sender,
     this.status = MessageStatus.approved,
+    this.approvalStatus,
+    this.approverName,
+    this.approvedAt,
+    this.rejectionReason,
   });
 
   /// Whether this message was sent by the current user.
@@ -119,6 +129,12 @@ class ChatMessage {
     final createdStr = (json['created_at'] ?? json['createdAt'] ?? '').toString();
     final senderData = json['sender'] ?? json['senderProfile'];
 
+    // Parse approval workflow fields
+    final approvalStatusStr = (json['approval_status'] ?? json['approvalStatus']) as String?;
+    final approverNameStr = (json['approver_name'] ?? json['approverName']) as String?;
+    final approvedAtStr = (json['approved_at'] ?? json['approvedAt'])?.toString();
+    final rejectionReasonStr = (json['rejection_reason'] ?? json['rejectionReason']) as String?;
+
     return ChatMessage(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       chatRoomId: (json['chat_room_id'] ?? json['chatRoomId'] ?? '').toString(),
@@ -130,9 +146,15 @@ class ChatMessage {
       deliveredAt: deliveredStr != null ? DateTime.tryParse(deliveredStr) : null,
       createdAt: DateTime.tryParse(createdStr) ?? DateTime.now(),
       sender: senderData != null
-          ? ChatSender.fromJson(senderData as Map<String, dynamic>)
-          : null,
+          ? ChatSender.fromJson(senderData as Map<String, dynamic>, senderRole: (json['sender_role'] ?? json['senderRole']) as String?)
+          : (json['sender_role'] ?? json['senderRole']) != null
+              ? ChatSender(id: (json['sender_id'] ?? json['senderId'] ?? '').toString(), fullName: (json['sender_name'] ?? 'Unknown') as String, role: (json['sender_role'] ?? json['senderRole']) as String?)
+              : null,
       status: status,
+      approvalStatus: approvalStatusStr,
+      approverName: approverNameStr,
+      approvedAt: approvedAtStr != null ? DateTime.tryParse(approvedAtStr) : null,
+      rejectionReason: rejectionReasonStr,
     );
   }
 
@@ -147,6 +169,10 @@ class ChatMessage {
       'read_by': readBy,
       'delivered_at': deliveredAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
+      'approval_status': approvalStatus,
+      'approver_name': approverName,
+      'approved_at': approvedAt?.toIso8601String(),
+      'rejection_reason': rejectionReason,
     };
   }
 
@@ -163,6 +189,10 @@ class ChatMessage {
     DateTime? createdAt,
     ChatSender? sender,
     MessageStatus? status,
+    String? approvalStatus,
+    String? approverName,
+    DateTime? approvedAt,
+    String? rejectionReason,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -176,6 +206,10 @@ class ChatMessage {
       createdAt: createdAt ?? this.createdAt,
       sender: sender ?? this.sender,
       status: status ?? this.status,
+      approvalStatus: approvalStatus ?? this.approvalStatus,
+      approverName: approverName ?? this.approverName,
+      approvedAt: approvedAt ?? this.approvedAt,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
     );
   }
 }
@@ -186,20 +220,23 @@ class ChatSender {
   final String fullName;
   final String? avatarUrl;
   final String? email;
+  final String? role;
 
   const ChatSender({
     required this.id,
     required this.fullName,
     this.avatarUrl,
     this.email,
+    this.role,
   });
 
-  factory ChatSender.fromJson(Map<String, dynamic> json) {
+  factory ChatSender.fromJson(Map<String, dynamic> json, {String? senderRole}) {
     return ChatSender(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       fullName: (json['full_name'] ?? json['fullName']) as String? ?? 'Unknown',
       avatarUrl: (json['avatar_url'] ?? json['avatarUrl']) as String?,
       email: json['email'] as String?,
+      role: senderRole ?? (json['role'] as String?),
     );
   }
 

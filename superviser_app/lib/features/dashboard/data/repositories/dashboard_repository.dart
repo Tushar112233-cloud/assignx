@@ -62,9 +62,9 @@ class DashboardRepository {
   /// Fetches projects filtered by subject.
   Future<List<RequestModel>> getRequestsBySubject(String subject) async {
     try {
-      final subjectParam = subject != 'All' ? '&subject=$subject' : '';
+      final subjectParam = subject != 'All' ? '?subject=$subject' : '';
       final response = await ApiClient.get(
-        '/supervisor/dashboard/requests?$subjectParam',
+        '/supervisor/dashboard/requests$subjectParam',
       );
       final list = response is List
           ? response

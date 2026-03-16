@@ -5,7 +5,7 @@ import '../../../../core/api/api_client.dart';
 class SubjectRepository {
   /// Fetches the list of active subjects from the backend.
   Future<List<Subject>> getSubjects() async {
-    final response = await ApiClient.get('/api/subjects');
+    final response = await ApiClient.get('/subjects');
     final List<dynamic> subjectList = response['subjects'] ?? [];
     return subjectList.map((json) => Subject.fromJson(json)).toList();
   }

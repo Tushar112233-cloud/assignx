@@ -4,7 +4,7 @@ import { checkAccount, sendOTP, verifyOTP, doerSignup, supervisorSignup, refresh
 import { AccessRequest } from '../models/AccessRequest';
 import { generateAccessToken, generateRefreshToken } from '../services/jwt.service';
 import { authenticate } from '../middleware/auth';
-import { authLimiter } from '../middleware/rateLimiter';
+// import { authLimiter } from '../middleware/rateLimiter';
 import { User, Doer, Supervisor, Admin } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
@@ -175,7 +175,7 @@ router.post('/check-account', async (req: Request, res: Response, next: NextFunc
   }
 });
 
-router.post('/send-otp', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/send-otp', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, purpose, role } = req.body;
     if (!email) throw new AppError('Email is required', 400);
@@ -190,7 +190,7 @@ router.post('/send-otp', authLimiter, async (req: Request, res: Response, next: 
   }
 });
 
-router.post('/verify', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/verify', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, otp, purpose, role } = req.body;
     if (!email || !otp) throw new AppError('Email and OTP are required', 400);
@@ -205,7 +205,7 @@ router.post('/verify', authLimiter, async (req: Request, res: Response, next: Ne
   }
 });
 
-router.post('/doer-signup', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/doer-signup', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, otp, fullName, metadata } = req.body;
     if (!email || !otp || !fullName || !metadata) {
@@ -218,7 +218,7 @@ router.post('/doer-signup', authLimiter, async (req: Request, res: Response, nex
   }
 });
 
-router.post('/supervisor-signup', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/supervisor-signup', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, otp, fullName, metadata } = req.body;
     if (!email || !otp || !fullName || !metadata) {

@@ -52,6 +52,7 @@ export interface Expert {
   education?: string;
   experience?: string;
   featured?: boolean;
+  availabilitySlots?: Array<{ day: string; startTime: string; endTime: string }>;
   createdAt: Date;
 }
 

@@ -53,7 +53,7 @@ class BusinessHubRepository {
           .toList();
     } catch (e) {
       _logger.e('Error fetching business hub posts: $e');
-      return _getMockPosts();
+      return [];
     }
   }
 
@@ -62,7 +62,9 @@ class BusinessHubRepository {
     try {
       final response = await ApiClient.get('/community/business-hub/$id');
       if (response == null) return null;
-      return BusinessHubPost.fromJson(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final postData = data['post'] as Map<String, dynamic>? ?? data;
+      return BusinessHubPost.fromJson(postData);
     } catch (e) {
       _logger.e('Error fetching business hub post: $e');
       return null;
@@ -85,13 +87,13 @@ class BusinessHubRepository {
         'category': category.name,
         'title': title,
         'content': description,
-        'images': images,
-        'company_name': companyName,
-        'industry': industry,
-        'tags': tags,
+        'imageUrls': images ?? [],
+        'tags': tags ?? [],
       });
 
-      return BusinessHubPost.fromJson(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final postData = data['post'] as Map<String, dynamic>? ?? data;
+      return BusinessHubPost.fromJson(postData);
     } catch (e) {
       _logger.e('Error creating business hub post: $e');
       rethrow;
@@ -137,83 +139,4 @@ class BusinessHubRepository {
     }
   }
 
-  List<BusinessHubPost> _getMockPosts() {
-    return [
-      BusinessHubPost(
-        id: 'biz-1',
-        userName: 'Neha Gupta',
-        userTitle: 'CEO',
-        companyName: 'TechVentures India',
-        category: BusinessCategory.recruitment,
-        postType: BusinessPostType.recruitment,
-        title: 'Hiring: Senior Flutter Developer - Remote',
-        description:
-            'Looking for experienced Flutter developers to join our growing team. Competitive salary and equity options.',
-        tags: ['Hiring', 'Flutter', 'Remote'],
-        likeCount: 42,
-        commentCount: 15,
-        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-      ),
-      BusinessHubPost(
-        id: 'biz-2',
-        userName: 'Arjun Mehta',
-        userTitle: 'VP Strategy',
-        companyName: 'GlobalCorp',
-        category: BusinessCategory.industryInsights,
-        postType: BusinessPostType.insight,
-        title: 'How AI is reshaping the Indian startup ecosystem',
-        description:
-            'A deep dive into the impact of generative AI on Indian startups. Key trends and opportunities ahead.',
-        tags: ['AI', 'Startups', 'India'],
-        likeCount: 78,
-        commentCount: 22,
-        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-      ),
-      BusinessHubPost(
-        id: 'biz-3',
-        userName: 'Riya Kapoor',
-        userTitle: 'Founder',
-        companyName: 'GreenTech Solutions',
-        category: BusinessCategory.funding,
-        postType: BusinessPostType.funding,
-        title: 'Series A: Raised 5M for sustainable tech platform',
-        description:
-            'Excited to announce our Series A funding! Building the future of sustainable enterprise software.',
-        tags: ['Funding', 'SeriesA', 'Sustainability'],
-        likeCount: 120,
-        commentCount: 35,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      BusinessHubPost(
-        id: 'biz-4',
-        userName: 'Vikram Reddy',
-        userTitle: 'CTO',
-        companyName: 'DataSync Labs',
-        category: BusinessCategory.innovation,
-        postType: BusinessPostType.innovation,
-        title: 'Our journey to building a real-time analytics platform',
-        description:
-            'Lessons learned from scaling our analytics platform to handle 1M events/sec.',
-        tags: ['Engineering', 'Scale', 'Analytics'],
-        likeCount: 56,
-        commentCount: 18,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      BusinessHubPost(
-        id: 'biz-5',
-        userName: 'Ananya Singh',
-        userTitle: 'Director',
-        companyName: 'InnoHub',
-        category: BusinessCategory.events,
-        postType: BusinessPostType.event,
-        title: 'Business Leaders Summit 2026 - Registration Open',
-        description:
-            'Join 500+ business leaders for networking and knowledge sharing. March 20-21, Delhi.',
-        tags: ['Summit', 'Networking', 'Leadership'],
-        likeCount: 45,
-        commentCount: 10,
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-    ];
-  }
 }

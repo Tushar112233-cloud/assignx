@@ -52,7 +52,7 @@ class ProNetworkRepository {
           .toList();
     } catch (e) {
       _logger.e('Error fetching pro network posts: $e');
-      return _getMockPosts();
+      return [];
     }
   }
 
@@ -61,7 +61,9 @@ class ProNetworkRepository {
     try {
       final response = await ApiClient.get('/community/pro-network/$id');
       if (response == null) return null;
-      return ProNetworkPost.fromJson(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final postData = data['post'] as Map<String, dynamic>? ?? data;
+      return ProNetworkPost.fromJson(postData);
     } catch (e) {
       _logger.e('Error fetching pro network post: $e');
       return null;
@@ -82,11 +84,13 @@ class ProNetworkRepository {
         'category': category.name,
         'title': title,
         'content': description,
-        'images': images,
-        'tags': tags,
+        'imageUrls': images ?? [],
+        'tags': tags ?? [],
       });
 
-      return ProNetworkPost.fromJson(response as Map<String, dynamic>);
+      final data = response as Map<String, dynamic>;
+      final postData = data['post'] as Map<String, dynamic>? ?? data;
+      return ProNetworkPost.fromJson(postData);
     } catch (e) {
       _logger.e('Error creating pro network post: $e');
       rethrow;
@@ -131,76 +135,4 @@ class ProNetworkRepository {
     }
   }
 
-  List<ProNetworkPost> _getMockPosts() {
-    return [
-      ProNetworkPost(
-        id: 'pro-1',
-        userName: 'Alex Chen',
-        userTitle: 'Full Stack Developer',
-        category: ProfessionalCategory.freelanceOpportunities,
-        postType: ProfessionalPostType.freelanceGig,
-        title: 'Looking for React Native developers for a 3-month project',
-        description:
-            'We have an exciting mobile app project. Budget: \$5000-8000. Remote friendly.',
-        tags: ['React Native', 'Mobile', 'Freelance'],
-        likeCount: 24,
-        commentCount: 8,
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      ProNetworkPost(
-        id: 'pro-2',
-        userName: 'Priya Sharma',
-        userTitle: 'UX Designer',
-        category: ProfessionalCategory.portfolioShowcase,
-        postType: ProfessionalPostType.portfolioItem,
-        title: 'Redesigned the entire checkout flow for an e-commerce platform',
-        description:
-            'Increased conversion by 23%. Check out my case study!',
-        tags: ['UX', 'Portfolio', 'E-commerce'],
-        likeCount: 56,
-        commentCount: 12,
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-      ProNetworkPost(
-        id: 'pro-3',
-        userName: 'Rahul Verma',
-        userTitle: 'Data Scientist',
-        category: ProfessionalCategory.skillExchange,
-        postType: ProfessionalPostType.skillOffer,
-        title: 'Offering Python/ML mentoring in exchange for Flutter coaching',
-        description:
-            'I have 3+ years in ML and want to learn Flutter development.',
-        tags: ['Python', 'ML', 'Flutter', 'Mentoring'],
-        likeCount: 18,
-        commentCount: 5,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      ProNetworkPost(
-        id: 'pro-4',
-        userName: 'Sara Patel',
-        userTitle: 'Tech Lead',
-        category: ProfessionalCategory.industryNews,
-        postType: ProfessionalPostType.newsArticle,
-        title: 'AI is transforming how we approach code reviews',
-        description:
-            'A deep dive into AI-powered code review tools and their impact.',
-        tags: ['AI', 'Code Review', 'Tech Trends'],
-        likeCount: 89,
-        commentCount: 23,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      ProNetworkPost(
-        id: 'pro-5',
-        userName: 'Vikram Singh',
-        category: ProfessionalCategory.events,
-        postType: ProfessionalPostType.event,
-        title: 'Tech Meetup: Building Scalable Systems - March 15',
-        description: 'Join us for an evening of talks and networking.',
-        tags: ['Meetup', 'Scalability', 'Networking'],
-        likeCount: 34,
-        commentCount: 7,
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-    ];
-  }
 }

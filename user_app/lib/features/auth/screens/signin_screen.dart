@@ -191,7 +191,17 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
 
       if (mounted) {
         if (success) {
-          context.go(RouteNames.roleSelection);
+          // Check if user needs onboarding (name not set or onboarding not completed)
+          final profile = ref.read(currentProfileProvider);
+          final needsOnboarding = profile == null ||
+              profile.fullName == null ||
+              profile.fullName!.isEmpty ||
+              !profile.onboardingCompleted;
+          if (needsOnboarding) {
+            context.go(RouteNames.profileCompletion);
+          } else {
+            context.go(RouteNames.home);
+          }
         } else {
           setState(() {
             _isLoading = false;

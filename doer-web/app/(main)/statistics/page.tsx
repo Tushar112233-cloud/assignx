@@ -112,10 +112,11 @@ export default function StatisticsPage() {
 
         // Load project data and calculate statistics
         if (doer?.id) {
-          // Fetch all projects for the doer
-          const projects = await apiClient<Array<{ topic: string; doer_payout: number; status: string }>>(
-            `/api/projects?doer_id=${doer.id}&fields=topic,doer_payout,status`
+          // Fetch all projects for the doer (API auto-filters by JWT doer ID)
+          const projectsData = await apiClient<{ projects: Array<{ topic: string; doer_payout: number; status: string }> }>(
+            `/api/projects?limit=1000`
           )
+          const projects = projectsData.projects
 
           if (stale) return
 
@@ -235,8 +236,10 @@ export default function StatisticsPage() {
       if (existing) {
         existing.projects += 1
         existing.earnings += item.amount
-        // Mock rating for now (in real app, fetch from reviews)
-        existing.ratings.push(displayStats.averageRating)
+        // Use overall average rating as proxy until per-project ratings are available
+        if (displayStats.averageRating > 0) {
+          existing.ratings.push(displayStats.averageRating)
+        }
       }
     })
 
@@ -279,26 +282,7 @@ export default function StatisticsPage() {
     }] : [])
   ]
 
-  const goals = [
-    {
-      title: 'Reach 100 completed projects',
-      current: displayStats.completedProjects,
-      target: 100,
-      unit: 'projects'
-    },
-    {
-      title: 'Earn ₹50,000 total',
-      current: displayStats.totalEarnings,
-      target: 50000,
-      unit: '₹'
-    },
-    {
-      title: 'Achieve 4.8+ average rating',
-      current: displayStats.averageRating,
-      target: 4.8,
-      unit: '★'
-    }
-  ]
+  const goals: { title: string; current: number; target: number; unit: string }[] = []
 
   return (
     <div className="relative min-h-screen">

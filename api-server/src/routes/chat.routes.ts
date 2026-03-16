@@ -136,7 +136,7 @@ router.post('/rooms', authenticate, async (req: Request, res: Response, next: Ne
   try {
     const { projectId, roomType, name, participantIds } = req.body;
 
-    const participants = participantIds.map((p: { id: string; role: string }) => ({
+    const participants = (participantIds || []).map((p: { id: string; role: string }) => ({
       id: p.id,
       role: p.role,
       joinedAt: new Date(),

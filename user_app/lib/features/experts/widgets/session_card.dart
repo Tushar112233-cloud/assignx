@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/expert_model.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -17,9 +18,6 @@ class SessionCard extends StatelessWidget {
 
   /// Expert information for the booking.
   final Expert? expert;
-
-  /// Called when message button is pressed.
-  final VoidCallback? onMessage;
 
   /// Called when reschedule button is pressed.
   final VoidCallback? onReschedule;
@@ -37,7 +35,6 @@ class SessionCard extends StatelessWidget {
     super.key,
     required this.booking,
     this.expert,
-    this.onMessage,
     this.onReschedule,
     this.onCancel,
     this.onJoin,
@@ -117,10 +114,15 @@ class SessionCard extends StatelessWidget {
                   icon: Icons.access_time,
                   label: '${booking.startTime} - ${booking.endTime}',
                 ),
-                if (booking.meetLink != null)
+                if (booking.meetLink != null && booking.meetLink!.isNotEmpty)
                   _buildInfoChip(
                     icon: Icons.videocam,
-                    label: 'Video Call'.tr(context),
+                    label: 'Meet link available'.tr(context),
+                  )
+                else if (isUpcoming)
+                  _buildInfoChip(
+                    icon: Icons.schedule,
+                    label: 'Meet link pending'.tr(context),
                   ),
               ],
             ),
@@ -226,7 +228,7 @@ class SessionCard extends StatelessWidget {
         radius: 26,
         backgroundColor: AppColors.primaryLight.withAlpha(50),
         backgroundImage:
-            expert?.avatar != null ? NetworkImage(expert!.avatar!) : null,
+            isValidImageUrl(expert?.avatar) ? NetworkImage(expert!.avatar!) : null,
         child: expert?.avatar == null
             ? Text(
                 expert?.initials ?? '?',
@@ -317,15 +319,10 @@ class SessionCard extends StatelessWidget {
     );
   }
 
-  /// Build action buttons for upcoming sessions.
+  /// Build action buttons for upcoming sessions (no chat).
   Widget _buildActionButtons() {
     return Row(
       children: [
-        _buildIconButton(
-          icon: Icons.message_outlined,
-          onTap: onMessage,
-        ),
-        const SizedBox(width: 8),
         _buildIconButton(
           icon: Icons.refresh,
           onTap: onReschedule,

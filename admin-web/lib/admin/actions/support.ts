@@ -16,7 +16,7 @@ export async function getTickets(params: {
   if (params.status) query.set("status", params.status);
   if (params.priority) query.set("priority", params.priority);
   if (params.page) query.set("page", String(params.page));
-  if (params.perPage) query.set("perPage", String(params.perPage));
+  if (params.perPage) query.set("limit", String(params.perPage));
 
   const result = await serverFetch(`/api/support/tickets?${query.toString()}`);
   const raw = result.tickets || result.data || [];
@@ -37,7 +37,32 @@ export async function getTickets(params: {
 
 export async function getTicketById(id: string) {
   await verifyAdmin();
-  return serverFetch(`/api/support/tickets/${id}`);
+  const result = await serverFetch(`/api/support/tickets/${id}`);
+  const t = result.ticket || result;
+  const ticket = {
+    ...t,
+    id: t._id || t.id,
+    subject: t.subject,
+    description: t.description || null,
+    status: t.status,
+    priority: t.priority,
+    createdAt: t.createdAt || t.created_at,
+    resolvedAt: t.resolvedAt || t.resolved_at || null,
+    resolutionNotes: t.resolutionNotes || t.resolution_notes || null,
+    assignedTo: t.assignedTo || t.assigned_to || null,
+    raisedById: t.raisedById || null,
+    userName: t.userName || t.raisedByName || null,
+  };
+  const rawMessages = result.messages || t.messages || [];
+  const messages = rawMessages.map((m: Record<string, unknown>) => ({
+    _id: m._id || m.id,
+    message: m.message,
+    senderRole: m.senderRole || m.sender_type,
+    senderName: m.senderName || (m.sender as Record<string, unknown>)?.full_name || null,
+    isInternal: m.isInternal || m.is_internal || false,
+    createdAt: m.createdAt || m.created_at,
+  }));
+  return { ticket, messages };
 }
 
 export async function replyToTicket(
@@ -84,13 +109,22 @@ export async function getTicketStats() {
   await verifyAdmin();
 
   try {
-    return await serverFetch(`/api/admin/support/stats`);
+    const result = await serverFetch(`/api/admin/support/stats`);
+    const s = result.stats || result;
+    return {
+      open_count: s.open ?? 0,
+      in_progress_count: s.inProgress ?? 0,
+      resolved_count: s.resolved ?? 0,
+      closed_count: s.closed ?? 0,
+      total_count: s.total ?? 0,
+    };
   } catch {
     return {
       open_count: 0,
       in_progress_count: 0,
-      avg_resolution_time: 0,
-      by_priority: { low: 0, medium: 0, high: 0, urgent: 0 },
+      resolved_count: 0,
+      closed_count: 0,
+      total_count: 0,
     };
   }
 }
@@ -99,7 +133,14 @@ export async function getAdmins() {
   await verifyAdmin();
 
   try {
-    return await serverFetch(`/api/admin/admins`);
+    const result = await serverFetch(`/api/admin/admins`);
+    const raw = Array.isArray(result) ? result : result.admins || result.data || [];
+    return raw.map((a: Record<string, unknown>) => ({
+      id: a._id || a.id,
+      full_name: a.fullName || a.full_name || null,
+      role: a.adminRole || a.role || null,
+      email: a.email || null,
+    }));
   } catch {
     return [];
   }

@@ -491,10 +491,7 @@ class _GlassButtonState extends State<GlassButton> {
       onTapCancel: _handleTapCancel,
       onTap: _isDisabled ? null : widget.onPressed,
       onLongPress: _isDisabled ? null : widget.onLongPress,
-      child: Opacity(
-        opacity: _isDisabled ? 0.6 : 1.0,
-        child: button,
-      ),
+      child: _isDisabled ? Opacity(opacity: 0.6, child: button) : button,
     );
 
     return Container(

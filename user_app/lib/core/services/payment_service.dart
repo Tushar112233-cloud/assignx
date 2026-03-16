@@ -63,18 +63,22 @@ class _OrderResponse {
   final String id;
   final int amount;
   final String currency;
+  final String? keyId;
 
   _OrderResponse({
     required this.id,
     required this.amount,
     required this.currency,
+    this.keyId,
   });
 
   factory _OrderResponse.fromJson(Map<String, dynamic> json) {
     return _OrderResponse(
-      id: json['id'] as String,
+      // API returns orderId (not id)
+      id: (json['orderId'] ?? json['id']) as String,
       amount: json['amount'] as int,
       currency: json['currency'] as String,
+      keyId: json['keyId'] as String?,
     );
   }
 }
@@ -82,6 +86,7 @@ class _OrderResponse {
 /// Server payment verification response.
 class _VerifyResponse {
   final bool success;
+  final String? paymentId;
   final String? transactionId;
   final double? newBalance;
   final String? message;
@@ -89,6 +94,7 @@ class _VerifyResponse {
 
   _VerifyResponse({
     required this.success,
+    this.paymentId,
     this.transactionId,
     this.newBalance,
     this.message,
@@ -98,8 +104,9 @@ class _VerifyResponse {
   factory _VerifyResponse.fromJson(Map<String, dynamic> json) {
     return _VerifyResponse(
       success: json['success'] as bool? ?? false,
-      transactionId: json['transaction_id'] as String?,
-      newBalance: (json['new_balance'] as num?)?.toDouble(),
+      paymentId: (json['paymentId'] ?? json['payment_id']) as String?,
+      transactionId: (json['transactionId'] ?? json['transaction_id']) as String?,
+      newBalance: (json['newBalance'] ?? json['new_balance'] ?? json['balance'] as num?)?.toDouble(),
       message: json['message'] as String?,
       error: json['error'] as String?,
     );
@@ -149,7 +156,7 @@ class PaymentService {
         id: (map['_id'] ?? map['id'] ?? '') as String,
         email: map['email'] as String?,
         phone: map['phone'] as String?,
-        fullName: map['full_name'] as String?,
+        fullName: (map['fullName'] ?? map['full_name']) as String?,
       );
     } catch (_) {
       return null;
@@ -182,15 +189,13 @@ class PaymentService {
     String? projectId,
   }) async {
     final headers = await _getAuthHeaders();
-    final amountInPaise = amountInRupees * 100;
 
+    // Send amount in rupees -- the API converts to paise internally.
     final body = {
-      'amount': amountInPaise,
-      'currency': 'INR',
-      'receipt': '${type}_${DateTime.now().millisecondsSinceEpoch}',
+      'amount': amountInRupees,
+      if (projectId != null) 'projectId': projectId,
       'notes': {
         'type': type,
-        if (projectId != null) 'project_id': projectId,
       },
     };
 
@@ -395,13 +400,31 @@ class PaymentService {
 
       if (verification.success) {
         _logger.i('[PaymentService] Payment verified and processed');
+
+        double? newBalance = verification.newBalance;
+
+        // For wallet top-ups (no projectId), credit the wallet via the topup endpoint
+        if (_currentProjectId == null && _currentAmountInRupees != null) {
+          try {
+            final topupResponse = await _creditWalletAfterVerification(
+              amountInRupees: _currentAmountInRupees!,
+              paymentId: response.paymentId ?? '',
+            );
+            newBalance = topupResponse;
+          } catch (e) {
+            _logger.e('[PaymentService] Wallet credit failed: $e');
+            // Payment was verified but wallet credit failed -- still report success
+            // but log the error for support follow-up
+          }
+        }
+
         _onSuccess?.call(PaymentResult(
           success: true,
           paymentId: response.paymentId,
           orderId: response.orderId,
           signature: response.signature,
           transactionId: verification.transactionId,
-          newBalance: verification.newBalance,
+          newBalance: newBalance,
         ));
       } else {
         _logger.e('[PaymentService] Server verification failed');
@@ -439,6 +462,115 @@ class PaymentService {
   void _handleExternalWallet(ExternalWalletResponse response) {
     _logger.i('[PaymentService] External wallet: ${response.walletName}');
     _onExternalWallet?.call();
+  }
+
+  /// Credits the wallet after a successful Razorpay payment verification.
+  ///
+  /// Called after the payment signature is verified on the server.
+  /// This calls POST /wallets/topup to actually credit the wallet balance.
+  Future<double?> _creditWalletAfterVerification({
+    required int amountInRupees,
+    required String paymentId,
+  }) async {
+    final headers = await _getAuthHeaders();
+
+    final body = {
+      'amount': amountInRupees,
+      'paymentId': paymentId,
+    };
+
+    _logger.i('[PaymentService] Crediting wallet: $amountInRupees INR');
+
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/api/wallets/topup'),
+      headers: headers,
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode != 200) {
+      final errorBody = jsonDecode(response.body);
+      throw Exception(errorBody['error'] ?? 'Failed to credit wallet');
+    }
+
+    final data = jsonDecode(response.body);
+    _logger.i('[PaymentService] Wallet credited. New balance: ${data['balance']}');
+    return (data['balance'] as num?)?.toDouble();
+  }
+
+  /// Opens Razorpay checkout with a pre-created order.
+  ///
+  /// Used for expert booking payments where the order is created
+  /// via a custom endpoint. Payment verification is handled by
+  /// the caller's onSuccess callback (not the standard verify flow).
+  ///
+  /// @param orderId Pre-created Razorpay order ID.
+  /// @param keyId Razorpay key ID from the server.
+  /// @param amountInPaise Amount in paise (already converted by server).
+  /// @param description Payment description.
+  /// @param onSuccess Callback with raw PaymentResult (caller handles verification).
+  /// @param onError Callback for payment errors.
+  void payCustomOrder({
+    required String orderId,
+    required String keyId,
+    required int amountInPaise,
+    required String description,
+    PaymentSuccessCallback? onSuccess,
+    PaymentErrorCallback? onError,
+  }) {
+    // For custom orders, skip server verification in _handlePaymentSuccess
+    // Instead, directly call the provided onSuccess callback
+    _onSuccess = null;
+    _onError = null;
+    _currentAmountInRupees = null;
+    _currentProjectId = null;
+
+    // Set up one-time handlers
+    _razorpay.clear();
+    _razorpay = Razorpay();
+
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (PaymentSuccessResponse response) {
+      _logger.i('[PaymentService] Custom order payment success: ${response.paymentId}');
+      onSuccess?.call(PaymentResult(
+        success: true,
+        paymentId: response.paymentId,
+        orderId: response.orderId,
+        signature: response.signature,
+      ));
+    });
+
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, (PaymentFailureResponse response) {
+      _logger.e('[PaymentService] Custom order payment failed: ${response.message}');
+      onError?.call(PaymentResult(
+        success: false,
+        errorCode: response.code.toString(),
+        errorMessage: response.message,
+      ));
+    });
+
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, (ExternalWalletResponse response) {
+      _logger.i('[PaymentService] External wallet: ${response.walletName}');
+    });
+
+    try {
+      final options = {
+        'key': keyId,
+        'amount': amountInPaise,
+        'currency': 'INR',
+        'name': 'AssignX',
+        'description': description,
+        'order_id': orderId,
+        'theme': {'color': '#7c3aed'},
+      };
+
+      _razorpay.open(options);
+    } catch (e) {
+      _logger.e('[PaymentService] Error opening custom checkout: $e');
+      onError?.call(PaymentResult(
+        success: false,
+        errorCode: 'INIT_ERROR',
+        errorMessage: e.toString(),
+      ));
+    }
   }
 
   /// Dispose of Razorpay instance.

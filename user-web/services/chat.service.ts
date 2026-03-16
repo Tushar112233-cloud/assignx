@@ -327,8 +327,8 @@ export const chatService = {
    */
   async getTotalUnreadCount(userId: string): Promise<number> {
     try {
-      const result = await apiClient<{ count: number }>(`/api/chat/unread-count?userId=${userId}`)
-      return result.count || 0
+      const result = await apiClient<{ total: number }>(`/api/chat/unread`)
+      return result.total || 0
     } catch {
       return 0
     }

@@ -8,7 +8,6 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../data/models/doer_project_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/dashboard_provider.dart';
-import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../widgets/assigned_task_card.dart';
 import '../widgets/task_pool_card.dart';
@@ -23,14 +22,17 @@ import '../../../providers/navigation_provider.dart';
 /// 3. Stat cards row (Assigned, Available, Urgent, Earnings)
 /// 4. Performance summary cards
 /// 5. Task sections with tabs (Assigned to Me / Open Pool)
-class DashboardScreen extends ConsumerStatefulWidget {
+///
+/// Provider watches are split into focused ConsumerWidget children
+/// so that only the relevant section rebuilds when data changes.
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends ConsumerState<DashboardScreen>
+class _DashboardScreenState extends State<DashboardScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -51,133 +53,162 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final dashboardState = ref.watch(dashboardProvider);
-    final stats = ref.watch(doerStatsProvider);
-
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: LoadingOverlay(
-        isLoading: dashboardState.isLoading,
-        child: RefreshIndicator(
-          onRefresh: () => ref.read(dashboardProvider.notifier).refresh(),
-          child: CustomScrollView(
-            slivers: [
-              // Greeting header
-              SliverToBoxAdapter(child: _buildGreetingHeader(context)),
+      body: _DashboardLoadingWrapper(
+        tabController: _tabController,
+        onTabChanged: (index) => setState(() => _tabController.animateTo(index)),
+      ),
+    );
+  }
+}
 
-              // Hero banner
-              SliverToBoxAdapter(child: _buildHeroBanner(context, dashboardState)),
+// =============================================================================
+// Loading wrapper - watches only isLoading from dashboardProvider
+// =============================================================================
 
-              // Stat cards grid
-              SliverToBoxAdapter(
-                child: _buildStatCardsGrid(stats, dashboardState),
+class _DashboardLoadingWrapper extends ConsumerWidget {
+  final TabController tabController;
+  final ValueChanged<int> onTabChanged;
+
+  const _DashboardLoadingWrapper({
+    required this.tabController,
+    required this.onTabChanged,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(
+      dashboardProvider.select((s) => s.isLoading),
+    );
+
+    return LoadingOverlay(
+      isLoading: isLoading,
+      child: RefreshIndicator(
+        onRefresh: () => ref.read(dashboardProvider.notifier).refresh(),
+        child: CustomScrollView(
+          slivers: [
+            // Greeting header - watches currentUserProvider
+            const SliverToBoxAdapter(child: _GreetingHeader()),
+
+            // Hero banner - watches dashboardProvider + currentUserProvider
+            const SliverToBoxAdapter(child: _HeroBannerSection()),
+
+            // Stat cards grid - watches doerStatsProvider + dashboardProvider
+            const SliverToBoxAdapter(child: _StatsGridSection()),
+
+            // Performance + Priority row - watches doerStatsProvider + dashboardProvider
+            const SliverToBoxAdapter(child: _PerformanceRowSection()),
+
+            // Tasks section header - watches dashboardProvider
+            const SliverToBoxAdapter(child: _TasksSectionHeader()),
+
+            // Task tab bar + content - watches dashboardProvider
+            SliverToBoxAdapter(
+              child: _TaskTabBar(
+                tabController: tabController,
+                onTabChanged: onTabChanged,
               ),
+            ),
 
-              // Performance + Task mix row
-              SliverToBoxAdapter(
-                child: _buildPerformanceRow(stats, dashboardState),
-              ),
+            // Task content
+            _TaskContentSection(
+              tabIndex: tabController.index,
+            ),
 
-              // Your Tasks section header
-              SliverToBoxAdapter(
-                child: _buildTasksSectionHeader(context, dashboardState),
-              ),
-
-              // Task tab bar
-              SliverToBoxAdapter(
-                child: _buildTaskTabBar(dashboardState),
-              ),
-
-              // Task content
-              if (_tabController.index == 0)
-                ..._buildAssignedContent(dashboardState)
-              else
-                ..._buildPoolContent(dashboardState),
-
-              // Bottom padding for floating nav bar
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
-            ],
-          ),
+            // Bottom padding for floating nav bar
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildGreetingHeader(BuildContext context) {
+// =============================================================================
+// Greeting Header - watches only currentUserProvider
+// =============================================================================
+
+class _GreetingHeader extends ConsumerWidget {
+  const _GreetingHeader();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final displayName = user?.fullName ?? 'Dolancer';
+    final firstName = displayName.split(' ').first;
+
     return SafeArea(
       bottom: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-        child: Consumer(
-          builder: (context, ref, _) {
-            final user = ref.watch(currentUserProvider);
-            final displayName = user?.fullName ?? 'Dolancer';
-            final firstName = displayName.split(' ').first;
-
-            return Row(
-              children: [
-                // AX Logo badge
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primary, AppColors.accent],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+        child: Row(
+          children: [
+            // AX Logo badge
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.accent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(
+                child: Text(
+                  'AX',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'AssignX Dolancer',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
                     ),
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Center(
-                    child: Text(
-                      'AX',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  Text(
+                    'Freelancer Portal',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'AssignX Dolancer',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      Text(
-                        'Freelancer Portal',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Notification bell
-                _buildHeaderIcon(
-                  Icons.notifications_outlined,
-                  () => context.push('/notifications'),
-                  showBadge: true,
-                ),
-              ],
-            );
-          },
+                ],
+              ),
+            ),
+            // Notification bell
+            _buildHeaderIcon(
+              context,
+              Icons.notifications_outlined,
+              () => context.push('/notifications'),
+              showBadge: true,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeaderIcon(IconData icon, VoidCallback onTap,
-      {bool showBadge = false}) {
+  Widget _buildHeaderIcon(
+    BuildContext context,
+    IconData icon,
+    VoidCallback onTap, {
+    bool showBadge = false,
+  }) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -211,9 +242,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       ],
     );
   }
+}
 
-  Widget _buildHeroBanner(
-      BuildContext context, DashboardState dashboardState) {
+// =============================================================================
+// Hero Banner Section - watches dashboardProvider + currentUserProvider
+// =============================================================================
+
+class _HeroBannerSection extends ConsumerWidget {
+  const _HeroBannerSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dashboardState = ref.watch(dashboardProvider);
     final user = ref.watch(currentUserProvider);
     final firstName = (user?.fullName ?? 'Dolancer').split(' ').first;
     final activeCount = dashboardState.assignedProjects
@@ -291,7 +331,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   fontFamily: 'Inter',
                 ),
                 children: [
-                  TextSpan(text: '${_getGreeting()}, '),
+                  TextSpan(text: '${_getGreeting(context)}, '),
                   TextSpan(
                     text: firstName,
                     style: const TextStyle(
@@ -380,9 +420,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
-  Widget _buildStatCardsGrid(
-      DoerStats stats, DashboardState dashboardState) {
-    final urgentCount = _getUrgentCount(dashboardState);
+  String _getGreeting(BuildContext context) {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning'.tr(context);
+    if (hour < 17) return 'Good afternoon'.tr(context);
+    return 'Good evening'.tr(context);
+  }
+
+  int _getUrgentCount(DashboardState dashboardState) {
+    return dashboardState.assignedProjects
+        .where((p) => p.isUrgent)
+        .length;
+  }
+}
+
+// =============================================================================
+// Stats Grid Section - watches doerStatsProvider + dashboardProvider
+// =============================================================================
+
+class _StatsGridSection extends ConsumerWidget {
+  const _StatsGridSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(doerStatsProvider);
+    final dashboardState = ref.watch(dashboardProvider);
+    final urgentCount = dashboardState.assignedProjects
+        .where((p) => p.isUrgent)
+        .length;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -441,8 +506,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
-  Widget _buildPerformanceRow(
-      DoerStats stats, DashboardState dashboardState) {
+  String _formatEarnings(double earnings) {
+    if (earnings >= 100000) {
+      return '${(earnings / 1000).toStringAsFixed(0)}K';
+    } else if (earnings >= 1000) {
+      return '${(earnings / 1000).toStringAsFixed(1)}K';
+    }
+    return earnings.toStringAsFixed(0);
+  }
+}
+
+// =============================================================================
+// Performance Row Section - watches doerStatsProvider + dashboardProvider
+// =============================================================================
+
+class _PerformanceRowSection extends ConsumerWidget {
+  const _PerformanceRowSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(doerStatsProvider);
+    final dashboardState = ref.watch(dashboardProvider);
+    final urgentCount = dashboardState.assignedProjects
+        .where((p) => p.isUrgent)
+        .length;
+
     final completionRate = stats.completedProjects > 0
         ? ((stats.completedProjects /
                     (stats.completedProjects + stats.activeProjects)) *
@@ -462,7 +550,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               items: [
                 _PerfItem('Completion rate', '$completionRate%'),
                 _PerfItem('Active tasks', '${stats.activeProjects}'),
-                _PerfItem('Urgent tasks', '${_getUrgentCount(dashboardState)}'),
+                _PerfItem('Urgent tasks', '$urgentCount'),
               ],
             ),
           ),
@@ -470,16 +558,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           // Priority tasks card
           Expanded(
             child: _PriorityCard(
-              urgentCount: _getUrgentCount(dashboardState),
+              urgentCount: urgentCount,
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildTasksSectionHeader(
-      BuildContext context, DashboardState dashboardState) {
+// =============================================================================
+// Tasks Section Header - watches dashboardProvider
+// =============================================================================
+
+class _TasksSectionHeader extends StatelessWidget {
+  const _TasksSectionHeader();
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 4),
       child: Column(
@@ -505,8 +601,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       ),
     );
   }
+}
 
-  Widget _buildTaskTabBar(DashboardState dashboardState) {
+// =============================================================================
+// Task Tab Bar - watches dashboardProvider for pool count badge
+// =============================================================================
+
+class _TaskTabBar extends ConsumerWidget {
+  final TabController tabController;
+  final ValueChanged<int> onTabChanged;
+
+  const _TaskTabBar({
+    required this.tabController,
+    required this.onTabChanged,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final poolCount = ref.watch(
+      dashboardProvider.select((s) => s.openPoolProjects.length),
+    );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
@@ -514,67 +629,94 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           _TaskTab(
             icon: Icons.assignment_rounded,
             label: 'Assigned to Me',
-            isActive: _tabController.index == 0,
-            onTap: () => setState(() => _tabController.animateTo(0)),
+            isActive: tabController.index == 0,
+            onTap: () => onTabChanged(0),
           ),
           const SizedBox(width: 8),
           _TaskTab(
             icon: Icons.group_work_rounded,
             label: 'Open Pool',
-            count: dashboardState.openPoolProjects.length,
-            isActive: _tabController.index == 1,
-            onTap: () => setState(() => _tabController.animateTo(1)),
+            count: poolCount,
+            isActive: tabController.index == 1,
+            onTap: () => onTabChanged(1),
           ),
         ],
       ),
     );
   }
+}
 
-  List<Widget> _buildAssignedContent(DashboardState dashboardState) {
-    if (dashboardState.assignedProjects.isEmpty) {
-      return [
-        const SliverToBoxAdapter(child: _EmptyAssignedTasks()),
-      ];
+// =============================================================================
+// Task Content Section - watches dashboardProvider
+// =============================================================================
+
+class _TaskContentSection extends ConsumerWidget {
+  final int tabIndex;
+
+  const _TaskContentSection({
+    required this.tabIndex,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dashboardState = ref.watch(dashboardProvider);
+
+    if (tabIndex == 0) {
+      return _buildAssignedContent(context, ref, dashboardState);
+    } else {
+      return _buildPoolContent(context, ref, dashboardState);
     }
-    return [
-      SliverToBoxAdapter(
-        child: _buildAssignedTasksList(dashboardState.assignedProjects),
-      ),
-    ];
   }
 
-  List<Widget> _buildPoolContent(DashboardState dashboardState) {
-    if (dashboardState.openPoolProjects.isEmpty) {
-      return [
-        const SliverToBoxAdapter(child: _EmptyTaskPool()),
-      ];
+  Widget _buildAssignedContent(
+    BuildContext context,
+    WidgetRef ref,
+    DashboardState dashboardState,
+  ) {
+    if (dashboardState.assignedProjects.isEmpty) {
+      return const SliverToBoxAdapter(child: _EmptyAssignedTasks());
     }
-    return [
-      SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final sorted =
-                  _sortedPoolProjects(dashboardState.openPoolProjects);
-              final project = sorted[index];
-              return Padding(
+    return SliverToBoxAdapter(
+      child: _buildAssignedTasksList(context, dashboardState.assignedProjects),
+    );
+  }
+
+  Widget _buildPoolContent(
+    BuildContext context,
+    WidgetRef ref,
+    DashboardState dashboardState,
+  ) {
+    if (dashboardState.openPoolProjects.isEmpty) {
+      return const SliverToBoxAdapter(child: _EmptyTaskPool());
+    }
+    final sorted = _sortedPoolProjects(dashboardState.openPoolProjects);
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final project = sorted[index];
+            return RepaintBoundary(
+              child: Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: TaskPoolCard(
                   project: project,
                   onTap: () => context.push('/project/${project.id}'),
-                  onAccept: () => _confirmAccept(context, project),
+                  onAccept: () => _confirmAccept(context, ref, project),
                 ),
-              );
-            },
-            childCount: dashboardState.openPoolProjects.length,
-          ),
+              ),
+            );
+          },
+          childCount: sorted.length,
         ),
       ),
-    ];
+    );
   }
 
-  Widget _buildAssignedTasksList(List<DoerProjectModel> projects) {
+  Widget _buildAssignedTasksList(
+    BuildContext context,
+    List<DoerProjectModel> projects,
+  ) {
     final sorted = List<DoerProjectModel>.from(projects)
       ..sort((a, b) {
         if (a.hasRevision && !b.hasRevision) return -1;
@@ -596,15 +738,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         itemCount: display.length,
         itemBuilder: (context, index) {
           final project = display[index];
-          return Padding(
-            padding: EdgeInsets.only(
-              right: index < display.length - 1 ? AppSpacing.md : 0,
-            ),
-            child: SizedBox(
-              width: cardWidth,
-              child: AssignedTaskCard(
-                project: project,
-                onTap: () => context.push('/project/${project.id}'),
+          return RepaintBoundary(
+            child: Padding(
+              padding: EdgeInsets.only(
+                right: index < display.length - 1 ? AppSpacing.md : 0,
+              ),
+              child: SizedBox(
+                width: cardWidth,
+                child: AssignedTaskCard(
+                  project: project,
+                  onTap: () => context.push('/project/${project.id}'),
+                ),
               ),
             ),
           );
@@ -623,7 +767,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       });
   }
 
-  void _confirmAccept(BuildContext context, DoerProjectModel project) {
+  void _confirmAccept(
+    BuildContext context,
+    WidgetRef ref,
+    DoerProjectModel project,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -671,7 +819,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           size: 14, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
                       Text(
-                        _formatDeadline(project.deadline),
+                        _formatDeadline(context, project.deadline),
                         style: const TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 12,
@@ -692,7 +840,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _acceptProject(project.id);
+              _acceptProject(context, ref, project.id);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
@@ -705,11 +853,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
-  Future<void> _acceptProject(String projectId) async {
+  Future<void> _acceptProject(
+    BuildContext context,
+    WidgetRef ref,
+    String projectId,
+  ) async {
     final success = await ref
         .read(dashboardProvider.notifier)
         .acceptProject(projectId);
-    if (success && mounted) {
+    if (success && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Project accepted successfully!'.tr(context)),
@@ -719,13 +871,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     }
   }
 
-  int _getUrgentCount(DashboardState dashboardState) {
-    return dashboardState.assignedProjects
-        .where((p) => p.isUrgent)
-        .length;
-  }
-
-  String _formatDeadline(DateTime deadline) {
+  String _formatDeadline(BuildContext context, DateTime deadline) {
     final remaining = deadline.difference(DateTime.now());
     if (remaining.inDays > 0) {
       return '${remaining.inDays}d ${remaining.inHours % 24}h ${'left'.tr(context)}';
@@ -736,22 +882,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     } else {
       return 'Due soon'.tr(context);
     }
-  }
-
-  String _formatEarnings(double earnings) {
-    if (earnings >= 100000) {
-      return '${(earnings / 1000).toStringAsFixed(0)}K';
-    } else if (earnings >= 1000) {
-      return '${(earnings / 1000).toStringAsFixed(1)}K';
-    }
-    return earnings.toStringAsFixed(0);
-  }
-
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning'.tr(context);
-    if (hour < 17) return 'Good afternoon'.tr(context);
-    return 'Good evening'.tr(context);
   }
 }
 

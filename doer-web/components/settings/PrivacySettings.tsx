@@ -6,7 +6,7 @@ import { Shield, Eye, Database, Save, Loader2 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { apiClient } from '@/lib/api/client'
+// apiClient import removed - preferences stored in localStorage until API endpoint is available
 import { toast } from 'sonner'
 
 type PrivacySettingsProps = {
@@ -43,14 +43,12 @@ export function PrivacySettings({ userId }: PrivacySettingsProps) {
     }
 
     try {
-      const data = await apiClient<PrivacyPrefs>('/api/doers/me/preferences')
-      if (data) {
-        const loaded: PrivacyPrefs = {
-          show_online_status: data.show_online_status ?? true,
-          analytics_opt_out: data.analytics_opt_out ?? false,
-        }
-        setPrefs(loaded)
-        setSavedPrefs(loaded)
+      // Preferences endpoint not yet available - use localStorage fallback
+      const stored = localStorage.getItem('privacy_prefs')
+      if (stored) {
+        const parsed = JSON.parse(stored) as PrivacyPrefs
+        setPrefs(parsed)
+        setSavedPrefs(parsed)
       }
     } catch {
       console.error('Failed to load privacy preferences')
@@ -87,13 +85,8 @@ export function PrivacySettings({ userId }: PrivacySettingsProps) {
 
     setIsSaving(true)
     try {
-      await apiClient('/api/doers/me/preferences', {
-        method: 'PUT',
-        body: JSON.stringify({
-          show_online_status: prefs.show_online_status,
-          analytics_opt_out: prefs.analytics_opt_out,
-        }),
-      })
+      // Preferences endpoint not yet available - use localStorage fallback
+      localStorage.setItem('privacy_prefs', JSON.stringify(prefs))
 
       setSavedPrefs({ ...prefs })
       setHasChanges(false)

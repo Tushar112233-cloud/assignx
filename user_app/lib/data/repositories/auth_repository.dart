@@ -16,27 +16,31 @@ class AuthRepository {
   Future<bool> get isAuthenticated => TokenStorage.hasTokens();
 
   /// Check if account exists.
-  Future<bool> checkAccount(String email) async {
+  Future<bool> checkAccount(String email, {String role = 'user'}) async {
     debugPrint('[AUTH] Checking account for: $email');
-    return await AuthApi.checkAccount(email);
+    return await AuthApi.checkAccount(email, role: role);
   }
 
   /// Send OTP to email.
+  ///
+  /// [role] defaults to 'user' since the API requires it.
   Future<void> sendOTP({
     required String email,
     required String purpose,
-    String? role,
+    String role = 'user',
   }) async {
-    debugPrint('[AUTH] Sending OTP to: $email (purpose: $purpose)');
+    debugPrint('[AUTH] Sending OTP to: $email (purpose: $purpose, role: $role)');
     await AuthApi.sendOTP(email, purpose, role: role);
   }
 
   /// Verify OTP.
+  ///
+  /// [role] defaults to 'user' since the API requires it.
   Future<Map<String, dynamic>?> verifyOtp({
     required String email,
     required String token,
     required String purpose,
-    String? role,
+    String role = 'user',
   }) async {
     debugPrint('[AUTH] Verifying OTP for: $email');
     try {
@@ -60,9 +64,16 @@ class AuthRepository {
   }
 
   /// Extract profile data from potentially wrapped response.
+  ///
+  /// The API returns different shapes depending on the endpoint:
+  /// - GET /users/me -> flat object with email, fullName, etc.
+  /// - PUT /users/me -> wrapped as `{ user: {...} }`
   Map<String, dynamic> _extractProfile(Map<String, dynamic> data) {
-    // API may return flat profile (GET /me) or wrapped { profile: {...} } (PUT /me)
+    // Flat response from GET /users/me (contains email at top level)
     if (data.containsKey('email')) return data;
+    // PUT /users/me wraps response in { user: {...} }
+    if (data['user'] is Map<String, dynamic>) return data['user'] as Map<String, dynamic>;
+    // Fallback for { profile: {...} } (legacy or other endpoints)
     if (data['profile'] is Map<String, dynamic>) return data['profile'] as Map<String, dynamic>;
     return data;
   }
@@ -115,7 +126,10 @@ class AuthRepository {
     return UserProfile.fromJson(profileData);
   }
 
-  /// Save student-specific data.
+  /// Save student-specific data via PUT /users/me.
+  ///
+  /// The API stores student fields directly on the user document
+  /// (no separate /student endpoint).
   Future<StudentData> saveStudentData({
     required String profileId,
     String? universityId,
@@ -142,13 +156,17 @@ class AuthRepository {
       data['preferredSubjects'] = preferredSubjects;
     }
 
-    final response = await ApiClient.post('/users/me/student', data);
+    final response = await ApiClient.put('/users/me', data);
     final respData = response as Map<String, dynamic>;
-    final studentData = respData['student'] as Map<String, dynamic>? ?? respData;
-    return StudentData.fromJson(studentData);
+    // PUT /users/me returns { user: {...} }
+    final userData = respData['user'] as Map<String, dynamic>? ?? respData;
+    return StudentData.fromJson(userData);
   }
 
-  /// Save professional-specific data.
+  /// Save professional-specific data via PUT /users/me.
+  ///
+  /// The API stores professional fields directly on the user document
+  /// (no separate /professional endpoint).
   Future<ProfessionalData> saveProfessionalData({
     required String profileId,
     required ProfessionalType professionalType,
@@ -170,33 +188,36 @@ class AuthRepository {
     if (businessType != null) data['businessType'] = businessType;
     if (gstNumber != null) data['gstNumber'] = gstNumber;
 
-    final response = await ApiClient.post('/users/me/professional', data);
+    final response = await ApiClient.put('/users/me', data);
     final respData = response as Map<String, dynamic>;
-    final profData = respData['professional'] as Map<String, dynamic>? ?? respData;
-    return ProfessionalData.fromJson(profData);
+    // PUT /users/me returns { user: {...} }
+    final userData = respData['user'] as Map<String, dynamic>? ?? respData;
+    return ProfessionalData.fromJson(userData);
   }
 
-  /// Get student data for a profile.
+  /// Get student data for a profile from GET /users/me.
+  ///
+  /// Student fields are stored directly on the user document.
   Future<StudentData?> getStudentData(String profileId) async {
     try {
-      final response = await ApiClient.get('/users/me/student');
+      final response = await ApiClient.get('/users/me');
       if (response == null) return null;
       final data = response as Map<String, dynamic>;
-      final studentData = data['student'] as Map<String, dynamic>? ?? data;
-      return StudentData.fromJson(studentData);
+      return StudentData.fromJson(data);
     } catch (_) {
       return null;
     }
   }
 
-  /// Get professional data for a profile.
+  /// Get professional data for a profile from GET /users/me.
+  ///
+  /// Professional fields are stored directly on the user document.
   Future<ProfessionalData?> getProfessionalData(String profileId) async {
     try {
-      final response = await ApiClient.get('/users/me/professional');
+      final response = await ApiClient.get('/users/me');
       if (response == null) return null;
       final data = response as Map<String, dynamic>;
-      final profData = data['professional'] as Map<String, dynamic>? ?? data;
-      return ProfessionalData.fromJson(profData);
+      return ProfessionalData.fromJson(data);
     } catch (_) {
       return null;
     }
@@ -205,7 +226,8 @@ class AuthRepository {
   /// Get list of universities.
   Future<List<Map<String, dynamic>>> getUniversities() async {
     final response = await ApiClient.get('/universities');
-    return List<Map<String, dynamic>>.from(response as List);
+    final data = response as Map<String, dynamic>;
+    return List<Map<String, dynamic>>.from(data['universities'] as List);
   }
 
   /// Get courses for a university.

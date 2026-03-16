@@ -1,5 +1,6 @@
 library;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -286,10 +287,14 @@ class _SavedPostCard extends StatelessWidget {
                       child: post.hasImages
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                post.primaryImage!,
+                              child: CachedNetworkImage(
+                                imageUrl: post.primaryImage!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Icon(
+                                placeholder: (_, __) => Container(
+                                  color: AppColors.neutralLight,
+                                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                ),
+                                errorWidget: (_, __, ___) => Icon(
                                   post.type.icon,
                                   size: 28,
                                   color: AppColors.neutralGray,

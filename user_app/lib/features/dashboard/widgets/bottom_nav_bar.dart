@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/extensions.dart';
 
 /// Custom bottom navigation bar with floating pill design.
 ///
@@ -170,17 +171,18 @@ class BottomNavBar extends StatelessWidget {
                     : _inactiveIconColor, // Gray border when inactive
                 width: isActive ? 2 : 1.5,
               ),
-              image: profileImageUrl != null
+              image: isValidImageUrl(profileImageUrl)
                   ? DecorationImage(
                       image: NetworkImage(profileImageUrl!),
                       fit: BoxFit.cover,
+                      onError: (_, __) {},
                     )
                   : null,
-              color: profileImageUrl == null
+              color: !isValidImageUrl(profileImageUrl)
                   ? const Color(0xFF3A3A3A) // Dark gray placeholder
                   : null,
             ),
-            child: profileImageUrl == null
+            child: !isValidImageUrl(profileImageUrl)
                 ? Icon(
                     LucideIcons.user,
                     size: 16,

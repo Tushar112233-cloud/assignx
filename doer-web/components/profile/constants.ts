@@ -1,5 +1,5 @@
 /**
- * Profile component constants and mock data
+ * Profile component constants and configuration
  * @module components/profile/constants
  */
 
@@ -16,11 +16,8 @@ import {
 } from 'lucide-react'
 import type {
   TransactionType,
-  WalletTransaction,
   Wallet,
   FAQ,
-  SkillWithVerification,
-  DoerReview,
 } from '@/types/database'
 
 /**
@@ -99,105 +96,29 @@ export const ticketCategories = [
 ]
 
 /**
- * Mock wallet data for demo
+ * Empty wallet defaults (no mock data)
  */
-export const mockWallet: Wallet = {
-  id: 'w1',
-  doer_id: 'd1',
-  balance: 15800,
-  locked_amount: 1800,
-  total_credited: 125000,
+export const emptyWallet: Wallet = {
+  id: '',
+  doer_id: '',
+  balance: 0,
+  locked_amount: 0,
+  total_credited: 0,
   total_debited: 0,
-  total_withdrawn: 109200,
+  total_withdrawn: 0,
   currency: 'INR',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 }
 
 /**
- * Mock transactions for demo
- */
-export const mockTransactions: WalletTransaction[] = [
-  {
-    id: '1',
-    wallet_id: 'w1',
-    transaction_type: 'project_earning',
-    amount: 2500,
-    balance_before: 10000,
-    balance_after: 12500,
-    description: 'Payment for Essay Writing project — Marketing Analysis Essay',
-    reference_id: 'p1',
-    reference_type: 'project',
-    notes: null,
-    status: 'completed',
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '2',
-    wallet_id: 'w1',
-    transaction_type: 'payout',
-    amount: -5000,
-    balance_before: 12500,
-    balance_after: 7500,
-    description: 'Withdrawal to bank account',
-    reference_id: 'pay1',
-    reference_type: 'payout',
-    notes: null,
-    status: 'completed',
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '3',
-    wallet_id: 'w1',
-    transaction_type: 'project_earning',
-    amount: 3500,
-    balance_before: 7500,
-    balance_after: 11000,
-    description: 'Payment for Research Paper — Literature Review',
-    reference_id: 'p2',
-    reference_type: 'project',
-    notes: null,
-    status: 'completed',
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '4',
-    wallet_id: 'w1',
-    transaction_type: 'bonus',
-    amount: 500,
-    balance_before: 11000,
-    balance_after: 11500,
-    description: 'Performance bonus for September',
-    reference_id: 'b1',
-    reference_type: 'bonus',
-    notes: null,
-    status: 'completed',
-    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '5',
-    wallet_id: 'w1',
-    transaction_type: 'project_earning',
-    amount: 1800,
-    balance_before: 11500,
-    balance_after: 13300,
-    description: 'Payment for Case Study — Business Case Study',
-    reference_id: 'p3',
-    reference_type: 'project',
-    notes: null,
-    status: 'pending',
-    created_at: new Date().toISOString(),
-  },
-]
-
-/**
- * Mock FAQs for demo
+ * Static FAQs - these are legitimate static content, not mock data
  */
 export const mockFAQs: FAQ[] = [
   {
     id: '1',
     question: 'How do I request a payout?',
-    answer: 'Go to your Profile > Payment History > Request Payout. Enter the amount you wish to withdraw (minimum ₹500) and confirm. Payouts are processed within 2-3 business days.',
+    answer: 'Go to your Profile > Payment History > Request Payout. Enter the amount you wish to withdraw (minimum \u20B9500) and confirm. Payouts are processed within 2-3 business days.',
     category: 'payment',
     display_order: 1,
     is_active: true,
@@ -262,126 +183,12 @@ export const mockFAQs: FAQ[] = [
 ]
 
 /**
- * Mock skills for demo
+ * Empty rating distribution (all zeros)
  */
-export const mockSkills: SkillWithVerification[] = [
-  {
-    id: '1',
-    name: 'Essay Writing',
-    category: 'Writing',
-    is_active: true,
-    proficiency_level: 'pro',
-    is_verified: true,
-    verified_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Research',
-    category: 'Research',
-    is_active: true,
-    proficiency_level: 'intermediate',
-    is_verified: true,
-    verified_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '3',
-    name: 'Data Analysis',
-    category: 'Analytics',
-    is_active: true,
-    proficiency_level: 'intermediate',
-    is_verified: false,
-    verified_at: null,
-  },
-  {
-    id: '4',
-    name: 'PowerPoint',
-    category: 'Presentation',
-    is_active: true,
-    proficiency_level: 'pro',
-    is_verified: true,
-    verified_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '5',
-    name: 'Academic Editing',
-    category: 'Writing',
-    is_active: true,
-    proficiency_level: 'beginner',
-    is_verified: false,
-    verified_at: null,
-  },
-  {
-    id: '6',
-    name: 'Literature Review',
-    category: 'Research',
-    is_active: true,
-    proficiency_level: 'intermediate',
-    is_verified: false,
-    verified_at: null,
-  },
-]
-
-/**
- * Mock reviews for demo
- */
-export const mockReviews: DoerReview[] = [
-  {
-    id: '1',
-    doer_id: 'd1',
-    reviewer_id: 'r1',
-    reviewer_type: 'supervisor',
-    reviewer_name: 'Dr. Smith',
-    project_id: 'p1',
-    project_title: 'Marketing Analysis Essay',
-    quality_rating: 5,
-    timeliness_rating: 5,
-    communication_rating: 5,
-    overall_rating: 5,
-    feedback: 'Excellent work! Very thorough research and well-structured analysis. Would definitely work with again.',
-    is_public: true,
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '2',
-    doer_id: 'd1',
-    reviewer_id: 'r2',
-    reviewer_type: 'user',
-    reviewer_name: 'Prof. Johnson',
-    project_id: 'p2',
-    project_title: 'Literature Review',
-    quality_rating: 4,
-    timeliness_rating: 5,
-    communication_rating: 4,
-    overall_rating: 4,
-    feedback: 'Good quality work delivered on time. Minor formatting issues but overall satisfied.',
-    is_public: true,
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '3',
-    doer_id: 'd1',
-    reviewer_id: 'r3',
-    reviewer_type: 'supervisor',
-    reviewer_name: 'Ms. Williams',
-    project_id: 'p3',
-    project_title: 'Business Case Study',
-    quality_rating: 5,
-    timeliness_rating: 4,
-    communication_rating: 5,
-    overall_rating: 5,
-    feedback: 'Outstanding attention to detail. Great communication throughout the project.',
-    is_public: true,
-    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-]
-
-/**
- * Default rating distribution
- */
-export const defaultRatingDistribution: Record<number, number> = {
-  5: 35,
-  4: 8,
-  3: 2,
+export const emptyRatingDistribution: Record<number, number> = {
+  5: 0,
+  4: 0,
+  3: 0,
   2: 0,
   1: 0,
 }

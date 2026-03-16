@@ -36,49 +36,75 @@ final savedCommunityPostsProvider =
 });
 
 /// Provider for fetching comments for a post.
+/// Comments are embedded in the post document, so we fetch the post detail
+/// and extract them from the response.
 final communityCommentsProvider =
     FutureProvider.autoDispose.family<List<CommunityComment>, String>(
   (ref, postId) async {
     final response = await ApiClient.get(
-      '/community/business-hub/$postId/comments',
+      '/community/business-hub/$postId',
     );
 
-    final commentsData = response is List
-        ? response
-        : (response as Map<String, dynamic>)['comments'] as List? ?? [];
+    // Comments are embedded in the post object returned by the detail endpoint
+    final postData = response is Map<String, dynamic>
+        ? (response['post'] as Map<String, dynamic>? ?? response)
+        : response as Map<String, dynamic>;
+    final commentsData = postData['comments'] as List? ?? [];
 
-    final comments = <CommunityComment>[];
+    // Separate top-level comments from replies using parentId
+    final topLevel = <Map<String, dynamic>>[];
+    final repliesMap = <String, List<Map<String, dynamic>>>{};
+
     for (final data in commentsData) {
       final commentMap = data as Map<String, dynamic>;
-      final repliesList = commentMap['replies'] as List? ?? [];
-
-      comments.add(CommunityComment(
-        id: commentMap['id'] as String? ?? '',
-        content: commentMap['content'] as String? ?? '',
-        authorId: commentMap['user_id'] as String? ?? '',
-        authorName: (commentMap['author'] as Map<String, dynamic>?)?['full_name'] as String? ?? 'Anonymous',
-        authorAvatar: (commentMap['author'] as Map<String, dynamic>?)?['avatar_url'] as String?,
-        isAuthorVerified: false,
-        createdAt: DateTime.parse(commentMap['created_at'] as String),
-        likeCount: commentMap['likes_count'] as int? ?? 0,
-        isLiked: false,
-        replies: repliesList.map((r) {
-          final replyMap = r as Map<String, dynamic>;
-          return CommunityComment(
-            id: replyMap['id'] as String? ?? '',
-            content: replyMap['content'] as String? ?? '',
-            authorId: replyMap['user_id'] as String? ?? '',
-            authorName: (replyMap['author'] as Map<String, dynamic>?)?['full_name'] as String? ?? 'Anonymous',
-            authorAvatar: (replyMap['author'] as Map<String, dynamic>?)?['avatar_url'] as String?,
-            isAuthorVerified: false,
-            createdAt: DateTime.parse(replyMap['created_at'] as String),
-            likeCount: replyMap['likes_count'] as int? ?? 0,
-            isLiked: false,
-            parentId: commentMap['id'] as String?,
-          );
-        }).toList(),
-      ));
+      final parentId = commentMap['parentId'] as String?;
+      if (parentId != null && parentId.isNotEmpty) {
+        repliesMap.putIfAbsent(parentId, () => []).add(commentMap);
+      } else {
+        topLevel.add(commentMap);
+      }
     }
+
+    CommunityComment parseComment(Map<String, dynamic> commentMap, {String? parentId}) {
+      // userId is populated by the API with {fullName, avatarUrl}
+      final userObj = commentMap['userId'];
+      final String authorId;
+      final String authorName;
+      final String? authorAvatar;
+      if (userObj is Map<String, dynamic>) {
+        authorId = (userObj['_id'] ?? userObj['id'] ?? '').toString();
+        authorName = (userObj['fullName'] as String?) ?? 'Anonymous';
+        authorAvatar = userObj['avatarUrl'] as String?;
+      } else {
+        authorId = (userObj ?? '').toString();
+        authorName = 'Anonymous';
+        authorAvatar = null;
+      }
+
+      final commentId = (commentMap['_id'] ?? commentMap['id'] ?? '').toString();
+      final createdAtRaw = commentMap['createdAt'] ?? commentMap['created_at'];
+      final createdAt = createdAtRaw != null
+          ? DateTime.tryParse(createdAtRaw.toString()) ?? DateTime.now()
+          : DateTime.now();
+
+      return CommunityComment(
+        id: commentId,
+        content: commentMap['content'] as String? ?? '',
+        authorId: authorId,
+        authorName: authorName,
+        authorAvatar: authorAvatar,
+        isAuthorVerified: false,
+        createdAt: createdAt,
+        likeCount: commentMap['likes_count'] as int? ?? commentMap['likeCount'] as int? ?? 0,
+        isLiked: false,
+        parentId: parentId,
+        replies: (repliesMap[commentId] ?? [])
+            .map((r) => parseComment(r, parentId: commentId))
+            .toList(),
+      );
+    }
+
+    final comments = topLevel.map((c) => parseComment(c)).toList();
 
     return comments;
   },

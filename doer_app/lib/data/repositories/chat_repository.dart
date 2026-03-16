@@ -127,7 +127,10 @@ class DoerChatRepository {
       });
 
       if (response == null) return null;
-      return ChatMessageModel.fromJson(response as Map<String, dynamic>, userId ?? '');
+      final data = response is Map<String, dynamic> && response.containsKey('message')
+          ? response['message'] as Map<String, dynamic>
+          : response as Map<String, dynamic>;
+      return ChatMessageModel.fromJson(data, userId ?? '');
     } catch (e) {
       if (kDebugMode) {
         debugPrint('DoerChatRepository.sendMessage error: $e');
@@ -152,14 +155,19 @@ class DoerChatRepository {
       final response = await ApiClient.post('/chat/rooms/$chatRoomId/messages', {
         'content': caption ?? fileName,
         'messageType': messageType,
-        'fileUrl': fileUrl,
-        'fileName': fileName,
-        'fileType': fileType,
-        'fileSizeBytes': fileSize,
+        'file': {
+          'url': fileUrl,
+          'name': fileName,
+          'type': fileType,
+          'size': fileSize,
+        },
       });
 
       if (response == null) return null;
-      return ChatMessageModel.fromJson(response as Map<String, dynamic>, userId ?? '');
+      final data = response is Map<String, dynamic> && response.containsKey('message')
+          ? response['message'] as Map<String, dynamic>
+          : response as Map<String, dynamic>;
+      return ChatMessageModel.fromJson(data, userId ?? '');
     } catch (e) {
       if (kDebugMode) {
         debugPrint('DoerChatRepository.sendFileMessage error: $e');

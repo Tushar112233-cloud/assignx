@@ -12,8 +12,8 @@ class CampusPulseSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mock items for now - will be replaced with real data
-    final items = _mockItems;
+    // Items will be populated from API when available.
+    final List<_PulseItem> items = [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,53 +50,45 @@ class CampusPulseSection extends StatelessWidget {
 
         const SizedBox(height: 12),
 
-        // Horizontal list
-        SizedBox(
-          height: 180,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              return _PulseCard(item: items[index]);
-            },
+        if (items.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.storefront_outlined,
+                    size: 40,
+                    color: AppColors.textTertiary,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No items yet'.tr(context),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          // Horizontal list
+          SizedBox(
+            height: 180,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: items.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                return _PulseCard(item: items[index]);
+              },
+            ),
           ),
-        ),
       ],
     );
   }
-
-  static final _mockItems = [
-    _PulseItem(
-      id: '1',
-      title: 'Engineering Textbooks',
-      price: '\u20B9450',
-      distance: '800m',
-      imageColor: AppColors.primary,
-    ),
-    _PulseItem(
-      id: '2',
-      title: 'Scientific Calculator',
-      price: '\u20B9800',
-      distance: '1.2km',
-      imageColor: AppColors.success,
-    ),
-    _PulseItem(
-      id: '3',
-      title: 'Room Available',
-      price: '\u20B95,000/mo',
-      distance: '500m',
-      imageColor: AppColors.warning,
-    ),
-    _PulseItem(
-      id: '4',
-      title: 'Internship Opening',
-      price: 'Paid',
-      distance: 'Remote',
-      imageColor: const Color(0xFF7C3AED),
-    ),
-  ];
 }
 
 class _PulseItem {
@@ -123,7 +115,6 @@ class _PulseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // Navigate to marketplace since these are mock items without real database IDs
       onTap: () => context.push('/marketplace'),
       child: Container(
         width: 140,

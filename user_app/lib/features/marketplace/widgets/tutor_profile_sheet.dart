@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/tutor_model.dart';
 
 /// Bottom sheet displaying detailed tutor profile information.
@@ -187,7 +188,7 @@ class TutorProfileSheet extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(AppSpacing.radiusMd - 1),
-              child: tutor.avatar != null
+              child: isValidImageUrl(tutor.avatar)
                   ? CachedNetworkImage(
                       imageUrl: tutor.avatar!,
                       fit: BoxFit.cover,

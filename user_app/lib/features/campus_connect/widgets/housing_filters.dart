@@ -125,7 +125,7 @@ const List<Map<String, String>> distanceOptions = [
   {'value': '10+', 'label': '10+ km'},
 ];
 
-/// Sample locations
+/// Available locations for housing filter.
 const List<Map<String, String>> locations = [
   {'value': 'delhi', 'label': 'Delhi'},
   {'value': 'mumbai', 'label': 'Mumbai'},

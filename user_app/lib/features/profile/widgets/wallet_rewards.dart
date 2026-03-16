@@ -167,7 +167,7 @@ class RedemptionOption {
 /// - "Redeem Points" button (opens bottom sheet)
 /// - Tier benefits preview
 class WalletRewards extends StatelessWidget {
-  /// Rewards data. If null, uses sample data.
+  /// Rewards data. If null, shows empty state (0 points, Bronze tier).
   final WalletRewardsData? data;
 
   /// Callback when redeem is tapped.
@@ -179,14 +179,14 @@ class WalletRewards extends StatelessWidget {
     this.onRedeemTap,
   });
 
-  /// Sample data for demonstration.
-  static const WalletRewardsData _sampleData = WalletRewardsData(
-    totalPoints: 1250,
-    pointsThisMonth: 320,
-    currentTier: RewardTier.silver,
+  /// Default empty state data when no real data is provided.
+  static const WalletRewardsData _emptyData = WalletRewardsData(
+    totalPoints: 0,
+    pointsThisMonth: 0,
+    currentTier: RewardTier.bronze,
   );
 
-  WalletRewardsData get _data => data ?? _sampleData;
+  WalletRewardsData get _data => data ?? _emptyData;
 
   @override
   Widget build(BuildContext context) {

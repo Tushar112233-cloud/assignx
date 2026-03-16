@@ -145,29 +145,35 @@ class ProjectRepository {
     return Project.fromJson(projectJson);
   }
 
-  /// Updates project status.
+  /// Updates project status (for doer/supervisor/admin roles only).
   Future<Project> updateProjectStatus(
     String projectId,
-    ProjectStatus status,
-  ) async {
+    ProjectStatus status, {
+    String? notes,
+  }) async {
     final response = await ApiClient.put('/projects/$projectId/status', {
       'status': status.toDbString(),
+      if (notes != null) 'notes': notes,
     });
     final data = response as Map<String, dynamic>;
     final projectJson = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
     return Project.fromJson(projectJson);
   }
 
-  /// Approves a project (moves to completed).
-  Future<Project> approveProject(String projectId) async {
-    return updateProjectStatus(projectId, ProjectStatus.completed);
+  /// Approves a project (user-facing endpoint: PUT /projects/:id/approve).
+  Future<Project> approveProject(String projectId, {String? feedback}) async {
+    final response = await ApiClient.put('/projects/$projectId/approve', {
+      if (feedback != null) 'feedback': feedback,
+    });
+    final data = response as Map<String, dynamic>;
+    final projectJson = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
+    return Project.fromJson(projectJson);
   }
 
-  /// Requests changes for a project.
+  /// Requests changes for a project (user-facing: POST /projects/:id/revisions).
   Future<Project> requestChanges(String projectId, String feedback) async {
-    final response = await ApiClient.put('/projects/$projectId/status', {
-      'status': ProjectStatus.revisionRequested.toDbString(),
-      'userFeedback': feedback,
+    final response = await ApiClient.post('/projects/$projectId/revisions', {
+      'feedback': feedback,
     });
     final data = response as Map<String, dynamic>;
     final projectJson = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
@@ -175,24 +181,27 @@ class ProjectRepository {
   }
 
   /// Updates the grade received by user for a completed project.
-  Future<Project> updateFinalGrade(String projectId, String grade) async {
-    final response = await ApiClient.put('/projects/$projectId', {
-      'userGrade': grade,
+  /// Uses the dedicated PUT /projects/:id/grade endpoint.
+  Future<Project> updateFinalGrade(String projectId, String grade, {String? feedback}) async {
+    final response = await ApiClient.put('/projects/$projectId/grade', {
+      'grade': grade,
+      if (feedback != null) 'feedback': feedback,
     });
     final data = response as Map<String, dynamic>;
     final projectJson = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
     return Project.fromJson(projectJson);
   }
 
-  /// Records payment for a project.
-  Future<Project> recordPayment(String projectId, String paymentId) async {
-    final response = await ApiClient.post('/payments/verify', {
-      'projectId': projectId,
-      'gatewayPaymentId': paymentId,
-    });
-    final data = response as Map<String, dynamic>;
-    final projectJson = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
-    return Project.fromJson(projectJson);
+  /// Records payment verification for a project.
+  ///
+  /// NOTE: The PaymentService already handles the full Razorpay verification
+  /// flow (create order -> checkout -> verify signature). This method is only
+  /// called after PaymentService has already verified the payment on the server.
+  /// It simply refreshes the project data.
+  Future<Project?> recordPayment(String projectId, String paymentId) async {
+    // The payment has already been verified server-side by PaymentService.
+    // Just refresh the project to get updated status.
+    return getProject(projectId);
   }
 
   /// Gets the project timeline events.
@@ -250,14 +259,23 @@ class ProjectRepository {
 
     () async {
       try {
-        final socket = await SocketClient.getSocket();
-        socket.on('project:$projectId', (data) {
-          try {
-            if (data != null) {
-              controller.add(Project.fromJson(data as Map<String, dynamic>));
-            }
-          } catch (_) {}
-        });
+        // Initial HTTP fetch so the screen loads immediately
+        final project = await getProject(projectId);
+        controller.add(project);
+
+        // Then listen for real-time socket updates
+        try {
+          final socket = await SocketClient.getSocket();
+          socket.on('project:$projectId', (data) {
+            try {
+              if (data != null) {
+                controller.add(Project.fromJson(data as Map<String, dynamic>));
+              }
+            } catch (_) {}
+          });
+        } catch (_) {
+          // Socket connection optional — initial fetch already succeeded
+        }
       } catch (e) {
         controller.addError(e);
       }
@@ -266,9 +284,14 @@ class ProjectRepository {
     return controller.stream;
   }
 
-  /// Cancels a project.
-  Future<Project> cancelProject(String projectId) async {
-    return updateProjectStatus(projectId, ProjectStatus.cancelled);
+  /// Cancels a project (user-facing: PUT /projects/:id/cancel).
+  Future<Project> cancelProject(String projectId, {String? reason}) async {
+    final response = await ApiClient.put('/projects/$projectId/cancel', {
+      if (reason != null) 'reason': reason,
+    });
+    final data = response as Map<String, dynamic>;
+    final projectJson = data.containsKey('title') ? data : (data['project'] as Map<String, dynamic>? ?? data);
+    return Project.fromJson(projectJson);
   }
 
   /// Gets project count by status tab.

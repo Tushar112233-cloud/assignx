@@ -30,7 +30,7 @@ class HomeRepository {
           .map((json) => AppBanner.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      return AppBanner.mockBanners;
+      return [];
     }
   }
 
@@ -39,6 +39,7 @@ class HomeRepository {
     try {
       final response = await ApiClient.get('/notifications', queryParams: {
         'limit': '20',
+        'role': 'user',
       });
       final list = response is List ? response : (response as Map<String, dynamic>)['notifications'] as List? ?? [];
       return list

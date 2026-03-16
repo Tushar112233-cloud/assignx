@@ -85,27 +85,10 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // In production: Fetch from Razorpay/Supabase
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // Mock data
-      _methods = [
-        const PaymentMethod(
-          id: 'card-1',
-          type: PaymentMethodType.card,
-          isDefault: true,
-          cardLast4: '4242',
-          cardBrand: 'visa',
-          cardExpiry: '12/26',
-          cardholderName: 'John Doe',
-        ),
-        const PaymentMethod(
-          id: 'upi-1',
-          type: PaymentMethodType.upi,
-          isDefault: false,
-          upiId: 'john@okaxis',
-        ),
-      ];
+      // Payment methods would be fetched from Razorpay/payment gateway API.
+      // For now, start with an empty list until integration is complete.
+      await Future.delayed(const Duration(milliseconds: 300));
+      _methods = [];
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

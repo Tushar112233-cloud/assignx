@@ -159,16 +159,9 @@ class RatingBreakdown extends StatelessWidget {
         ),
       ];
 
-  /// Mock distribution if not provided.
+  /// Returns the provided distribution or an empty one with all zeros.
   RatingDistribution get _distribution =>
-      distribution ??
-      RatingDistribution(
-        fiveStar: (totalReviews * 0.65).round(),
-        fourStar: (totalReviews * 0.22).round(),
-        threeStar: (totalReviews * 0.08).round(),
-        twoStar: (totalReviews * 0.03).round(),
-        oneStar: (totalReviews * 0.02).round(),
-      );
+      distribution ?? const RatingDistribution();
 
   @override
   Widget build(BuildContext context) {

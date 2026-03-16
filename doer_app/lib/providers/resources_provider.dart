@@ -694,8 +694,8 @@ class ResourcesNotifier extends Notifier<ResourcesState> {
 
     // Save to API
     try {
-      await ApiClient.post('/training/progress/complete', {
-        'moduleId': moduleId,
+      await ApiClient.put('/training/progress/$moduleId', {
+        'progress': 100,
       });
     } catch (e) {
       // Continue anyway for testing

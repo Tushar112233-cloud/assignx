@@ -26,8 +26,6 @@
 /// - [AppSpacing] for spacing constants
 library;
 
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -143,37 +141,33 @@ class AppCard extends StatelessWidget {
           width: 1.0,
         );
 
+    final effectiveOpacity = ((opacity * 255).round() + 25).clamp(0, 255);
+
     return Container(
       margin: margin,
-      child: ClipRRect(
-        borderRadius: radius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: Container(
-            decoration: BoxDecoration(
-              color: bgColor.withAlpha((opacity * 255).round()),
-              borderRadius: radius,
-              border: effectiveBorder,
-              boxShadow: hasShadow
-                  ? [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(10),
-                        blurRadius: elevation ?? 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: radius,
-                child: Padding(
-                  padding: padding ?? const EdgeInsets.all(20.0),
-                  child: child,
-                ),
-              ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: bgColor.withAlpha(effectiveOpacity),
+          borderRadius: radius,
+          border: effectiveBorder,
+          boxShadow: hasShadow
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(10),
+                    blurRadius: elevation ?? 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: radius,
+            child: Padding(
+              padding: padding ?? const EdgeInsets.all(20.0),
+              child: child,
             ),
           ),
         ),
@@ -303,40 +297,29 @@ class _AppElevatedCardState extends State<AppElevatedCard>
         },
         child: Container(
           margin: widget.margin,
-          child: ClipRRect(
+          decoration: BoxDecoration(
+            color: bgColor.withAlpha(((widget.opacity * 255).round() + 25).clamp(0, 255)),
             borderRadius: radius,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: widget.blur,
-                sigmaY: widget.blur,
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: bgColor.withAlpha((widget.opacity * 255).round()),
-                  borderRadius: radius,
-                  border: Border.all(
-                    color: Colors.white.withAlpha(51),
-                    width: 1.0,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(10),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withAlpha(5),
-                      blurRadius: 40,
-                      offset: const Offset(0, 16),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: widget.padding ?? const EdgeInsets.all(20.0),
-                  child: widget.child,
-                ),
-              ),
+            border: Border.all(
+              color: Colors.white.withAlpha(51),
+              width: 1.0,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(10),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Colors.black.withAlpha(5),
+                blurRadius: 40,
+                offset: const Offset(0, 16),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: widget.padding ?? const EdgeInsets.all(20.0),
+            child: widget.child,
           ),
         ),
       ),
@@ -409,90 +392,84 @@ class AppStatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     const bgColor = AppColors.surface;
 
-    return ClipRRect(
-      borderRadius: _defaultRadius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: Container(
-          decoration: BoxDecoration(
-            color: bgColor.withAlpha((opacity * 255).round()),
-            borderRadius: _defaultRadius,
-            border: Border.all(
-              color: Colors.white.withAlpha(51),
-              width: 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(10),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Charcoal-to-orange gradient accent strip
-              Container(
-                height: 4,
-                decoration: const BoxDecoration(
-                  gradient: _accentGradient,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20.0),
-                    topRight: Radius.circular(20.0),
-                  ),
-                ),
-              ),
-              // Card content
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: onTap,
-                  borderRadius: _defaultRadius,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: AppSpacing.paddingSm,
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.1),
-                            borderRadius: AppSpacing.borderRadiusSm,
-                          ),
-                          child: Icon(icon, color: color, size: 24),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.xxs),
-                              Text(
-                                value,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: bgColor.withAlpha(((opacity * 255).round() + 25).clamp(0, 255)),
+        borderRadius: _defaultRadius,
+        border: Border.all(
+          color: Colors.white.withAlpha(51),
+          width: 1.0,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Charcoal-to-orange gradient accent strip
+          Container(
+            height: 4,
+            decoration: const BoxDecoration(
+              gradient: _accentGradient,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20.0),
+                topRight: Radius.circular(20.0),
+              ),
+            ),
+          ),
+          // Card content
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: _defaultRadius,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: AppSpacing.paddingSm,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.1),
+                        borderRadius: AppSpacing.borderRadiusSm,
+                      ),
+                      child: Icon(icon, color: color, size: 24),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xxs),
+                          Text(
+                            value,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

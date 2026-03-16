@@ -1,43 +1,32 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
 const publicPaths = ["/login", "/api/auth"];
 
 /**
- * Proxy that runs on every request to validate JWT auth sessions.
- * Redirects unauthenticated users to /login for protected routes.
+ * Proxy that runs on every request to check auth cookie presence.
+ * Only checks cookie — actual token validation happens in verifyAdmin().
+ * This prevents session loss during HMR/API restarts by avoiding
+ * API calls in the proxy layer.
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths
   if (publicPaths.some((p) => pathname.startsWith(p))) {
+    // If on login page with a valid token, redirect to dashboard
+    const token = request.cookies.get("admin-token")?.value;
+    if (pathname === "/login" && token) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
     return NextResponse.next();
   }
 
-  // Check for admin-token cookie
+  // Check for admin-token cookie (presence only, no API validation)
   const token = request.cookies.get("admin-token")?.value;
 
   if (!token) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
-  }
-
-  // Validate token against Express API
-  try {
-    const res = await fetch(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!res.ok) {
-      const loginUrl = new URL("/login", request.url);
-      const response = NextResponse.redirect(loginUrl);
-      response.cookies.delete("admin-token");
-      return response;
-    }
-  } catch {
-    // If API is unreachable, allow through (SSR will handle auth)
   }
 
   return NextResponse.next();

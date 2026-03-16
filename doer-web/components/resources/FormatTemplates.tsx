@@ -34,7 +34,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { mockTemplates as defaultMockTemplates, categoryColors, formatFileSize } from './constants'
+import { categoryColors, formatFileSize } from './constants'
 import type { FormatTemplate, TemplateCategory } from '@/types/database'
 
 /**
@@ -58,7 +58,7 @@ interface FormatTemplatesProps {
  * Displays downloadable document templates organized by category
  */
 export function FormatTemplates({
-  templates = defaultMockTemplates,
+  templates = [],
   isLoading,
   onDownload,
   onBack,

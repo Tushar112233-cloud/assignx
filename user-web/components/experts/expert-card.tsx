@@ -181,9 +181,9 @@ export const ExpertCard = memo(function ExpertCard({
             {expert.specializations.slice(0, 3).map((spec) => (
               <span
                 key={spec}
-                className="px-2 py-0.5 text-xs font-medium rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                className="px-2 py-0.5 text-xs font-medium rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 capitalize"
               >
-                {SPEC_LABELS[spec]}
+                {SPEC_LABELS[spec as ExpertSpecialization] || spec.replace(/_/g, " ")}
               </span>
             ))}
             {expert.specializations.length > 3 && (

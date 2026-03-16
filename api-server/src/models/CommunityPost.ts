@@ -5,7 +5,7 @@ export interface ICommunityPost extends Document {
   postType: 'campus' | 'pro_network' | 'business_hub';
   title: string;
   content: string;
-  imageUrl: string;
+  imageUrls: string[];
   category: string;
   tags: string[];
   viewCount: number;
@@ -32,7 +32,7 @@ const communityPostSchema = new Schema<ICommunityPost>(
     postType: { type: String, enum: ['campus', 'pro_network', 'business_hub'], required: true },
     title: { type: String, default: '' },
     content: { type: String, default: '' },
-    imageUrl: { type: String },
+    imageUrls: [String],
     category: { type: String },
     tags: [String],
     viewCount: { type: Number, default: 0 },

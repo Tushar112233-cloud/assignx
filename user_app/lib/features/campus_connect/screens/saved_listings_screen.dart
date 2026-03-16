@@ -6,14 +6,13 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/marketplace_model.dart';
-import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../widgets/post_card.dart';
 import '../widgets/save_button.dart';
 
 /// Provider for saved listings data.
 final savedListingsProvider = FutureProvider.autoDispose<List<MarketplaceListing>>((ref) async {
   try {
-    final response = await ApiClient.get('/community/campus/saved');
+    final response = await ApiClient.get('/community/posts/saved');
     final list = response is List
         ? response
         : (response as Map<String, dynamic>)['posts'] as List? ?? [];
@@ -30,7 +29,7 @@ final savedListingsProvider = FutureProvider.autoDispose<List<MarketplaceListing
         likeCount: (p['likes_count'] ?? p['likeCount'] ?? 0) as int,
         commentCount: (p['comments_count'] ?? p['commentCount'] ?? 0) as int,
         createdAt: DateTime.parse(p['created_at'] ?? p['createdAt'] ?? DateTime.now().toIso8601String()),
-        images: p['images'] != null ? List<String>.from(p['images'] as List) : null,
+        images: (p['imageUrls'] ?? p['images']) != null ? List<String>.from((p['imageUrls'] ?? p['images']) as List) : null,
         collegeName: null,
       );
     }).toList();
@@ -78,7 +77,7 @@ class _SavedListingsScreenState extends ConsumerState<SavedListingsScreen> {
     });
 
     try {
-      await ApiClient.delete('/community/campus/$listingId/save');
+      await ApiClient.post('/community/posts/$listingId/save');
 
       // Refresh the list
       ref.invalidate(savedListingsProvider);
@@ -111,9 +110,22 @@ class _SavedListingsScreenState extends ConsumerState<SavedListingsScreen> {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          // App Bar
-          const SliverToBoxAdapter(
-            child: DashboardAppBar(),
+          // Back button
+          SliverToBoxAdapter(
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8, top: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    onPressed: () => context.pop(),
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
           ),
 
           // Header

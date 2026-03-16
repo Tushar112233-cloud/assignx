@@ -6,7 +6,7 @@ import { Bell, Mail, MessageSquare, Save, Loader2 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { apiClient } from '@/lib/api/client'
+// apiClient import removed - preferences stored in localStorage until API endpoint is available
 import { toast } from 'sonner'
 
 type NotificationSettingsProps = {
@@ -47,16 +47,12 @@ export function NotificationSettings({ userId }: NotificationSettingsProps) {
     }
 
     try {
-      const data = await apiClient<NotificationPrefs>('/api/doers/me/preferences')
-      if (data) {
-        const loaded: NotificationPrefs = {
-          push_notifications: data.push_notifications ?? true,
-          email_notifications: data.email_notifications ?? true,
-          project_updates: data.project_updates ?? true,
-          marketing_emails: data.marketing_emails ?? false,
-        }
-        setPrefs(loaded)
-        setSavedPrefs(loaded)
+      // Preferences endpoint not yet available - use localStorage fallback
+      const stored = localStorage.getItem('notification_prefs')
+      if (stored) {
+        const parsed = JSON.parse(stored) as NotificationPrefs
+        setPrefs(parsed)
+        setSavedPrefs(parsed)
       }
     } catch {
       console.error('Failed to load notification preferences')
@@ -93,15 +89,8 @@ export function NotificationSettings({ userId }: NotificationSettingsProps) {
 
     setIsSaving(true)
     try {
-      await apiClient('/api/doers/me/preferences', {
-        method: 'PUT',
-        body: JSON.stringify({
-          push_notifications: prefs.push_notifications,
-          email_notifications: prefs.email_notifications,
-          project_updates: prefs.project_updates,
-          marketing_emails: prefs.marketing_emails,
-        }),
-      })
+      // Preferences endpoint not yet available - use localStorage fallback
+      localStorage.setItem('notification_prefs', JSON.stringify(prefs))
 
       setSavedPrefs({ ...prefs })
       setHasChanges(false)

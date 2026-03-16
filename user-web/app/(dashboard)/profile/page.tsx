@@ -10,7 +10,6 @@ import {
   SecuritySection,
   SubscriptionCard,
   DangerZone,
-  SettingsTabs,
   SettingsSection,
   PaymentMethodsSection,
   SubjectsSection,
@@ -26,7 +25,13 @@ import {
 import { apiClient } from "@/lib/api/client";
 import { logout } from "@/lib/api/auth";
 import { toast } from "sonner";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type {
   ProfileTab,
   UserProfile,
@@ -193,7 +198,7 @@ export default function ProfilePage() {
       });
 
       // Update profile with new avatar URL
-      await updateProfile({ avatar_url: uploadResult.url });
+      await updateProfile({ avatarUrl: uploadResult.url });
 
       toast.success("Avatar updated successfully");
       await fetchUser();
@@ -209,7 +214,7 @@ export default function ProfilePage() {
     setIsSaving(true);
     try {
       const result = await updateProfile({
-        full_name: data.full_name || "",
+        fullName: data.full_name || "",
         phone: data.phone,
       });
 
@@ -471,7 +476,6 @@ export default function ProfilePage() {
     setSettingsOpen(true);
   };
 
-  // Get tab title for sheet header
   const getTabTitle = (tab: ProfileTab) => {
     switch (tab) {
       case "personal": return "Personal Information";
@@ -481,6 +485,18 @@ export default function ProfilePage() {
       case "subscription": return "Subscription";
       case "payment": return "Payment Methods";
       default: return "Settings";
+    }
+  };
+
+  const getTabDescription = (tab: ProfileTab) => {
+    switch (tab) {
+      case "personal": return "Update your name, phone and other details";
+      case "academic": return "University, course and subject information";
+      case "preferences": return "Notification and display preferences";
+      case "security": return "Password, 2FA and session management";
+      case "subscription": return "Manage your plan and billing";
+      case "payment": return "Manage your saved payment methods";
+      default: return "Manage your account settings";
     }
   };
 
@@ -494,21 +510,18 @@ export default function ProfilePage() {
         onSettingsClick={handleSettingsClick}
       />
 
-      {/* Settings Sheet */}
-      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
-          <SheetHeader className="px-6 pt-6 pb-4 border-b border-border/40">
-            <SheetTitle className="text-base font-medium">{getTabTitle(activeTab)}</SheetTitle>
-          </SheetHeader>
-
-          {/* Settings Tabs Navigation */}
+      {/* Settings Dialog — individual per section, no tabs */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/40">
+            <DialogTitle className="text-base font-medium">{getTabTitle(activeTab)}</DialogTitle>
+            <DialogDescription>{getTabDescription(activeTab)}</DialogDescription>
+          </DialogHeader>
           <div className="p-6">
-            <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab}>
-              {renderTabContent()}
-            </SettingsTabs>
+            {renderTabContent()}
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

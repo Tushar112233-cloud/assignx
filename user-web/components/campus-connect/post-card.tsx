@@ -194,7 +194,8 @@ export const PostCard = memo(function PostCard({
 
   const categoryConfig = getCategoryUIConfig(post.category);
   const CategoryIcon = categoryConfig.icon;
-  const hasImage = post.imageUrls.length > 0;
+  const imageUrls = Array.isArray(post.imageUrls) ? post.imageUrls : [];
+  const hasImage = imageUrls.length > 0;
 
   return (
     <Link href={`/campus-connect/${post.id}`} className="block group">
@@ -213,7 +214,7 @@ export const PostCard = memo(function PostCard({
         {hasImage && (
           <div className="relative aspect-[4/3] overflow-hidden">
             <Image
-              src={post.imageUrls[0]}
+              src={imageUrls[0]}
               alt={post.title}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -229,6 +230,15 @@ export const PostCard = memo(function PostCard({
                 <Badge className="gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-foreground border-0 shadow-sm">
                   <Pin className="h-3 w-3" />
                   Pinned
+                </Badge>
+              </div>
+            )}
+
+            {/* Multiple images indicator */}
+            {imageUrls.length > 1 && (
+              <div className="absolute bottom-3 left-3">
+                <Badge className="gap-1 bg-black/60 text-white border-0 text-[10px] backdrop-blur-sm">
+                  1/{imageUrls.length}
                 </Badge>
               </div>
             )}

@@ -48,13 +48,10 @@ export async function serverFetch<T = any>(
     cache: "no-store",
   });
 
-  if (res.status === 401) {
-    redirect("/login");
-  }
-
   if (!res.ok) {
     const errorBody = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(errorBody.message || errorBody.error || res.statusText);
+    const message = errorBody.message || errorBody.error || res.statusText;
+    throw new Error(`${res.status}: ${message}`);
   }
 
   const text = await res.text();
@@ -73,27 +70,46 @@ export async function verifyAdmin(): Promise<AdminSession> {
     redirect("/login");
   }
 
-  try {
-    const data = await serverFetch<any>("/api/auth/me");
+  // Try up to 2 times to handle transient errors (e.g. API server restart)
+  let lastError: any = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const data = await serverFetch<any>("/api/auth/me");
 
-    // API returns { profile, roleData } - extract the profile
-    const profile = data?.profile || data;
-    const role = profile?.userType || profile?.role;
+      // API returns { profile, roleData } - extract the profile
+      const profile = data?.profile || data;
+      const role = profile?.userType || profile?.role;
 
-    if (!profile || (role !== "admin" && role !== "super_admin")) {
-      redirect("/login");
+      if (!profile || (role !== "admin" && role !== "super_admin")) {
+        redirect("/login");
+      }
+
+      return {
+        id: profile._id || profile.id,
+        email: profile.email || "",
+        role: role || "admin",
+        permissions: data?.roleData?.permissions || null,
+      };
+    } catch (error: any) {
+      // Always rethrow Next.js redirects
+      if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+        throw error;
+      }
+      lastError = error;
+      // Brief pause before retry
+      if (attempt === 0) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
     }
+  }
 
-    return {
-      id: profile._id || profile.id,
-      email: profile.email || "",
-      role: role || "admin",
-      permissions: data?.roleData?.permissions || null,
-    };
-  } catch (error: any) {
-    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
-      throw error;
-    }
+  // Only redirect to login if we're sure it's an auth issue (401),
+  // not a transient network error
+  if (lastError?.message?.includes("401") || lastError?.message?.includes("Unauthorized")) {
     redirect("/login");
   }
+
+  // For transient errors, throw so Next.js shows an error page
+  // instead of losing the session by redirecting to login
+  throw lastError || new Error("Failed to verify admin session");
 }

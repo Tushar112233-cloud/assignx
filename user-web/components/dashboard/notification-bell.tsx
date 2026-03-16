@@ -115,6 +115,7 @@ export function NotificationBell() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <ScrollArea className="h-80">
+          <div>
           {isLoading ? (
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -151,6 +152,7 @@ export function NotificationBell() {
               );
             })
           )}
+          </div>
         </ScrollArea>
       </DropdownMenuContent>
     </DropdownMenu>

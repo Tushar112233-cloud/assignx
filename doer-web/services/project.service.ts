@@ -32,12 +32,11 @@ export interface ProjectWithSupervisor extends Project {
 }
 
 export async function getDoerProjects(
-  doerId: string,
+  _doerId: string,
   filters?: ProjectFilters,
   sort?: ProjectSort
 ): Promise<Project[]> {
   const params = new URLSearchParams()
-  params.set('doer_id', doerId)
 
   if (filters?.status) {
     if (Array.isArray(filters.status)) {
@@ -124,12 +123,11 @@ export async function updateProjectStatus(
 
 export async function acceptTask(
   projectId: string,
-  doerId: string
+  _doerId: string
 ): Promise<Project> {
   try {
-    return await apiClient<Project>(`/api/projects/${projectId}/accept`, {
+    return await apiClient<Project>(`/api/projects/${projectId}/claim-from-pool`, {
       method: 'POST',
-      body: JSON.stringify({ doer_id: doerId }),
     })
   } catch (err) {
     logger.error('Project', 'Error accepting task:', err)
@@ -151,21 +149,28 @@ export async function uploadDeliverable(
   file: File
 ): Promise<ProjectDeliverable> {
   try {
-    return await apiUpload<ProjectDeliverable>(
+    const result = await apiUpload<{ project: Project }>(
       `/api/projects/${projectId}/deliverables`,
       file,
       'deliverables'
     )
+    // API returns { project } — extract the latest deliverable from the array
+    const deliverables = result.project?.deliverables || []
+    const latest = deliverables[deliverables.length - 1]
+    if (!latest) {
+      throw new Error('No deliverable returned after upload')
+    }
+    return latest as ProjectDeliverable
   } catch (err) {
     logger.error('Project', 'Error uploading deliverable:', err)
     throw err
   }
 }
 
-export async function getActiveProjectsCount(doerId: string): Promise<number> {
+export async function getActiveProjectsCount(_doerId: string): Promise<number> {
   try {
-    const data = await apiClient<{ count: number }>(`/api/projects/count?doer_id=${doerId}&status=assigned,in_progress,revision_requested`)
-    return data.count || 0
+    const data = await apiClient<{ projects: Project[]; total: number }>(`/api/projects?status=assigned,in_progress,revision_requested`)
+    return data.total || 0
   } catch (err) {
     logger.error('Project', 'Error getting active projects count:', err)
     throw err
@@ -189,8 +194,7 @@ export async function getOpenPoolTasks(
   sort?: ProjectSort
 ): Promise<ProjectWithSupervisor[]> {
   const params = new URLSearchParams()
-  params.set('status', 'paid')
-  params.set('unassigned', 'true')
+  params.set('pool', 'true')
   if (sort) {
     params.set('sort_by', sort.field)
     params.set('sort_dir', sort.direction)
@@ -206,10 +210,9 @@ export async function getOpenPoolTasks(
 }
 
 export async function getAssignedTasks(
-  doerId: string
+  _doerId: string
 ): Promise<ProjectWithSupervisor[]> {
   const params = new URLSearchParams()
-  params.set('doer_id', doerId)
   params.set('status', 'assigned,in_progress,in_revision,revision_requested')
 
   try {
@@ -235,12 +238,22 @@ export async function getDoerStats(doerId: string): Promise<{
   averageRating: number
 }> {
   try {
-    return await apiClient<{
-      activeCount: number
-      completedCount: number
-      totalEarnings: number
-      averageRating: number
-    }>(`/api/doers/${doerId}/stats`)
+    const data = await apiClient<{
+      doer: any
+      stats: {
+        activeAssignments: number
+        completedProjects: number
+        totalEarnings: number
+        averageRating: number
+      } | null
+    }>(`/api/doers/by-id/${doerId}/full`)
+    const stats = data.stats
+    return {
+      activeCount: stats?.activeAssignments || 0,
+      completedCount: stats?.completedProjects || 0,
+      totalEarnings: stats?.totalEarnings || 0,
+      averageRating: stats?.averageRating || 0,
+    }
   } catch (err) {
     logger.error('Project', 'Error getting doer stats:', err)
     return { activeCount: 0, completedCount: 0, totalEarnings: 0, averageRating: 0 }

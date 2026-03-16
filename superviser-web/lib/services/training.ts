@@ -19,12 +19,10 @@ export async function getTrainingProgress() {
 }
 
 export async function markModuleComplete(moduleId: string) {
-  await apiFetch("/api/training/progress", {
-    method: "POST",
+  await apiFetch(`/api/training/progress/${moduleId}`, {
+    method: "PUT",
     body: JSON.stringify({
-      moduleId,
-      status: "completed",
-      progressPercentage: 100,
+      progress: 100,
     }),
   })
 }

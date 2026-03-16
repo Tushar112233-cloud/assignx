@@ -14,8 +14,10 @@ export const authService = {
     const token = getAccessToken()
     if (!token) return null
     try {
-      const data = await apiFetch<{ user: any; token: string }>("/api/auth/me")
-      return { user: data.user, access_token: token }
+      const data = await apiFetch<any>("/api/auth/me")
+      // /api/auth/me returns a flat object (not wrapped in { user: ... })
+      const user = data.user || data
+      return { user, access_token: token }
     } catch {
       return null
     }
@@ -28,10 +30,12 @@ export const authService = {
     const stored = getStoredUser()
     if (stored) return stored
     try {
-      const data = await apiFetch<{ user: any }>("/api/auth/me")
-      if (data?.user) {
-        storeUser(data.user)
-        return data.user
+      const data = await apiFetch<any>("/api/auth/me")
+      // /api/auth/me returns a flat object (not wrapped in { user: ... })
+      const user = data.user || data
+      if (user) {
+        storeUser(user)
+        return user
       }
       return null
     } catch {

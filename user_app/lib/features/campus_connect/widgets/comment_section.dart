@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
-import '../../../../core/translation/translation_extensions.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
+
+import '../../../core/utils/extensions.dart';
 
 /// Comment data model.
 class CampusComment {
@@ -451,10 +453,10 @@ class _CommentItemState extends State<_CommentItem>
             CircleAvatar(
               radius: widget.isReply ? 14 : 18,
               backgroundColor: AppColors.avatarWarm,
-              backgroundImage: widget.comment.authorAvatar != null
+              backgroundImage: isValidImageUrl(widget.comment.authorAvatar)
                   ? NetworkImage(widget.comment.authorAvatar!)
                   : null,
-              child: widget.comment.authorAvatar == null
+              child: !isValidImageUrl(widget.comment.authorAvatar)
                   ? Text(
                       widget.comment.authorName.isNotEmpty
                           ? widget.comment.authorName[0].toUpperCase()

@@ -41,11 +41,11 @@ export function useDoers(options: UseDoersOptions = {}): UseDoersReturn {
 
       const params = new URLSearchParams()
       params.set("limit", String(limit))
-      params.set("offset", String(offset))
-      params.set("activated", "true")
+      params.set("page", String(Math.floor(offset / limit) + 1))
+      params.set("isActivated", "true")
 
       if (subjectId) params.set("subjectId", subjectId)
-      if (isAvailable !== undefined) params.set("available", String(isAvailable))
+      if (isAvailable !== undefined) params.set("isAvailable", String(isAvailable))
       if (searchQuery) params.set("search", searchQuery)
 
       const data = await apiFetch<{ doers: DoerWithProfile[]; total: number }>(
@@ -97,12 +97,12 @@ export function useDoer(doerId: string): UseDoerReturn {
       setIsLoading(true)
       setError(null)
 
-      const data = await apiFetch<{ doer: DoerWithProfile; subjects: Subject[] }>(
-        `/api/doers/${doerId}`
+      const data = await apiFetch<{ doer: DoerWithProfile & { subjects?: Subject[] }; stats: any }>(
+        `/api/doers/by-id/${doerId}/full`
       )
 
       setDoer(data.doer)
-      setSubjects(data.subjects || [])
+      setSubjects(data.doer?.subjects || [])
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch doer"))
     } finally {
@@ -167,10 +167,22 @@ export function useDoerStats(doerId: string): UseDoerStatsReturn {
 
     async function fetchStats() {
       try {
-        const data = await apiFetch<UseDoerStatsReturn["stats"]>(
-          `/api/doers/${doerId}/stats`
-        )
-        setStats(data)
+        const data = await apiFetch<{
+          doer: any
+          stats: {
+            activeAssignments: number
+            completedProjects: number
+            averageRating: number
+            onTimeDeliveryRate: number
+          } | null
+        }>(`/api/doers/by-id/${doerId}/full`)
+        const s = data.stats
+        setStats(s ? {
+          totalProjects: (s.activeAssignments || 0) + (s.completedProjects || 0),
+          completedProjects: s.completedProjects || 0,
+          averageRating: s.averageRating || 0,
+          onTimeDeliveryRate: s.onTimeDeliveryRate || 0,
+        } : null)
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Failed to fetch doer stats"))
       } finally {

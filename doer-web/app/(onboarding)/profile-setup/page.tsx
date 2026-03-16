@@ -6,7 +6,6 @@ import { ProfileSetupForm } from '@/components/onboarding/ProfileSetupForm'
 import { ROUTES } from '@/lib/constants'
 import { apiClient, getAccessToken } from '@/lib/api/client'
 import { useAuth } from '@/hooks/useAuth'
-import type { Qualification, ExperienceLevel } from '@/types/common.types'
 
 /**
  * Profile setup page
@@ -46,55 +45,20 @@ export default function ProfileSetupPage() {
       }
 
       if (!doerRecord) {
-        // CREATE new doer record with the form data
-        const newDoer = await apiClient<{ id: string }>('/api/doers', {
-          method: 'POST',
-          body: JSON.stringify({
-            qualification: data.qualification as Qualification,
-            experience_level: data.experienceLevel as ExperienceLevel,
-            university_name: data.universityName || null,
-            is_available: false,
-            max_concurrent_projects: 3,
-            is_activated: false,
-            total_earnings: 0,
-            total_projects_completed: 0,
-            average_rating: 0,
-            total_reviews: 0,
-            success_rate: 0,
-            on_time_delivery_rate: 0,
-            bank_verified: false,
-            is_flagged: false,
-          }),
-        })
-
-        doerRecord = newDoer
-
-        // Create activation record for new doer
-        try {
-          await apiClient(`/api/doers/${doerRecord.id}/activation`, {
-            method: 'POST',
-            body: JSON.stringify({
-              training_completed: false,
-              quiz_passed: false,
-              total_quiz_attempts: 0,
-              bank_details_added: false,
-              is_fully_activated: false,
-            }),
-          })
-        } catch (activationError) {
-          console.error('Failed to create activation record:', activationError)
-        }
-      } else {
-        // UPDATE existing doer record
-        await apiClient(`/api/doers/${doerRecord.id}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            qualification: data.qualification,
-            experience_level: data.experienceLevel,
-            university_name: data.universityName || null,
-          }),
-        })
+        // Doer record should have been created during signup (doer-signup flow).
+        // If it doesn't exist, the user may need to re-register.
+        throw new Error('Doer profile not found. Please sign up again.')
       }
+
+      // UPDATE existing doer record with profile setup data
+      await apiClient(`/api/doers/${doerRecord.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          qualification: data.qualification,
+          experienceLevel: data.experienceLevel,
+          universityName: data.universityName || null,
+        }),
+      })
 
       // Insert skills (if any selected)
       if (data.skills.length > 0) {
@@ -102,8 +66,8 @@ export default function ProfileSetupPage() {
           method: 'POST',
           body: JSON.stringify({
             skills: data.skills.map(skillId => ({
-              skill_id: skillId,
-              proficiency_level: 'intermediate',
+              skillId,
+              proficiencyLevel: 'intermediate',
             })),
           }),
         })
@@ -115,8 +79,8 @@ export default function ProfileSetupPage() {
           method: 'POST',
           body: JSON.stringify({
             subjects: data.subjects.map((subjectId, index) => ({
-              subject_id: subjectId,
-              is_primary: index === 0,
+              subjectId,
+              isPrimary: index === 0,
             })),
           }),
         })

@@ -8,14 +8,11 @@ import {
   IconBook2,
   IconChartBar,
   IconChevronRight,
-  IconCreditCard,
   IconDashboard,
   IconDotsVertical,
-  IconEye,
   IconFolder,
   IconHelp,
   IconLogout,
-  IconMessage,
   IconPhoto,
   IconReport,
   IconSchool,
@@ -27,12 +24,10 @@ import {
   IconLayersLinked,
   IconUserScan,
   IconTools,
-  IconHeartHandshake,
-  IconUsersGroup,
-  IconSpeakerphone,
-  IconFileText,
-  IconTargetArrow,
   IconFileCheck,
+  IconBriefcase,
+  IconCash,
+  IconCurrencyRupee,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
@@ -99,24 +94,14 @@ const mainNav: NavItem[] = [
 
 const sections: NavSection[] = [
   {
-    label: "CRM",
-    icon: IconHeartHandshake,
-    items: [
-      { title: "CRM Dashboard", url: "/crm", icon: IconTargetArrow, exact: true },
-      { title: "Segments", url: "/crm/segments", icon: IconUsersGroup },
-      { title: "Communications", url: "/crm/communications", icon: IconSpeakerphone },
-      { title: "Content Control", url: "/crm/content", icon: IconFileText },
-    ],
-  },
-  {
     label: "Management",
     icon: IconLayersLinked,
     items: [
       { title: "Users", url: "/users", icon: IconUsers },
       { title: "Projects", url: "/projects", icon: IconFolder },
-      { title: "Messages", url: "/messages", icon: IconMessage },
-      { title: "Wallets", url: "/wallets", icon: IconCreditCard },
       { title: "Support", url: "/support", icon: IconHelp },
+      { title: "Applications", url: "/applications", icon: IconFileCheck },
+      { title: "Pricing", url: "/pricing", icon: IconCurrencyRupee },
     ],
   },
   {
@@ -126,17 +111,23 @@ const sections: NavSection[] = [
       { title: "Supervisors", url: "/supervisors", icon: IconShield },
       { title: "Doers", url: "/doers", icon: IconUser },
       { title: "Experts", url: "/experts", icon: IconStar },
+      { title: "Investors", url: "/investors", icon: IconCash },
     ],
   },
   {
-    label: "Content & Tools",
+    label: "Content",
     icon: IconTools,
     items: [
-      { title: "Applications", url: "/applications", icon: IconFileCheck },
-      { title: "Moderation", url: "/moderation", icon: IconEye },
+      { title: "Jobs", url: "/jobs", icon: IconBriefcase },
+      { title: "Training", url: "/learning", icon: IconBook2 },
       { title: "Banners", url: "/banners", icon: IconPhoto },
       { title: "Colleges", url: "/colleges", icon: IconSchool },
-      { title: "Learning", url: "/learning", icon: IconBook2 },
+    ],
+  },
+  {
+    label: "Insights",
+    icon: IconChartBar,
+    items: [
       { title: "Analytics", url: "/analytics", icon: IconChartBar },
       { title: "Reports", url: "/reports", icon: IconReport },
     ],
@@ -436,10 +427,10 @@ export function AdminSidebar({
 
   // Auto-open sections that have an active child
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    CRM: true,
     Management: true,
     People: true,
-    "Content & Tools": true,
+    Content: true,
+    Insights: false,
   });
 
   // Auto-open section when navigating to a child

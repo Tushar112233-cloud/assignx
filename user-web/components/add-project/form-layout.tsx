@@ -46,21 +46,21 @@ const stepContextData = [
   {
     icon: Lightbulb,
     heading: "Choose Your Focus",
-    message: "Select the subject area that matches your project. Our experts cover 50+ academic fields.",
+    message: "Select the subject area that matches your project. Our experts cover a wide range of academic fields.",
     tip: "Not sure? Start broad — you can refine details later.",
     nextLabel: "Set requirements",
   },
   {
     icon: FileText,
     heading: "Set Your Scope",
-    message: "Define the length and citation style. We handle everything from 250 to 50,000 words.",
+    message: "Define the length and citation style. We handle projects of any size.",
     tip: "Average project is 2,500 words with APA7 citations.",
     nextLabel: "Choose timeline",
   },
   {
     icon: Clock,
     heading: "When Do You Need It?",
-    message: "Choose your deadline and urgency. We've delivered 10,000+ projects on time.",
+    message: "Choose your deadline and urgency level for your project.",
     tip: "Standard delivery gives you the best value.",
     nextLabel: "Add details",
   },
@@ -249,15 +249,15 @@ function DynamicStepContext({ currentStep, totalSteps }: { currentStep: number; 
         <div className="flex items-center gap-3 text-[12px] text-white/50 border-t border-white/[0.05] pt-5">
           <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.06]">
             <CheckCircle className="h-3.5 w-3.5 text-emerald-400/60" />
-            <span className="font-medium">15,234 projects</span>
+            <span className="font-medium">Projects completed</span>
           </div>
           <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.06]">
             <Star className="h-3.5 w-3.5 text-[#A07A65]/70" />
-            <span className="font-medium">4.9/5 rating</span>
+            <span className="font-medium">Expert rated</span>
           </div>
           <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.06]">
             <Zap className="h-3.5 w-3.5 text-[#765341]/70" />
-            <span className="font-medium">98% on-time</span>
+            <span className="font-medium">On-time delivery</span>
           </div>
         </div>
 

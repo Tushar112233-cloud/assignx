@@ -95,9 +95,9 @@ const STEP_VISUAL_CONFIGS = [
     visualSubheading:
       "Create your account and get access to expert academic assistance tailored just for you.",
     cards: [
-      { icon: Users, iconBg: "bg-primary", title: "Students", value: "10K+", label: "Active users", position: "position-1", delay: 0.3 },
-      { icon: Star, iconBg: "bg-accent", title: "Rating", value: "4.9", label: "User satisfaction", position: "position-2", delay: 0.5 },
-      { icon: TrendingUp, iconBg: "bg-success", title: "Success", value: "95%", label: "Grade improvement", position: "position-3", delay: 0.7 },
+      { icon: Users, iconBg: "bg-primary", title: "Students", value: "-", label: "Active users", position: "position-1", delay: 0.3 },
+      { icon: Star, iconBg: "bg-accent", title: "Rating", value: "-", label: "User satisfaction", position: "position-2", delay: 0.5 },
+      { icon: TrendingUp, iconBg: "bg-success", title: "Success", value: "-", label: "Grade improvement", position: "position-3", delay: 0.7 },
     ],
   },
   {

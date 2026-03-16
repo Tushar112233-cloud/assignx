@@ -16,7 +16,10 @@ class DoerWalletRepository {
     try {
       final response = await ApiClient.get('/wallets/me');
       if (response == null) return null;
-      return WalletModel.fromJson(response as Map<String, dynamic>);
+      final data = response is Map<String, dynamic>
+          ? (response['wallet'] as Map<String, dynamic>? ?? response)
+          : response as Map<String, dynamic>;
+      return WalletModel.fromJson(data);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('DoerWalletRepository.getWallet error: $e');
@@ -32,7 +35,8 @@ class DoerWalletRepository {
     String? transactionType,
   }) async {
     try {
-      var path = '/wallets/me/transactions?limit=$limit&offset=$offset';
+      final page = (offset ~/ limit) + 1;
+      var path = '/wallets/me/transactions?limit=$limit&page=$page';
       if (transactionType != null) {
         path += '&type=$transactionType';
       }
@@ -99,7 +103,7 @@ class DoerWalletRepository {
     try {
       final response = await ApiClient.post('/wallets/me/withdraw', {
         'amount': amount,
-        'method': withdrawalMethod,
+        'paymentMethod': withdrawalMethod,
         if (notes != null) 'notes': notes,
       });
 
@@ -143,10 +147,10 @@ class DoerWalletRepository {
   /// Gets monthly earnings summary.
   Future<List<MonthlySummary>> getMonthlyEarnings({int months = 6}) async {
     try {
-      final response = await ApiClient.get('/wallets/me/monthly-earnings?months=$months');
+      final response = await ApiClient.get('/wallets/earnings/monthly');
       final list = response is List
           ? response
-          : (response as Map<String, dynamic>)['summaries'] as List? ?? [];
+          : (response as Map<String, dynamic>)['earnings'] as List? ?? [];
 
       return list
           .map((json) => MonthlySummary.fromJson(json as Map<String, dynamic>))

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../data/models/expert_model.dart';
 import '../../../providers/experts_provider.dart';
 import '../../../core/translation/translation_extensions.dart';
@@ -195,10 +196,10 @@ class _ExpertHeader extends StatelessWidget {
                 child: CircleAvatar(
                   radius: 50,
                   backgroundColor: AppColors.primaryLight.withAlpha(50),
-                  backgroundImage: expert.avatar != null
+                  backgroundImage: isValidImageUrl(expert.avatar)
                       ? NetworkImage(expert.avatar!)
                       : null,
-                  child: expert.avatar == null
+                  child: !isValidImageUrl(expert.avatar)
                       ? Text(
                           expert.initials,
                           style: AppTextStyles.displaySmall.copyWith(

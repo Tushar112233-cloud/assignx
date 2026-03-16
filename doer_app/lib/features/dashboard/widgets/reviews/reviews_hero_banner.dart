@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -194,23 +193,17 @@ class ReviewsHeroBanner extends StatelessWidget {
   }
 
   Widget _buildGlassCard({required Widget child}) {
-    return ClipRRect(
-      borderRadius: AppSpacing.borderRadiusLg,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
-            borderRadius: AppSpacing.borderRadiusLg,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
-            ),
-          ),
-          child: child,
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: AppSpacing.borderRadiusLg,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
         ),
       ),
+      child: child,
     );
   }
 
@@ -236,18 +229,14 @@ class ReviewsHeroBanner extends StatelessWidget {
     required String value,
     required Color iconColor,
   }) {
-    return ClipRRect(
-      borderRadius: AppSpacing.borderRadiusMd,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
-            borderRadius: AppSpacing.borderRadiusMd,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-          ),
-          child: Row(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: AppSpacing.borderRadiusMd,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Row(
             children: [
               Icon(icon, color: iconColor, size: 18),
               const SizedBox(width: 8),
@@ -269,8 +258,6 @@ class ReviewsHeroBanner extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 

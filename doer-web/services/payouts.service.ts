@@ -33,8 +33,8 @@ interface BankDetailsUpdate {
 
 export async function getPayoutHistory(): Promise<Payout[]> {
   try {
-    const data = await apiClient<{ payouts: Payout[] }>('/api/wallets/payouts')
-    return data.payouts || []
+    const data = await apiClient<{ transactions: Payout[] }>('/api/wallets/me/transactions?type=withdrawal')
+    return data.transactions || []
   } catch (err) {
     logger.error('Payouts', 'Error fetching payout history:', err)
     return []
@@ -68,7 +68,11 @@ export async function updateBankDetails(
   bankDetails: BankDetailsUpdate
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await apiClient('/api/doers/me/bank-details', {
+    // Get the doer's id first
+    const doer = await apiClient<{ id: string }>('/api/doers/me')
+    if (!doer?.id) throw new Error('Doer profile not found')
+
+    await apiClient(`/api/doers/${doer.id}/bank-details`, {
       method: 'PUT',
       body: JSON.stringify(bankDetails),
     })

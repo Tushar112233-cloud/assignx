@@ -38,7 +38,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
-import { transactionTypeConfig, statusConfig, mockTransactions } from './constants'
+import { transactionTypeConfig, statusConfig } from './constants'
 import type { WalletTransaction, TransactionType } from '@/types/database'
 
 /**
@@ -89,9 +89,9 @@ const formatTime = (date: string): string => {
  * Displays transaction history with filtering
  */
 export function PaymentHistory({
-  transactions = mockTransactions,
-  balance = 15800,
-  pendingBalance = 1800,
+  transactions = [],
+  balance = 0,
+  pendingBalance = 0,
   isLoading,
   onLoadMore,
   className,

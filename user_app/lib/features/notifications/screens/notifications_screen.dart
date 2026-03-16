@@ -13,7 +13,7 @@ import '../../../shared/widgets/glass_container.dart';
 /// Provider for notifications list
 final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
   try {
-    final response = await ApiClient.get('/notifications?limit=50');
+    final response = await ApiClient.get('/notifications', queryParams: {'limit': '50', 'role': 'user'});
     final list = response is List
         ? response
         : (response as Map<String, dynamic>)['notifications'] as List? ?? [];
@@ -78,6 +78,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => context.pop(),
+        ),
         title: Text(
           'Notifications',
           style: AppTextStyles.headingSmall.copyWith(
@@ -389,7 +393,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
   Future<void> _markAllAsRead(WidgetRef ref) async {
     try {
-      await ApiClient.put('/notifications/mark-all-read', {});
+      await ApiClient.put('/notifications/read-all', {});
     } catch (_) {
       // Silently fail
     }

@@ -105,13 +105,13 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
 
       try {
         // Fetch skills and subjects in parallel
-        const [skillsData, subjectsData] = await Promise.all([
-          apiClient<Skill[]>('/api/skills?is_active=true&sort=name'),
-          apiClient<Subject[]>('/api/subjects?is_active=true&parent_id=null&sort=name'),
+        const [skillsRes, subjectsRes] = await Promise.all([
+          apiClient<{ skills: Array<{ _id: string; name: string }> }>('/api/skills'),
+          apiClient<{ subjects: Array<{ _id: string; name: string }> }>('/api/subjects'),
         ])
 
-        setSkills(skillsData || [])
-        setSubjects(subjectsData || [])
+        setSkills((skillsRes.skills || []).map(s => ({ id: s._id, name: s.name })))
+        setSubjects((subjectsRes.subjects || []).map(s => ({ id: s._id, name: s.name })))
       } catch (error) {
         console.error('Error fetching profile data:', error)
         setFetchError('Failed to load data. Please refresh the page.')

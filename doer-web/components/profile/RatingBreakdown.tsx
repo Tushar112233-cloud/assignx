@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import { mockReviews, defaultRatingDistribution } from './constants'
+import { emptyRatingDistribution } from './constants'
 import type { DoerReview } from '@/types/database'
 
 /**
@@ -119,13 +119,13 @@ const categories = [
  * Displays detailed rating breakdown and recent reviews
  */
 export function RatingBreakdown({
-  overall = 4.8,
-  quality = 4.9,
-  timeliness = 4.7,
-  communication = 4.8,
-  totalReviews = 45,
-  ratingDistribution = defaultRatingDistribution,
-  recentReviews = mockReviews,
+  overall = 0,
+  quality = 0,
+  timeliness = 0,
+  communication = 0,
+  totalReviews = 0,
+  ratingDistribution = emptyRatingDistribution,
+  recentReviews = [],
   isLoading,
   className,
 }: RatingBreakdownProps) {

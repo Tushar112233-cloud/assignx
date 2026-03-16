@@ -50,11 +50,30 @@ export interface JobListing {
   location: string;
   type: JobType;
   category: JobCategory;
-  salary: string;
+  salary: string | null;
+  salaryRaw?: { min: number; max: number; currency: string } | null;
   description: string;
+  requirements?: string[];
+  skills?: string[];
   postedAt: string;
   isRemote: boolean;
   tags: string[];
+  applyUrl?: string | null;
+  applicationCount?: number;
+  isActive?: boolean;
+}
+
+/**
+ * Job application interface
+ */
+export interface JobApplicationEntry {
+  id: string;
+  jobId: string;
+  job?: JobListing;
+  resumeUrl: string;
+  coverLetter?: string | null;
+  status: 'applied' | 'reviewing' | 'shortlisted' | 'rejected';
+  created_at: string;
 }
 
 /**
@@ -79,6 +98,8 @@ export interface PitchDeck {
   id: string;
   name: string;
   uploadedAt: string;
-  status: "pending" | "reviewed" | "shortlisted";
+  status: "pending" | "reviewed" | "shortlisted" | "rejected";
   fileUrl?: string;
+  description?: string;
+  feedback?: string;
 }

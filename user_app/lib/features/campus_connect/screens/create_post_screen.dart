@@ -1000,14 +1000,15 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               .where((t) => t.isNotEmpty),
       ];
 
-      await ApiClient.post('/community/campus', {
+      await ApiClient.post('/community/posts', {
+        'postType': 'campus',
+        'category': _selectedCategory.name,
         'title': _titleController.text.trim(),
         'content': _descriptionController.text.trim().isNotEmpty
             ? _descriptionController.text.trim()
             : null,
-        'category': _selectedCategory.name,
         'tags': tagsList,
-        'images': _selectedImages,
+        'imageUrls': _selectedImages,
       });
 
       if (mounted) {

@@ -110,6 +110,30 @@ class ProjectDetailScreen extends ConsumerWidget {
                   color: _ProjectDetailColors.secondaryText,
                 ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: _ProjectDetailColors.mutedText,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Go Back'),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton(
+                    onPressed: () => ref.invalidate(projectStreamProvider(projectId)),
+                    style: TextButton.styleFrom(foregroundColor: _ProjectDetailColors.warmAccent),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

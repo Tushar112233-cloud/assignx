@@ -49,7 +49,7 @@ export default function PendingApprovalPage() {
       }
 
       try {
-        const doer = await apiClient<{ is_access_granted: boolean }>('/api/doers/me/status')
+        const doer = await apiClient<{ is_access_granted: boolean }>('/api/doers/me')
         if (doer?.is_access_granted) {
           router.push('/dashboard')
         }

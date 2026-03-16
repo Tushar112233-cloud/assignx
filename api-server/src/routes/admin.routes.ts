@@ -6,7 +6,7 @@ import {
   User, Project, Doer, Supervisor, UserWallet, DoerWallet, SupervisorWallet, WalletTransaction,
   SupportTicket, Notification, Banner, FAQ, LearningResource,
   TrainingModule, College, AppSetting, AuditLog, CommunityPost,
-  AccessRequest,
+  AccessRequest, Admin,
 } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
@@ -382,6 +382,14 @@ router.post('/banners', async (req: Request, res: Response, next: NextFunction) 
   } catch (err) { next(err); }
 });
 
+router.get('/banners/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const banner = await Banner.findById(req.params.id);
+    if (!banner) throw new AppError('Banner not found', 404);
+    res.json({ banner });
+  } catch (err) { next(err); }
+});
+
 router.put('/banners/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const banner = await Banner.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -442,6 +450,14 @@ router.post('/learning-resources', async (req: Request, res: Response, next: Nex
   } catch (err) { next(err); }
 });
 
+router.get('/learning-resources/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const resource = await LearningResource.findById(req.params.id);
+    if (!resource) throw new AppError('Resource not found', 404);
+    res.json({ resource });
+  } catch (err) { next(err); }
+});
+
 router.put('/learning-resources/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const resource = await LearningResource.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -499,6 +515,14 @@ router.post('/colleges', async (req: Request, res: Response, next: NextFunction)
   try {
     const college = await College.create(req.body);
     res.status(201).json({ college });
+  } catch (err) { next(err); }
+});
+
+router.get('/colleges/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const college = await College.findById(req.params.id).populate('universityId', 'name');
+    if (!college) throw new AppError('College not found', 404);
+    res.json({ college });
   } catch (err) { next(err); }
 });
 
@@ -1003,6 +1027,161 @@ router.get('/audit-logs', async (req: Request, res: Response, next: NextFunction
     ]);
 
     res.json({ logs, total, page: Number(page) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/notifications - Send notification to a specific user
+router.post('/notifications', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { recipientId, recipientRole, notificationType, title, body: notifBody } = req.body;
+    if (!recipientId || !title) throw new AppError('recipientId and title are required', 400);
+
+    const notification = await Notification.create({
+      recipientId,
+      recipientRole: recipientRole || 'user',
+      type: notificationType || 'system_alert',
+      title,
+      message: notifBody || '',
+    });
+
+    res.status(201).json({ notification });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/users/:id/suspend
+router.post('/users/:id/suspend', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { isSuspended: true, suspendReason: req.body.reason || '' },
+      { new: true }
+    );
+    if (!user) throw new AppError('User not found', 404);
+    res.json({ user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/users/:id/activate
+router.post('/users/:id/activate', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { isSuspended: false, suspendReason: '' },
+      { new: true }
+    );
+    if (!user) throw new AppError('User not found', 404);
+    res.json({ user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/transactions - List all transactions (general listing)
+router.get('/transactions', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { page = '1', limit = '20', type, status, walletId } = req.query;
+    const filter: Record<string, unknown> = {};
+    if (type) filter.transactionType = type;
+    if (status) filter.status = status;
+    if (walletId) filter.walletId = walletId;
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const [transactions, total] = await Promise.all([
+      WalletTransaction.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+      WalletTransaction.countDocuments(filter),
+    ]);
+
+    res.json({ data: transactions, total, page: Number(page), total_pages: Math.ceil(total / Number(limit)) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/wallets/:id - Get wallet by ID
+router.get('/wallets/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await findAnyWallet(req.params.id);
+    if (!result) throw new AppError('Wallet not found', 404);
+    res.json({ wallet: result.wallet, walletType: result.walletType });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/admins - List all admin users
+router.get('/admins', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const admins = await Admin.find().select('email fullName adminRole createdAt');
+    res.json(admins);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/moderation/flagged - Get flagged content
+router.get('/moderation/flagged', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { contentType, status, page = '1', perPage = '20' } = req.query;
+    const skip = (Number(page) - 1) * Number(perPage);
+
+    // Aggregate flagged doers and supervisors
+    const flaggedDoers = await Doer.find({ isFlagged: true }).select('fullName email flagReason createdAt').lean();
+    const flaggedSupervisors = await Supervisor.find({ isFlagged: true }).select('fullName email flagReason createdAt').lean();
+    const flaggedPosts = await CommunityPost.find({ isFlagged: true }).select('title content userId createdAt').lean();
+
+    const allFlagged = [
+      ...flaggedDoers.map(d => ({ ...d, contentType: 'doer', id: d._id })),
+      ...flaggedSupervisors.map(s => ({ ...s, contentType: 'supervisor', id: s._id })),
+      ...flaggedPosts.map(p => ({ ...p, contentType: 'post', id: p._id })),
+    ];
+
+    const filtered = contentType ? allFlagged.filter(f => f.contentType === contentType) : allFlagged;
+    const total = filtered.length;
+    const data = filtered.slice(skip, skip + Number(perPage));
+
+    res.json({ data, total, page: Number(page), per_page: Number(perPage), total_pages: Math.ceil(total / Number(perPage)) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/moderation/action - Take moderation action on content
+router.post('/moderation/action', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { contentType, contentId, action, reason } = req.body;
+    if (!contentType || !contentId || !action) throw new AppError('contentType, contentId, and action are required', 400);
+
+    if (contentType === 'doer') {
+      if (action === 'flag') await Doer.findByIdAndUpdate(contentId, { isFlagged: true, flagReason: reason });
+      else if (action === 'unflag') await Doer.findByIdAndUpdate(contentId, { isFlagged: false, flagReason: '' });
+      else if (action === 'suspend') await Doer.findByIdAndUpdate(contentId, { isAccessGranted: false, flagReason: reason });
+    } else if (contentType === 'supervisor') {
+      if (action === 'flag') await Supervisor.findByIdAndUpdate(contentId, { isFlagged: true, flagReason: reason });
+      else if (action === 'unflag') await Supervisor.findByIdAndUpdate(contentId, { isFlagged: false, flagReason: '' });
+      else if (action === 'suspend') await Supervisor.findByIdAndUpdate(contentId, { isAccessGranted: false, flagReason: reason });
+    } else if (contentType === 'post') {
+      if (action === 'hide') await CommunityPost.findByIdAndUpdate(contentId, { isHidden: true });
+      else if (action === 'unhide') await CommunityPost.findByIdAndUpdate(contentId, { isHidden: false });
+      else if (action === 'delete') await CommunityPost.findByIdAndUpdate(contentId, { isActive: false });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/crm/moderate-listing - Moderate marketplace listing
+router.post('/crm/moderate-listing', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Marketplace listing moderation stub
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }

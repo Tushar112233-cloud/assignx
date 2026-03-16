@@ -3,9 +3,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
-import '../../../../core/translation/translation_extensions.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
+import '../../../core/utils/extensions.dart';
 
 /// Type of presence event.
 enum PresenceEventType {
@@ -478,7 +479,7 @@ class _MiniAvatar extends StatelessWidget {
         ),
       ),
       child: ClipOval(
-        child: avatarUrl != null
+        child: isValidImageUrl(avatarUrl)
             ? Image.network(
                 avatarUrl!,
                 fit: BoxFit.cover,

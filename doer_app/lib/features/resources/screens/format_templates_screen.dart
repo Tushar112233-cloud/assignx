@@ -94,103 +94,8 @@ enum TemplateFormat {
   const TemplateFormat(this.displayName, this.icon, this.color);
 }
 
-/// Mock templates data.
-final List<DocumentTemplate> _mockTemplates = [
-  const DocumentTemplate(
-    id: '1',
-    name: 'Academic Essay Template',
-    description: 'Standard academic essay format with proper margins, headers, and citation placeholders.',
-    format: TemplateFormat.word,
-    fileSize: 45056,
-    downloadUrl: 'https://example.com/templates/academic-essay.docx',
-    downloadCount: 1250,
-    isPopular: true,
-  ),
-  const DocumentTemplate(
-    id: '2',
-    name: 'Research Paper Template',
-    description: 'Comprehensive research paper template with abstract, methodology, and references sections.',
-    format: TemplateFormat.word,
-    fileSize: 67584,
-    downloadUrl: 'https://example.com/templates/research-paper.docx',
-    downloadCount: 980,
-    isPopular: true,
-  ),
-  const DocumentTemplate(
-    id: '3',
-    name: 'Business Report Template',
-    description: 'Professional business report format with executive summary and charts.',
-    format: TemplateFormat.word,
-    fileSize: 89600,
-    downloadUrl: 'https://example.com/templates/business-report.docx',
-    downloadCount: 756,
-  ),
-  const DocumentTemplate(
-    id: '4',
-    name: 'Case Study Template',
-    description: 'Structured case study format with problem statement, analysis, and recommendations.',
-    format: TemplateFormat.word,
-    fileSize: 52224,
-    downloadUrl: 'https://example.com/templates/case-study.docx',
-    downloadCount: 623,
-  ),
-  const DocumentTemplate(
-    id: '5',
-    name: 'Academic Presentation',
-    description: 'Clean academic presentation template with proper slide structure.',
-    format: TemplateFormat.powerpoint,
-    fileSize: 2097152,
-    downloadUrl: 'https://example.com/templates/academic-ppt.pptx',
-    downloadCount: 892,
-    isPopular: true,
-  ),
-  const DocumentTemplate(
-    id: '6',
-    name: 'Project Proposal Slides',
-    description: 'Professional project proposal presentation with timeline and budget slides.',
-    format: TemplateFormat.powerpoint,
-    fileSize: 1572864,
-    downloadUrl: 'https://example.com/templates/proposal-ppt.pptx',
-    downloadCount: 534,
-  ),
-  const DocumentTemplate(
-    id: '7',
-    name: 'Data Analysis Template',
-    description: 'Excel template with pre-built formulas for common statistical analysis.',
-    format: TemplateFormat.excel,
-    fileSize: 131072,
-    downloadUrl: 'https://example.com/templates/data-analysis.xlsx',
-    downloadCount: 445,
-  ),
-  const DocumentTemplate(
-    id: '8',
-    name: 'Literature Review Template',
-    description: 'Organized literature review format with source tracking table.',
-    format: TemplateFormat.word,
-    fileSize: 48128,
-    downloadUrl: 'https://example.com/templates/lit-review.docx',
-    downloadCount: 678,
-  ),
-  const DocumentTemplate(
-    id: '9',
-    name: 'APA Format Guide',
-    description: 'Complete APA 7th edition formatting guide with examples.',
-    format: TemplateFormat.pdf,
-    fileSize: 524288,
-    downloadUrl: 'https://example.com/templates/apa-guide.pdf',
-    downloadCount: 1456,
-    isPopular: true,
-  ),
-  const DocumentTemplate(
-    id: '10',
-    name: 'Harvard Referencing Guide',
-    description: 'Comprehensive Harvard referencing style guide.',
-    format: TemplateFormat.pdf,
-    fileSize: 458752,
-    downloadUrl: 'https://example.com/templates/harvard-guide.pdf',
-    downloadCount: 1123,
-  ),
-];
+/// Templates data - populated from API when available.
+final List<DocumentTemplate> _mockTemplates = [];
 
 /// Format Templates screen widget.
 class FormatTemplatesScreen extends ConsumerStatefulWidget {
@@ -329,6 +234,10 @@ class _FormatTemplatesScreenState extends ConsumerState<FormatTemplatesScreen>
   /// Builds the popular templates horizontal section.
   Widget _buildPopularSection() {
     final popularTemplates = _getPopularTemplates();
+
+    if (popularTemplates.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),

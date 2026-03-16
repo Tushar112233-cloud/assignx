@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
-import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../data/models/pro_network_post_model.dart';
 import '../providers/pro_network_provider.dart';
 
@@ -59,7 +58,23 @@ class _ProSavedPostsScreenState extends ConsumerState<ProSavedPostsScreen> {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          const SliverToBoxAdapter(child: DashboardAppBar()),
+          // Back button
+          SliverToBoxAdapter(
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8, top: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    onPressed: () => context.pop(),
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ),
 
           // Header
           SliverToBoxAdapter(

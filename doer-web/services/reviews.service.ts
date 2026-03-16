@@ -27,7 +27,26 @@ export async function getDoerReviews(doerId: string): Promise<DoerReview[]> {
 
 export async function getRatingBreakdown(doerId: string): Promise<RatingBreakdown> {
   try {
-    return await apiClient<RatingBreakdown>(`/api/doers/${doerId}/ratings`)
+    // Rating breakdown is included in the full profile stats
+    const data = await apiClient<{
+      doer: any
+      stats: {
+        averageRating: number
+        totalReviews: number
+        qualityRating: number
+        timelinessRating: number
+        communicationRating: number
+      } | null
+    }>(`/api/doers/by-id/${doerId}/full`)
+    const stats = data.stats
+    return {
+      overall: stats?.averageRating || 0,
+      quality: stats?.qualityRating || 0,
+      timeliness: stats?.timelinessRating || 0,
+      communication: stats?.communicationRating || 0,
+      totalReviews: stats?.totalReviews || 0,
+      ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+    }
   } catch {
     return {
       overall: 0,

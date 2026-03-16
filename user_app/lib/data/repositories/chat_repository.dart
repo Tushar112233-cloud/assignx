@@ -18,16 +18,20 @@ class ChatRepository {
     String projectId,
     String userId,
   ) async {
-    final response = await ApiClient.post('/chat/rooms', {
-      'projectId': projectId,
-    });
-    return ChatRoom.fromJson(response as Map<String, dynamic>);
+    final response = await ApiClient.post('/chat/rooms/project/$projectId', {});
+    // API wraps in { room: {...} }
+    final data = response is Map<String, dynamic> && response.containsKey('room')
+        ? response['room'] as Map<String, dynamic>
+        : response as Map<String, dynamic>;
+    return ChatRoom.fromJson(data);
   }
 
   /// Gets all chat rooms for a user.
   Future<List<ChatRoom>> getChatRooms(String userId) async {
     final response = await ApiClient.get('/chat/rooms');
-    final list = response as List;
+    final list = response is List
+        ? response
+        : (response as Map<String, dynamic>)['rooms'] as List? ?? [];
     return list.map((r) => ChatRoom.fromJson(r as Map<String, dynamic>)).toList();
   }
 
@@ -46,7 +50,10 @@ class ChatRepository {
       '/chat/rooms/$roomId/messages',
       queryParams: queryParams,
     );
-    final list = response as List;
+    // API returns { messages: [...], total, page } or raw list
+    final list = response is Map<String, dynamic>
+        ? (response['messages'] as List? ?? [])
+        : response as List;
     return list
         .map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))
         .toList();
@@ -71,7 +78,11 @@ class ChatRepository {
       '/chat/rooms/$roomId/messages',
       messageData,
     );
-    return ChatMessage.fromJson(response as Map<String, dynamic>);
+    // API returns { message: {...} } or raw object
+    final data = response is Map<String, dynamic> && response.containsKey('message')
+        ? response['message'] as Map<String, dynamic>
+        : response as Map<String, dynamic>;
+    return ChatMessage.fromJson(data);
   }
 
   /// Uploads a file attachment for chat.
@@ -177,10 +188,28 @@ class ChatRepository {
   /// Gets total unread message count for a user.
   Future<int> getTotalUnreadCount(String userId) async {
     try {
-      final response = await ApiClient.get('/chat/unread-count');
-      return (response as Map<String, dynamic>)['count'] as int? ?? 0;
+      final response = await ApiClient.get('/chat/unread');
+      return (response as Map<String, dynamic>)['total'] as int? ?? 0;
     } catch (_) {
       return 0;
+    }
+  }
+
+  /// Fetches project timeline (status history) events.
+  ///
+  /// Returns a list of timeline entries from `GET /projects/:id/timeline`.
+  Future<List<Map<String, dynamic>>> getProjectTimeline(String projectId) async {
+    try {
+      final response = await ApiClient.get('/projects/$projectId/timeline');
+      // API may return { timeline: [...] } or raw list
+      final list = response is Map<String, dynamic>
+          ? (response['timeline'] ?? response['status_history'] ?? response['statusHistory'] ?? []) as List
+          : response is List
+              ? response
+              : [];
+      return list.cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
     }
   }
 

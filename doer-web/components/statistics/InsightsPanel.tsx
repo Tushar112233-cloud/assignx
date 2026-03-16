@@ -138,62 +138,69 @@ export function InsightsPanel({ insights, goals }: InsightsPanelProps) {
           Your Goals
         </h3>
         <div className="space-y-4">
-          {goals.map((goal, index) => {
-            const percentage = calculatePercentage(goal.current, goal.target)
-            const progressGradient = getProgressGradient(percentage)
+          {goals.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-slate-500 font-medium">Set your goals</p>
+              <p className="text-xs text-slate-400 mt-1">Goals will appear here once configured</p>
+            </div>
+          ) : (
+            goals.map((goal, index) => {
+              const percentage = calculatePercentage(goal.current, goal.target)
+              const progressGradient = getProgressGradient(percentage)
 
-            return (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.4,
-                  delay: index * 0.1,
-                  ease: [0.22, 1, 0.36, 1]
-                }}
-                className="space-y-2"
-              >
-                {/* Goal Title and Percentage */}
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium text-slate-900">
-                    {goal.title}
-                  </h4>
-                  <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-full">
-                    {percentage}%
-                  </span>
-                </div>
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.4,
+                    delay: index * 0.1,
+                    ease: [0.22, 1, 0.36, 1]
+                  }}
+                  className="space-y-2"
+                >
+                  {/* Goal Title and Percentage */}
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-slate-900">
+                      {goal.title}
+                    </h4>
+                    <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-full">
+                      {percentage}%
+                    </span>
+                  </div>
 
-                {/* Progress Bar */}
-                <div className="relative h-3 rounded-full bg-slate-100 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${percentage}%` }}
-                    transition={{
-                      duration: 1,
-                      delay: index * 0.1 + 0.2,
-                      ease: [0.22, 1, 0.36, 1]
-                    }}
-                    className={`h-full ${progressGradient} rounded-full`}
-                  />
-                </div>
+                  {/* Progress Bar */}
+                  <div className="relative h-3 rounded-full bg-slate-100 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${percentage}%` }}
+                      transition={{
+                        duration: 1,
+                        delay: index * 0.1 + 0.2,
+                        ease: [0.22, 1, 0.36, 1]
+                      }}
+                      className={`h-full ${progressGradient} rounded-full`}
+                    />
+                  </div>
 
-                {/* Current/Target Values */}
-                <div className="flex items-center justify-between text-xs text-slate-600">
-                  <span>
-                    {goal.unit === '₹' ? goal.unit : ''}
-                    {goal.current.toLocaleString('en-IN')}
-                    {goal.unit !== '₹' ? ` ${goal.unit}` : ''}
-                  </span>
-                  <span className="text-slate-400">
-                    / {goal.unit === '₹' ? goal.unit : ''}
-                    {goal.target.toLocaleString('en-IN')}
-                    {goal.unit !== '₹' ? ` ${goal.unit}` : ''}
-                  </span>
-                </div>
-              </motion.div>
-            )
-          })}
+                  {/* Current/Target Values */}
+                  <div className="flex items-center justify-between text-xs text-slate-600">
+                    <span>
+                      {goal.unit === '₹' ? goal.unit : ''}
+                      {goal.current.toLocaleString('en-IN')}
+                      {goal.unit !== '₹' ? ` ${goal.unit}` : ''}
+                    </span>
+                    <span className="text-slate-400">
+                      / {goal.unit === '₹' ? goal.unit : ''}
+                      {goal.target.toLocaleString('en-IN')}
+                      {goal.unit !== '₹' ? ` ${goal.unit}` : ''}
+                    </span>
+                  </div>
+                </motion.div>
+              )
+            })
+          )}
         </div>
       </div>
     </div>
