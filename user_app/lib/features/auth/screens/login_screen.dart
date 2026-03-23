@@ -1,14 +1,10 @@
 import 'dart:async';
-import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:lottie/lottie.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -23,8 +19,7 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen>
-    with TickerProviderStateMixin {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   // Flow state: false = email entry, true = OTP entry.
   bool _otpState = false;
 
@@ -40,21 +35,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   int _resendCooldown = 0;
   Timer? _resendTimer;
 
-  // Floating animation for Lottie hero.
-  late AnimationController _floatController;
-
-  @override
-  void initState() {
-    super.initState();
-    _floatController = AnimationController(
-      duration: const Duration(seconds: 6),
-      vsync: this,
-    )..repeat(reverse: true);
-  }
-
   @override
   void dispose() {
-    _floatController.dispose();
     _emailController.dispose();
     _resendTimer?.cancel();
     for (final c in _otpControllers) {
@@ -267,19 +249,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final lottieSize = (screenWidth * 0.35).clamp(140.0, 200.0);
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Stack(
           children: [
-            // Mesh gradient background.
-            _MeshGradientBackground(height: screenHeight),
-
             SafeArea(
               bottom: false,
               child: Column(
@@ -287,12 +264,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   // App name header.
                   _buildHeader(),
 
-                  // Lottie hero - takes available space and pushes card to bottom.
+                  // Icon illustration — takes available space.
                   Expanded(
                     child: Center(
-                      child: _LottieHero(
-                        floatAnimation: _floatController,
-                        size: lottieSize,
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.lock_open_rounded,
+                          size: 64,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   ),
@@ -353,22 +339,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 color: AppColors.primary,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.2,
-                shadows: [
-                  Shadow(
-                    color: AppColors.primary.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
             ),
           ],
-        ).animate().fadeIn(duration: 600.ms).slideY(
-              begin: -0.3,
-              duration: 600.ms,
-              curve: Curves.easeOutBack,
-            ),
+        ),
       ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Bottom card wrapper
+  // ---------------------------------------------------------------------------
+
+  Widget _buildBottomCard({required Widget child, required double bottomPadding}) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(24, 20, 24, bottomPadding + 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SingleChildScrollView(child: child),
     );
   }
 
@@ -379,15 +376,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget _buildEmailSection({Key? key}) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return _GlassCard(
+    return _buildBottomCard(
       key: key,
       bottomPadding: bottomPadding,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _handleIndicator(),
-          const SizedBox(height: 12),
-
           Text(
             'Welcome Back',
             style: AppTextStyles.headingSmall.copyWith(
@@ -447,35 +441,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           SizedBox(
             width: double.infinity,
             height: 48,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: _isLoading
-                    ? null
-                    : const LinearGradient(
-                        colors: [AppColors.primary, AppColors.primaryLight],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                color: _isLoading ? AppColors.primary.withValues(alpha: 0.5) : null,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _onContinue,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _onContinue,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
                 ),
-                child: const Text(
-                  'Continue',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Continue',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
                 ),
               ),
             ),
@@ -535,7 +515,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget _buildOtpSection({Key? key}) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return _GlassCard(
+    return _buildBottomCard(
       key: key,
       bottomPadding: bottomPadding,
       child: Column(
@@ -594,35 +574,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           SizedBox(
             width: double.infinity,
             height: 48,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: _isLoading
-                    ? null
-                    : const LinearGradient(
-                        colors: [AppColors.primary, AppColors.primaryLight],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                color: _isLoading ? AppColors.primary.withValues(alpha: 0.5) : null,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _onVerify,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _onVerify,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
                 ),
-                child: const Text(
-                  'Verify',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Verify',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
                 ),
               ),
             ),
@@ -709,155 +675,5 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         },
       ),
     );
-  }
-
-  Widget _handleIndicator() {
-    return Container(
-      width: 36,
-      height: 4,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(2),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// Shared widgets
-// =============================================================================
-
-/// Glass morphism card used for the bottom content area.
-class _GlassCard extends StatelessWidget {
-  final double bottomPadding;
-  final Widget child;
-
-  const _GlassCard({
-    super.key,
-    required this.bottomPadding,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding + 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.85),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.5),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                blurRadius: 30,
-                offset: const Offset(0, -10),
-              ),
-            ],
-          ),
-          child: SingleChildScrollView(child: child),
-        ),
-      ),
-    );
-  }
-}
-
-/// Mesh gradient background (Dashboard-style).
-class _MeshGradientBackground extends StatelessWidget {
-  final double height;
-
-  static const _colors = [
-    Color(0xFFFBE8E0), // Warm peach
-    Color(0xFFF5E6D8), // Light sand
-    Color(0xFFEDE0D4), // Cream
-  ];
-
-  static const _alignments = [
-    Alignment(1.2, -0.8),
-    Alignment(-0.8, 0.6),
-    Alignment(0.5, 1.2),
-  ];
-
-  static const _radii = [1.5, 1.2, 1.0];
-  static const _opacities = [0.4, 0.35, 0.3];
-
-  const _MeshGradientBackground({required this.height});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: Stack(
-        fit: StackFit.expand,
-        children: List.generate(_colors.length, (i) {
-          return Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: _alignments[i],
-                  radius: _radii[i],
-                  colors: [
-                    _colors[i].withValues(alpha: _opacities[i]),
-                    _colors[i].withValues(alpha: 0.0),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}
-
-/// Lottie floating hero animation.
-class _LottieHero extends StatelessWidget {
-  final AnimationController floatAnimation;
-  final double size;
-
-  const _LottieHero({required this.floatAnimation, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: floatAnimation,
-      builder: (context, child) {
-        final yOffset = math.sin(floatAnimation.value * math.pi * 2) * 6;
-        return Transform.translate(offset: Offset(0, yOffset), child: child);
-      },
-      child: SizedBox(
-        height: size,
-        width: size,
-        child: Lottie.network(
-          'https://lottie.host/350df33f-fcc3-476f-9b46-475b0ab98268/u13av2s6ax.json',
-          fit: BoxFit.contain,
-          animate: true,
-          repeat: true,
-          errorBuilder: (context, error, stackTrace) {
-            return Icon(
-              Icons.computer_rounded,
-              size: size * 0.5,
-              color: Colors.white.withValues(alpha: 0.6),
-            );
-          },
-        ),
-      ),
-    )
-        .animate()
-        .fadeIn(delay: 200.ms, duration: 500.ms)
-        .scale(
-          begin: const Offset(0.8, 0.8),
-          end: const Offset(1, 1),
-          delay: 200.ms,
-          duration: 500.ms,
-          curve: Curves.easeOutBack,
-        );
   }
 }
