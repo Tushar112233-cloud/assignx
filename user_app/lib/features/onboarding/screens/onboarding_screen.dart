@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -13,7 +12,7 @@ import '../../../core/translation/translation_extensions.dart';
 
 /// Onboarding carousel with 3 slides.
 ///
-/// Beautiful curved design with gradient backgrounds, Lottie animations,
+/// Warm flat design with primary-colored top section, icon per slide,
 /// and step indicators.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -29,25 +28,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _userInteracted = false;
 
   /// Onboarding slides data.
-  /// Each slide has gradient colors, title, subtitle, and Lottie animation URL.
+  /// Each slide has an icon, title, and subtitle.
   static const _pages = [
     {
-      'gradientColors': [Color(0xFFBD916B), Color(0xFFD4A574)], // Warm caramel/sand
+      'icon': Icons.school_rounded,
       'title': 'Expert Help',
       'subtitle': 'Get professional assistance at your fingertips, anytime',
-      'lottieUrl': 'https://lottie.host/715ac670-afd6-4524-986e-e00f6d039876/vOvWdIeO1B.json',
     },
     {
-      'gradientColors': [Color(0xFF765341), Color(0xFF9D7B65)], // Coffee bean to warm brown
+      'icon': Icons.assignment_rounded,
       'title': 'Versatile Projects',
       'subtitle': 'From essays to presentations, we handle it all for you',
-      'lottieUrl': 'https://lottie.host/5533bf32-9e5e-4767-82d9-d08a4fde91b8/fHuLWM1ODi.json',
     },
     {
-      'gradientColors': [Color(0xFF259369), Color(0xFF6FCF97)], // Sage green - earthy
+      'icon': Icons.rocket_launch_rounded,
       'title': 'Your Journey Starts',
       'subtitle': 'Join thousands of students achieving academic success',
-      'lottieUrl': 'https://lottie.host/f5451620-d8db-4e9d-b228-de3b65c936d7/uSnBXiDaWD.json',
     },
   ];
 
@@ -117,57 +113,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final topSectionHeight = screenHeight * 0.55;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
+      backgroundColor: AppColors.background,
+      body: Column(
         children: [
-          // Animated gradient background that smoothly transitions
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-            child: _AnimatedGradientBackground(
-              currentPage: _currentPage,
-              pages: _pages,
-              topSectionHeight: topSectionHeight,
-            ),
-          ),
-
-          // Page view for swipeable Lottie content only
-          GestureDetector(
-            onHorizontalDragStart: (_) {
-              // User started swiping - stop auto-scroll
+          // Top section with primary background and icon carousel
+          _TopSection(
+            pageController: _pageController,
+            pages: _pages,
+            currentPage: _currentPage,
+            topSectionHeight: topSectionHeight,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index;
+                _userInteracted = true;
+              });
+            },
+            onSwipeStart: () {
               setState(() => _userInteracted = true);
             },
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index;
-                  _userInteracted = true; // Mark as interacted on page change
-                });
-              },
-              itemCount: _pages.length,
-              itemBuilder: (context, index) {
-                final page = _pages[index];
-
-                return _OnboardingLottieContent(
-                  topSectionHeight: topSectionHeight,
-                  lottieUrl: page['lottieUrl'] as String,
-                  isActive: index == _currentPage,
-                );
-              },
-            ),
           ),
 
-          // Bottom white section with content
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
+          // Bottom section with text content
+          Expanded(
             child: _BottomContent(
               currentPage: _currentPage,
               totalPages: _pages.length,
               title: (_pages[_currentPage]['title'] as String).tr(context),
-              subtitle: (_pages[_currentPage]['subtitle'] as String).tr(context),
+              subtitle:
+                  (_pages[_currentPage]['subtitle'] as String).tr(context),
               onNext: _nextPage,
               onSkip: _completeOnboarding,
             ),
@@ -178,452 +151,81 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-/// Animated gradient background that smoothly transitions between pages.
-class _AnimatedGradientBackground extends StatefulWidget {
-  final int currentPage;
+/// Top section with rounded bottom corners, primary background, and icon.
+class _TopSection extends StatelessWidget {
+  final PageController pageController;
   final List<Map<String, dynamic>> pages;
+  final int currentPage;
   final double topSectionHeight;
+  final ValueChanged<int> onPageChanged;
+  final VoidCallback onSwipeStart;
 
-  const _AnimatedGradientBackground({
-    required this.currentPage,
+  const _TopSection({
+    required this.pageController,
     required this.pages,
+    required this.currentPage,
     required this.topSectionHeight,
+    required this.onPageChanged,
+    required this.onSwipeStart,
   });
 
   @override
-  State<_AnimatedGradientBackground> createState() =>
-      _AnimatedGradientBackgroundState();
-}
-
-class _AnimatedGradientBackgroundState
-    extends State<_AnimatedGradientBackground>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Color?> _colorAnimation1;
-  late Animation<Color?> _colorAnimation2;
-  List<Color> _previousColors = [];
-  List<Color> _currentColors = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-
-    _currentColors =
-        widget.pages[widget.currentPage]['gradientColors'] as List<Color>;
-    _previousColors = _currentColors;
-
-    _setupAnimations();
-  }
-
-  void _setupAnimations() {
-    _colorAnimation1 = ColorTween(
-      begin: _previousColors[0],
-      end: _currentColors[0],
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-
-    _colorAnimation2 = ColorTween(
-      begin: _previousColors[1],
-      end: _currentColors[1],
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void didUpdateWidget(_AnimatedGradientBackground oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentPage != widget.currentPage) {
-      _previousColors = _currentColors;
-      _currentColors =
-          widget.pages[widget.currentPage]['gradientColors'] as List<Color>;
-
-      _setupAnimations();
-      _controller.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Column(
-          children: [
-            // Gradient top section with curved bottom
-            ClipPath(
-              clipper: _CurvedBottomClipper(),
-              child: Container(
-                height: widget.topSectionHeight + 40, // Extra for curve
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      _colorAnimation1.value ?? _currentColors[0],
-                      _colorAnimation2.value ?? _currentColors[1],
-                    ],
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    // Decorative doodle elements
-                    ..._buildDoodleElements(),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Build decorative doodle elements (circles, rings, dots)
-  List<Widget> _buildDoodleElements() {
-    return [
-      // Large ring - top left
-      Positioned(
-        top: 40,
-        left: -30,
-        child: _DoodleRing(size: 80, strokeWidth: 3),
-      ),
-      // Small filled circle - top right
-      Positioned(
-        top: 60,
-        right: 40,
-        child: _DoodleCircle(size: 20),
-      ),
-      // Medium ring - right side
-      Positioned(
-        top: 150,
-        right: -20,
-        child: _DoodleRing(size: 60, strokeWidth: 2),
-      ),
-      // Dots cluster - left side
-      Positioned(
-        top: 200,
-        left: 30,
-        child: _DoodleDots(),
-      ),
-      // Small circle - bottom left
-      Positioned(
-        bottom: 120,
-        left: 60,
-        child: _DoodleCircle(size: 14),
-      ),
-      // Squiggly line - top center
-      Positioned(
-        top: 90,
-        left: 100,
-        child: _DoodleSquiggle(),
-      ),
-      // Cross/plus - right center
-      Positioned(
-        top: 280,
-        right: 50,
-        child: _DoodleCross(size: 24),
-      ),
-      // Small ring - bottom right
-      Positioned(
-        bottom: 100,
-        right: 80,
-        child: _DoodleRing(size: 30, strokeWidth: 2),
-      ),
-      // Triangle outline - left
-      Positioned(
-        top: 320,
-        left: 20,
-        child: _DoodleTriangle(size: 28),
-      ),
-      // Tiny dots scattered
-      Positioned(
-        top: 120,
-        right: 120,
-        child: _DoodleCircle(size: 8),
-      ),
-      Positioned(
-        bottom: 160,
-        left: 120,
-        child: _DoodleCircle(size: 10),
-      ),
-    ];
-  }
-}
-
-/// Doodle ring (circle outline)
-class _DoodleRing extends StatelessWidget {
-  final double size;
-  final double strokeWidth;
-
-  const _DoodleRing({required this.size, required this.strokeWidth});
-
-  @override
   Widget build(BuildContext context) {
     return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-          width: strokeWidth,
+      height: topSectionHeight,
+      decoration: const BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(32),
+        ),
+      ),
+      child: GestureDetector(
+        onHorizontalDragStart: (_) => onSwipeStart(),
+        child: PageView.builder(
+          controller: pageController,
+          onPageChanged: onPageChanged,
+          itemCount: pages.length,
+          itemBuilder: (context, index) {
+            final icon = pages[index]['icon'] as IconData;
+            return SafeArea(
+              bottom: false,
+              child: Center(
+                child: _SlideIcon(
+                  icon: icon,
+                  isActive: index == currentPage,
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 }
 
-/// Doodle filled circle
-class _DoodleCircle extends StatelessWidget {
-  final double size;
-
-  const _DoodleCircle({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.25),
-      ),
-    );
-  }
-}
-
-/// Doodle dots cluster
-class _DoodleDots extends StatelessWidget {
-  const _DoodleDots();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 30,
-      height: 30,
-      child: Stack(
-        children: [
-          Positioned(top: 0, left: 0, child: _dot()),
-          Positioned(top: 0, right: 0, child: _dot()),
-          Positioned(bottom: 0, left: 0, child: _dot()),
-          Positioned(bottom: 0, right: 0, child: _dot()),
-          Positioned(
-            top: 10,
-            left: 10,
-            child: Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.3),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _dot() => Container(
-        width: 6,
-        height: 6,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: 0.25),
-        ),
-      );
-}
-
-/// Doodle squiggle/wave line
-class _DoodleSquiggle extends StatelessWidget {
-  const _DoodleSquiggle();
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(50, 20),
-      painter: _SquigglePainter(),
-    );
-  }
-}
-
-class _SquigglePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path();
-    path.moveTo(0, size.height / 2);
-    path.quadraticBezierTo(size.width * 0.25, 0, size.width * 0.5, size.height / 2);
-    path.quadraticBezierTo(size.width * 0.75, size.height, size.width, size.height / 2);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Doodle cross/plus
-class _DoodleCross extends StatelessWidget {
-  final double size;
-
-  const _DoodleCross({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: _CrossPainter(),
-    );
-  }
-}
-
-class _CrossPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    // Vertical line
-    canvas.drawLine(
-      Offset(size.width / 2, 0),
-      Offset(size.width / 2, size.height),
-      paint,
-    );
-    // Horizontal line
-    canvas.drawLine(
-      Offset(0, size.height / 2),
-      Offset(size.width, size.height / 2),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Doodle triangle outline
-class _DoodleTriangle extends StatelessWidget {
-  final double size;
-
-  const _DoodleTriangle({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: _TrianglePainter(),
-    );
-  }
-}
-
-class _TrianglePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final path = Path();
-    path.moveTo(size.width / 2, 0);
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Lottie animation content centered in the curved area.
-class _OnboardingLottieContent extends StatelessWidget {
-  final double topSectionHeight;
-  final String lottieUrl;
+/// Icon displayed inside a translucent white circle, with entrance animation.
+class _SlideIcon extends StatelessWidget {
+  final IconData icon;
   final bool isActive;
 
-  const _OnboardingLottieContent({
-    required this.topSectionHeight,
-    required this.lottieUrl,
+  const _SlideIcon({
+    required this.icon,
     required this.isActive,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          height: topSectionHeight + 40,
-          child: SafeArea(
-            bottom: false,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 40),
-                child: _LottieAnimation(
-                  url: lottieUrl,
-                  isActive: isActive,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Lottie animation widget using network URLs.
-class _LottieAnimation extends StatelessWidget {
-  final String url;
-  final bool isActive;
-
-  const _LottieAnimation({
-    required this.url,
-    required this.isActive,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Make size responsive - 65% of screen width, max 300px
-    final screenWidth = MediaQuery.of(context).size.width;
-    final size = (screenWidth * 0.65).clamp(200.0, 300.0);
-
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Lottie.network(
-        url,
-        fit: BoxFit.contain,
-        animate: isActive,
-        repeat: true,
-        errorBuilder: (context, error, stackTrace) {
-          // Fallback if Lottie fails to load
-          return Icon(
-            Icons.image_outlined,
-            size: size * 0.5,
-            color: Colors.white.withValues(alpha: 0.5),
-          );
-        },
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.15),
+      ),
+      child: Icon(
+        icon,
+        size: 80,
+        color: Colors.white,
       ),
     )
         .animate()
@@ -662,71 +264,71 @@ class _BottomContent extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24), // Reduced top padding from 50 to 32
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-          // Title - prominent heading
-          Text(
-            title,
-            style: AppTextStyles.displayMedium.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 32,
-              height: 1.2,
-            ),
-            textAlign: TextAlign.center,
-          )
-              .animate(key: ValueKey('title-$currentPage'))
-              .fadeIn(duration: 300.ms)
-              .slideY(begin: 0.2, end: 0, duration: 300.ms),
-
-          const SizedBox(height: 12),
-
-          // Subtitle - caption below title
-          Text(
-            subtitle,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          )
-              .animate(key: ValueKey('subtitle-$currentPage'))
-              .fadeIn(delay: 100.ms, duration: 300.ms)
-              .slideY(begin: 0.1, end: 0, duration: 300.ms),
-
-          const SizedBox(height: 32),
-
-          // Next button
-          _NextButton(
-            onPressed: onNext,
-            isLastPage: isLastPage,
-          ).animate().scale(delay: 200.ms, duration: 300.ms),
-
-          const SizedBox(height: 20),
-
-          // Page indicator dots
-          _PageDots(
-            currentPage: currentPage,
-            totalPages: totalPages,
-          ).animate().fadeIn(delay: 300.ms, duration: 300.ms),
-
-          // Skip to sign-in link (not shown on last page)
-          if (!isLastPage) ...[
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () => GoRouter.of(context).go(RouteNames.login),
-              child: Text(
-                'Already have an account? Sign in'.tr(context),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w500,
-                ),
+            // Title - prominent heading
+            Text(
+              title,
+              style: AppTextStyles.displayMedium.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 32,
+                height: 1.2,
               ),
-            ).animate().fadeIn(delay: 400.ms, duration: 300.ms),
+              textAlign: TextAlign.center,
+            )
+                .animate(key: ValueKey('title-$currentPage'))
+                .fadeIn(duration: 300.ms)
+                .slideY(begin: 0.2, end: 0, duration: 300.ms),
+
+            const SizedBox(height: 12),
+
+            // Subtitle - caption below title
+            Text(
+              subtitle,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            )
+                .animate(key: ValueKey('subtitle-$currentPage'))
+                .fadeIn(delay: 100.ms, duration: 300.ms)
+                .slideY(begin: 0.1, end: 0, duration: 300.ms),
+
+            const SizedBox(height: 32),
+
+            // Next button
+            _NextButton(
+              onPressed: onNext,
+              isLastPage: isLastPage,
+            ).animate().scale(delay: 200.ms, duration: 300.ms),
+
+            const SizedBox(height: 20),
+
+            // Page indicator dots
+            _PageDots(
+              currentPage: currentPage,
+              totalPages: totalPages,
+            ).animate().fadeIn(delay: 300.ms, duration: 300.ms),
+
+            // Skip to sign-in link (not shown on last page)
+            if (!isLastPage) ...[
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: () => GoRouter.of(context).go(RouteNames.login),
+                child: Text(
+                  'Already have an account? Sign in'.tr(context),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ).animate().fadeIn(delay: 400.ms, duration: 300.ms),
+            ],
           ],
-        ],
         ),
       ),
     );
@@ -832,28 +434,4 @@ class _PageDots extends StatelessWidget {
       }),
     );
   }
-}
-
-/// Custom clipper for curved bottom edge.
-class _CurvedBottomClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 60);
-
-    // Create smooth curve
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height,
-      size.width,
-      size.height - 60,
-    );
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
