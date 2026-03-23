@@ -249,8 +249,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: GestureDetector(
@@ -351,9 +349,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   // Bottom card wrapper
   // ---------------------------------------------------------------------------
 
-  Widget _buildBottomCard({required Widget child, required double bottomPadding}) {
+  Widget _buildBottomCard({Key? key, required Widget child, double? bottomPadding}) {
+    final bp = bottomPadding ?? MediaQuery.of(context).padding.bottom;
     return Container(
-      padding: EdgeInsets.fromLTRB(24, 20, 24, bottomPadding + 16),
+      key: key,
+      padding: EdgeInsets.fromLTRB(24, 20, 24, bp + 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -374,11 +374,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildEmailSection({Key? key}) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
     return _buildBottomCard(
       key: key,
-      bottomPadding: bottomPadding,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -513,11 +510,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildOtpSection({Key? key}) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
     return _buildBottomCard(
       key: key,
-      bottomPadding: bottomPadding,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
