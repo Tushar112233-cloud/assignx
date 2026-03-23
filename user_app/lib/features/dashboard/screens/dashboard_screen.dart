@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -180,9 +181,13 @@ class DashboardScreen extends ConsumerWidget {
                               ),
                             ),
 
-                          // ── Explore ──
-                          const SliverToBoxAdapter(
-                            child: _ExploreSection(),
+                          // ── Campus Connect ──
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              child: _CampusConnectCard(),
+                            ),
                           ),
 
                           const SliverToBoxAdapter(
@@ -1280,103 +1285,247 @@ class _ProjectCard extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// EXPLORE — pill chips with gradient borders
+// CAMPUS CONNECT — animated carousel card
 // ═══════════════════════════════════════════════════════════════
-class _ExploreSection extends StatelessWidget {
-  const _ExploreSection();
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionTitle(title: 'Explore'.tr(context)),
-          const SizedBox(height: 14),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: [
-                _ExplorePill(
-                  icon: LucideIcons.shoppingBag,
-                  label: 'Marketplace'.tr(context),
-                  color: _C.rose,
-                  onTap: () => context.push('/marketplace'),
-                ),
-                const SizedBox(width: 10),
-                _ExplorePill(
-                  icon: LucideIcons.users,
-                  label: 'Connect'.tr(context),
-                  color: _C.violet,
-                  onTap: () => context.push('/connect'),
-                ),
-                const SizedBox(width: 10),
-                _ExplorePill(
-                  icon: LucideIcons.briefcase,
-                  label: 'Pro Network'.tr(context),
-                  color: _C.sky,
-                  onTap: () => context.push('/pro-network'),
-                ),
-                const SizedBox(width: 10),
-                _ExplorePill(
-                  icon: LucideIcons.building2,
-                  label: 'Business Hub'.tr(context),
-                  color: _C.emerald,
-                  onTap: () => context.push('/business-hub'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
+class _CCItem {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+
+  const _CCItem(this.title, this.subtitle, this.icon, this.color);
 }
 
-class _ExplorePill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback? onTap;
+class _CampusConnectCard extends StatefulWidget {
+  const _CampusConnectCard();
 
-  const _ExplorePill({
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.onTap,
-  });
+  @override
+  State<_CampusConnectCard> createState() => _CampusConnectCardState();
+}
+
+class _CampusConnectCardState extends State<_CampusConnectCard>
+    with SingleTickerProviderStateMixin {
+  int _currentIndex = 0;
+  Timer? _timer;
+  late AnimationController _progressController;
+
+  static const _items = [
+    _CCItem('Student Housing', 'Find your perfect place',
+        LucideIcons.home, Color(0xFFE11D48)),
+    _CCItem('Campus Events', "Never miss what's happening",
+        LucideIcons.calendar, Color(0xFF6366F1)),
+    _CCItem('Study Resources', 'Notes, guides & materials',
+        LucideIcons.bookOpen, Color(0xFFF59E0B)),
+    _CCItem('Marketplace', 'Buy & sell with students',
+        LucideIcons.shoppingBag, Color(0xFF14B8A6)),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _progressController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+    _startCycle();
+  }
+
+  void _startCycle() {
+    _progressController.forward(from: 0);
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      setState(() {
+        _currentIndex = (_currentIndex + 1) % _items.length;
+      });
+      _progressController.forward(from: 0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _progressController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final item = _items[_currentIndex];
+
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        final container = ProviderScope.containerOf(context);
+        container.read(navigationIndexProvider.notifier).state = 2;
+      },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              color.withValues(alpha: 0.08),
-              color.withValues(alpha: 0.03),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: color.withValues(alpha: 0.18)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Row(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: color),
-            const SizedBox(width: 7),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: color,
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Icon circle
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: item.color,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(item.icon, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  // Title, badge, subtitle
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Campus Connect',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Live badge
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color:
+                                    AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(LucideIcons.messageCircle,
+                                      size: 10, color: AppColors.primary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Live',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        // Animated subtitle
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) {
+                            final slideIn = Tween<Offset>(
+                              begin: const Offset(0, 0.5),
+                              end: Offset.zero,
+                            ).animate(animation);
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: slideIn,
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: SizedBox(
+                            key: ValueKey(_currentIndex),
+                            width: double.infinity,
+                            child: Text(
+                              '${item.title} — ${item.subtitle}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Dots
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(_items.length, (i) {
+                          final isActive = i == _currentIndex;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            width: isActive ? 16 : 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? AppColors.primary
+                                  : AppColors.border,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 8),
+                      // Arrow button
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          LucideIcons.chevronRight,
+                          size: 18,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
+            ),
+            // Progress bar
+            AnimatedBuilder(
+              animation: _progressController,
+              builder: (context, _) {
+                return Container(
+                  height: 2,
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: _progressController.value,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
