@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,8 +6,6 @@ import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
-import '../../../shared/widgets/glass_container.dart';
-import '../../../shared/widgets/mesh_gradient_background.dart';
 
 /// Post category options for Campus Connect.
 enum PostCategory {
@@ -77,115 +73,68 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: MeshGradientBackground(
-        position: MeshPosition.topLeft,
-        opacity: 0.4,
-        colors: [
-          AppColors.meshPink,
-          AppColors.meshPeach,
-          AppColors.meshOrange,
-        ],
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              _buildHeader(context),
-
-              // Progress indicator
-              _buildProgressIndicator(),
-
-              // Form content
-              Expanded(
-                child: Form(
-                  key: _formKey,
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: [
-                      _buildCategoryStep(),
-                      _buildDetailsStep(),
-                      _buildMediaStep(),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Navigation buttons
-              _buildNavigationButtons(),
-            ],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Create Post'.tr(context),
+          style: AppTextStyles.headingSmall,
+        ),
+        centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: AppColors.border,
+            height: 1,
           ),
         ),
       ),
-    );
-  }
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
 
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(204),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withAlpha(128),
-                width: 1,
+            // Progress indicator
+            _buildProgressIndicator(),
+
+            // Step label
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${'Step'.tr(context)} ${_currentStep + 1} ${'of'.tr(context)} 3',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
             ),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () => context.pop(),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.close, size: 20),
-                  ),
+
+            // Form content
+            Expanded(
+              child: Form(
+                key: _formKey,
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildCategoryStep(),
+                    _buildDetailsStep(),
+                    _buildMediaStep(),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Create Post'.tr(context),
-                        style: AppTextStyles.labelLarge.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        '${'Step'.tr(context)} ${_currentStep + 1} ${'of'.tr(context)} 3',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (_currentStep == 2)
-                  GlassButton(
-                    label: 'Post'.tr(context),
-                    onPressed: _isSubmitting ? null : _handleSubmit,
-                    isLoading: _isSubmitting,
-                    blur: 10,
-                    opacity: 0.9,
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    fullWidth: false,
-                    height: 40,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    fontSize: 14,
-                  ),
-              ],
+              ),
             ),
-          ),
+
+            // Navigation buttons
+            _buildNavigationButtons(),
+          ],
         ),
       ),
     );
@@ -222,7 +171,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Text(
             'What would you like to post?'.tr(context),
             style: AppTextStyles.headingSmall,
@@ -236,37 +185,39 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Category cards
+          // Category cards with animated capsule style
           ...PostCategory.values.map((category) {
             final isSelected = category == _selectedCategory;
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: GlassCard(
-                blur: isSelected ? 15 : 10,
-                opacity: isSelected ? 0.9 : 0.7,
-                elevation: isSelected ? 3 : 1,
+              child: GestureDetector(
                 onTap: () {
                   setState(() {
                     _selectedCategory = category;
                   });
                 },
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: isSelected
-                        ? LinearGradient(
-                            colors: [
-                              AppColors.primary.withAlpha(26),
-                              AppColors.primaryLight.withAlpha(13),
-                            ],
-                          )
-                        : null,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
                   padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withAlpha(26)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.border,
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                  ),
                   child: Row(
                     children: [
-                      Container(
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: isSelected
@@ -291,7 +242,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                               category.label.tr(context),
                               style: AppTextStyles.labelLarge.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: isSelected ? AppColors.primary : null,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -307,7 +260,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                       if (isSelected)
                         Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
@@ -334,7 +287,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Text(
             'Tell us more'.tr(context),
             style: AppTextStyles.headingSmall,
@@ -342,7 +295,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           const SizedBox(height: 24),
 
           // Title
-          _buildGlassTextField(
+          _buildTextField(
             controller: _titleController,
             label: 'Title'.tr(context),
             hint: _getTitleHint(),
@@ -360,7 +313,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           const SizedBox(height: 16),
 
           // Description
-          _buildGlassTextField(
+          _buildTextField(
             controller: _descriptionController,
             label: 'Description'.tr(context),
             hint: 'Tell everyone more about your post...'.tr(context),
@@ -382,7 +335,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           ],
 
           // Location
-          _buildGlassTextField(
+          _buildTextField(
             controller: _locationController,
             label: 'Location'.tr(context),
             hint: 'e.g., North Campus, Delhi'.tr(context),
@@ -391,7 +344,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           const SizedBox(height: 16),
 
           // Tags
-          _buildGlassTextField(
+          _buildTextField(
             controller: _tagsController,
             label: 'Tags (optional)'.tr(context),
             hint: 'Add tags to help others find your post'.tr(context),
@@ -415,7 +368,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight.withAlpha(77),
+                    color: AppColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -433,7 +386,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                         onTap: () {
                           setState(() => _tags.remove(tag));
                         },
-                        child: Icon(
+                        child: const Icon(
                           Icons.close,
                           size: 14,
                           color: AppColors.primary,
@@ -451,16 +404,19 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   }
 
   Widget _buildEventFields() {
-    return GlassCard(
-      blur: 12,
-      opacity: 0.8,
+    return Container(
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.event,
                 size: 18,
                 color: AppColors.primary,
@@ -478,6 +434,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
           // Date picker
           InkWell(
+            borderRadius: BorderRadius.circular(12),
             onTap: () async {
               final date = await showDatePicker(
                 context: context,
@@ -492,13 +449,13 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: AppColors.surfaceVariant,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.calendar_today,
                     size: 18,
                     color: AppColors.textSecondary,
@@ -522,6 +479,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
           // Time picker
           InkWell(
+            borderRadius: BorderRadius.circular(12),
             onTap: () async {
               final time = await showTimePicker(
                 context: context,
@@ -534,13 +492,13 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: AppColors.surfaceVariant,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.access_time,
                     size: 18,
                     color: AppColors.textSecondary,
@@ -566,16 +524,19 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   }
 
   Widget _buildHousingFields() {
-    return GlassCard(
-      blur: 12,
-      opacity: 0.8,
+    return Container(
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.currency_rupee,
                 size: 18,
                 color: AppColors.primary,
@@ -598,14 +559,21 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               hintText: 'Monthly rent'.tr(context),
               prefixText: '\u20B9 ',
               filled: true,
-              fillColor: AppColors.surface,
+              fillColor: AppColors.surfaceVariant,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppColors.borderFocused,
+                  width: 1.5,
+                ),
               ),
               contentPadding: const EdgeInsets.all(14),
             ),
@@ -621,7 +589,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Text(
             'Add photos'.tr(context),
             style: AppTextStyles.headingSmall,
@@ -658,16 +626,19 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           const SizedBox(height: 32),
 
           // Community guidelines
-          GlassCard(
-            blur: 12,
-            opacity: 0.8,
+          Container(
             padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.infoLight,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.info.withAlpha(51)),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.info_outline,
                       size: 20,
                       color: AppColors.info,
@@ -695,7 +666,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     );
   }
 
-  Widget _buildGlassTextField({
+  Widget _buildTextField({
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -704,95 +675,124 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     String? Function(String?)? validator,
     void Function(String)? onSubmitted,
   }) {
-    return GlassCard(
-      blur: 12,
-      opacity: 0.8,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 18, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: AppTextStyles.labelMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 18, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: AppTextStyles.labelMedium.copyWith(
+                fontWeight: FontWeight.w600,
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: controller,
-            maxLines: maxLines,
-            style: AppTextStyles.bodyMedium,
-            decoration: InputDecoration(
-              hintText: hint,
-              filled: true,
-              fillColor: AppColors.surface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              contentPadding: const EdgeInsets.all(16),
             ),
-            validator: validator,
-            onFieldSubmitted: onSubmitted,
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          style: AppTextStyles.bodyMedium,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textTertiary,
+            ),
+            filled: true,
+            fillColor: AppColors.surfaceVariant,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColors.borderFocused,
+                width: 1.5,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.borderError),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColors.borderError,
+                width: 1.5,
+              ),
+            ),
+            contentPadding: const EdgeInsets.all(16),
           ),
-        ],
-      ),
+          validator: validator,
+          onFieldSubmitted: onSubmitted,
+        ),
+      ],
     );
   }
 
   Widget _buildAddImageCard() {
-    return GlassCard(
-      blur: 10,
-      opacity: 0.7,
-      padding: EdgeInsets.zero,
+    return GestureDetector(
       onTap: _showImageSourceSheet,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.add_photo_alternate_outlined,
-            size: 32,
-            color: AppColors.textSecondary,
+      child: CustomPaint(
+        painter: _DashedBorderPainter(
+          color: AppColors.border,
+          borderRadius: 14,
+          dashWidth: 6,
+          dashSpace: 4,
+          strokeWidth: 1.5,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant.withAlpha(128),
+            borderRadius: BorderRadius.circular(14),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Add Photo'.tr(context),
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.textSecondary,
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.add_photo_alternate_outlined,
+                size: 32,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Add Photo'.tr(context),
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildImageCard(String url, int index) {
-    return GlassCard(
-      blur: 8,
-      opacity: 0.6,
-      padding: EdgeInsets.zero,
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
       child: Stack(
         fit: StackFit.expand,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(13),
             child: Image.network(
               url,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   color: AppColors.surfaceVariant,
-                  child: Icon(
+                  child: const Icon(
                     Icons.broken_image,
                     color: AppColors.textTertiary,
                   ),
@@ -809,7 +809,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               },
               child: Container(
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.error,
                   shape: BoxShape.circle,
                 ),
@@ -832,7 +832,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
+          const Icon(
             Icons.check_circle_outline,
             size: 18,
             color: AppColors.info,
@@ -852,42 +852,82 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   }
 
   Widget _buildNavigationButtons() {
-    return Padding(
+    return Container(
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: AppColors.border),
+        ),
+      ),
       child: Row(
         children: [
           if (_currentStep > 0)
             Expanded(
-              child: GlassButton(
-                label: 'Back'.tr(context),
-                icon: Icons.arrow_back,
-                onPressed: () {
-                  setState(() => _currentStep--);
-                  _pageController.animateToPage(
-                    _currentStep,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                },
-                blur: 12,
-                opacity: 0.8,
-                backgroundColor: Colors.white,
-                foregroundColor: AppColors.textPrimary,
-                height: 52,
+              child: SizedBox(
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() => _currentStep--);
+                    _pageController.animateToPage(
+                      _currentStep,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                  icon: const Icon(Icons.arrow_back, size: 18),
+                  label: Text('Back'.tr(context)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textPrimary,
+                    side: const BorderSide(color: AppColors.border),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    textStyle: AppTextStyles.buttonMedium.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
               ),
             ),
           if (_currentStep > 0) const SizedBox(width: 12),
           Expanded(
-            child: GlassButton(
-              label: _currentStep < 2 ? 'Continue'.tr(context) : 'Post'.tr(context),
-              icon: _currentStep < 2 ? Icons.arrow_forward : Icons.check,
-              onPressed: _currentStep < 2 ? _handleNext : _handleSubmit,
-              isLoading: _isSubmitting,
-              blur: 12,
-              opacity: 0.9,
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              height: 52,
+            child: SizedBox(
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _isSubmitting
+                    ? null
+                    : (_currentStep < 2 ? _handleNext : _handleSubmit),
+                icon: _isSubmitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Icon(
+                        _currentStep < 2 ? Icons.arrow_forward : Icons.check,
+                        size: 18,
+                      ),
+                label: Text(
+                  _currentStep < 2
+                      ? 'Continue'.tr(context)
+                      : 'Post'.tr(context),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: AppColors.primary.withAlpha(153),
+                  disabledForegroundColor: Colors.white70,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  textStyle: AppTextStyles.buttonMedium,
+                ),
+              ),
             ),
           ),
         ],
@@ -898,52 +938,50 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   void _showImageSourceSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface.withAlpha(242),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ListTile(
-                    leading: const Icon(Icons.camera_alt),
-                    title: Text('Take Photo'.tr(context)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickImage(ImageSource.camera);
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.photo_library),
-                    title: Text('Choose from Gallery'.tr(context)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickImage(ImageSource.gallery);
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                ],
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-          ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.camera_alt,
+                  color: AppColors.textPrimary),
+              title: Text(
+                'Take Photo'.tr(context),
+                style: AppTextStyles.bodyMedium,
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library,
+                  color: AppColors.textPrimary),
+              title: Text(
+                'Choose from Gallery'.tr(context),
+                style: AppTextStyles.bodyMedium,
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
@@ -1036,7 +1074,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     }
   }
 
-String _getTitleHint() {
+  String _getTitleHint() {
     switch (_selectedCategory) {
       case PostCategory.discussion:
         return 'e.g., Best study spots on campus?';
@@ -1047,5 +1085,59 @@ String _getTitleHint() {
       case PostCategory.resource:
         return 'e.g., Engineering Drawing Set - Like New';
     }
+  }
+}
+
+/// Custom painter for dashed border on the image upload area.
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double borderRadius;
+  final double dashWidth;
+  final double dashSpace;
+  final double strokeWidth;
+
+  _DashedBorderPainter({
+    required this.color,
+    required this.borderRadius,
+    required this.dashWidth,
+    required this.dashSpace,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(borderRadius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final metrics = path.computeMetrics();
+
+    for (final metric in metrics) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final end = distance + dashWidth;
+        canvas.drawPath(
+          metric.extractPath(distance, end.clamp(0, metric.length)),
+          paint,
+        );
+        distance = end + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.borderRadius != borderRadius ||
+        oldDelegate.dashWidth != dashWidth ||
+        oldDelegate.dashSpace != dashSpace ||
+        oldDelegate.strokeWidth != strokeWidth;
   }
 }
