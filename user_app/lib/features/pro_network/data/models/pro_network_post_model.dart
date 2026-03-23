@@ -93,28 +93,32 @@ class ProNetworkPost {
   bool get hasImages => images != null && images!.isNotEmpty;
 
   factory ProNetworkPost.fromJson(Map<String, dynamic> json) {
+    final author = json['author'] ?? json['userId'];
+    final authorMap = author is Map<String, dynamic> ? author : null;
     return ProNetworkPost(
-      id: json['id'] as String,
-      userId: json['user_id'] as String? ?? '',
-      userName: json['author']?['full_name'] as String? ?? 'Anonymous',
-      userAvatar: json['author']?['avatar_url'] as String?,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: (json['user_id'] ?? (authorMap != null ? (authorMap['_id'] ?? authorMap['id']) : null) ?? '').toString(),
+      userName: (authorMap != null ? (authorMap['full_name'] ?? authorMap['fullName']) : json['authorName']) as String? ?? 'Anonymous',
+      userAvatar: (authorMap != null ? (authorMap['avatar_url'] ?? authorMap['avatarUrl']) : null) as String?,
       userTitle: json['author_title'] as String?,
       category: ProfessionalCategory.values.firstWhere(
-        (c) => c.name == json['category'],
+        (c) => c.name == (json['category'] ?? ''),
         orElse: () => ProfessionalCategory.all,
       ),
       postType: ProfessionalPostType.values.firstWhere(
-        (t) => t.name == json['post_type'],
+        (t) => t.name == (json['post_type'] ?? json['postType'] ?? ''),
         orElse: () => ProfessionalPostType.discussion,
       ),
       title: json['title'] as String? ?? '',
       description: json['content'] as String?,
-      images: json['images'] != null ? List<String>.from(json['images']) : null,
+      images: (json['images'] ?? json['imageUrls'] ?? json['image_urls']) != null
+          ? List<String>.from(json['images'] ?? json['imageUrls'] ?? json['image_urls'])
+          : null,
       location: json['location'] as String?,
       tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
-      likeCount: json['likes_count'] as int? ?? 0,
-      commentCount: json['comments_count'] as int? ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      likeCount: (json['likes_count'] ?? json['likeCount'] ?? json['like_count']) as int? ?? 0,
+      commentCount: (json['comments_count'] ?? json['commentCount'] ?? json['comment_count']) as int? ?? 0,
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }
