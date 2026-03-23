@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -122,24 +123,27 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
     try {
       final authNotifier = ref.read(authStateProvider.notifier);
 
-      // Update profile with basic info - using UserType.student
-      await authNotifier.updateProfile(
-        fullName: _nameController.text.trim(),
-        userType: UserType.student,
-        onboardingStep: OnboardingStep.complete,
-        onboardingCompleted: true,
-      );
+      // Send everything in one PUT /users/me call (matches web behavior)
+      final phone = _phoneController.text.trim();
+      final body = <String, dynamic>{
+        'fullName': _nameController.text.trim(),
+        'userType': 'student',
+        'onboardingStep': 'complete',
+        'onboardingCompleted': true,
+      };
+      if (phone.isNotEmpty) body['phone'] = phone;
+      if (_selectedUniversityId != null) body['universityId'] = _selectedUniversityId;
+      if (_selectedCourseId != null) body['courseId'] = _selectedCourseId;
+      if (_selectedSemester != null) body['semester'] = _selectedSemester;
+      if (_selectedYearOfStudy != null) body['yearOfStudy'] = _selectedYearOfStudy;
+      if (_studentIdController.text.trim().isNotEmpty) {
+        body['studentIdNumber'] = _studentIdController.text.trim();
+      }
 
-      // Save student-specific data to students table
-      await authNotifier.saveStudentData(
-        universityId: _selectedUniversityId,
-        courseId: _selectedCourseId,
-        semester: _selectedSemester,
-        yearOfStudy: _selectedYearOfStudy,
-        studentIdNumber: _studentIdController.text.trim().isNotEmpty
-            ? _studentIdController.text.trim()
-            : null,
-      );
+      await ApiClient.put('/users/me', body);
+
+      // Refresh the auth state so router knows onboarding is done
+      await authNotifier.refreshProfile();
 
       if (mounted) {
         context.go(RouteNames.signupSuccess);

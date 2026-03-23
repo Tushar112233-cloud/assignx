@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -107,28 +108,31 @@ class _ProfessionalProfileScreenState
     try {
       final authNotifier = ref.read(authStateProvider.notifier);
 
-      // Update profile with basic info - using UserType.professional
-      await authNotifier.updateProfile(
-        fullName: _nameController.text.trim(),
-        userType: UserType.professional,
-        onboardingStep: OnboardingStep.complete,
-        onboardingCompleted: true,
-      );
+      // Send everything in one PUT /users/me call (matches web behavior)
+      final phone = _phoneController.text.trim();
+      final body = <String, dynamic>{
+        'fullName': _nameController.text.trim(),
+        'userType': 'professional',
+        'professionalType': _selectedProfessionalType!.toDbString(),
+        'onboardingStep': 'complete',
+        'onboardingCompleted': true,
+      };
+      if (phone.isNotEmpty) body['phone'] = phone;
+      if (_selectedIndustryId != null) body['industryId'] = _selectedIndustryId;
+      if (_jobTitleController.text.trim().isNotEmpty) {
+        body['jobTitle'] = _jobTitleController.text.trim();
+      }
+      if (_companyController.text.trim().isNotEmpty) {
+        body['companyName'] = _companyController.text.trim();
+      }
+      if (_linkedinController.text.trim().isNotEmpty) {
+        body['linkedinUrl'] = _linkedinController.text.trim();
+      }
 
-      // Save professional-specific data to professionals table
-      await authNotifier.saveProfessionalData(
-        professionalType: _selectedProfessionalType!,
-        industryId: _selectedIndustryId,
-        jobTitle: _jobTitleController.text.trim().isNotEmpty
-            ? _jobTitleController.text.trim()
-            : null,
-        companyName: _companyController.text.trim().isNotEmpty
-            ? _companyController.text.trim()
-            : null,
-        linkedinUrl: _linkedinController.text.trim().isNotEmpty
-            ? _linkedinController.text.trim()
-            : null,
-      );
+      await ApiClient.put('/users/me', body);
+
+      // Refresh the auth state so router knows onboarding is done
+      await authNotifier.refreshProfile();
 
       if (mounted) {
         context.go(RouteNames.signupSuccess);
