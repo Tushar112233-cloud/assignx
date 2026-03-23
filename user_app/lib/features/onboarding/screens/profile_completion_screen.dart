@@ -13,6 +13,7 @@ import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/widgets/phone_input.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 
 /// Simple profile completion screen shown after signup OTP verification.
@@ -280,20 +281,12 @@ class _ProfileCompletionScreenState
                           const SizedBox(height: 20),
 
                           // Phone Number field (optional)
-                          AppTextField(
+                          PhoneInput(
                             controller: _phoneController,
                             focusNode: _phoneFocusNode,
                             label: 'Phone Number (Optional)'.tr(context),
                             hint: 'Enter your phone number'.tr(context),
-                            prefixIcon: Icons.phone_outlined,
-                            keyboardType: TextInputType.phone,
-                            textInputAction: TextInputAction.done,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp(r'[0-9+\-\s]')),
-                              LengthLimitingTextInputFormatter(15),
-                            ],
-                            onSubmitted: (_) => _submit(),
+                            onSubmitted: _submit,
                           ),
 
                           const SizedBox(height: 8),

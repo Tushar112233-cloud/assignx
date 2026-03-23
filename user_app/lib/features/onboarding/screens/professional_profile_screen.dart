@@ -15,6 +15,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_dropdown.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/phone_input.dart';
 
 /// Professional profile completion screen.
 ///
@@ -38,6 +39,7 @@ class _ProfessionalProfileScreenState
   final _jobTitleController = TextEditingController();
   final _companyController = TextEditingController();
   final _linkedinController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   @override
   void initState() {
@@ -71,6 +73,7 @@ class _ProfessionalProfileScreenState
     _jobTitleController.dispose();
     _companyController.dispose();
     _linkedinController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -346,6 +349,16 @@ class _ProfessionalProfileScreenState
                           hint: 'https://linkedin.com/in/yourprofile',
                           prefixIcon: Icons.link,
                           keyboardType: TextInputType.url,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Phone Number (optional)
+                        PhoneInput(
+                          controller: _phoneController,
+                          label: 'Phone Number (Optional)'.tr(context),
+                          hint: 'Enter your phone number'.tr(context),
+                          onSubmitted: _submitForm,
                         ),
                       ],
                     ),

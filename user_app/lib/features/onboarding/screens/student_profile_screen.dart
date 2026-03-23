@@ -15,6 +15,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_dropdown.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/phone_input.dart';
 import '../widgets/step_progress_bar.dart';
 
 /// Student profile completion screen.
@@ -41,6 +42,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
   int? _selectedSemester;
   int? _selectedYearOfStudy;
   final _studentIdController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   @override
   void initState() {
@@ -65,6 +67,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
     _pageController.dispose();
     _nameController.dispose();
     _studentIdController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -503,6 +506,15 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                   label: 'Student ID (Optional)'.tr(context),
                   hint: 'Enter your student ID number'.tr(context),
                   prefixIcon: Icons.badge_outlined,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Phone Number (optional)
+                PhoneInput(
+                  controller: _phoneController,
+                  label: 'Phone Number (Optional)'.tr(context),
+                  hint: 'Enter your phone number'.tr(context),
                 ),
               ],
             ),
