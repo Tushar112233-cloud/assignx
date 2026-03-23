@@ -579,10 +579,6 @@ class _PillTabs extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final tabWidth = (constraints.maxWidth - 8) / tabs.length;
-            // 8 = total horizontal padding inside the outer container (4 each side
-            // already accounted for by the Container padding, so effectively 0 extra,
-            // but we use constraints.maxWidth which is after padding).
             final capsuleWidth = constraints.maxWidth / tabs.length;
 
             return Stack(
@@ -1330,67 +1326,77 @@ class _BookingSubTabs extends StatelessWidget {
       (type: _BookingTabType.cancelled, icon: LucideIcons.xCircle, label: 'Cancelled'.tr(context)),
     ];
 
-    return GlassCard(
-      blur: 8,
-      opacity: 0.6,
-      elevation: 1,
+    final selectedIndex = tabs.indexWhere((t) => t.type == activeTab);
+
+    return Container(
       padding: const EdgeInsets.all(4),
-      borderRadius: BorderRadius.circular(14),
-      borderColor: Colors.white.withValues(alpha: 0.4),
-      enableHoverEffect: false,
-      child: Row(
-        children: tabs.map((tab) {
-          final isSelected = activeTab == tab.type;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onTabChanged(tab.type),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final capsuleWidth = constraints.maxWidth / tabs.length;
+
+          return Stack(
+            children: [
+              // Sliding capsule indicator
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 250),
                 curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(vertical: 11),
-                decoration: BoxDecoration(
-                  gradient: isSelected
-                      ? const LinearGradient(colors: [_kTeal1, _kTeal2])
-                      : null,
-                  color: isSelected ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: _kTeal1.withValues(alpha: 0.25),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      tab.icon,
-                      size: 14,
-                      color: isSelected ? Colors.white : AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 5),
-                    Flexible(
-                      child: Text(
-                        tab.label,
-                        style: AppTextStyles.labelSmall.copyWith(
-                          fontSize: 11,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                left: selectedIndex * capsuleWidth,
+                top: 0,
+                bottom: 0,
+                width: capsuleWidth,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
-            ),
+
+              // Tab labels
+              Row(
+                children: tabs.map((tab) {
+                  final isSelected = activeTab == tab.type;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => onTabChanged(tab.type),
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              tab.icon,
+                              size: 14,
+                              color: isSelected ? Colors.white : AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                tab.label,
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  fontSize: 11,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
           );
-        }).toList(),
+        },
       ),
     );
   }
@@ -1436,11 +1442,13 @@ class _BookingEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      blur: 12,
-      opacity: 0.7,
+    return Container(
       padding: const EdgeInsets.all(32),
-      borderRadius: BorderRadius.circular(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -1448,11 +1456,8 @@ class _BookingEmptyState extends StatelessWidget {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.1),
-              ),
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
               _icon,
