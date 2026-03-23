@@ -257,6 +257,34 @@ class ProjectDetailNotifier extends StateNotifier<ProjectDetailState> {
     }
   }
 
+  /// Updates project status directly (e.g. for QC approval without deliverables).
+  Future<bool> updateStatus(String newStatus) async {
+    if (state.project == null) return false;
+
+    state = state.copyWith(isUpdating: true, error: null);
+
+    try {
+      final status = ProjectStatus.fromString(newStatus);
+      final success = await _repository.updateProjectStatus(
+        state.project!.id,
+        status,
+      );
+
+      if (success) {
+        await loadProject(state.project!.id);
+      }
+
+      state = state.copyWith(isUpdating: false);
+      return success;
+    } catch (e) {
+      state = state.copyWith(
+        isUpdating: false,
+        error: 'Failed to update status: $e',
+      );
+      return false;
+    }
+  }
+
   /// Requests revision for the project.
   Future<bool> requestRevision({
     required String feedback,

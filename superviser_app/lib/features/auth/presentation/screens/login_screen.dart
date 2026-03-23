@@ -76,7 +76,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context.showErrorSnackBar('No supervisor account found for this email. Please register first.'.tr(context));
           break;
         case 'pending':
-          context.go('/registration/pending');
+          _showPendingApprovalDialog();
           break;
         case 'rejected':
           context.showErrorSnackBar('Your application was rejected. You may re-apply.'.tr(context));
@@ -103,6 +103,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final error = ref.read(authProvider).error;
       if (error != null) context.showErrorSnackBar(error);
     }
+  }
+
+  void _showPendingApprovalDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: const Icon(Icons.hourglass_top_rounded, size: 48, color: AppColors.accent),
+        title: Text('Application Under Review'.tr(context)),
+        content: Text(
+          'Your supervisor application is currently being reviewed by our admin team. '
+          'You will be notified once your application is approved. '
+          'This usually takes 2-3 business days.'.tr(context),
+          textAlign: TextAlign.center,
+          style: AppTypography.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('OK'.tr(context)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _handleResendOTP() async {

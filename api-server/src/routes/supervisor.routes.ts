@@ -770,6 +770,21 @@ router.put('/projects/:id/deliverables/:deliverableId/approve', authenticate, as
     (deliverable as any).qcNotes = req.body.qc_notes || req.body.notes || '';
     (deliverable as any).qcAt = new Date();
     (deliverable as any).qcBy = req.user!.id;
+
+    // Also update project status to qc_approved
+    const oldStatus = project.status;
+    if (oldStatus === 'submitted_for_qc' || oldStatus === 'qc_in_progress') {
+      project.status = 'qc_approved' as any;
+      project.statusUpdatedAt = new Date();
+      project.statusHistory.push({
+        fromStatus: oldStatus,
+        toStatus: 'qc_approved',
+        changedBy: req.user!.id as any,
+        notes: 'QC approved by supervisor',
+        createdAt: new Date(),
+      });
+    }
+
     await project.save();
 
     res.json({ success: true });

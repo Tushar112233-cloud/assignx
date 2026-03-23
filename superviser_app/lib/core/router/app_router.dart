@@ -150,6 +150,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         RoutePaths.login,
         RoutePaths.register,
         RoutePaths.onboarding,
+        RoutePaths.registrationPending,
       ];
 
       // Routes allowed without activation (auth required but not activation)

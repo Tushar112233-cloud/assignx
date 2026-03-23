@@ -341,9 +341,19 @@ function ProjectsPage() {
     setSelectedSubject("all")
   }, [])
 
-  // Handle claim project
+  // Handle claim project (or navigate directly if already assigned)
   const handleClaimProject = useCallback(async (projectId: string) => {
     try {
+      // Check if this project is already assigned to the current supervisor
+      const project = needsQuote.find(p => p.id === projectId)
+      const alreadyAssigned = project?.supervisor_id || (project as any)?.supervisorId
+
+      if (alreadyAssigned) {
+        // Already assigned to us — go straight to analyze/quote
+        router.push(`/projects/${projectId}`)
+        return
+      }
+
       await claimProject(projectId)
       toast.success("Project claimed successfully!")
       await refetch()
@@ -353,7 +363,7 @@ function ProjectsPage() {
       toast.error("Failed to claim project. It may have been claimed by another supervisor.")
       await refetch()
     }
-  }, [refetch, router])
+  }, [refetch, router, needsQuote])
 
   // Handle QC approve
   const handleApprove = useCallback(async (projectId: string, message?: string) => {

@@ -282,7 +282,7 @@ export default function DoerDetailPage() {
                   <Award className="h-5 w-5 text-purple-500" />
                   <div>
                     <p className="text-2xl font-bold">
-                      ₹{doer.total_earnings?.toLocaleString("en-IN") || "0"}
+                      ₹{(doer.total_earnings ?? 0).toLocaleString("en-IN")}
                     </p>
                     <p className="text-xs text-muted-foreground">Total Earnings</p>
                   </div>
@@ -313,7 +313,7 @@ export default function DoerDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {doer.on_time_delivery_rate ? `${doer.on_time_delivery_rate.toFixed(0)}%` : "N/A"}
+              {doer.on_time_delivery_rate != null ? `${doer.on_time_delivery_rate.toFixed(0)}%` : "N/A"}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Based on delivery history

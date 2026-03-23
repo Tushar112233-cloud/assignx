@@ -227,7 +227,7 @@ export function useNewRequests() {
       }
 
       const data = await apiFetch<{ projects: ProjectWithRelations[] }>(
-        "/api/projects?unassigned=true&status=submitted,analyzing"
+        "/api/projects?status=submitted,analyzing"
       )
 
       setProjects(data.projects || [])
@@ -270,7 +270,7 @@ export function useReadyToAssign() {
       }
 
       const data = await apiFetch<{ projects: ProjectWithRelations[] }>(
-        "/api/projects?supervisorId=me&status=paid&needsDoer=true"
+        "/api/projects?status=paid"
       )
 
       setProjects(data.projects || [])

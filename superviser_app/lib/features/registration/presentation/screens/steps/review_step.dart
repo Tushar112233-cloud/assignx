@@ -5,6 +5,7 @@ import '../../../../../core/theme/app_typography.dart';
 import '../../../../../core/translation/translation_extensions.dart';
 import '../../../../../shared/widgets/buttons/primary_button.dart';
 import '../../providers/registration_provider.dart';
+import '../../../../common/presentation/providers/subjects_provider.dart';
 
 /// Step 4: Review & Submit
 ///
@@ -93,7 +94,14 @@ class ReviewStep extends ConsumerWidget {
               _ReviewItem(
                 'Expertise'.tr(context),
                 data.expertiseAreas.isNotEmpty
-                    ? data.expertiseAreas.join(', ')
+                    ? ref.watch(subjectsProvider).whenOrNull(
+                          data: (subjects) {
+                            final nameMap = {for (final s in subjects) s.id: s.name};
+                            return data.expertiseAreas
+                                .map((id) => nameMap[id] ?? id)
+                                .join(', ');
+                          },
+                        ) ?? data.expertiseAreas.join(', ')
                     : 'Not selected'.tr(context),
               ),
               _ReviewItem(

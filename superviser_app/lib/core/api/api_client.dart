@@ -17,8 +17,8 @@ class ApiClient {
 
   static String get baseUrl {
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
-    // Android emulator needs 10.0.2.2; iOS/desktop use localhost
-    if (Platform.isAndroid) return 'http://10.0.2.2:4000';
+    // Physical Android device needs LAN IP; emulator uses 10.0.2.2
+    if (Platform.isAndroid) return 'http://10.48.168.2:4000';
     return 'http://localhost:4000';
   }
 
