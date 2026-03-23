@@ -172,9 +172,10 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
 
   @override
   Widget build(BuildContext context) {
-    return SubtleGradientScaffold.standard(
+    return SubtleGradientScaffold(
+      extendBodyBehindAppBar: false,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white.withValues(alpha: 0.9),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(

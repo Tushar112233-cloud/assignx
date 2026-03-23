@@ -170,7 +170,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final listingAsync = ref.watch(listingDetailProvider(widget.postId));
     final commentsAsync = ref.watch(postCommentsProvider(widget.postId));
 
-    return SubtleGradientScaffold.standard(
+    return SubtleGradientScaffold(
+      extendBodyBehindAppBar: false,
       body: listingAsync.when(
         data: (listing) {
           if (listing == null) {

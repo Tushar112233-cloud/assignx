@@ -160,7 +160,8 @@ class _ProPostDetailScreenState extends ConsumerState<ProPostDetailScreen> {
     final postAsync = ref.watch(proNetworkPostDetailProvider(widget.postId));
     final commentsAsync = ref.watch(proPostCommentsProvider(widget.postId));
 
-    return SubtleGradientScaffold.standard(
+    return SubtleGradientScaffold(
+      extendBodyBehindAppBar: false,
       body: postAsync.when(
         data: (post) {
           if (post == null) {
