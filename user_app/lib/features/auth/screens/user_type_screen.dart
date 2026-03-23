@@ -300,11 +300,13 @@ class _UserTypeCard extends StatelessWidget {
                           color: AppColors.textTertiary,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          'Requires college email (.edu, .ac.in, .ac.uk)',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textTertiary,
-                            fontSize: 11,
+                        Flexible(
+                          child: Text(
+                            'Requires college email (.edu, .ac.in, .ac.uk)',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textTertiary,
+                              fontSize: 11,
+                            ),
                           ),
                         ),
                       ],
