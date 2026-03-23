@@ -12,7 +12,6 @@ import '../../../data/models/marketplace_model.dart';
 import '../../../data/models/tutor_model.dart';
 import '../../../providers/marketplace_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
-import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../widgets/banner_card.dart';
 import '../widgets/book_session_sheet.dart';
@@ -34,15 +33,7 @@ class MarketplaceScreen extends ConsumerWidget {
     final filters = ref.watch(marketplaceFilterProvider);
 
     return SubtleGradientScaffold.standard(
-      body: MeshGradientBackground(
-        position: MeshPosition.center,
-        opacity: 0.5,
-        colors: [
-          AppColors.meshPink,
-          AppColors.meshPeach,
-          AppColors.meshOrange,
-        ],
-        child: RefreshIndicator(
+      body: RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(marketplaceListingsProvider);
           },
@@ -169,7 +160,6 @@ class MarketplaceScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }

@@ -80,7 +80,9 @@ class _WalletOffersCarouselState extends State<WalletOffersCarousel> {
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.85);
-    _startAutoScroll();
+    if (_offers.isNotEmpty) {
+      _startAutoScroll();
+    }
   }
 
   @override
@@ -92,9 +94,10 @@ class _WalletOffersCarouselState extends State<WalletOffersCarousel> {
 
   /// Starts the auto-scroll timer (every 5 seconds).
   void _startAutoScroll() {
+    if (_offers.isEmpty) return;
     _autoScrollTimer?.cancel();
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!_isUserScrolling && mounted) {
+      if (!_isUserScrolling && mounted && _offers.isNotEmpty) {
         final nextPage = (_currentPage + 1) % _offers.length;
         _pageController.animateToPage(
           nextPage,
