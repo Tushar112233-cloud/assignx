@@ -13,6 +13,7 @@ import '../../campus_connect/widgets/comment_section.dart';
 import '../../campus_connect/widgets/like_button.dart';
 import '../../campus_connect/widgets/save_button.dart';
 import '../../campus_connect/widgets/report_button.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 import '../data/models/pro_network_post_model.dart';
 import '../providers/pro_network_provider.dart';
 
@@ -159,8 +160,7 @@ class _ProPostDetailScreenState extends ConsumerState<ProPostDetailScreen> {
     final postAsync = ref.watch(proNetworkPostDetailProvider(widget.postId));
     final commentsAsync = ref.watch(proPostCommentsProvider(widget.postId));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: postAsync.when(
         data: (post) {
           if (post == null) {

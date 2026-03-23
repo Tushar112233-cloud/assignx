@@ -9,6 +9,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/marketplace_model.dart';
 import '../../../providers/marketplace_provider.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Detail screen for marketplace listings.
 class ItemDetailScreen extends ConsumerWidget {
@@ -23,8 +24,7 @@ class ItemDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listingAsync = ref.watch(listingDetailProvider(listingId));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: listingAsync.when(
         data: (listing) {
           if (listing == null) {

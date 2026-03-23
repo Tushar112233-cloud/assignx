@@ -10,6 +10,7 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Success screen shown after profile completion.
 ///
@@ -49,8 +50,7 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
     final profile = ref.watch(currentProfileProvider);
     final displayName = profile?.fullName?.split(' ').first ?? 'there';
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: Stack(
         children: [
           SafeArea(

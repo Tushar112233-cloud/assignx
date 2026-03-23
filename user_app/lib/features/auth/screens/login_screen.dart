@@ -10,6 +10,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Login screen with a two-state OTP flow: email entry then OTP verification.
 class LoginScreen extends ConsumerStatefulWidget {
@@ -249,8 +250,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Stack(

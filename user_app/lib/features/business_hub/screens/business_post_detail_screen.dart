@@ -13,6 +13,7 @@ import '../../campus_connect/widgets/comment_section.dart';
 import '../../campus_connect/widgets/like_button.dart';
 import '../../campus_connect/widgets/save_button.dart';
 import '../../campus_connect/widgets/report_button.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 import '../data/models/business_hub_post_model.dart';
 import '../providers/business_hub_provider.dart';
 
@@ -162,8 +163,7 @@ class _BusinessPostDetailScreenState
     final commentsAsync =
         ref.watch(businessPostCommentsProvider(widget.postId));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: postAsync.when(
         data: (post) {
           if (post == null) return _buildNotFound(context);

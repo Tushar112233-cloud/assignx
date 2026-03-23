@@ -14,6 +14,7 @@ import '../../../providers/profile_provider.dart';
 import '../../../providers/project_provider.dart';
 import '../widgets/payment_prompt_modal.dart';
 import '../widgets/progress_indicator.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Projects page design tokens
@@ -125,8 +126,7 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
       value: SystemUiOverlayStyle.dark.copyWith(
         statusBarColor: Colors.transparent,
       ),
-      child: Scaffold(
-        backgroundColor: _P.bg,
+      child: SubtleGradientScaffold.standard(
         body: Stack(
           children: [
             // Page-specific ambient background

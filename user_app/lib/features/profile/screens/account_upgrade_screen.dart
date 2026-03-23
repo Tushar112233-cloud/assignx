@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../widgets/account_upgrade_card.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Upgrade step in the multi-step flow.
 enum UpgradeStep {
@@ -280,10 +281,9 @@ class _AccountUpgradeScreenState extends ConsumerState<AccountUpgradeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           onPressed: _currentStep == UpgradeStep.success

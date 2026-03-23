@@ -13,6 +13,7 @@ import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/experts_provider.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../widgets/booking_calendar.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 import '../widgets/price_breakdown.dart';
 
 /// Booking screen for scheduling expert consultations.
@@ -58,10 +59,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   Widget build(BuildContext context) {
     final expertAsync = ref.watch(expertDetailProvider(widget.expertId));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: GestureDetector(
           onTap: () => context.pop(),

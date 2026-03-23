@@ -11,6 +11,7 @@ import '../../../data/models/marketplace_model.dart';
 import '../../../providers/marketplace_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/mesh_gradient_background.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Screen to create new marketplace listings with modern glass morphism design.
 ///
@@ -61,8 +62,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: MeshGradientBackground(
         position: MeshPosition.topLeft,
         opacity: 0.4,

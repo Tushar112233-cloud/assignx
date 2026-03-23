@@ -20,6 +20,7 @@ import '../widgets/resource_filters.dart';
 import '../widgets/housing_restricted_state.dart';
 import '../widgets/campus_connect_filter_sheet.dart';
 import '../widgets/quick_categories.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Campus Connect screen — coffee brown theme with colorful icon pops.
 ///
@@ -58,8 +59,7 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     final isHousingRestricted =
         !isStudent && _selectedCategory == CampusConnectCategory.housing;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFEFDFB),
+    return SubtleGradientScaffold.standard(
       body: Stack(
         children: [
           RefreshIndicator(

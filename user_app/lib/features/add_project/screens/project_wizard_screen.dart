@@ -17,6 +17,7 @@ import '../widgets/reference_style_dropdown.dart';
 import '../widgets/subject_dropdown.dart';
 import '../widgets/success_popup.dart';
 import '../widgets/word_count_input.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 class _StepContext {
   final IconData icon;
@@ -263,8 +264,7 @@ class _ProjectWizardScreenState extends ConsumerState<ProjectWizardScreen> {
     final step = _steps[_currentStep];
     final progress = (_currentStep + 1) / 4;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+    return SubtleGradientScaffold.standard(
       body: SafeArea(
         child: Column(
           children: [

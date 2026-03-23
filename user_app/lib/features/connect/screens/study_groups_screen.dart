@@ -9,6 +9,7 @@ import '../../../data/models/connect_models.dart';
 import '../../../providers/connect_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/mesh_gradient_background.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../widgets/connect_search.dart';
 import '../widgets/study_group_card.dart';
@@ -36,8 +37,7 @@ class _StudyGroupsScreenState extends ConsumerState<StudyGroupsScreen> {
     final userGroupsAsync = ref.watch(userStudyGroupsProvider);
     final subjects = ref.watch(connectSubjectsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: MeshGradientBackground(
         position: MeshPosition.topRight,
         opacity: 0.4,

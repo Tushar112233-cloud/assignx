@@ -18,6 +18,7 @@ import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../../../shared/widgets/phone_input.dart';
 import '../widgets/step_progress_bar.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Student profile completion screen.
 ///
@@ -159,8 +160,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: SafeArea(
         child: LoadingOverlay(
           isLoading: _isLoading,

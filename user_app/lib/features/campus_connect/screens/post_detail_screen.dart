@@ -13,6 +13,7 @@ import '../../../data/models/marketplace_model.dart';
 import '../../../providers/marketplace_provider.dart';
 import '../widgets/comment_section.dart';
 import '../widgets/like_button.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 import '../widgets/save_button.dart';
 import '../widgets/report_button.dart';
 
@@ -169,8 +170,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final listingAsync = ref.watch(listingDetailProvider(widget.postId));
     final commentsAsync = ref.watch(postCommentsProvider(widget.postId));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: listingAsync.when(
         data: (listing) {
           if (listing == null) {

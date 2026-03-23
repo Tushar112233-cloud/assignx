@@ -12,6 +12,7 @@ import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../widgets/expert_review_form.dart';
 import '../widgets/session_card.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// My Bookings screen showing user's consultation bookings.
 ///
@@ -65,8 +66,7 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
   Widget build(BuildContext context) {
     final bookingsAsync = ref.watch(userBookingsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

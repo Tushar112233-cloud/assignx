@@ -17,6 +17,7 @@ import '../../../shared/widgets/app_dropdown.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../../../shared/widgets/phone_input.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Professional profile completion screen.
 ///
@@ -150,8 +151,7 @@ class _ProfessionalProfileScreenState
   Widget build(BuildContext context) {
     final industries = ref.watch(industriesProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: SafeArea(
         child: LoadingOverlay(
           isLoading: _isLoading,

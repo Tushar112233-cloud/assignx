@@ -10,6 +10,7 @@ import '../../../providers/project_provider.dart';
 import '../widgets/file_attachment.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../widgets/success_popup.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Report type options with web-matching prices.
 enum ReportType {
@@ -171,11 +172,10 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),

@@ -8,6 +8,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../data/models/pro_network_post_model.dart';
 import '../providers/pro_network_provider.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Screen displaying user's saved Pro Network posts.
 class ProSavedPostsScreen extends ConsumerStatefulWidget {
@@ -54,8 +55,7 @@ class _ProSavedPostsScreenState extends ConsumerState<ProSavedPostsScreen> {
   Widget build(BuildContext context) {
     final savedPostsAsync = ref.watch(savedProNetworkPostsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: CustomScrollView(
         slivers: [
           // Back button

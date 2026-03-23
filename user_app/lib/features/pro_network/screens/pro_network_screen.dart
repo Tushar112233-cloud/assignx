@@ -13,6 +13,7 @@ import '../widgets/pro_filter_tabs_bar.dart';
 import '../widgets/pro_network_hero.dart';
 import '../widgets/pro_post_card.dart';
 import '../widgets/pro_search_bar.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Pro Network screen with staggered feed of professional content.
 class ProNetworkScreen extends ConsumerStatefulWidget {
@@ -53,8 +54,7 @@ class _ProNetworkScreenState extends ConsumerState<ProNetworkScreen> {
 
     final canPop = Navigator.of(context).canPop();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: Stack(
         children: [
           CustomScrollView(

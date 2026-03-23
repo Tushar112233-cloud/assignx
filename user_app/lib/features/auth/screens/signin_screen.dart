@@ -13,6 +13,7 @@ import '../../../core/translation/translation_extensions.dart';
 import '../../../core/utils/email_validators.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Sign-up screen with OTP-based account creation.
 ///
@@ -268,8 +269,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget build(BuildContext context) {
     final userType = GoRouterState.of(context).uri.queryParameters['type'];
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: LoadingOverlay(

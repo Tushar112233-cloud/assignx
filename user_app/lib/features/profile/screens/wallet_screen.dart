@@ -13,6 +13,7 @@ import '../../../providers/profile_provider.dart';
 import '../widgets/wallet_offers_carousel.dart';
 import '../widgets/wallet_rewards.dart';
 import '../widgets/monthly_spend_chart.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Wallet screen with curved dome hero, credit card design, and glass styling.
 ///
@@ -34,8 +35,7 @@ class WalletScreen extends ConsumerWidget {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
-      child: Scaffold(
-        backgroundColor: AppColors.background,
+      child: SubtleGradientScaffold.standard(
         body: RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(walletProvider);

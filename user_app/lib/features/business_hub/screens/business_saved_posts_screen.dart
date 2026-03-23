@@ -8,6 +8,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../data/models/business_hub_post_model.dart';
 import '../providers/business_hub_provider.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Screen displaying user's saved Business Hub posts.
 class BusinessSavedPostsScreen extends ConsumerStatefulWidget {
@@ -50,8 +51,7 @@ class _BusinessSavedPostsScreenState
   Widget build(BuildContext context) {
     final savedPostsAsync = ref.watch(savedBusinessHubPostsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: CustomScrollView(
         slivers: [
           // Back button

@@ -17,6 +17,7 @@ import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../home/widgets/home_app_bar.dart';
 import '../widgets/expert_card.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 // ─── Pop-of-color gradient for icon containers only (teal) ───
 // The page's unique accent — used ONLY in icon backgrounds, like wallet does.
@@ -55,8 +56,7 @@ class _ExpertsScreenState extends ConsumerState<ExpertsScreen> {
     final expertsAsync = ref.watch(expertsProvider);
     final featuredAsync = ref.watch(featuredExpertsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {

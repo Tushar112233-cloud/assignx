@@ -17,6 +17,7 @@ import '../../../providers/home_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../providers/project_provider.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Design System — Coffee Bean palette matched to user-web
@@ -105,8 +106,7 @@ class DashboardScreen extends ConsumerWidget {
       value: SystemUiOverlayStyle.dark.copyWith(
         statusBarColor: Colors.transparent,
       ),
-      child: Scaffold(
-        backgroundColor: _C.bg,
+      child: SubtleGradientScaffold.standard(
         body: Stack(
           children: [
             // Ambient background gradient

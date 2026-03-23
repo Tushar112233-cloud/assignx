@@ -10,6 +10,7 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/notification_model.dart';
 import '../../../shared/widgets/capsule_tab_bar.dart';
 import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Provider for notifications list
 final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
@@ -73,9 +74,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   Widget build(BuildContext context) {
     final notificationsAsync = ref.watch(notificationsProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBodyBehindAppBar: true,
+    return SubtleGradientScaffold.standard(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -108,11 +107,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           const SizedBox(width: 8),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          color: AppColors.background,
-        ),
-        child: SafeArea(
+      body: SafeArea(
           child: Column(
             children: [
               const SizedBox(height: 8),
@@ -240,7 +235,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             ],
           ),
         ),
-      ),
     );
   }
 

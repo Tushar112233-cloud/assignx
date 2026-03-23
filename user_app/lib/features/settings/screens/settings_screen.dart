@@ -15,6 +15,7 @@ import '../../../providers/accessibility_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/theme_provider.dart';
 import '../../profile/widgets/subscription_card.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 // ============================================================
 // PROVIDERS
@@ -109,8 +110,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: Column(
         children: [
           // Back button row

@@ -12,6 +12,7 @@ import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../widgets/role_card.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Represents a selectable role option in the onboarding flow.
 ///
@@ -118,8 +119,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
         user?.email?.split('@').first ??
         'there';
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: SafeArea(
         child: Padding(
           padding: AppSpacing.screenPadding,

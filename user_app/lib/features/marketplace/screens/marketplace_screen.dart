@@ -18,6 +18,7 @@ import '../widgets/banner_card.dart';
 import '../widgets/book_session_sheet.dart';
 import '../widgets/item_card.dart';
 import '../widgets/tutor_card.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 import '../widgets/tutor_profile_sheet.dart';
 
 /// Main marketplace/connect screen with Pinterest-style staggered grid.
@@ -32,8 +33,7 @@ class MarketplaceScreen extends ConsumerWidget {
     final listingsAsync = ref.watch(marketplaceListingsProvider);
     final filters = ref.watch(marketplaceFilterProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: MeshGradientBackground(
         position: MeshPosition.center,
         opacity: 0.5,

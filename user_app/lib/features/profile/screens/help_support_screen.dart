@@ -10,6 +10,7 @@ import '../../../data/models/faq_model.dart';
 import '../../../data/models/support_ticket_model.dart';
 import '../../../providers/profile_provider.dart';
 import '../widgets/ticket_history_section.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Help and support screen with FAQ, contact options, and ticket submission.
 ///
@@ -36,10 +37,9 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(

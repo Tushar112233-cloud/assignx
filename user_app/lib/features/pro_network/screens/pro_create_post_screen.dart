@@ -11,6 +11,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/mesh_gradient_background.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 import '../data/models/pro_network_post_model.dart';
 import '../providers/pro_network_provider.dart';
 
@@ -65,8 +66,7 @@ class _ProCreatePostScreenState extends ConsumerState<ProCreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: MeshGradientBackground(
         position: MeshPosition.topLeft,
         opacity: 0.4,

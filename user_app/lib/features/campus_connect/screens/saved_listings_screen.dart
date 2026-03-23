@@ -8,6 +8,7 @@ import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/marketplace_model.dart';
 import '../widgets/post_card.dart';
 import '../widgets/save_button.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Provider for saved listings data.
 final savedListingsProvider = FutureProvider.autoDispose<List<MarketplaceListing>>((ref) async {
@@ -106,8 +107,7 @@ class _SavedListingsScreenState extends ConsumerState<SavedListingsScreen> {
   Widget build(BuildContext context) {
     final savedListingsAsync = ref.watch(savedListingsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: CustomScrollView(
         slivers: [
           // Back button

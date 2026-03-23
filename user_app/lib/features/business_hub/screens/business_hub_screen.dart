@@ -13,6 +13,7 @@ import '../widgets/business_filter_tabs_bar.dart';
 import '../widgets/business_hub_hero.dart';
 import '../widgets/business_post_card.dart';
 import '../widgets/business_search_bar.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Business Hub screen with staggered feed of business content.
 class BusinessHubScreen extends ConsumerStatefulWidget {
@@ -54,8 +55,7 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
 
     final canPop = Navigator.of(context).canPop();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: Stack(
         children: [
           CustomScrollView(

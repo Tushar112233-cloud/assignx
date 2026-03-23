@@ -15,6 +15,7 @@ import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../widgets/account_upgrade_card.dart';
 import '../widgets/app_info_footer.dart';
 import '../widgets/avatar_upload_dialog.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Sage green accent color for the profile page.
 const Color _sageGreen = Color(0xFF6B8F71);
@@ -42,8 +43,7 @@ class ProfileScreen extends ConsumerWidget {
     final projectsAsync = ref.watch(completedProjectsCountProvider);
     final referralAsync = ref.watch(referralProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: profileAsync.when(
         data: (profile) => Column(
           children: [

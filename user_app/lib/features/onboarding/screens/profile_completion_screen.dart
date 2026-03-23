@@ -15,6 +15,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/phone_input.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Simple profile completion screen shown after signup OTP verification.
 ///
@@ -113,8 +114,7 @@ class _ProfileCompletionScreenState
     final user = ref.watch(currentUserProvider);
     final emailPrefix = user?.email?.split('@').first ?? 'there';
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: SafeArea(
         child: LoadingOverlay(
           isLoading: _isLoading,

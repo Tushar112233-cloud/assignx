@@ -19,6 +19,7 @@ import '../widgets/connect_search.dart';
 import '../widgets/qa_section.dart';
 import '../widgets/resource_cards.dart';
 import '../widgets/study_group_card.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Main Connect screen with tabs for Tutors, Study Groups, and Resources.
 ///
@@ -56,8 +57,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
   Widget build(BuildContext context) {
     final filters = ref.watch(connectFilterProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return SubtleGradientScaffold.standard(
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
