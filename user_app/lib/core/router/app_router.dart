@@ -86,7 +86,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authStateProvider);
       final isLoading = authState.isLoading;
       final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
-      final hasProfile = authState.valueOrNull?.hasProfile ?? false;
       final currentPath = state.matchedLocation;
 
       // Don't redirect while loading or on splash screen
@@ -119,16 +118,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      // If authenticated but no profile, go to profile completion
-      if (isAuthenticated && !hasProfile) {
+      // Check if onboarding is truly completed
+      final profile = authState.valueOrNull?.profile;
+      final onboardingDone = profile?.onboardingCompleted ?? false;
+
+      // If authenticated but onboarding not completed, go to profile completion
+      if (isAuthenticated && !onboardingDone) {
         if (!profileRoutes.contains(currentPath)) {
           return RouteNames.profileCompletion;
         }
         return null;
       }
 
-      // If authenticated with profile and on auth routes, go to home
-      if (isAuthenticated && hasProfile) {
+      // If authenticated with completed onboarding and on auth routes, go to home
+      if (isAuthenticated && onboardingDone) {
         if (publicRoutes.contains(currentPath) || profileRoutes.contains(currentPath)) {
           return RouteNames.home;
         }
