@@ -14,14 +14,11 @@ import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_dropdown.dart';
 import '../../../shared/widgets/app_text_field.dart';
-import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_overlay.dart';
-import '../../../shared/widgets/mesh_gradient_background.dart';
 
 /// Professional profile completion screen.
 ///
-/// Redesigned with gradient background, glass morphism form,
-/// and smooth animations to match Dashboard aesthetic.
+/// Single-page form with smooth animations for collecting professional details.
 class ProfessionalProfileScreen extends ConsumerStatefulWidget {
   const ProfessionalProfileScreen({super.key});
 
@@ -148,226 +145,231 @@ class _ProfessionalProfileScreenState
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: MeshGradientBackground(
-        position: MeshPosition.topRight,
-        colors: [
-          AppColors.meshBlue,
-          AppColors.meshPurple,
-          AppColors.meshPink,
-        ],
-        opacity: 0.4,
-        child: SafeArea(
-          child: LoadingOverlay(
-            isLoading: _isLoading,
-            message: 'Saving profile...'.tr(context),
-            child: Column(
-              children: [
-                // App bar with glass effect
-                GlassContainer(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () => context.pop(),
+      body: SafeArea(
+        child: LoadingOverlay(
+          isLoading: _isLoading,
+          message: 'Saving profile...'.tr(context),
+          child: Column(
+            children: [
+              // App bar
+              Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0x0F000000),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => context.pop(),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Complete Profile'.tr(context),
+                        style: AppTextStyles.headingSmall,
+                        textAlign: TextAlign.center,
                       ),
-                      Expanded(
-                        child: Text(
-                          'Complete Profile'.tr(context),
-                          style: AppTextStyles.headingSmall,
-                          textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(width: 48), // Balance for back button
+                  ],
+                ),
+              ).animate().fadeIn(duration: 400.ms),
+
+              const SizedBox(height: 8),
+
+              // Main form
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: AppSpacing.screenPadding,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0x0F000000),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
-                      const SizedBox(width: 48), // Balance for back button
-                    ],
-                  ),
-                ).animate().fadeIn(duration: 400.ms),
-
-                const SizedBox(height: 8),
-
-                // Main form with glass container
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: AppSpacing.screenPadding,
-                    child: GlassContainer(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Header
-                          Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.primary,
-                                      AppColors.primary.withValues(alpha: 0.7),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Row(
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.work_outline,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Professional Details'.tr(context),
+                                    style: AppTextStyles.headingMedium.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.work_outline,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Professional Details'.tr(context),
-                                      style: AppTextStyles.headingMedium.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Tell us a bit about yourself'.tr(context),
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: AppColors.textSecondary,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Tell us a bit about yourself'.tr(context),
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
+                        ),
 
-                          const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                          // Full Name
-                          AppTextField(
-                            controller: _nameController,
-                            label: 'Full Name'.tr(context),
-                            hint: 'Enter your full name'.tr(context),
-                            prefixIcon: Icons.person_outline,
-                            textCapitalization: TextCapitalization.words,
-                            validator: Validators.name,
-                          ),
+                        // Full Name
+                        AppTextField(
+                          controller: _nameController,
+                          label: 'Full Name'.tr(context),
+                          hint: 'Enter your full name'.tr(context),
+                          prefixIcon: Icons.person_outline,
+                          textCapitalization: TextCapitalization.words,
+                          validator: Validators.name,
+                        ),
 
-                          const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                          // Professional Type (required)
-                          AppDropdown<ProfessionalType>(
-                            label: 'Professional Type'.tr(context),
-                            hint: 'Select your professional type'.tr(context),
-                            value: _selectedProfessionalType,
-                            items: ProfessionalType.values,
-                            itemLabel: (item) => item.displayName,
+                        // Professional Type (required)
+                        AppDropdown<ProfessionalType>(
+                          label: 'Professional Type'.tr(context),
+                          hint: 'Select your professional type'.tr(context),
+                          value: _selectedProfessionalType,
+                          items: ProfessionalType.values,
+                          itemLabel: (item) => item.displayName,
+                          onChanged: (value) {
+                            setState(() => _selectedProfessionalType = value);
+                          },
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Industry
+                        industries.when(
+                          data: (items) => AppDropdown<Map<String, dynamic>>(
+                            label: 'Industry (Optional)'.tr(context),
+                            hint: 'Select your industry'.tr(context),
+                            value: items
+                                .where((i) => i['id'] == _selectedIndustryId)
+                                .firstOrNull,
+                            items: items,
+                            itemLabel: (item) => item['name'] as String,
+                            searchable: true,
                             onChanged: (value) {
-                              setState(() => _selectedProfessionalType = value);
+                              setState(() => _selectedIndustryId = value?['id'] as String?);
                             },
                           ),
-
-                          const SizedBox(height: 16),
-
-                          // Industry
-                          industries.when(
-                            data: (items) => AppDropdown<Map<String, dynamic>>(
-                              label: 'Industry (Optional)'.tr(context),
-                              hint: 'Select your industry'.tr(context),
-                              value: items
-                                  .where((i) => i['id'] == _selectedIndustryId)
-                                  .firstOrNull,
-                              items: items,
-                              itemLabel: (item) => item['name'] as String,
-                              searchable: true,
-                              onChanged: (value) {
-                                setState(() => _selectedIndustryId = value?['id'] as String?);
-                              },
-                            ),
-                            loading: () => const Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                              ),
-                            ),
-                            error: (_, _) => Text(
-                              'Failed to load industries'.tr(context),
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.error,
-                              ),
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                             ),
                           ),
-
-                          const SizedBox(height: 16),
-
-                          // Job Title (optional)
-                          AppTextField(
-                            controller: _jobTitleController,
-                            label: _selectedProfessionalType == ProfessionalType.business
-                                ? 'Your Role (Optional)'.tr(context)
-                                : 'Job Title (Optional)'.tr(context),
-                            hint: _selectedProfessionalType == ProfessionalType.business
-                                ? 'e.g., Founder, CEO'.tr(context)
-                                : 'e.g., Software Engineer'.tr(context),
-                            prefixIcon: Icons.work_outline,
-                            textCapitalization: TextCapitalization.words,
+                          error: (_, _) => Text(
+                            'Failed to load industries'.tr(context),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.error,
+                            ),
                           ),
-
-                          const SizedBox(height: 16),
-
-                          // Company (optional)
-                          AppTextField(
-                            controller: _companyController,
-                            label: _selectedProfessionalType == ProfessionalType.business
-                                ? 'Business Name (Optional)'.tr(context)
-                                : 'Company (Optional)'.tr(context),
-                            hint: _selectedProfessionalType == ProfessionalType.business
-                                ? 'Enter your business name'.tr(context)
-                                : 'Enter your company name'.tr(context),
-                            prefixIcon: Icons.business_outlined,
-                            textCapitalization: TextCapitalization.words,
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // LinkedIn URL (optional)
-                          AppTextField(
-                            controller: _linkedinController,
-                            label: 'LinkedIn Profile (Optional)'.tr(context),
-                            hint: 'https://linkedin.com/in/yourprofile',
-                            prefixIcon: Icons.link,
-                            keyboardType: TextInputType.url,
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn(duration: 500.ms).slideY(
-                          begin: 0.1,
-                          end: 0,
-                          duration: 500.ms,
-                          curve: Curves.easeOutCubic,
                         ),
-                  ),
-                ),
 
-                // Submit button with glass effect
-                Padding(
-                  padding: AppSpacing.screenPadding,
-                  child: GlassContainer(
-                    padding: const EdgeInsets.all(4),
-                    child: AppButton(
-                      label: 'Complete'.tr(context),
-                      onPressed: _submitForm,
-                      icon: Icons.check,
+                        const SizedBox(height: 16),
+
+                        // Job Title (optional)
+                        AppTextField(
+                          controller: _jobTitleController,
+                          label: _selectedProfessionalType == ProfessionalType.business
+                              ? 'Your Role (Optional)'.tr(context)
+                              : 'Job Title (Optional)'.tr(context),
+                          hint: _selectedProfessionalType == ProfessionalType.business
+                              ? 'e.g., Founder, CEO'.tr(context)
+                              : 'e.g., Software Engineer'.tr(context),
+                          prefixIcon: Icons.work_outline,
+                          textCapitalization: TextCapitalization.words,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Company (optional)
+                        AppTextField(
+                          controller: _companyController,
+                          label: _selectedProfessionalType == ProfessionalType.business
+                              ? 'Business Name (Optional)'.tr(context)
+                              : 'Company (Optional)'.tr(context),
+                          hint: _selectedProfessionalType == ProfessionalType.business
+                              ? 'Enter your business name'.tr(context)
+                              : 'Enter your company name'.tr(context),
+                          prefixIcon: Icons.business_outlined,
+                          textCapitalization: TextCapitalization.words,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // LinkedIn URL (optional)
+                        AppTextField(
+                          controller: _linkedinController,
+                          label: 'LinkedIn Profile (Optional)'.tr(context),
+                          hint: 'https://linkedin.com/in/yourprofile',
+                          prefixIcon: Icons.link,
+                          keyboardType: TextInputType.url,
+                        ),
+                      ],
                     ),
-                  ),
-                ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
+                  ).animate().fadeIn(duration: 500.ms).slideY(
+                        begin: 0.1,
+                        end: 0,
+                        duration: 500.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
+                ),
+              ),
 
-                const SizedBox(height: 16),
-              ],
-            ),
+              // Submit button
+              Padding(
+                padding: AppSpacing.screenPadding,
+                child: AppButton(
+                  label: 'Complete'.tr(context),
+                  onPressed: _submitForm,
+                  icon: Icons.check,
+                ),
+              ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
+
+              const SizedBox(height: 16),
+            ],
           ),
         ),
       ),
