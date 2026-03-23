@@ -64,7 +64,7 @@ final qaFilterProvider =
 
 /// Provider that fetches Q&A questions from the API with filters applied.
 ///
-/// Calls the `/community/connect/questions` endpoint, applying status and
+/// Calls the `/connect/questions` endpoint, applying status and
 /// subject filters from [qaFilterProvider]. Falls back to an empty list when
 /// the API is unavailable or the query fails.
 final connectQuestionsProvider =
@@ -85,7 +85,7 @@ final connectQuestionsProvider =
     final queryString = queryParams.entries
         .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
         .join('&');
-    final path = '/community/connect/questions${queryString.isNotEmpty ? '?$queryString' : ''}';
+    final path = '/connect/questions${queryString.isNotEmpty ? '?$queryString' : ''}';
 
     final response = await ApiClient.get(path);
     final list = response is List

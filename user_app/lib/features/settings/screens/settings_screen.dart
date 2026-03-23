@@ -1249,7 +1249,7 @@ class _FeedbackDialogContentState extends State<_FeedbackDialogContent> {
 
     setState(() => _isSending = true);
     try {
-      await ApiClient.post('/feedback', {
+      await ApiClient.post('/support/feedback', {
         'feedback_type': _selectedType,
         'message': message,
       });

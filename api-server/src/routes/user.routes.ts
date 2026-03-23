@@ -35,10 +35,10 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
 router.put('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const allowedFields = ['fullName', 'phone', 'avatarUrl', 'onboardingStep', 'onboardingCompleted', 'userType',
-      'universityId', 'courseId', 'semester', 'yearOfStudy', 'studentIdNumber',
-      'expectedGraduationYear', 'collegeEmail', 'preferredSubjects',
+      'universityId', 'courseId', 'semester', 'yearOfStudy', 'studentIdNumber', 'studentId',
+      'expectedGraduationYear', 'collegeEmail', 'preferredSubjects', 'dateOfBirth',
       'professionalType', 'industryId', 'jobTitle', 'companyName', 'linkedinUrl',
-      'businessType', 'gstNumber'];
+      'businessType', 'gstNumber', 'city', 'state', 'lastLoginAt'];
     const updates: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];

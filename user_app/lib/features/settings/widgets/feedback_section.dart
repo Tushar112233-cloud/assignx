@@ -203,7 +203,7 @@ class _FeedbackSectionState extends ConsumerState<FeedbackSection> {
     setState(() => _isSending = true);
 
     try {
-      await ApiClient.post('/feedback', {
+      await ApiClient.post('/support/feedback', {
         'feedback_type': _selectedType,
         'message': message,
       });

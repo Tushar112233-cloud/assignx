@@ -86,7 +86,7 @@ class _AskQuestionSheetState extends ConsumerState<AskQuestionSheet> {
     setState(() => _isSubmitting = true);
 
     try {
-      await ApiClient.post('/community/connect/questions', {
+      await ApiClient.post('/connect/questions', {
         'title': _titleController.text.trim(),
         'body': _bodyController.text.trim(),
         'subject': _selectedSubject,
