@@ -330,7 +330,6 @@ class _GlassSearchBarState extends ConsumerState<_GlassSearchBar> {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withAlpha(_isFocused ? 56 : 43),
         borderRadius: BorderRadius.circular(16),
@@ -339,39 +338,24 @@ class _GlassSearchBarState extends ConsumerState<_GlassSearchBar> {
           width: 1,
         ),
       ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.search,
-                color: Colors.white.withAlpha(200),
-                size: 22,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Colors.white,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search items, tutors, events...'.tr(context),
-                    hintStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white.withAlpha(153),
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  onChanged: (value) {
-                    ref
-                        .read(marketplaceFilterProvider.notifier)
-                        .setSearchQuery(value.isEmpty ? null : value);
-                    setState(() {});
-                  },
-                ),
-              ),
-              if (_controller.text.isNotEmpty)
-                GestureDetector(
+      child: TextField(
+        controller: _controller,
+        focusNode: _focusNode,
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: Colors.white,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Search items, tutors, events...'.tr(context),
+          hintStyle: AppTextStyles.bodyMedium.copyWith(
+            color: Colors.white.withAlpha(153),
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: Colors.white.withAlpha(200),
+            size: 22,
+          ),
+          suffixIcon: _controller.text.isNotEmpty
+              ? GestureDetector(
                   onTap: () {
                     _controller.clear();
                     ref
@@ -379,21 +363,26 @@ class _GlassSearchBarState extends ConsumerState<_GlassSearchBar> {
                         .setSearchQuery(null);
                     setState(() {});
                   },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(38),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.white.withAlpha(200),
-                      size: 16,
-                    ),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.white.withAlpha(200),
+                    size: 18,
                   ),
-                ),
-            ],
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
           ),
+        ),
+        onChanged: (value) {
+          ref
+              .read(marketplaceFilterProvider.notifier)
+              .setSearchQuery(value.isEmpty ? null : value);
+          setState(() {});
+        },
+      ),
     );
   }
 }

@@ -420,60 +420,50 @@ class _FloatingSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        style: AppTextStyles.bodyMedium.copyWith(
+          fontSize: 14,
+          color: AppColors.textPrimary,
         ),
-        child: Row(
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 14),
-              child: Icon(
-                LucideIcons.search,
-                size: 18,
-                color: AppColors.textTertiary,
-              ),
-            ),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontSize: 14,
-                  color: AppColors.textPrimary,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search experts...'.tr(context),
-                  hintStyle: AppTextStyles.bodyMedium.copyWith(
-                    fontSize: 14,
-                    color: AppColors.textTertiary,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 13,
-                  ),
-                  isDense: true,
-                ),
-                onChanged: onChanged,
-              ),
-            ),
-            if (controller.text.isNotEmpty)
-              GestureDetector(
-                onTap: onClear,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Icon(
+        decoration: InputDecoration(
+          hintText: 'Search experts...'.tr(context),
+          hintStyle: AppTextStyles.bodyMedium.copyWith(
+            fontSize: 14,
+            color: AppColors.textTertiary,
+          ),
+          prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textTertiary),
+          suffixIcon: controller.text.isNotEmpty
+              ? GestureDetector(
+                  onTap: onClear,
+                  child: const Icon(
                     LucideIcons.x,
                     size: 16,
                     color: AppColors.textTertiary,
                   ),
-                ),
-              ),
-          ],
+                )
+              : null,
+          filled: true,
+          fillColor: AppColors.surfaceVariant,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
+        onChanged: onChanged,
       ),
     );
   }

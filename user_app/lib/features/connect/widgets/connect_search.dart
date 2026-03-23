@@ -109,76 +109,72 @@ class _ConnectSearchBarState extends ConsumerState<ConnectSearchBar> {
             children: [
               // Search field
               Expanded(
-                child: GlassContainer(
-                  blur: 10,
-                  opacity: 0.7,
-                  borderRadius: BorderRadius.circular(12),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  borderColor: _focusNode.hasFocus
-                      ? AppColors.primary.withAlpha(128)
-                      : AppColors.border.withAlpha(77),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.search,
-                        color: AppColors.textSecondary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          focusNode: _focusNode,
-                          style: AppTextStyles.bodyMedium,
-                          decoration: InputDecoration(
-                            hintText: 'Search tutors, groups, resources...'.tr(context),
-                            hintStyle: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textTertiary,
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                            ),
-                          ),
-                          onSubmitted: (value) {
-                            _handleSearch(value);
-                          },
-                          onChanged: (value) {
-                            ref.read(connectFilterProvider.notifier).setSearchQuery(
-                                  value.isEmpty ? null : value,
-                                );
-                          },
-                        ),
-                      ),
-                      if (_controller.text.isNotEmpty) ...[
-                        GestureDetector(
-                          onTap: _clearSearch,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceVariant,
-                              shape: BoxShape.circle,
-                            ),
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  style: AppTextStyles.bodyMedium,
+                  decoration: InputDecoration(
+                    hintText: 'Search tutors, groups, resources...'.tr(context),
+                    hintStyle: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      size: 20,
+                      color: AppColors.textTertiary,
+                    ),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_controller.text.isNotEmpty)
+                          GestureDetector(
+                            onTap: _clearSearch,
                             child: Icon(
                               Icons.close,
-                              size: 14,
+                              size: 18,
                               color: AppColors.textSecondary,
                             ),
                           ),
+                        GestureDetector(
+                          onTap: _handleVoiceInput,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: Icon(
+                              Icons.mic_outlined,
+                              color: AppColors.textSecondary,
+                              size: 20,
+                            ),
+                          ),
                         ),
-                        const SizedBox(width: 8),
                       ],
-                      // Voice input icon
-                      GestureDetector(
-                        onTap: _handleVoiceInput,
-                        child: Icon(
-                          Icons.mic_outlined,
-                          color: AppColors.textSecondary,
-                          size: 20,
-                        ),
-                      ),
-                    ],
+                    ),
+                    filled: true,
+                    fillColor: AppColors.surfaceVariant,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
+                  onSubmitted: (value) {
+                    _handleSearch(value);
+                  },
+                  onChanged: (value) {
+                    ref.read(connectFilterProvider.notifier).setSearchQuery(
+                          value.isEmpty ? null : value,
+                        );
+                  },
                 ),
               ),
 
@@ -457,7 +453,6 @@ class _ConnectHeroSearchBarState extends ConsumerState<ConnectHeroSearchBar> {
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.white.withAlpha(_isFocused ? 51 : 38),
             borderRadius: BorderRadius.circular(16),
@@ -466,65 +461,55 @@ class _ConnectHeroSearchBarState extends ConsumerState<ConnectHeroSearchBar> {
               width: 1,
             ),
           ),
-          child: Row(
-            children: [
-              Icon(
+          child: TextField(
+            controller: _controller,
+            focusNode: _focusNode,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Colors.white,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Search tutors, groups, resources...'.tr(context),
+              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                color: Colors.white.withAlpha(153),
+              ),
+              prefixIcon: Icon(
                 Icons.search,
                 color: Colors.white.withAlpha(200),
                 size: 22,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Colors.white,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search tutors, groups, resources...'.tr(context),
-                    hintStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white.withAlpha(153),
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  onSubmitted: (value) {
-                    if (value.isNotEmpty) {
-                      ref
-                          .read(connectFilterProvider.notifier)
-                          .setSearchQuery(value);
-                      widget.onSearchSubmit?.call(value);
-                    }
-                  },
-                  onChanged: (value) {
-                    ref.read(connectFilterProvider.notifier).setSearchQuery(
-                          value.isEmpty ? null : value,
-                        );
-                  },
-                ),
+              suffixIcon: _controller.text.isNotEmpty
+                  ? GestureDetector(
+                      onTap: () {
+                        _controller.clear();
+                        ref.read(connectFilterProvider.notifier).setSearchQuery(null);
+                        setState(() {});
+                      },
+                      child: Icon(
+                        Icons.close,
+                        color: Colors.white.withAlpha(200),
+                        size: 18,
+                      ),
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
               ),
-              if (_controller.text.isNotEmpty)
-                GestureDetector(
-                  onTap: () {
-                    _controller.clear();
-                    ref.read(connectFilterProvider.notifier).setSearchQuery(null);
-                    setState(() {});
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(38),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.white.withAlpha(200),
-                      size: 16,
-                    ),
-                  ),
-                ),
-            ],
+            ),
+            onSubmitted: (value) {
+              if (value.isNotEmpty) {
+                ref
+                    .read(connectFilterProvider.notifier)
+                    .setSearchQuery(value);
+                widget.onSearchSubmit?.call(value);
+              }
+            },
+            onChanged: (value) {
+              ref.read(connectFilterProvider.notifier).setSearchQuery(
+                    value.isEmpty ? null : value,
+                  );
+            },
           ),
         ),
       ),
