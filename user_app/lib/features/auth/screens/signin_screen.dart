@@ -183,14 +183,22 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
       if (mounted) {
         if (success) {
-          // Check if user needs onboarding (name not set or onboarding not completed)
+          // Check if user needs onboarding
           final profile = ref.read(currentProfileProvider);
           final needsOnboarding = profile == null ||
               profile.fullName == null ||
               profile.fullName!.isEmpty ||
               !profile.onboardingCompleted;
           if (needsOnboarding) {
-            context.go(RouteNames.profileCompletion);
+            // Route to the right profile screen based on user type
+            final userType = GoRouterState.of(context).uri.queryParameters['type'];
+            if (userType == 'student') {
+              context.go(RouteNames.studentProfile);
+            } else if (userType == 'professional' || userType == 'business') {
+              context.go(RouteNames.professionalProfile);
+            } else {
+              context.go(RouteNames.profileCompletion);
+            }
           } else {
             context.go(RouteNames.home);
           }
