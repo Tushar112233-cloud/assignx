@@ -59,9 +59,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   Widget build(BuildContext context) {
     final expertAsync = ref.watch(expertDetailProvider(widget.expertId));
 
-    return SubtleGradientScaffold.standard(
+    return SubtleGradientScaffold(
+      extendBodyBehindAppBar: false,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white.withValues(alpha: 0.9),
         elevation: 0,
         leading: GestureDetector(
           onTap: () => context.pop(),
