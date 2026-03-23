@@ -10,15 +10,11 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../shared/widgets/app_button.dart';
-import '../../../shared/widgets/glass_container.dart';
-import '../../../shared/widgets/mesh_gradient_background.dart';
 
 /// Success screen shown after profile completion.
 ///
-/// Redesigned with gradient background, glass morphism,
-/// confetti animation, and smooth entrance animations
-/// to match Dashboard aesthetic.
+/// Uses warm flat design with Coffee Bean palette,
+/// confetti animation, and smooth entrance animations.
 class SignupSuccessScreen extends ConsumerStatefulWidget {
   const SignupSuccessScreen({super.key});
 
@@ -57,169 +53,193 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Gradient background
-          MeshGradientBackground(
-            position: MeshPosition.center,
-            colors: [
-              AppColors.meshBlue,
-              AppColors.meshPurple,
-              AppColors.meshPink,
-              AppColors.meshOrange,
-            ],
-            opacity: 0.5,
-            child: SafeArea(
-              child: Padding(
-                padding: AppSpacing.screenPadding,
-                child: Column(
-                  children: [
-                    const Spacer(),
+          SafeArea(
+            child: Padding(
+              padding: AppSpacing.screenPadding,
+              child: Column(
+                children: [
+                  const Spacer(),
 
-                    // Success icon with glass container
-                    GlassContainer(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        children: [
-                          // Success icon
-                          Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.success,
-                                  AppColors.success.withValues(alpha: 0.7),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.success.withValues(alpha: 0.3),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.check_circle_rounded,
-                              size: 80,
-                              color: Colors.white,
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(duration: 400.ms)
-                              .scale(
-                                begin: const Offset(0.3, 0.3),
-                                end: const Offset(1, 1),
-                                duration: 600.ms,
-                                curve: Curves.elasticOut,
-                              ),
-
-                          const SizedBox(height: 32),
-
-                          // Welcome message
-                          Text(
-                            '${'Welcome'.tr(context)}, $displayName! 🎉',
-                            style: AppTextStyles.displaySmall.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ).animate(delay: 300.ms).fadeIn(duration: 500.ms).slideY(
-                                begin: 0.2,
-                                end: 0,
-                                duration: 500.ms,
-                              ),
-
-                          const SizedBox(height: 12),
-
-                          Text(
-                            'Your account is ready'.tr(context),
-                            style: AppTextStyles.headingMedium.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            textAlign: TextAlign.center,
-                          ).animate(delay: 400.ms).fadeIn(duration: 500.ms),
-
-                          const SizedBox(height: 8),
-
-                          Text(
-                            "You're all set to get expert help for your projects and connect with professionals.".tr(context),
-                            style: AppTextStyles.bodyLarge.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                            textAlign: TextAlign.center,
-                          ).animate(delay: 500.ms).fadeIn(duration: 500.ms),
-                        ],
+                  // Success icon and text section
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.textSecondary.withValues(alpha: 0.1),
                       ),
-                    ).animate(delay: 100.ms).fadeIn(duration: 600.ms).slideY(
-                          begin: 0.1,
-                          end: 0,
-                          duration: 600.ms,
-                          curve: Curves.easeOutCubic,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
                         ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Success icon
+                        Container(
+                          width: 120,
+                          height: 120,
+                          decoration: const BoxDecoration(
+                            color: AppColors.success,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check_circle_rounded,
+                            size: 80,
+                            color: Colors.white,
+                          ),
+                        )
+                            .animate()
+                            .fadeIn(duration: 400.ms)
+                            .scale(
+                              begin: const Offset(0.3, 0.3),
+                              end: const Offset(1, 1),
+                              duration: 600.ms,
+                              curve: Curves.elasticOut,
+                            ),
 
-                    const SizedBox(height: 32),
+                        const SizedBox(height: 32),
 
-                    // Features preview
-                    GlassContainer(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
+                        // Welcome message
+                        Text(
+                          '${'Welcome'.tr(context)}, $displayName! 🎉',
+                          style: AppTextStyles.displaySmall.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ).animate(delay: 300.ms).fadeIn(duration: 500.ms).slideY(
+                              begin: 0.2,
+                              end: 0,
+                              duration: 500.ms,
+                            ),
+
+                        const SizedBox(height: 12),
+
+                        Text(
+                          'Your account is ready'.tr(context),
+                          style: AppTextStyles.headingMedium.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ).animate(delay: 400.ms).fadeIn(duration: 500.ms),
+
+                        const SizedBox(height: 8),
+
+                        Text(
+                          "You're all set to get expert help for your projects and connect with professionals.".tr(context),
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ).animate(delay: 500.ms).fadeIn(duration: 500.ms),
+                      ],
+                    ),
+                  ).animate(delay: 100.ms).fadeIn(duration: 600.ms).slideY(
+                        begin: 0.1,
+                        end: 0,
+                        duration: 600.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
+
+                  const SizedBox(height: 32),
+
+                  // Features preview
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.textSecondary.withValues(alpha: 0.1),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        _buildFeatureRow(
+                          Icons.upload_file_outlined,
+                          'Upload projects easily'.tr(context),
+                          AppColors.primary,
+                        ).animate(delay: 600.ms).fadeIn(duration: 400.ms).slideX(
+                              begin: -0.2,
+                              end: 0,
+                              duration: 400.ms,
+                            ),
+                        const SizedBox(height: 16),
+                        _buildFeatureRow(
+                          Icons.visibility_outlined,
+                          'Track progress in real-time'.tr(context),
+                          AppColors.success,
+                        ).animate(delay: 700.ms).fadeIn(duration: 400.ms).slideX(
+                              begin: -0.2,
+                              end: 0,
+                              duration: 400.ms,
+                            ),
+                        const SizedBox(height: 16),
+                        _buildFeatureRow(
+                          Icons.verified_outlined,
+                          'Get quality-assured work'.tr(context),
+                          AppColors.success,
+                        ).animate(delay: 800.ms).fadeIn(duration: 400.ms).slideX(
+                              begin: -0.2,
+                              end: 0,
+                              duration: 400.ms,
+                            ),
+                      ],
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Go to dashboard button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () => context.go(RouteNames.home),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildFeatureRow(
-                            Icons.upload_file_outlined,
-                            'Upload projects easily'.tr(context),
-                            AppColors.primary,
-                          ).animate(delay: 600.ms).fadeIn(duration: 400.ms).slideX(
-                                begin: -0.2,
-                                end: 0,
-                                duration: 400.ms,
-                              ),
-                          const SizedBox(height: 16),
-                          _buildFeatureRow(
-                            Icons.visibility_outlined,
-                            'Track progress in real-time'.tr(context),
-                            AppColors.success,
-                          ).animate(delay: 700.ms).fadeIn(duration: 400.ms).slideX(
-                                begin: -0.2,
-                                end: 0,
-                                duration: 400.ms,
-                              ),
-                          const SizedBox(height: 16),
-                          _buildFeatureRow(
-                            Icons.verified_outlined,
-                            'Get quality-assured work'.tr(context),
-                            AppColors.success,
-                          ).animate(delay: 800.ms).fadeIn(duration: 400.ms).slideX(
-                                begin: -0.2,
-                                end: 0,
-                                duration: 400.ms,
-                              ),
+                          Text(
+                            'Go to Dashboard'.tr(context),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward, size: 18),
                         ],
                       ),
                     ),
-
-                    const Spacer(),
-
-                    // Go to dashboard button with glass effect
-                    GlassContainer(
-                      padding: const EdgeInsets.all(4),
-                      child: AppButton(
-                        label: 'Go to Dashboard'.tr(context),
-                        onPressed: () => context.go(RouteNames.home),
-                        icon: Icons.arrow_forward,
+                  ).animate(delay: 900.ms).fadeIn(duration: 400.ms).slideY(
+                        begin: 0.2,
+                        end: 0,
+                        duration: 400.ms,
                       ),
-                    ).animate(delay: 900.ms).fadeIn(duration: 400.ms).slideY(
-                          begin: 0.2,
-                          end: 0,
-                          duration: 400.ms,
-                        ),
 
-                    const SizedBox(height: 16),
-                  ],
-                ),
+                  const SizedBox(height: 16),
+                ],
               ),
             ),
           ),
@@ -260,22 +280,8 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                color,
-                color.withValues(alpha: 0.7),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: color,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: Icon(
             icon,
