@@ -5,12 +5,11 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../../../data/models/expert_model.dart';
-import '../../../shared/widgets/glass_container.dart';
 
 /// Booking calendar widget for selecting date and time slots.
 ///
-/// Displays a week view calendar with selectable dates and time slots
-/// for booking expert consultations.
+/// Displays a horizontal scrollable date picker filtered by the expert's
+/// available days, plus a grid of time slots for the selected date.
 class BookingCalendar extends StatefulWidget {
   /// Expert ID for fetching availability.
   final String expertId;
@@ -33,6 +32,10 @@ class BookingCalendar extends StatefulWidget {
   /// Whether the calendar is loading.
   final bool isLoading;
 
+  /// Set of weekday numbers the expert is available (1=Mon, 7=Sun).
+  /// If empty, all weekdays Mon-Sat are considered available.
+  final Set<int> availableWeekdays;
+
   const BookingCalendar({
     super.key,
     required this.expertId,
@@ -42,6 +45,7 @@ class BookingCalendar extends StatefulWidget {
     required this.onDateSelected,
     required this.onTimeSlotSelected,
     this.isLoading = false,
+    this.availableWeekdays = const {1, 2, 3, 4, 5, 6},
   });
 
   @override
@@ -49,45 +53,49 @@ class BookingCalendar extends StatefulWidget {
 }
 
 class _BookingCalendarState extends State<BookingCalendar> {
-  late DateTime _currentWeekStart;
-  late DateTime _today;
+  late List<DateTime> _availableDates;
+  late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
-    _today = DateTime.now();
-    _currentWeekStart = _getWeekStart(_today);
+    _scrollController = ScrollController();
+    _buildAvailableDates();
   }
 
-  DateTime _getWeekStart(DateTime date) {
-    return date.subtract(Duration(days: date.weekday - 1));
-  }
-
-  void _goToPreviousWeek() {
-    final previousWeek = _currentWeekStart.subtract(const Duration(days: 7));
-    if (!previousWeek.isBefore(_getWeekStart(_today))) {
-      setState(() {
-        _currentWeekStart = previousWeek;
-      });
+  @override
+  void didUpdateWidget(covariant BookingCalendar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.availableWeekdays != widget.availableWeekdays) {
+      _buildAvailableDates();
     }
   }
 
-  void _goToNextWeek() {
-    final maxDate = _today.add(const Duration(days: 30));
-    final nextWeek = _currentWeekStart.add(const Duration(days: 7));
-    if (nextWeek.isBefore(maxDate)) {
-      setState(() {
-        _currentWeekStart = nextWeek;
-      });
-    }
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
-  bool _isDateSelectable(DateTime date) {
+  /// Build the list of selectable dates (next 30 days, filtered by available weekdays).
+  void _buildAvailableDates() {
     final now = DateTime.now();
-    final maxDate = now.add(const Duration(days: 30));
-    return !date.isBefore(DateTime(now.year, now.month, now.day)) &&
-        date.isBefore(maxDate) &&
-        date.weekday != 7; // Exclude Sundays
+    final today = DateTime(now.year, now.month, now.day);
+    final effectiveWeekdays = widget.availableWeekdays.isNotEmpty
+        ? widget.availableWeekdays
+        : {1, 2, 3, 4, 5, 6};
+
+    _availableDates = [];
+    for (int i = 0; i <= 30; i++) {
+      final date = today.add(Duration(days: i));
+      if (effectiveWeekdays.contains(date.weekday)) {
+        _availableDates.add(date);
+      }
+    }
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   @override
@@ -95,320 +103,219 @@ class _BookingCalendarState extends State<BookingCalendar> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Date selection header
-        GlassCard(
-          blur: 10,
-          opacity: 0.8,
-          padding: const EdgeInsets.all(16),
-          borderRadius: BorderRadius.circular(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    size: 18,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Select Date'.tr(context),
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Week navigation
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: _currentWeekStart
-                            .isAfter(_getWeekStart(_today))
-                        ? _goToPreviousWeek
-                        : null,
-                    icon: Icon(
-                      Icons.chevron_left,
-                      color: _currentWeekStart.isAfter(_getWeekStart(_today))
-                          ? AppColors.textPrimary
-                          : AppColors.textTertiary,
-                    ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
-                  ),
-                  Text(
-                    _getMonthYearString(),
-                    style: AppTextStyles.labelMedium.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _goToNextWeek,
-                    icon: const Icon(Icons.chevron_right),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Week days
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(7, (index) {
-                  final date = _currentWeekStart.add(Duration(days: index));
-                  final isSelected = widget.selectedDate != null &&
-                      _isSameDay(date, widget.selectedDate!);
-                  final isToday = _isSameDay(date, _today);
-                  final isSelectable = _isDateSelectable(date);
-
-                  return _DateCell(
-                    date: date,
-                    isSelected: isSelected,
-                    isToday: isToday,
-                    isSelectable: isSelectable,
-                    onTap: isSelectable
-                        ? () => widget.onDateSelected(date)
-                        : null,
-                  );
-                }),
-              ),
-            ],
-          ),
-        ),
+        // Date selection
+        _buildDateSection(context),
         const SizedBox(height: 16),
 
         // Time slots
-        if (widget.selectedDate != null) ...[
-          GlassCard(
-            blur: 10,
-            opacity: 0.8,
-            padding: const EdgeInsets.all(16),
-            borderRadius: BorderRadius.circular(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${'Available Times for'.tr(context)} ${DateFormat('EEEE, MMM d').format(widget.selectedDate!)}',
-                      style: AppTextStyles.labelLarge.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                if (widget.isLoading)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  )
-                else if (widget.timeSlots.isEmpty)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text(
-                        'No available time slots for this date'.tr(context),
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: widget.timeSlots.map((slot) {
-                      final isSelected = widget.selectedTimeSlot?.id == slot.id;
-                      return _TimeSlotChip(
-                        slot: slot,
-                        isSelected: isSelected,
-                        onTap: slot.available
-                            ? () => widget.onTimeSlotSelected(slot)
-                            : null,
-                      );
-                    }).toList(),
-                  ),
-
-                const SizedBox(height: 12),
-                Text(
-                  'Session duration: 60 minutes'.tr(context),
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-
-        // Selection summary
-        if (widget.selectedDate != null && widget.selectedTimeSlot != null) ...[
-          const SizedBox(height: 16),
-          GlassCard(
-            blur: 10,
-            opacity: 0.9,
-            padding: const EdgeInsets.all(16),
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.primary.withAlpha(20),
-                Colors.white.withAlpha(200),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Selected Session'.tr(context),
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        DateFormat('EEEE, MMMM d, yyyy')
-                            .format(widget.selectedDate!),
-                        style: AppTextStyles.labelLarge.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        '${widget.selectedTimeSlot!.displayTime} (60 min)',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withAlpha(30),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Available'.tr(context),
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.success,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        if (widget.selectedDate != null) _buildTimeSlotsSection(context),
       ],
     );
   }
 
-  String _getMonthYearString() {
-    final weekEnd = _currentWeekStart.add(const Duration(days: 6));
-    if (_currentWeekStart.month == weekEnd.month) {
-      return DateFormat('MMMM yyyy').format(_currentWeekStart);
-    }
-    return '${DateFormat('MMM').format(_currentWeekStart)} - ${DateFormat('MMM yyyy').format(weekEnd)}';
+  Widget _buildDateSection(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.calendar_today, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Select Date'.tr(context),
+                style: AppTextStyles.labelLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          if (_availableDates.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'No available dates in the next 30 days'.tr(context),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              height: 76,
+              child: ListView.separated(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                itemCount: _availableDates.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final date = _availableDates[index];
+                  final isSelected = widget.selectedDate != null &&
+                      _isSameDay(date, widget.selectedDate!);
+                  final isToday = _isSameDay(date, DateTime.now());
+
+                  return _DateChip(
+                    date: date,
+                    isSelected: isSelected,
+                    isToday: isToday,
+                    onTap: () => widget.onDateSelected(date),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
+  Widget _buildTimeSlotsSection(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.access_time, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${'Available Times for'.tr(context)} ${DateFormat('EEEE, MMM d').format(widget.selectedDate!)}',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          if (widget.isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (widget.timeSlots.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'No available time slots for this date'.tr(context),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ),
+            )
+          else
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: widget.timeSlots.map((slot) {
+                final isSelected = widget.selectedTimeSlot?.id == slot.id;
+                return _TimeSlotChip(
+                  slot: slot,
+                  isSelected: isSelected,
+                  onTap: slot.available
+                      ? () => widget.onTimeSlotSelected(slot)
+                      : null,
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
   }
 }
 
-/// Date cell widget for the calendar.
-class _DateCell extends StatelessWidget {
+/// Date chip for horizontal date picker.
+class _DateChip extends StatelessWidget {
   final DateTime date;
   final bool isSelected;
   final bool isToday;
-  final bool isSelectable;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
-  const _DateCell({
+  const _DateChip({
     required this.date,
     required this.isSelected,
     required this.isToday,
-    required this.isSelectable,
-    this.onTap,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final dayName = DateFormat('E').format(date).substring(0, 2);
+    final dayName = DateFormat('E').format(date).substring(0, 3);
     final dayNumber = date.day.toString();
 
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 42,
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        width: 52,
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.darkBrown
-              : isToday
-                  ? AppColors.surfaceVariant
-                  : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: isToday && !isSelected
-              ? Border.all(color: AppColors.primary, width: 1.5)
-              : null,
+          color: isSelected ? AppColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary
+                : isToday
+                    ? AppColors.primary
+                    : AppColors.border,
+            width: isSelected || isToday ? 2 : 1,
+          ),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               dayName,
               style: AppTextStyles.caption.copyWith(
                 color: isSelected
-                    ? Colors.white.withAlpha(180)
-                    : isSelectable
-                        ? AppColors.textSecondary
-                        : AppColors.textTertiary,
-                fontSize: 10,
+                    ? Colors.white.withAlpha(200)
+                    : AppColors.textSecondary,
+                fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               dayNumber,
-              style: AppTextStyles.labelMedium.copyWith(
-                color: isSelected
-                    ? Colors.white
-                    : isSelectable
-                        ? AppColors.textPrimary
-                        : AppColors.textTertiary,
+              style: AppTextStyles.labelLarge.copyWith(
+                color: isSelected ? Colors.white : AppColors.textPrimary,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
               ),
             ),
@@ -439,20 +346,17 @@ class _TimeSlotChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 10,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.darkBrown
+              ? AppColors.primary
               : isAvailable
                   ? Colors.white
                   : AppColors.surfaceVariant.withAlpha(128),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
-                ? AppColors.darkBrown
+                ? AppColors.primary
                 : isAvailable
                     ? AppColors.border
                     : AppColors.border.withAlpha(50),

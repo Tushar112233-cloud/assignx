@@ -68,6 +68,9 @@ class Expert {
   /// Whether the expert is featured.
   final bool featured;
 
+  /// Availability slots defining which days/times the expert is available.
+  final List<AvailabilitySlot> availabilitySlots;
+
   /// Created timestamp.
   final DateTime createdAt;
 
@@ -97,6 +100,7 @@ class Expert {
     this.institution,
     this.currency = 'INR',
     this.featured = false,
+    this.availabilitySlots = const [],
     required this.createdAt,
     this.lastActiveAt,
   });
@@ -123,6 +127,20 @@ class Expert {
   /// Get primary specialization for display.
   String? get primarySpecialization =>
       specializations.isNotEmpty ? specializations.first.label : null;
+
+  /// Returns the set of weekday numbers the expert is available.
+  /// If no availability slots are defined, all weekdays (Mon-Sat) are available.
+  Set<int> get availableWeekdays {
+    if (availabilitySlots.isEmpty) {
+      return {1, 2, 3, 4, 5, 6}; // Mon-Sat
+    }
+    return availabilitySlots.map((s) => s.weekday).where((w) => w > 0).toSet();
+  }
+
+  /// Whether the expert is available on the given date.
+  bool isAvailableOnDate(DateTime date) {
+    return availableWeekdays.contains(date.weekday);
+  }
 
   /// Create from JSON.
   factory Expert.fromJson(Map<String, dynamic> json) {
@@ -155,6 +173,11 @@ class Expert {
       institution: json['institution'] as String?,
       currency: json['currency'] as String? ?? 'INR',
       featured: json['featured'] as bool? ?? false,
+      availabilitySlots: (json['availability_slots'] as List<dynamic>? ??
+              json['availabilitySlots'] as List<dynamic>? ??
+              [])
+          .map((s) => AvailabilitySlot.fromJson(s as Map<String, dynamic>))
+          .toList(),
       createdAt: (json['created_at'] ?? json['createdAt']) != null
           ? DateTime.tryParse((json['created_at'] ?? json['createdAt']).toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -206,6 +229,7 @@ class Expert {
       'institution': institution,
       'currency': currency,
       'featured': featured,
+      'availability_slots': availabilitySlots.map((s) => s.toJson()).toList(),
       'created_at': createdAt.toIso8601String(),
       'last_active_at': lastActiveAt?.toIso8601String(),
     };
@@ -235,6 +259,7 @@ class Expert {
     String? institution,
     String? currency,
     bool? featured,
+    List<AvailabilitySlot>? availabilitySlots,
     DateTime? createdAt,
     DateTime? lastActiveAt,
   }) {
@@ -261,6 +286,7 @@ class Expert {
       institution: institution ?? this.institution,
       currency: currency ?? this.currency,
       featured: featured ?? this.featured,
+      availabilitySlots: availabilitySlots ?? this.availabilitySlots,
       createdAt: createdAt ?? this.createdAt,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
     );
@@ -295,6 +321,55 @@ enum ExpertSpecialization {
       (s) => s.value == value,
       orElse: () => ExpertSpecialization.other,
     );
+  }
+}
+
+/// Availability slot defining a day and time range.
+class AvailabilitySlot {
+  final String day;
+  final String startTime;
+  final String endTime;
+
+  const AvailabilitySlot({
+    required this.day,
+    required this.startTime,
+    required this.endTime,
+  });
+
+  factory AvailabilitySlot.fromJson(Map<String, dynamic> json) {
+    return AvailabilitySlot(
+      day: (json['day'] as String? ?? '').toLowerCase(),
+      startTime: json['startTime'] as String? ?? json['start_time'] as String? ?? '09:00',
+      endTime: json['endTime'] as String? ?? json['end_time'] as String? ?? '17:00',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'day': day,
+        'startTime': startTime,
+        'endTime': endTime,
+      };
+
+  /// Returns the weekday number (1=Monday, 7=Sunday) for this slot.
+  int get weekday {
+    switch (day.toLowerCase()) {
+      case 'monday':
+        return 1;
+      case 'tuesday':
+        return 2;
+      case 'wednesday':
+        return 3;
+      case 'thursday':
+        return 4;
+      case 'friday':
+        return 5;
+      case 'saturday':
+        return 6;
+      case 'sunday':
+        return 7;
+      default:
+        return 0;
+    }
   }
 }
 

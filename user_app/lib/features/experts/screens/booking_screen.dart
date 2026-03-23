@@ -11,7 +11,6 @@ import '../../../core/utils/extensions.dart';
 import '../../../data/models/expert_model.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../../../providers/experts_provider.dart';
-import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../widgets/booking_calendar.dart';
 import '../widgets/price_breakdown.dart';
@@ -19,7 +18,8 @@ import '../widgets/price_breakdown.dart';
 /// Booking screen for scheduling expert consultations.
 ///
 /// Allows users to select a date, time slot, session type, and
-/// view the price before confirming a booking.
+/// view the price breakdown (base + platform fee + GST) before
+/// confirming and paying via Razorpay.
 class BookingScreen extends ConsumerStatefulWidget {
   /// Expert ID to book with.
   final String expertId;
@@ -40,6 +40,20 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   String? _topic;
   bool _isLoading = false;
 
+  /// Platform fee percentage.
+  static const double _platformFeePercent = 10.0;
+
+  /// GST percentage.
+  static const double _gstPercent = 18.0;
+
+  /// Calculate total amount including platform fee and GST.
+  double _calculateTotal(double basePrice) {
+    final platformFee = basePrice * (_platformFeePercent / 100);
+    final subtotal = basePrice + platformFee;
+    final gst = subtotal * (_gstPercent / 100);
+    return subtotal + gst;
+  }
+
   @override
   Widget build(BuildContext context) {
     final expertAsync = ref.watch(expertDetailProvider(widget.expertId));
@@ -47,15 +61,16 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: GestureDetector(
           onTap: () => context.pop(),
           child: Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha(200),
+              color: Colors.white,
               shape: BoxShape.circle,
+              border: Border.all(color: AppColors.border),
             ),
             child: const Icon(
               Icons.arrow_back,
@@ -83,6 +98,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             selectedTimeSlot: _selectedTimeSlot,
             selectedSessionType: _selectedSessionType,
             topic: _topic,
+            platformFeePercent: _platformFeePercent,
+            gstPercent: _gstPercent,
             onDateSelected: (date) {
               setState(() {
                 _selectedDate = date;
@@ -113,7 +130,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 16),
-              Text('Failed to load expert'.tr(context), style: AppTextStyles.bodyMedium),
+              Text('Failed to load expert'.tr(context),
+                  style: AppTextStyles.bodyMedium),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () =>
@@ -133,6 +151,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             selectedTimeSlot: _selectedTimeSlot,
             selectedSessionType: _selectedSessionType,
             isLoading: _isLoading,
+            totalAmount: _calculateTotal(
+                expert.pricePerSession * _selectedSessionType.priceMultiplier),
             onConfirm: () => _confirmBooking(expert),
           );
         },
@@ -154,11 +174,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final totalAmount =
+      final basePrice =
           expert.pricePerSession * _selectedSessionType.priceMultiplier;
+      final totalAmount = _calculateTotal(basePrice);
 
       // Step 1: Create Razorpay order for expert booking
-      final orderResponse = await ApiClient.post('/experts/bookings/create-order', {
+      final orderResponse =
+          await ApiClient.post('/experts/bookings/create-order', {
         'expertId': expert.id,
         'amount': totalAmount,
       });
@@ -229,7 +251,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             setState(() => _isLoading = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Payment failed: ${result.errorMessage ?? 'Unknown error'}'),
+                content: Text(
+                    'Payment failed: ${result.errorMessage ?? 'Unknown error'}'),
                 backgroundColor: AppColors.error,
               ),
             );
@@ -260,13 +283,15 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 }
 
-/// Main booking content.
+/// Main booking content with flat Coffee Bean design.
 class _BookingContent extends ConsumerWidget {
   final Expert expert;
   final DateTime? selectedDate;
   final ExpertTimeSlot? selectedTimeSlot;
   final ExpertSessionType selectedSessionType;
   final String? topic;
+  final double platformFeePercent;
+  final double gstPercent;
   final ValueChanged<DateTime> onDateSelected;
   final ValueChanged<ExpertTimeSlot> onTimeSlotSelected;
   final ValueChanged<ExpertSessionType> onSessionTypeChanged;
@@ -278,6 +303,8 @@ class _BookingContent extends ConsumerWidget {
     required this.selectedTimeSlot,
     required this.selectedSessionType,
     required this.topic,
+    required this.platformFeePercent,
+    required this.gstPercent,
     required this.onDateSelected,
     required this.onTimeSlotSelected,
     required this.onSessionTypeChanged,
@@ -300,7 +327,7 @@ class _BookingContent extends ConsumerWidget {
           _ExpertInfoCard(expert: expert),
           const SizedBox(height: 20),
 
-          // Calendar
+          // Calendar with availability filtering
           BookingCalendar(
             expertId: expert.id,
             selectedDate: selectedDate,
@@ -309,6 +336,7 @@ class _BookingContent extends ConsumerWidget {
             onDateSelected: onDateSelected,
             onTimeSlotSelected: onTimeSlotSelected,
             isLoading: slotsAsync?.isLoading ?? false,
+            availableWeekdays: expert.availableWeekdays,
           ),
           const SizedBox(height: 20),
 
@@ -327,16 +355,17 @@ class _BookingContent extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
-          // Price breakdown
+          // Price breakdown with correct fees
           if (selectedDate != null && selectedTimeSlot != null)
             PriceBreakdown(
-              basePrice: expert.pricePerSession * selectedSessionType.priceMultiplier,
-              platformFeePercent: 5.0,
-              taxPercent: 18.0,
-              initiallyExpanded: false,
+              basePrice:
+                  expert.pricePerSession * selectedSessionType.priceMultiplier,
+              platformFeePercent: platformFeePercent,
+              taxPercent: gstPercent,
+              initiallyExpanded: true,
             ),
 
-          // Bottom padding
+          // Bottom padding for bottom bar
           const SizedBox(height: 100),
         ],
       ),
@@ -344,7 +373,7 @@ class _BookingContent extends ConsumerWidget {
   }
 }
 
-/// Expert info card.
+/// Expert info card with flat design.
 class _ExpertInfoCard extends StatelessWidget {
   final Expert expert;
 
@@ -352,11 +381,20 @@ class _ExpertInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      blur: 10,
-      opacity: 0.8,
+    return Container(
       padding: const EdgeInsets.all(14),
-      borderRadius: BorderRadius.circular(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           // Avatar
@@ -365,20 +403,14 @@ class _ExpertInfoCard extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(20),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              border: Border.all(color: AppColors.border, width: 2),
             ),
             child: CircleAvatar(
               radius: 28,
               backgroundColor: AppColors.primaryLight.withAlpha(50),
-              backgroundImage:
-                  isValidImageUrl(expert.avatar) ? NetworkImage(expert.avatar!) : null,
+              backgroundImage: isValidImageUrl(expert.avatar)
+                  ? NetworkImage(expert.avatar!)
+                  : null,
               child: expert.avatar == null
                   ? Text(
                       expert.initials,
@@ -411,11 +443,7 @@ class _ExpertInfoCard extends StatelessWidget {
                     ),
                     if (expert.verified) ...[
                       const SizedBox(width: 4),
-                      Icon(
-                        Icons.verified,
-                        size: 16,
-                        color: AppColors.success,
-                      ),
+                      Icon(Icons.verified, size: 16, color: AppColors.success),
                     ],
                   ],
                 ),
@@ -445,6 +473,14 @@ class _ExpertInfoCard extends StatelessWidget {
                         color: AppColors.textTertiary,
                       ),
                     ),
+                    const Spacer(),
+                    Text(
+                      '\u20B9${expert.pricePerSession.toStringAsFixed(0)}/hr',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -456,7 +492,7 @@ class _ExpertInfoCard extends StatelessWidget {
   }
 }
 
-/// Session type selector.
+/// Session type selector with flat design.
 class _SessionTypeSelector extends StatelessWidget {
   final ExpertSessionType selectedType;
   final double pricePerSession;
@@ -499,7 +535,7 @@ class _SessionTypeSelector extends StatelessWidget {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primary.withAlpha(20)
+                      ? AppColors.primary.withAlpha(15)
                       : Colors.white,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
@@ -525,11 +561,8 @@ class _SessionTypeSelector extends StatelessWidget {
                         ),
                       ),
                       child: isSelected
-                          ? const Icon(
-                              Icons.check,
-                              size: 14,
-                              color: Colors.white,
-                            )
+                          ? const Icon(Icons.check,
+                              size: 14, color: Colors.white)
                           : null,
                     ),
                     const SizedBox(width: 12),
@@ -562,7 +595,7 @@ class _SessionTypeSelector extends StatelessWidget {
   }
 }
 
-/// Topic input.
+/// Topic input with flat design.
 class _TopicInput extends StatelessWidget {
   final String? topic;
   final ValueChanged<String?> onChanged;
@@ -590,11 +623,12 @@ class _TopicInput extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        GlassCard(
-          blur: 10,
-          opacity: 0.8,
-          padding: EdgeInsets.zero,
-          borderRadius: BorderRadius.circular(14),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
+          ),
           child: TextField(
             onChanged: onChanged,
             maxLines: 3,
@@ -614,13 +648,14 @@ class _TopicInput extends StatelessWidget {
   }
 }
 
-/// Bottom booking bar with Coffee Bean theme.
+/// Bottom booking bar with flat Coffee Bean design.
 class _BookingBar extends StatelessWidget {
   final Expert expert;
   final DateTime? selectedDate;
   final ExpertTimeSlot? selectedTimeSlot;
   final ExpertSessionType selectedSessionType;
   final bool isLoading;
+  final double totalAmount;
   final VoidCallback onConfirm;
 
   const _BookingBar({
@@ -629,6 +664,7 @@ class _BookingBar extends StatelessWidget {
     required this.selectedTimeSlot,
     required this.selectedSessionType,
     required this.isLoading,
+    required this.totalAmount,
     required this.onConfirm,
   });
 
@@ -636,17 +672,12 @@ class _BookingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalPrice = expert.pricePerSession * selectedSessionType.priceMultiplier;
-
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: Colors.white,
         border: Border(
-          top: BorderSide(
-            color: AppColors.border.withAlpha(100),
-            width: 1,
-          ),
+          top: BorderSide(color: AppColors.border, width: 1),
         ),
         boxShadow: [
           BoxShadow(
@@ -668,17 +699,12 @@ class _BookingBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.primary.withAlpha(15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.primary.withAlpha(40),
-                  ),
+                  border: Border.all(color: AppColors.primary.withAlpha(40)),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
+                    Icon(Icons.check_circle_outline,
+                        size: 18, color: AppColors.primary),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -702,20 +728,20 @@ class _BookingBar extends StatelessWidget {
             // Price and confirm button row
             Row(
               children: [
-                // Price column
+                // Price column showing total with fees
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '\u20B9${totalPrice.toStringAsFixed(0)}',
+                      '\u20B9${totalAmount.toStringAsFixed(0)}',
                       style: AppTextStyles.headingMedium.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
                     ),
                     Text(
-                      'Total amount'.tr(context),
+                      'incl. fees & GST'.tr(context),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -726,10 +752,14 @@ class _BookingBar extends StatelessWidget {
                 // Confirm button
                 Expanded(
                   child: Material(
-                    color: _canBook ? AppColors.primary : AppColors.surfaceVariant,
+                    color: _canBook
+                        ? AppColors.primary
+                        : AppColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(14),
                     elevation: _canBook ? 2 : 0,
-                    shadowColor: _canBook ? AppColors.primary.withAlpha(80) : Colors.transparent,
+                    shadowColor: _canBook
+                        ? AppColors.primary.withAlpha(80)
+                        : Colors.transparent,
                     child: InkWell(
                       onTap: _canBook && !isLoading ? onConfirm : null,
                       borderRadius: BorderRadius.circular(14),
@@ -742,8 +772,8 @@ class _BookingBar extends StatelessWidget {
                                 height: 22,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  valueColor:
-                                      AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
                                 ),
                               )
                             : Text(
