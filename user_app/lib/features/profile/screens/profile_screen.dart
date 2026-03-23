@@ -92,11 +92,18 @@ class ProfileScreen extends ConsumerWidget {
                       data: (referral) => _buildReferralCard(
                         context,
                         code: referral.code,
+                        userId: profile.id,
                         referrals: referral.totalReferrals,
                         earned: referral.totalEarnings,
                       ),
-                      loading: () => const SizedBox.shrink(),
-                      error: (e, s) => const SizedBox.shrink(),
+                      loading: () => _buildReferralCardLoading(context),
+                      error: (e, s) => _buildReferralCard(
+                        context,
+                        code: '',
+                        userId: profile.id,
+                        referrals: 0,
+                        earned: 0,
+                      ),
                     ),
                     const SizedBox(height: 24),
 
@@ -510,12 +517,84 @@ class ProfileScreen extends ConsumerWidget {
   // REFERRAL CARD
   // ============================================================
 
+  /// Generates a display-friendly referral code from the user ID.
+  /// Takes the first 8 characters of the user ID and uppercases them.
+  String _generateFallbackCode(String userId) {
+    if (userId.isEmpty) return 'ASSIGNX';
+    // Remove dashes/special chars, take first 8 chars, uppercase
+    final cleaned = userId.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+    final segment = cleaned.length >= 8 ? cleaned.substring(0, 8) : cleaned;
+    return segment.toUpperCase();
+  }
+
+  /// Loading placeholder for the referral card.
+  Widget _buildReferralCardLoading(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.warningLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.card_giftcard, size: 20,
+                    color: AppColors.warning),
+              ),
+              const SizedBox(width: 14),
+              Text(
+                'Refer & Earn',
+                style: AppTextStyles.headingSmall.copyWith(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildReferralCard(
     BuildContext context, {
     required String code,
+    required String userId,
     required int referrals,
     required double earned,
   }) {
+    // If the API returns an empty code, generate one from user ID
+    final displayCode = code.isNotEmpty ? code : _generateFallbackCode(userId);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(20),
@@ -586,7 +665,7 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    code,
+                    displayCode,
                     style: AppTextStyles.labelLarge.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -598,7 +677,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 GestureDetector(
                   onTap: () {
-                    Clipboard.setData(ClipboardData(text: code));
+                    Clipboard.setData(ClipboardData(text: displayCode));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Referral code copied!'),
@@ -621,7 +700,7 @@ class ProfileScreen extends ConsumerWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: code));
+                    Clipboard.setData(ClipboardData(text: displayCode));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Referral code copied!'),
@@ -654,7 +733,7 @@ class ProfileScreen extends ConsumerWidget {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Share.share(
-                      'Use my referral code $code to get 20% off your first project on AssignX!',
+                      'Use my referral code $displayCode to get 20% off your first project on AssignX!',
                       subject: 'Join AssignX',
                     );
                   },

@@ -390,7 +390,7 @@ class _TopBanner extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FLOATING SEARCH BAR — neutral white, brown accents
+// SEARCH BAR — flat design, surfaceVariant fill, border outline
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _FloatingSearchBar extends StatelessWidget {
@@ -410,28 +410,20 @@ class _FloatingSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-      child: GlassCard(
-        blur: 12,
-        opacity: 0.85,
-        elevation: 1,
-        padding: EdgeInsets.zero,
-        borderRadius: BorderRadius.circular(16),
-        borderColor: AppColors.border.withValues(alpha: 0.12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
         child: Row(
           children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [_kTeal1, _kTeal2]),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  LucideIcons.search,
-                  size: 14,
-                  color: Colors.white,
-                ),
+            const Padding(
+              padding: EdgeInsets.only(left: 14),
+              child: Icon(
+                LucideIcons.search,
+                size: 18,
+                color: AppColors.textTertiary,
               ),
             ),
             Expanded(
@@ -443,15 +435,15 @@ class _FloatingSearchBar extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Search experts, specializations...'.tr(context),
-                  hintStyle: AppTextStyles.bodySmall.copyWith(
-                    fontSize: 13,
-                    color: AppColors.textTertiary.withValues(alpha: 0.7),
+                  hintText: 'Search experts...'.tr(context),
+                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                    fontSize: 14,
+                    color: AppColors.textTertiary,
                   ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 14,
+                    horizontal: 10,
+                    vertical: 13,
                   ),
                   isDense: true,
                 ),
@@ -462,18 +454,11 @@ class _FloatingSearchBar extends StatelessWidget {
               GestureDetector(
                 onTap: onClear,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: _kTeal1.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      LucideIcons.x,
-                      size: 13,
-                      color: _kTeal1.withValues(alpha: 0.7),
-                    ),
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Icon(
+                    LucideIcons.x,
+                    size: 16,
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ),
@@ -562,7 +547,7 @@ class _BannerStatPill extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PILL TABS — coffee brown active state
+// ANIMATED CAPSULE TABS — flat design with sliding indicator
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _PillTabs extends StatelessWidget {
@@ -582,73 +567,91 @@ class _PillTabs extends StatelessWidget {
       (type: ExpertsTabType.bookings, icon: LucideIcons.calendarCheck, label: 'My Bookings'.tr(context)),
     ];
 
+    final selectedIndex = tabs.indexWhere((t) => t.type == activeTab);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-      child: GlassCard(
-        blur: 10,
-        opacity: 0.7,
-        elevation: 1,
+      child: Container(
         padding: const EdgeInsets.all(4),
-        borderRadius: BorderRadius.circular(16),
-        borderColor: Colors.white.withValues(alpha: 0.4),
-        enableHoverEffect: false,
-        child: Row(
-          children: tabs.map((tab) {
-            final isSelected = activeTab == tab.type;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => onTabChanged(tab.type),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final tabWidth = (constraints.maxWidth - 8) / tabs.length;
+            // 8 = total horizontal padding inside the outer container (4 each side
+            // already accounted for by the Container padding, so effectively 0 extra,
+            // but we use constraints.maxWidth which is after padding).
+            final capsuleWidth = constraints.maxWidth / tabs.length;
+
+            return Stack(
+              children: [
+                // Sliding capsule indicator
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 280),
                   curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: isSelected
-                        ? const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [_kTeal1, _kTeal2],
-                          )
-                        : null,
-                    color: isSelected ? null : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: _kTeal1.withValues(alpha: 0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        tab.icon,
-                        size: 15,
-                        color: isSelected ? Colors.white : AppColors.textTertiary,
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          tab.label,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? Colors.white : AppColors.textSecondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                  left: selectedIndex * capsuleWidth,
+                  top: 0,
+                  bottom: 0,
+                  width: capsuleWidth,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
-              ),
+
+                // Tab labels
+                Row(
+                  children: tabs.map((tab) {
+                    final isSelected = activeTab == tab.type;
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () => onTabChanged(tab.type),
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimatedDefaultTextStyle(
+                                duration: const Duration(milliseconds: 200),
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      tab.icon,
+                                      size: 15,
+                                      color: isSelected ? Colors.white : AppColors.textSecondary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        tab.label,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             );
-          }).toList(),
+          },
         ),
       ),
     );

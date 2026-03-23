@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/support_ticket_model.dart';
 import '../../../providers/profile_provider.dart';
+import '../../../shared/widgets/capsule_tab_bar.dart';
 
 /// Ticket filter options.
 enum TicketFilter {
@@ -50,11 +51,17 @@ class _TicketHistorySectionState extends ConsumerState<TicketHistorySection> {
               ],
             ),
             // Filter chips
-            _FilterChips(
-              selectedFilter: _selectedFilter,
-              onFilterChanged: (filter) {
-                setState(() => _selectedFilter = filter);
-              },
+            SizedBox(
+              width: 200,
+              child: CapsuleTabBar(
+                tabs: TicketFilter.values.map((f) => f.label).toList(),
+                selectedIndex: _selectedFilter.index,
+                onTabChanged: (i) {
+                  setState(() => _selectedFilter = TicketFilter.values[i]);
+                },
+                height: 32,
+                internalPadding: 3,
+              ),
             ),
           ],
         ),
@@ -127,45 +134,7 @@ class _TicketHistorySectionState extends ConsumerState<TicketHistorySection> {
   }
 }
 
-/// Filter chips for ticket status.
-class _FilterChips extends StatelessWidget {
-  final TicketFilter selectedFilter;
-  final ValueChanged<TicketFilter> onFilterChanged;
-
-  const _FilterChips({
-    required this.selectedFilter,
-    required this.onFilterChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: TicketFilter.values.map((filter) {
-        final isSelected = filter == selectedFilter;
-        return Padding(
-          padding: const EdgeInsets.only(left: 4),
-          child: GestureDetector(
-            onTap: () => onFilterChanged(filter),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                filter.label,
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
+// _FilterChips replaced by CapsuleTabBar
 
 /// Individual ticket card widget.
 class _TicketCard extends StatelessWidget {

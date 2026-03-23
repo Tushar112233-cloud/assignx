@@ -5,6 +5,7 @@ library;
 
 export 'app_button.dart';
 export 'app_dropdown.dart';
+export 'capsule_tab_bar.dart';
 export 'app_text_field.dart';
 export 'bottom_nav_bar.dart';
 export 'dock_navigation.dart';
