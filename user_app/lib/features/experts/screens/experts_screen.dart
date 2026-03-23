@@ -12,6 +12,7 @@ import '../../../data/models/expert_model.dart';
 import '../../../providers/experts_provider.dart';
 import '../../../core/translation/translation_extensions.dart';
 import '../../../shared/animations/common_animations.dart';
+import '../../../shared/widgets/capsule_tab_bar.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../home/widgets/home_app_bar.dart';
@@ -99,9 +100,18 @@ class _ExpertsScreenState extends ConsumerState<ExpertsScreen> {
 
                 // ── Main tabs ──
                 SliverToBoxAdapter(
-                  child: _PillTabs(
-                    activeTab: _activeTab,
-                    onTabChanged: (tab) => setState(() => _activeTab = tab),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                    child: CapsuleTabBar(
+                      tabs: [
+                        'Doctors'.tr(context),
+                        'All Experts'.tr(context),
+                        'My Bookings'.tr(context),
+                      ],
+                      selectedIndex: ExpertsTabType.values.indexOf(_activeTab),
+                      onTabChanged: (i) =>
+                          setState(() => _activeTab = ExpertsTabType.values[i]),
+                    ),
                   ).fadeInSlideUp(delay: const Duration(milliseconds: 200)),
                 ),
 
@@ -550,109 +560,7 @@ class _BannerStatPill extends StatelessWidget {
 // ANIMATED CAPSULE TABS — flat design with sliding indicator
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _PillTabs extends StatelessWidget {
-  final ExpertsTabType activeTab;
-  final ValueChanged<ExpertsTabType> onTabChanged;
-
-  const _PillTabs({
-    required this.activeTab,
-    required this.onTabChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final tabs = [
-      (type: ExpertsTabType.doctors, icon: LucideIcons.stethoscope, label: 'Doctors'.tr(context)),
-      (type: ExpertsTabType.allExperts, icon: LucideIcons.graduationCap, label: 'All Experts'.tr(context)),
-      (type: ExpertsTabType.bookings, icon: LucideIcons.calendarCheck, label: 'My Bookings'.tr(context)),
-    ];
-
-    final selectedIndex = tabs.indexWhere((t) => t.type == activeTab);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final capsuleWidth = constraints.maxWidth / tabs.length;
-
-            return Stack(
-              children: [
-                // Sliding capsule indicator
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 280),
-                  curve: Curves.easeOutCubic,
-                  left: selectedIndex * capsuleWidth,
-                  top: 0,
-                  bottom: 0,
-                  width: capsuleWidth,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-
-                // Tab labels
-                Row(
-                  children: tabs.map((tab) {
-                    final isSelected = activeTab == tab.type;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => onTabChanged(tab.type),
-                        behavior: HitTestBehavior.opaque,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 11),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              AnimatedDefaultTextStyle(
-                                duration: const Duration(milliseconds: 200),
-                                style: AppTextStyles.labelSmall.copyWith(
-                                  fontSize: 12,
-                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                  color: isSelected ? Colors.white : AppColors.textSecondary,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      tab.icon,
-                                      size: 15,
-                                      color: isSelected ? Colors.white : AppColors.textSecondary,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Flexible(
-                                      child: Text(
-                                        tab.label,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
+// _PillTabs replaced by CapsuleTabBar (used inline above)
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FEATURED DOCTORS ROW

@@ -8,6 +8,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/notification_model.dart';
+import '../../../shared/widgets/capsule_tab_bar.dart';
 import '../../../shared/widgets/glass_container.dart';
 
 /// Provider for notifications list
@@ -243,85 +244,19 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     );
   }
 
-  /// Build filter tabs with glassmorphic design - even width
+  /// Build filter tabs using CapsuleTabBar.
   Widget _buildFilterTabs() {
-    const tabs = [
-      (icon: LucideIcons.inbox, label: 'All'),
-      (icon: LucideIcons.mailOpen, label: 'Unread'),
-      (icon: LucideIcons.briefcase, label: 'Projects'),
-      (icon: LucideIcons.users, label: 'Campus'),
-      (icon: LucideIcons.settings, label: 'System'),
-    ];
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.5),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(6),
-      child: Row(
-        children: List.generate(tabs.length, (index) {
-          final tab = tabs[index];
-          final isSelected = _selectedTabIndex == index;
-
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                _tabController.animateTo(index);
-                setState(() => _selectedTabIndex = index);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: isSelected ? [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.25),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ] : null,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      tab.icon,
-                      size: 18,
-                      color: isSelected ? Colors.white : AppColors.textSecondary,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      tab.label,
-                      style: AppTextStyles.caption.copyWith(
-                        fontSize: 10,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: CapsuleTabBar(
+        tabs: const ['All', 'Unread', 'Projects', 'Campus', 'System'],
+        selectedIndex: _selectedTabIndex,
+        onTabChanged: (index) {
+          _tabController.animateTo(index);
+          setState(() => _selectedTabIndex = index);
+        },
+        height: 40,
+        internalPadding: 4,
       ),
     );
   }

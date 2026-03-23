@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/translation/translation_extensions.dart';
+import '../../../shared/widgets/capsule_tab_bar.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import 'ask_question_sheet.dart';
@@ -130,11 +131,20 @@ class QaSection extends ConsumerWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: _StatusFilterChips(
-                  currentStatus: filters.status,
-                  onStatusChanged: (status) {
-                    ref.read(qaFilterProvider.notifier).setStatus(status);
+                child: CapsuleTabBar(
+                  tabs: [
+                    'All'.tr(context),
+                    'Answered'.tr(context),
+                    'Unanswered'.tr(context),
+                  ],
+                  selectedIndex: filters.status.index,
+                  onTabChanged: (i) {
+                    ref
+                        .read(qaFilterProvider.notifier)
+                        .setStatus(QaStatusFilter.values[i]);
                   },
+                  height: 36,
+                  internalPadding: 3,
                 ),
               ),
             ),
@@ -265,94 +275,7 @@ class QaSection extends ConsumerWidget {
 // STATUS FILTER CHIPS
 // ============================================================
 
-/// Horizontal row of filter chips for question status.
-class _StatusFilterChips extends StatelessWidget {
-  final QaStatusFilter currentStatus;
-  final ValueChanged<QaStatusFilter> onStatusChanged;
-
-  const _StatusFilterChips({
-    required this.currentStatus,
-    required this.onStatusChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _buildChip(
-          context,
-          label: 'All'.tr(context),
-          value: QaStatusFilter.all,
-        ),
-        const SizedBox(width: 8),
-        _buildChip(
-          context,
-          label: 'Answered'.tr(context),
-          value: QaStatusFilter.answered,
-          icon: Icons.check_circle_outline,
-        ),
-        const SizedBox(width: 8),
-        _buildChip(
-          context,
-          label: 'Unanswered'.tr(context),
-          value: QaStatusFilter.unanswered,
-          icon: Icons.help_outline,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildChip(
-    BuildContext context, {
-    required String label,
-    required QaStatusFilter value,
-    IconData? icon,
-  }) {
-    final isSelected = currentStatus == value;
-
-    return GestureDetector(
-      onTap: () => onStatusChanged(value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withAlpha(26)
-              : AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primary.withAlpha(80)
-                : AppColors.border.withAlpha(60),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 14,
-                color: isSelected ? AppColors.primary : AppColors.textTertiary,
-              ),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              label,
-              style: AppTextStyles.labelSmall.copyWith(
-                color:
-                    isSelected ? AppColors.primary : AppColors.textSecondary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// _StatusFilterChips replaced by CapsuleTabBar
 
 // ============================================================
 // SUBJECT FILTER CHIP
