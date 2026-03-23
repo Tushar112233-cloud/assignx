@@ -116,7 +116,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       await ref.read(authStateProvider.notifier).sendOTP(
             email: _email,
             purpose: 'signup',
-            role: 'user',
+            role: userType ?? 'user',
           );
 
       if (mounted) {
@@ -174,11 +174,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     });
 
     try {
+      final userType = GoRouterState.of(context).uri.queryParameters['type'];
       final success = await ref.read(authStateProvider.notifier).verifyOtp(
             email: _email,
             token: otp,
             purpose: 'signup',
-            role: 'user',
+            role: userType ?? 'user',
           );
 
       if (mounted) {
@@ -232,10 +233,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     });
 
     try {
+      final userType = GoRouterState.of(context).uri.queryParameters['type'];
       await ref.read(authStateProvider.notifier).sendOTP(
             email: _email,
             purpose: 'signup',
-            role: 'user',
+            role: userType ?? 'user',
           );
       if (mounted) {
         setState(() => _isLoading = false);
