@@ -158,45 +158,46 @@ class ProDiscussionPostCard extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ProPostFooter(
-                        userName: post.userName,
-                        userTitle: post.userTitle,
-                        categoryLabel: 'Discussion',
-                        categoryColor: const Color(0xFF6366F1),
-                      ),
-                    ),
-                    if (post.likeCount > 0)
-                      CompactLikeButton(
-                        isLiked: isLiked,
-                        likeCount: post.likeCount,
-                        onToggle: onLike,
-                      ),
-                    if (post.commentCount > 0) ...[
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: onComment,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.chat_bubble_outline_rounded,
-                                size: 16, color: AppColors.textTertiary),
-                            const SizedBox(width: 4),
-                            Text(
-                              post.commentCount.toString(),
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.textTertiary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
+                _ProPostFooter(
+                  userName: post.userName,
+                  userTitle: post.userTitle,
+                  categoryLabel: 'Discussion',
+                  categoryColor: const Color(0xFF6366F1),
                 ),
+                if (post.likeCount > 0 || post.commentCount > 0) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      if (post.likeCount > 0)
+                        CompactLikeButton(
+                          isLiked: isLiked,
+                          likeCount: post.likeCount,
+                          onToggle: onLike,
+                        ),
+                      if (post.commentCount > 0) ...[
+                        if (post.likeCount > 0) const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: onComment,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.chat_bubble_outline_rounded,
+                                  size: 16, color: AppColors.textTertiary),
+                              const SizedBox(width: 4),
+                              Text(
+                                post.commentCount.toString(),
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textTertiary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -521,24 +522,20 @@ class FreelanceGigPostCard extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ProPostFooter(
-                        userName: post.userName,
-                        userTitle: post.userTitle,
-                        categoryLabel: 'Freelance',
-                        categoryColor: const Color(0xFF059669),
-                      ),
-                    ),
-                    if (post.likeCount > 0)
-                      CompactLikeButton(
-                        isLiked: isLiked,
-                        likeCount: post.likeCount,
-                        onToggle: onLike,
-                      ),
-                  ],
+                _ProPostFooter(
+                  userName: post.userName,
+                  userTitle: post.userTitle,
+                  categoryLabel: 'Freelance',
+                  categoryColor: const Color(0xFF059669),
                 ),
+                if (post.likeCount > 0) ...[
+                  const SizedBox(height: 8),
+                  CompactLikeButton(
+                    isLiked: isLiked,
+                    likeCount: post.likeCount,
+                    onToggle: onLike,
+                  ),
+                ],
               ],
             ),
           ),
@@ -743,24 +740,20 @@ class NewsPostCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _ProPostFooter(
-                      userName: post.userName,
-                      userTitle: post.userTitle,
-                      categoryLabel: 'News',
-                      categoryColor: const Color(0xFF2563EB),
-                    ),
-                  ),
-                  if (post.likeCount > 0)
-                    CompactLikeButton(
-                      isLiked: isLiked,
-                      likeCount: post.likeCount,
-                      onToggle: onLike,
-                    ),
-                ],
+              _ProPostFooter(
+                userName: post.userName,
+                userTitle: post.userTitle,
+                categoryLabel: 'News',
+                categoryColor: const Color(0xFF2563EB),
               ),
+              if (post.likeCount > 0) ...[
+                const SizedBox(height: 8),
+                CompactLikeButton(
+                  isLiked: isLiked,
+                  likeCount: post.likeCount,
+                  onToggle: onLike,
+                ),
+              ],
             ],
           ),
         ),
@@ -1084,18 +1077,22 @@ class _ProPostFooter extends StatelessWidget {
           ),
         ),
         // Category pill
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: categoryColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            categoryLabel,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: categoryColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 10,
+        Flexible(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: categoryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              categoryLabel,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: categoryColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 10,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ),
