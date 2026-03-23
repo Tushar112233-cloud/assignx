@@ -114,7 +114,7 @@ class _ProfessionalProfileScreenState
         'fullName': _nameController.text.trim(),
         'userType': 'professional',
         'professionalType': _selectedProfessionalType!.toDbString(),
-        'onboardingStep': 'complete',
+        'onboardingStep': 5,
         'onboardingCompleted': true,
       };
       if (phone.isNotEmpty) body['phone'] = phone;

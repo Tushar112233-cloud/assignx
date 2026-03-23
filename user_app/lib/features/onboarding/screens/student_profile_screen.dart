@@ -128,7 +128,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
       final body = <String, dynamic>{
         'fullName': _nameController.text.trim(),
         'userType': 'student',
-        'onboardingStep': 'complete',
+        'onboardingStep': 5,
         'onboardingCompleted': true,
       };
       if (phone.isNotEmpty) body['phone'] = phone;

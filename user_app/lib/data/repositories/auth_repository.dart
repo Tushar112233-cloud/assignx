@@ -115,7 +115,7 @@ class AuthRepository {
     if (city != null) data['city'] = city;
     if (state != null) data['state'] = state;
     if (onboardingStep != null) {
-      data['onboardingStep'] = onboardingStep.toDbString();
+      data['onboardingStep'] = onboardingStep.stepNumber;
     }
     if (onboardingCompleted != null) {
       data['onboardingCompleted'] = onboardingCompleted;
