@@ -14,15 +14,12 @@ import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_dropdown.dart';
 import '../../../shared/widgets/app_text_field.dart';
-import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_overlay.dart';
-import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/step_progress_bar.dart';
 
 /// Student profile completion screen.
 ///
-/// Redesigned with gradient background, glass morphism form,
-/// and smooth animations to match Dashboard aesthetic.
+/// Multi-step form with smooth animations for collecting student details.
 class StudentProfileScreen extends ConsumerStatefulWidget {
   const StudentProfileScreen({super.key});
 
@@ -157,88 +154,100 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: MeshGradientBackground(
-        position: MeshPosition.bottomRight,
-        colors: [
-          AppColors.meshPink,
-          AppColors.meshPeach,
-          AppColors.meshOrange,
-        ],
-        opacity: 0.4,
-        child: SafeArea(
-          child: LoadingOverlay(
-            isLoading: _isLoading,
-            message: 'Saving profile...'.tr(context),
-            child: Column(
-              children: [
-                // App bar with glass effect
-                GlassContainer(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: _previousStep,
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Complete Profile'.tr(context),
-                          style: AppTextStyles.headingSmall,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(width: 48), // Balance for back button
-                    ],
-                  ),
-                ).animate().fadeIn(duration: 400.ms),
-
-                // Progress bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                  child: GlassContainer(
-                    padding: const EdgeInsets.all(16),
-                    child: StepProgressBar(
-                      currentStep: _currentStep,
-                      totalSteps: 2,
-                      labels: ['Basic Info'.tr(context), 'Education'.tr(context)],
+      body: SafeArea(
+        child: LoadingOverlay(
+          isLoading: _isLoading,
+          message: 'Saving profile...'.tr(context),
+          child: Column(
+            children: [
+              // App bar
+              Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0x0F000000),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: _previousStep,
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Complete Profile'.tr(context),
+                        style: AppTextStyles.headingSmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(width: 48), // Balance for back button
+                  ],
+                ),
+              ).animate().fadeIn(duration: 400.ms),
 
-                const SizedBox(height: 24),
-
-                // Form pages
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: [
-                      _buildStep1(),
-                      _buildStep2(),
+              // Progress bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0x0F000000),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
                     ],
+                  ),
+                  child: StepProgressBar(
+                    currentStep: _currentStep,
+                    totalSteps: 2,
+                    labels: ['Basic Info'.tr(context), 'Education'.tr(context)],
                   ),
                 ),
+              ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
 
-                // Continue button with glass effect
-                Padding(
-                  padding: AppSpacing.screenPadding,
-                  child: GlassContainer(
-                    padding: const EdgeInsets.all(4),
-                    child: AppButton(
-                      label: _currentStep == 2 ? 'Complete'.tr(context) : 'Continue'.tr(context),
-                      onPressed: _nextStep,
-                      icon: _currentStep == 2 ? Icons.check : Icons.arrow_forward,
-                    ),
-                  ),
-                ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
+              const SizedBox(height: 24),
 
-                const SizedBox(height: 16),
-              ],
-            ),
+              // Form pages
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildStep1(),
+                    _buildStep2(),
+                  ],
+                ),
+              ),
+
+              // Continue button
+              Padding(
+                padding: AppSpacing.screenPadding,
+                child: AppButton(
+                  label: _currentStep == 2 ? 'Complete'.tr(context) : 'Continue'.tr(context),
+                  onPressed: _nextStep,
+                  icon: _currentStep == 2 ? Icons.check : Icons.arrow_forward,
+                ),
+              ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
+
+              const SizedBox(height: 16),
+            ],
           ),
         ),
       ),
@@ -251,8 +260,20 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GlassContainer(
+          Container(
             padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0x0F000000),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -262,14 +283,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withValues(alpha: 0.7),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -334,8 +348,20 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GlassContainer(
+          Container(
             padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0x0F000000),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -345,14 +371,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withValues(alpha: 0.7),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
