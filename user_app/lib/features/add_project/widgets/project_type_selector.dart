@@ -77,27 +77,21 @@ class ProjectTypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final spacing = 12.0;
-        final cardWidth = (constraints.maxWidth - spacing) / 2;
-
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: ProjectType.values.map((type) {
-            final isSelected = selected == type;
-            return SizedBox(
-              width: cardWidth,
-              child: _ProjectTypeCard(
-                type: type,
-                isSelected: isSelected,
-                onTap: () => onSelected(type),
-              ),
-            );
-          }).toList(),
+    return GridView.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.25,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      children: ProjectType.values.map((type) {
+        final isSelected = selected == type;
+        return _ProjectTypeCard(
+          type: type,
+          isSelected: isSelected,
+          onTap: () => onSelected(type),
         );
-      },
+      }).toList(),
     );
   }
 }
