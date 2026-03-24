@@ -253,24 +253,7 @@ class ModernGradientBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final orbs = customOrbs ?? defaultOrbs;
 
-    Widget content = Stack(children: orbs);
-
-    if (useBlur) {
-      content = Stack(
-        children: [
-          ...orbs,
-          // Apply blur for smoother blending
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-              child: Container(color: Colors.transparent),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return content;
+    return Stack(children: orbs);
   }
 }
 
@@ -470,13 +453,6 @@ class SubtleGradientScaffold extends StatelessWidget {
           // Gradient orbs with blur for smooth blending
           if (showGradients) ...[
             ...gradientOrbs,
-            // Blur layer for smooth blending
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-                child: Container(color: Colors.transparent),
-              ),
-            ),
           ],
 
           // Actual content
@@ -520,13 +496,6 @@ class SubtleGradientBackground extends StatelessWidget {
       child: Stack(
         children: [
           ...gradientOrbs,
-          if (useBlur)
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-                child: Container(color: Colors.transparent),
-              ),
-            ),
           Positioned.fill(child: child),
         ],
       ),
