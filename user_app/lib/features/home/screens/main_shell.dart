@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../providers/home_provider.dart';
 import '../../../providers/profile_provider.dart';
-import '../../../shared/widgets/subtle_gradient_scaffold.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../connect_hub/screens/connect_hub_screen.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../../dashboard/widgets/bottom_nav_bar.dart';
@@ -55,7 +55,8 @@ class _MainShellState extends ConsumerState<MainShell> {
     // Get avatar URL from profile
     final avatarUrl = profileAsync.valueOrNull?.avatarUrl;
 
-    return SubtleGradientScaffold.standard(
+    return Scaffold(
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           // Main content with IndexedStack for state preservation
