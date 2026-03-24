@@ -185,21 +185,21 @@ class _CommentSectionState extends State<CommentSection> {
         else if (widget.comments.isEmpty)
           const _EmptyComments()
         else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+          Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: widget.comments.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final comment = widget.comments[index];
-              return _CommentItem(
-                comment: comment,
-                onLike: () => widget.onLikeComment?.call(comment.id),
-                onReply: () => _startReply(comment.id, comment.authorName),
-                isVerified: widget.isVerified,
-              );
-            },
+            child: Column(
+              children: [
+                for (int i = 0; i < widget.comments.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 16),
+                  _CommentItem(
+                    comment: widget.comments[i],
+                    onLike: () => widget.onLikeComment?.call(widget.comments[i].id),
+                    onReply: () => _startReply(widget.comments[i].id, widget.comments[i].authorName),
+                    isVerified: widget.isVerified,
+                  ),
+                ],
+              ],
+            ),
           ),
 
         const SizedBox(height: 20),

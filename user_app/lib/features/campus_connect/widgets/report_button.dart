@@ -94,48 +94,51 @@ class _ReportButtonState extends State<ReportButton>
   Widget build(BuildContext context) {
     final config = _getSizeConfig(widget.size);
 
-    return Tooltip(
-      message: _isReported ? 'Already reported'.tr(context) : 'Report this listing'.tr(context),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: _isReported ? null : _handleTap,
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: EdgeInsets.all(config.padding),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: _isReported
-                    ? AppColors.warning.withAlpha(26)
-                    : Colors.transparent,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _isReported ? Icons.flag : Icons.flag_outlined,
-                    size: config.iconSize,
-                    color: _isReported
-                        ? AppColors.warning
-                        : AppColors.textSecondary,
-                  ),
-                  if (widget.showLabel) ...[
-                    const SizedBox(width: 6),
-                    Text(
-                      _isReported ? 'Reported'.tr(context) : 'Report'.tr(context),
-                      style: AppTextStyles.labelMedium.copyWith(
-                        fontSize: config.fontSize,
-                        fontWeight: FontWeight.w500,
-                        color: _isReported
-                            ? AppColors.warning
-                            : AppColors.textSecondary,
-                      ),
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
+        );
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _isReported ? null : _handleTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: EdgeInsets.all(config.padding),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: _isReported
+                  ? AppColors.warning.withAlpha(26)
+                  : Colors.transparent,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _isReported ? Icons.flag : Icons.flag_outlined,
+                  size: config.iconSize,
+                  color: _isReported
+                      ? AppColors.warning
+                      : AppColors.textSecondary,
+                ),
+                if (widget.showLabel) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    _isReported ? 'Reported'.tr(context) : 'Report'.tr(context),
+                    style: AppTextStyles.labelMedium.copyWith(
+                      fontSize: config.fontSize,
+                      fontWeight: FontWeight.w500,
+                      color: _isReported
+                          ? AppColors.warning
+                          : AppColors.textSecondary,
                     ),
-                  ],
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
         ),
