@@ -448,19 +448,7 @@ class SubtleGradientScaffold extends StatelessWidget {
       floatingActionButton: floatingActionButton,
       floatingActionButtonLocation: floatingActionButtonLocation,
       bottomNavigationBar: bottomNavigationBar,
-      body: Stack(
-        children: [
-          // Gradient orbs with blur for smooth blending
-          if (showGradients) ...[
-            ...gradientOrbs,
-          ],
-
-          // Actual content
-          Positioned.fill(
-            child: body,
-          ),
-        ],
-      ),
+      body: body,
     );
   }
 }
