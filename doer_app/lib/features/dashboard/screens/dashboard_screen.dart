@@ -1,6 +1,7 @@
 import '../../../data/models/project_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -144,28 +145,11 @@ class _GreetingHeader extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
         child: Row(
           children: [
-            // AX Logo badge
-            Container(
+            // DoLancer Logo
+            SvgPicture.asset(
+              'assets/images/logo.svg',
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.accent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(
-                child: Text(
-                  'AX',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -173,7 +157,7 @@ class _GreetingHeader extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'AssignX Dolancer',
+                    'DoLancer',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

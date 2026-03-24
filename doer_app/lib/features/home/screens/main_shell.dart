@@ -7,7 +7,7 @@ import '../../dashboard/screens/dashboard_screen.dart';
 import '../../dashboard/widgets/bottom_nav_bar.dart';
 import '../../projects/screens/my_projects_screen.dart';
 import '../../resources/screens/resources_hub_screen.dart';
-import '../../profile/screens/payment_history_screen.dart';
+import '../../earnings/screens/earnings_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 
 /// Main app shell with bottom navigation.
@@ -40,7 +40,7 @@ class MainShell extends ConsumerWidget {
               DashboardScreen(),        // 0: Dashboard
               MyProjectsScreen(),       // 1: Projects
               ResourcesHubScreen(),     // 2: Resources
-              PaymentHistoryScreen(),   // 3: Earnings
+              EarningsScreen(),          // 3: Earnings
               ProfileScreen(),          // 4: Profile
             ],
           ),

@@ -253,11 +253,17 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
                     selected: isSelected,
                     onSelected: (_) => _toggleExpertise(subject.id),
                     selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                    backgroundColor: Colors.grey.shade100,
                     checkmarkColor: AppColors.primary,
+                    side: BorderSide(
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.grey.shade300,
+                    ),
                     labelStyle: AppTypography.labelMedium.copyWith(
                       color: isSelected
                           ? AppColors.primary
-                          : AppColors.textSecondaryLight,
+                          : AppColors.textPrimaryLight,
                     ),
                   );
                 }).toList(),

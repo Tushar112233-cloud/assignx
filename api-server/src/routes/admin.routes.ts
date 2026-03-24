@@ -773,6 +773,37 @@ router.get('/crm/content-overview', async (_req: Request, res: Response, next: N
   } catch (err) { next(err); }
 });
 
+// GET /admin/crm/customers - List all customers with pagination
+router.get('/crm/customers', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { page = '1', limit = '20', search, userType, sortBy } = req.query;
+    const filter: Record<string, unknown> = {};
+
+    if (search) {
+      filter.$or = [
+        { fullName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ];
+    }
+    if (userType) filter.userType = userType;
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const sort: Record<string, 1 | -1> = sortBy === 'name' ? { fullName: 1 } : { createdAt: -1 };
+
+    const [customers, total] = await Promise.all([
+      User.find(filter).sort(sort).skip(skip).limit(Number(limit)).select('-twoFactorSecret'),
+      User.countDocuments(filter),
+    ]);
+
+    res.json({
+      customers,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit)),
+    });
+  } catch (err) { next(err); }
+});
+
 // GET /admin/crm/customers/:id
 router.get('/crm/customers/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {

@@ -272,15 +272,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ActivationCompleteScreen(),
       ),
 
-      // Chat Room (outside shell to hide bottom nav, SlideRight transition)
+      // Chat Room (outside shell to hide bottom nav)
       GoRoute(
         path: '/chat/:roomId',
         name: RouteNames.chatRoom,
         pageBuilder: (context, state) {
           final roomId = state.pathParameters['roomId']!;
-          return SlideRightPage(
+          return MaterialPage(
             key: state.pageKey,
             child: ChatScreen(projectId: roomId),
+          );
+        },
+      ),
+
+      // Project Detail (outside shell to avoid ghost transition)
+      GoRoute(
+        path: '/projects/:id',
+        name: RouteNames.projectDetail,
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return MaterialPage(
+            key: state.pageKey,
+            child: ProjectDetailScreen(projectId: id),
           );
         },
       ),
@@ -292,35 +305,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RoutePaths.dashboard,
             name: RouteNames.dashboard,
-            builder: (context, state) => const DashboardScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: DashboardScreen(),
+            ),
           ),
           GoRoute(
             path: RoutePaths.projects,
             name: RouteNames.projects,
-            builder: (context, state) => const ProjectsScreen(),
-            routes: [
-              GoRoute(
-                path: ':id',
-                name: RouteNames.projectDetail,
-                pageBuilder: (context, state) {
-                  final id = state.pathParameters['id']!;
-                  return SlideRightPage(
-                    key: state.pageKey,
-                    child: ProjectDetailScreen(projectId: id),
-                  );
-                },
-              ),
-            ],
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: ProjectsScreen(),
+            ),
           ),
           GoRoute(
             path: RoutePaths.chat,
             name: RouteNames.chat,
-            builder: (context, state) => const ChatListScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: ChatListScreen(),
+            ),
           ),
           GoRoute(
             path: RoutePaths.profile,
             name: RouteNames.profile,
-            builder: (context, state) => const ProfileScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: ProfileScreen(),
+            ),
             routes: [
               GoRoute(
                 path: 'reviews',
@@ -337,12 +345,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RoutePaths.earnings,
             name: RouteNames.earnings,
-            builder: (context, state) => const EarningsScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: EarningsScreen(),
+            ),
           ),
           GoRoute(
             path: RoutePaths.resources,
             name: RouteNames.resources,
-            builder: (context, state) => const ResourcesScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: ResourcesScreen(),
+            ),
             routes: [
               GoRoute(
                 path: 'plagiarism-checker',
@@ -382,7 +394,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RoutePaths.support,
             name: RouteNames.support,
-            builder: (context, state) => const SupportScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: SupportScreen(),
+            ),
             routes: [
               GoRoute(
                 path: 'ticket/:ticketId',
@@ -400,12 +414,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RoutePaths.faq,
             name: RouteNames.faq,
-            builder: (context, state) => const FAQScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: FAQScreen(),
+            ),
           ),
           GoRoute(
             path: RoutePaths.notifications,
             name: RouteNames.notifications,
-            builder: (context, state) => const NotificationsScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: NotificationsScreen(),
+            ),
             routes: [
               GoRoute(
                 path: 'settings',
@@ -417,7 +435,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RoutePaths.users,
             name: RouteNames.users,
-            builder: (context, state) => const UsersScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: UsersScreen(),
+            ),
             routes: [
               GoRoute(
                 path: ':clientId',
@@ -435,7 +455,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RoutePaths.doers,
             name: RouteNames.doers,
-            builder: (context, state) => const DoersScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: DoersScreen(),
+            ),
             routes: [
               GoRoute(
                 path: ':doerId',
@@ -453,7 +475,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RoutePaths.settings,
             name: RouteNames.settings,
-            builder: (context, state) => const SettingsScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: SettingsScreen(),
+            ),
           ),
         ],
       ),

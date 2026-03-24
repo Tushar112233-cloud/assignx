@@ -56,7 +56,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final filteredRooms = _filterRooms(state.chatRooms);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

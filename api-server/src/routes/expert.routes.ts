@@ -359,6 +359,18 @@ router.post('/bookings', authenticate, async (req: Request, res: Response, next:
   }
 });
 
+// GET /experts/bookings - Get current user's bookings (alias for /bookings/me)
+router.get('/bookings', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const bookings = await ExpertBooking.find({ userId: req.user!.id })
+      .populate('expertId')
+      .sort({ date: -1 });
+    res.json({ bookings });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /experts/bookings/me (must be before /:id)
 router.get('/bookings/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {

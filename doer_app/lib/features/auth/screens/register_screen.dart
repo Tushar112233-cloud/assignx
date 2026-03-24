@@ -819,65 +819,70 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        Row(
-          children: _experienceLevels.map((level) {
-            final isSelected = _experienceLevel == level.value;
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: level.value != _experienceLevels.last.value
-                      ? AppSpacing.sm
-                      : 0,
-                ),
-                child: GestureDetector(
-                  onTap: () =>
-                      setState(() => _experienceLevel = level.value),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.sm + 2,
-                      horizontal: AppSpacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary.withAlpha(20)
-                          : AppColors.surface,
-                      borderRadius:
-                          BorderRadius.circular(AppSpacing.radiusMd),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.border,
-                        width: isSelected ? 1.5 : 1,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: _experienceLevels.map((level) {
+              final isSelected = _experienceLevel == level.value;
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    right: level.value != _experienceLevels.last.value
+                        ? AppSpacing.sm
+                        : 0,
+                  ),
+                  child: GestureDetector(
+                    onTap: () =>
+                        setState(() => _experienceLevel = level.value),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.sm + 2,
+                        horizontal: AppSpacing.xs,
                       ),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          level.label,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.textPrimary,
-                          ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primary.withAlpha(20)
+                            : AppColors.surface,
+                        borderRadius:
+                            BorderRadius.circular(AppSpacing.radiusMd),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.border,
+                          width: isSelected ? 1.5 : 1,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          level.description,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textTertiary,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            level.label,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 2),
+                          Text(
+                            level.description,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
         ),
 
         const SizedBox(height: AppSpacing.md),
@@ -1447,15 +1452,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       children: [
         // Back button (visible on steps 2+).
         if (_step > 1) ...[
-          Expanded(
-            flex: _step < 5 ? 0 : 0,
-            child: AppButton(
-              text: 'Back',
-              variant: AppButtonVariant.outline,
-              icon: Icons.arrow_back,
-              onPressed: _isLoading ? null : _handleBack,
-              size: AppButtonSize.large,
-            ),
+          AppButton(
+            text: 'Back',
+            variant: AppButtonVariant.outline,
+            icon: Icons.arrow_back,
+            onPressed: _isLoading ? null : _handleBack,
+            size: AppButtonSize.large,
           ),
           const SizedBox(width: AppSpacing.md),
         ],

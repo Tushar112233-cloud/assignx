@@ -11,7 +11,6 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/marketplace_model.dart';
 import '../../../providers/marketplace_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
-import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Enhanced detail screen for marketplace listings with modern glass morphism design.
@@ -45,15 +44,7 @@ class _ItemDetailScreenEnhancedState extends ConsumerState<ItemDetailScreenEnhan
     final listingAsync = ref.watch(listingDetailProvider(widget.listingId));
 
     return SubtleGradientScaffold.standard(
-      body: MeshGradientBackground(
-        position: MeshPosition.topRight,
-        opacity: 0.4,
-        colors: const [
-          Color(0xFFFBE8E8), // Soft pink
-          Color(0xFFFCEDE8), // Soft peach
-          Color(0xFFF0E8F8), // Soft purple
-        ],
-        child: listingAsync.when(
+      body: listingAsync.when(
           data: (listing) {
             if (listing == null) {
               return _buildNotFound(context);
@@ -65,7 +56,6 @@ class _ItemDetailScreenEnhancedState extends ConsumerState<ItemDetailScreenEnhan
             child: Text('Error: $error'),
           ),
         ),
-      ),
     );
   }
 

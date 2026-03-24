@@ -13,8 +13,11 @@ router.get('/tickets', authenticate, async (req: Request, res: Response, next: N
     const filter: Record<string, unknown> = {};
 
     if (req.user!.role !== 'admin') {
-      filter.raisedById = req.user!.id;
-      filter.raisedByRole = req.user!.role;
+      // Support both raisedById and legacy userId field
+      filter.$or = [
+        { raisedById: req.user!.id },
+        { userId: req.user!.id },
+      ];
     }
     if (status) filter.status = status;
 

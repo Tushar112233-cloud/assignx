@@ -177,6 +177,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = authState.isLoading;
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: MeshGradientBackground(
         position: MeshPosition.topRight,
         colors: const [
@@ -187,12 +188,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ],
         opacity: 0.6,
         child: SafeArea(
-          child: SingleChildScrollView(
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: Form(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+              child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 48),
                   _buildLogo(),
@@ -319,6 +324,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
               ),
             ),
+            ),
+          ),
           ),
         ),
       ),

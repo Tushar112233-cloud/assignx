@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/translation/translation_extensions.dart';
-import '../../../../shared/widgets/glass_container.dart';
-import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/earnings_model.dart';
 import '../../data/models/transaction_model.dart';
 import '../providers/earnings_provider.dart';
 import '../widgets/earnings_chart.dart';
-import '../widgets/stats_widgets.dart';
 import '../widgets/transaction_widgets.dart';
 
-/// Main earnings screen with tabs for overview, transactions, and commission.
+/// Redesigned earnings screen with a single-scroll layout.
 ///
-/// This is a layout-only stateful widget that manages the [TabController].
-/// Each tab body is a focused [ConsumerWidget] that watches only the
-/// provider it needs, minimizing unnecessary rebuilds:
-/// - Overview and Commission tabs watch [earningsProvider]
-/// - Transactions tab watches [transactionsProvider]
+/// Layout (top to bottom):
+/// 1. Header with title and refresh
+/// 2. Period selector pills
+/// 3. 2x2 summary stat cards
+/// 4. Monthly earnings chart section
+/// 5. Recent transactions list
+/// 6. Commission breakdown section
 class EarningsScreen extends ConsumerStatefulWidget {
   const EarningsScreen({super.key});
 
@@ -25,67 +25,138 @@ class EarningsScreen extends ConsumerStatefulWidget {
   ConsumerState<EarningsScreen> createState() => _EarningsScreenState();
 }
 
-class _EarningsScreenState extends ConsumerState<EarningsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
+class _EarningsScreenState extends ConsumerState<EarningsScreen> {
   @override
   Widget build(BuildContext context) {
+    final earningsState = ref.watch(earningsProvider);
+    final transactionsState = ref.watch(transactionsProvider);
+
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Earnings'.tr(context)),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: 'Overview'.tr(context)),
-            Tab(text: 'Transactions'.tr(context)),
-            Tab(text: 'Commission'.tr(context)),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(earningsProvider.notifier).refresh();
-              ref.read(transactionsProvider.notifier).refresh();
-            },
-          ),
-        ],
-      ),
-      body: MeshGradientBackground(
-        position: MeshPosition.bottomRight,
-        colors: MeshColors.warmColors,
-        opacity: 0.4,
-        child: SafeArea(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              // Overview Tab -- watches earningsProvider
-              _EarningsOverviewTab(
-                onWithdraw: () => _showWithdrawDialog(context),
-              ),
-              // Transactions Tab -- watches transactionsProvider
-              _EarningsTransactionsTab(
-                onTransactionTap: (tx) => _showTransactionDetail(context, tx),
-              ),
-              // Commission Tab -- watches earningsProvider
-              const _EarningsCommissionTab(),
-            ],
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await Future.wait([
+              ref.read(earningsProvider.notifier).refresh(),
+              ref.read(transactionsProvider.notifier).refresh(),
+            ]);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // -- Header --
+                _Header(
+                  onRefresh: () {
+                    ref.read(earningsProvider.notifier).refresh();
+                    ref.read(transactionsProvider.notifier).refresh();
+                  },
+                ),
+
+                // -- Period Selector --
+                _PeriodPills(
+                  selected: earningsState.selectedPeriod,
+                  onChanged: (p) {
+                    ref.read(earningsProvider.notifier).changePeriod(p);
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // -- Loading state --
+                if (earningsState.isLoading && earningsState.summary == null)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 80),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+
+                // -- Empty state --
+                if (earningsState.summary == null &&
+                    !earningsState.isLoading) ...[
+                  const SizedBox(height: 60),
+                  _EmptyState(),
+                ],
+
+                // -- Summary Cards 2x2 --
+                if (earningsState.summary != null)
+                  _SummaryGrid(summary: earningsState.summary!),
+
+                // -- Earnings Chart --
+                if (earningsState.chartData.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  _SectionHeader(
+                    title: 'Monthly Earnings'.tr(context),
+                    icon: Icons.bar_chart_rounded,
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _CardWrapper(
+                      child: EarningsChartCard(
+                        dataPoints: earningsState.chartData,
+                        title: 'Earnings Trend'.tr(context),
+                      ),
+                    ),
+                  ),
+                ],
+
+                // -- Recent Transactions --
+                const SizedBox(height: 24),
+                _SectionHeader(
+                  title: 'Recent Transactions'.tr(context),
+                  icon: Icons.receipt_long_rounded,
+                ),
+                const SizedBox(height: 12),
+                _RecentTransactionsList(
+                  transactions: transactionsState.transactions,
+                  isLoading: transactionsState.isLoading,
+                  onTransactionTap: (tx) => _showTransactionDetail(context, tx),
+                ),
+
+                // -- Commission Breakdown --
+                if (earningsState.commissionBreakdown.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  _SectionHeader(
+                    title: 'Commission Breakdown'.tr(context),
+                    icon: Icons.pie_chart_rounded,
+                  ),
+                  const SizedBox(height: 12),
+                  _CommissionBreakdownSection(
+                    breakdown: earningsState.commissionBreakdown,
+                  ),
+                ],
+
+                // -- Withdraw Button --
+                if (earningsState.summary != null &&
+                    earningsState.summary!.availableBalance > 0) ...[
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton.icon(
+                        onPressed: () => _showWithdrawDialog(context),
+                        icon: const Icon(Icons.account_balance_wallet_outlined),
+                        label: Text(
+                          'Request Withdrawal'.tr(context),
+                          style: AppTypography.buttonMedium.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -110,808 +181,34 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
   }
 }
 
-/// Overview tab that watches only [earningsProvider].
-///
-/// Displays balance card, performance insights, earnings snapshot,
-/// stats cards, chart, and performance metrics.
-class _EarningsOverviewTab extends ConsumerWidget {
-  const _EarningsOverviewTab({this.onWithdraw});
+// =============================================================================
+// Header
+// =============================================================================
 
-  final VoidCallback? onWithdraw;
+class _Header extends StatelessWidget {
+  const _Header({required this.onRefresh});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(earningsProvider);
-
-    if (state.isLoading && state.summary == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return _OverviewTab(
-      state: state,
-      onPeriodChanged: (period) {
-        ref.read(earningsProvider.notifier).changePeriod(period);
-      },
-      onWithdraw: onWithdraw,
-      onRefresh: () async {
-        await ref.read(earningsProvider.notifier).refresh();
-      },
-    );
-  }
-}
-
-/// Transactions tab that watches only [transactionsProvider].
-///
-/// Displays transaction list with filters and load-more pagination.
-class _EarningsTransactionsTab extends ConsumerWidget {
-  const _EarningsTransactionsTab({required this.onTransactionTap});
-
-  final void Function(TransactionModel) onTransactionTap;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(transactionsProvider);
-
-    return _TransactionsTab(
-      state: state,
-      onTransactionTap: onTransactionTap,
-      onLoadMore: () => ref.read(transactionsProvider.notifier).loadMore(),
-      onFilterChanged: (filter) {
-        ref.read(transactionsProvider.notifier).updateFilter(filter);
-      },
-    );
-  }
-}
-
-/// Commission tab that watches only [earningsProvider].
-///
-/// Displays commission breakdown pie chart and detailed list.
-class _EarningsCommissionTab extends ConsumerWidget {
-  const _EarningsCommissionTab();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(earningsProvider);
-
-    return _CommissionTab(
-      breakdown: state.commissionBreakdown,
-      period: state.selectedPeriod,
-      onPeriodChanged: (period) {
-        ref.read(earningsProvider.notifier).changePeriod(period);
-      },
-    );
-  }
-}
-
-/// Overview tab showing balance, metrics, and charts.
-class _OverviewTab extends StatelessWidget {
-  const _OverviewTab({
-    required this.state,
-    required this.onPeriodChanged,
-    this.onWithdraw,
-    this.onRefresh,
-  });
-
-  final EarningsState state;
-  final void Function(EarningsPeriod) onPeriodChanged;
-  final VoidCallback? onWithdraw;
-  final Future<void> Function()? onRefresh;
-
-  @override
-  Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: onRefresh ?? () async {},
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Period Selector
-            PeriodSelector(
-              selectedPeriod: state.selectedPeriod,
-              onPeriodChanged: onPeriodChanged,
-            ),
-
-            // Empty state when no data
-            if (state.summary == null && !state.isLoading) ...[
-              const SizedBox(height: 80),
-              Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.account_balance_wallet_outlined,
-                      size: 64,
-                      color: AppColors.textSecondaryLight.withValues(alpha: 0.4),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No earnings yet'.tr(context),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppColors.textSecondaryLight,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 48),
-                      child: Text(
-                        'Your earnings will appear here once you complete projects.'.tr(context),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondaryLight,
-                            ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            // Balance Card
-            if (state.summary != null)
-              BalanceCard(
-                totalEarnings: state.summary!.totalEarnings,
-                availableBalance: state.summary!.availableBalance,
-                pendingEarnings: state.summary!.pendingEarnings,
-                onWithdraw: onWithdraw,
-              ),
-
-            // Performance Insights Card
-            if (state.summary != null)
-              _PerformanceInsightsCard(
-                currentEarnings: state.summary!.totalEarnings,
-                goalAmount: 50000,
-                growthPercentage: state.summary!.growthPercentage,
-                previousPeriodEarnings: state.summary!.previousPeriodEarnings,
-              ),
-
-            // Earnings Snapshot
-            if (state.summary != null)
-              _EarningsSnapshot(
-                totalEarnings: state.summary!.totalEarnings,
-                monthlyEarnings: state.summary!.totalEarnings -
-                    (state.summary!.previousPeriodEarnings ?? 0),
-                todayEarnings: state.summary!.pendingEarnings,
-              ),
-
-            const SizedBox(height: 8),
-
-            // Stats Cards Row
-            if (state.summary != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: StatsCard(
-                        title: 'Projects'.tr(context),
-                        value: state.summary!.projectsCompleted.toString(),
-                        icon: Icons.folder_copy,
-                        iconColor: Colors.blue,
-                        trend: (state.summary!.growthPercentage ?? 0) > 0
-                            ? '+${state.summary!.growthPercentage!.toStringAsFixed(1)}%'
-                            : null,
-                        trendPositive: (state.summary!.growthPercentage ?? 0) > 0,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: StatsCard(
-                        title: 'Avg/Project'.tr(context),
-                        value: '₹${state.summary!.averagePerProject.toStringAsFixed(0)}',
-                        icon: Icons.trending_up,
-                        iconColor: Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            const SizedBox(height: 8),
-
-            // Earnings Chart
-            if (state.chartData.isNotEmpty)
-              EarningsChartCard(
-                dataPoints: state.chartData,
-                title: 'Earnings Trend'.tr(context),
-              ),
-
-            // Performance Metrics
-            if (state.performanceMetrics != null)
-              PerformanceMetricsWidget(
-                metrics: state.performanceMetrics!,
-              ),
-
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Transactions tab with list and filters.
-class _TransactionsTab extends StatelessWidget {
-  const _TransactionsTab({
-    required this.state,
-    required this.onTransactionTap,
-    required this.onLoadMore,
-    required this.onFilterChanged,
-  });
-
-  final TransactionsState state;
-  final void Function(TransactionModel) onTransactionTap;
-  final VoidCallback onLoadMore;
-  final void Function(TransactionFilter) onFilterChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Filter bar
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              // Quick stats
-              Expanded(
-                child: Row(
-                  children: [
-                    _QuickStat(
-                      label: 'Income'.tr(context),
-                      value: '₹${state.totalCredits.toStringAsFixed(0)}',
-                      color: AppColors.success,
-                    ),
-                    const SizedBox(width: 16),
-                    _QuickStat(
-                      label: 'Outgoing'.tr(context),
-                      value: '₹${state.totalDebits.toStringAsFixed(0)}',
-                      color: AppColors.error,
-                    ),
-                  ],
-                ),
-              ),
-              // Filter button
-              IconButton.filledTonal(
-                onPressed: () => _showFilterSheet(context),
-                icon: Badge(
-                  isLabelVisible: state.filter.hasFilters,
-                  child: const Icon(Icons.filter_list),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-        // Transaction list
-        Expanded(
-          child: TransactionList(
-            transactions: state.transactions,
-            onTransactionTap: onTransactionTap,
-            onLoadMore: onLoadMore,
-            hasMore: state.hasMore,
-            isLoading: state.isLoading,
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showFilterSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => TransactionFilterSheet(
-        currentFilter: state.filter,
-        onApply: onFilterChanged,
-      ),
-    );
-  }
-}
-
-class _QuickStat extends StatelessWidget {
-  const _QuickStat({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondaryLight,
-                    fontSize: 10,
-                  ),
-            ),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// Commission tab with pie chart breakdown.
-class _CommissionTab extends StatelessWidget {
-  const _CommissionTab({
-    required this.breakdown,
-    required this.period,
-    required this.onPeriodChanged,
-  });
-
-  final List<CommissionBreakdown> breakdown;
-  final EarningsPeriod period;
-  final void Function(EarningsPeriod) onPeriodChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final total = breakdown.fold(0.0, (sum, item) => sum + item.amount);
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Period selector
-          PeriodSelector(
-            selectedPeriod: period,
-            onPeriodChanged: onPeriodChanged,
-          ),
-          const SizedBox(height: 16),
-
-          // Total earnings card
-          GlassCard(
-            blur: 15,
-            opacity: 0.75,
-            elevation: 2,
-            borderRadius: BorderRadius.circular(16),
-            padding: const EdgeInsets.all(20),
-            child: Column(
-                children: [
-                  Text(
-                    'Total Commission'.tr(context),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: AppColors.textSecondaryLight,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '₹${total.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${breakdown.fold(0, (sum, item) => sum + item.projectCount)} ${'projects'.tr(context)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondaryLight,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 24),
-
-          // Pie chart
-          Text(
-            'Commission by Category'.tr(context),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 16),
-
-          if (breakdown.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text(
-                  'No commission data for this period'.tr(context),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
-                ),
-              ),
-            )
-          else
-            CommissionPieChart(
-              breakdown: breakdown,
-              size: 180,
-            ),
-
-          const SizedBox(height: 24),
-
-          // Detailed breakdown list
-          if (breakdown.isNotEmpty) ...[
-            Text(
-              'Detailed Breakdown'.tr(context),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 12),
-            ...breakdown.map((item) => _CommissionItem(item: item)),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _CommissionItem extends StatelessWidget {
-  const _CommissionItem({required this.item});
-
-  final CommissionBreakdown item;
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassCard(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      blur: 10,
-      opacity: 0.7,
-      elevation: 1,
-      borderRadius: BorderRadius.circular(12),
-      child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: (item.color ?? AppColors.primary).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(
-                  '${item.percentage.toStringAsFixed(0)}%',
-                  style: TextStyle(
-                    color: item.color ?? AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.category,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  Text(
-                    '${item.projectCount} ${'projects'.tr(context)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondaryLight,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              '₹${item.amount.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-          ],
-        ),
-      );
-  }
-}
-
-/// Performance Insights card showing monthly goal progress, trend,
-/// and a motivational message based on progress percentage.
-class _PerformanceInsightsCard extends StatelessWidget {
-  const _PerformanceInsightsCard({
-    required this.currentEarnings,
-    required this.goalAmount,
-    required this.growthPercentage,
-    required this.previousPeriodEarnings,
-  });
-
-  final double currentEarnings;
-  final double goalAmount;
-  final double? growthPercentage;
-  final double? previousPeriodEarnings;
-
-  /// Returns an appropriate motivational message based on progress.
-  String _getMotivationalMessage(int percentage, BuildContext context) {
-    if (percentage >= 100) {
-      return 'Outstanding! You have exceeded your monthly goal!'.tr(context);
-    } else if (percentage >= 75) {
-      return 'Almost there! Keep up the great work!'.tr(context);
-    } else if (percentage >= 50) {
-      return 'Great progress! You are halfway to your goal.'.tr(context);
-    } else if (percentage >= 25) {
-      return 'Good start! Stay consistent to reach your target.'.tr(context);
-    } else {
-      return 'Every project counts. Let us build momentum!'.tr(context);
-    }
-  }
-
-  /// Returns color for the progress bar based on progress.
-  Color _getProgressColor(int percentage) {
-    if (percentage >= 75) return AppColors.success;
-    if (percentage >= 50) return AppColors.accent;
-    if (percentage >= 25) return AppColors.warning;
-    return AppColors.error;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final progress = (currentEarnings / goalAmount).clamp(0.0, 1.0);
-    final percentage = (progress * 100).toInt();
-    final isPositiveTrend = (growthPercentage ?? 0) >= 0;
-    final progressColor = _getProgressColor(percentage);
-
-    return GlassCard(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      blur: 15,
-      opacity: 0.75,
-      elevation: 2,
-      borderRadius: BorderRadius.circular(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row with title and trend badge
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.insights,
-                  size: 20,
-                  color: AppColors.accent,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Performance Insights'.tr(context),
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    Text(
-                      'Monthly Goal: ₹${goalAmount.toStringAsFixed(0)}'.tr(context),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-              // Trend indicator badge
-              if (growthPercentage != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: (isPositiveTrend ? AppColors.success : AppColors.error)
-                        .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isPositiveTrend
-                            ? Icons.trending_up
-                            : Icons.trending_down,
-                        size: 14,
-                        color: isPositiveTrend
-                            ? AppColors.success
-                            : AppColors.error,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${isPositiveTrend ? '+' : ''}${growthPercentage!.toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: isPositiveTrend
-                              ? AppColors.success
-                              : AppColors.error,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Progress bar
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '₹${currentEarnings.toStringAsFixed(0)}',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        Text(
-                          '$percentage%',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: progressColor,
-                              ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 10,
-                        backgroundColor: Theme.of(context)
-                            .colorScheme
-                            .outlineVariant
-                            .withValues(alpha: 0.3),
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(progressColor),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Motivational message
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: progressColor.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  percentage >= 75
-                      ? Icons.emoji_events
-                      : percentage >= 50
-                          ? Icons.thumb_up
-                          : Icons.lightbulb_outline,
-                  size: 18,
-                  color: progressColor,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    _getMotivationalMessage(percentage, context),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Comparison vs last period
-          if (previousPeriodEarnings != null) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Icons.compare_arrows,
-                  size: 14,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '${'vs last period:'.tr(context)} ₹${previousPeriodEarnings!.toStringAsFixed(0)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Earnings snapshot row with Total, This Month, and Today cards.
-class _EarningsSnapshot extends StatelessWidget {
-  const _EarningsSnapshot({
-    required this.totalEarnings,
-    required this.monthlyEarnings,
-    required this.todayEarnings,
-  });
-
-  final double totalEarnings;
-  final double monthlyEarnings;
-  final double todayEarnings;
+  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
       child: Row(
         children: [
-          Expanded(
-            child: _SnapshotCard(
-              label: 'Total'.tr(context),
-              value: '₹${totalEarnings.toStringAsFixed(0)}',
-              icon: Icons.account_balance_wallet,
-              color: AppColors.primary,
+          Text(
+            'Earnings'.tr(context),
+            style: AppTypography.headlineSmall.copyWith(
+              color: AppColors.textPrimaryLight,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _SnapshotCard(
-              label: 'This Month'.tr(context),
-              value: '₹${monthlyEarnings.toStringAsFixed(0)}',
-              icon: Icons.calendar_month,
-              color: AppColors.accent,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _SnapshotCard(
-              label: 'Today'.tr(context),
-              value: '₹${todayEarnings.toStringAsFixed(0)}',
-              icon: Icons.today,
-              color: Colors.green,
+          const Spacer(),
+          IconButton(
+            onPressed: onRefresh,
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: AppColors.textSecondaryLight,
             ),
           ),
         ],
@@ -920,53 +217,654 @@ class _EarningsSnapshot extends StatelessWidget {
   }
 }
 
-/// Individual snapshot card used in [_EarningsSnapshot].
-class _SnapshotCard extends StatelessWidget {
-  const _SnapshotCard({
+// =============================================================================
+// Period Selector Pills
+// =============================================================================
+
+class _PeriodPills extends StatelessWidget {
+  const _PeriodPills({required this.selected, required this.onChanged});
+
+  final EarningsPeriod selected;
+  final ValueChanged<EarningsPeriod> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        itemCount: EarningsPeriod.values.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final period = EarningsPeriod.values[index];
+          final isSelected = period == selected;
+
+          return GestureDetector(
+            onTap: () => onChanged(period),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.borderLight,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.25),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Text(
+                period.displayName,
+                style: AppTypography.labelMedium.copyWith(
+                  color: isSelected
+                      ? Colors.white
+                      : AppColors.textSecondaryLight,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Empty State
+// =============================================================================
+
+class _EmptyState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 48),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariantLight,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.account_balance_wallet_outlined,
+                size: 48,
+                color: AppColors.textTertiaryLight,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'No earnings yet'.tr(context),
+              style: AppTypography.titleMedium.copyWith(
+                color: AppColors.textSecondaryLight,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your earnings will appear here once you complete projects.'
+                  .tr(context),
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textTertiaryLight,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// 2x2 Summary Stat Cards
+// =============================================================================
+
+class _SummaryGrid extends StatelessWidget {
+  const _SummaryGrid({required this.summary});
+
+  final EarningsSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  label: 'Total Earnings'.tr(context),
+                  value: _formatCurrency(summary.totalEarnings),
+                  icon: Icons.account_balance_wallet_rounded,
+                  iconBgColor: AppColors.info.withValues(alpha: 0.1),
+                  iconColor: AppColors.info,
+                  trend: summary.growthPercentage,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  label: 'This Month'.tr(context),
+                  value: _formatCurrency(
+                    summary.totalEarnings -
+                        (summary.previousPeriodEarnings ?? 0),
+                  ),
+                  icon: Icons.calendar_month_rounded,
+                  iconBgColor: AppColors.accent.withValues(alpha: 0.1),
+                  iconColor: AppColors.accent,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  label: 'Balance'.tr(context),
+                  value: _formatCurrency(summary.availableBalance),
+                  icon: Icons.savings_rounded,
+                  iconBgColor: AppColors.success.withValues(alpha: 0.1),
+                  iconColor: AppColors.success,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  label: 'Pending'.tr(context),
+                  value: _formatCurrency(summary.pendingEarnings),
+                  icon: Icons.hourglass_bottom_rounded,
+                  iconBgColor: AppColors.warning.withValues(alpha: 0.1),
+                  iconColor: AppColors.warning,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatCurrency(double amount) {
+    if (amount >= 100000) {
+      return '₹${(amount / 1000).toStringAsFixed(1)}K';
+    }
+    return '₹${amount.toStringAsFixed(0)}';
+  }
+}
+
+/// Individual stat card used in the 2x2 summary grid.
+class _StatCard extends StatelessWidget {
+  const _StatCard({
     required this.label,
     required this.value,
     required this.icon,
-    required this.color,
+    required this.iconBgColor,
+    required this.iconColor,
+    this.trend,
   });
 
   final String label;
   final String value;
   final IconData icon;
-  final Color color;
+  final Color iconBgColor;
+  final Color iconColor;
+  final double? trend;
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      padding: const EdgeInsets.all(12),
-      blur: 10,
-      opacity: 0.7,
-      elevation: 1,
-      borderRadius: BorderRadius.circular(16),
-      borderColor: color.withValues(alpha: 0.15),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(height: 6),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: iconColor),
+              ),
+              const Spacer(),
+              if (trend != null) _TrendBadge(trend: trend!),
+            ],
+          ),
+          const SizedBox(height: 14),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+            style: AppTypography.titleLarge.copyWith(
+              color: AppColors.textPrimaryLight,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 10,
-                ),
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textSecondaryLight,
+            ),
           ),
         ],
       ),
     );
   }
 }
+
+/// Small trend indicator badge showing growth percentage.
+class _TrendBadge extends StatelessWidget {
+  const _TrendBadge({required this.trend});
+
+  final double trend;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPositive = trend >= 0;
+    final color = isPositive ? AppColors.success : AppColors.error;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isPositive ? Icons.trending_up : Icons.trending_down,
+            size: 12,
+            color: color,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            '${isPositive ? '+' : ''}${trend.toStringAsFixed(1)}%',
+            style: AppTypography.labelSmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Section Header
+// =============================================================================
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.icon});
+
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.textSecondaryLight),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: AppTypography.titleMedium.copyWith(
+              color: AppColors.textPrimaryLight,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Card Wrapper (removes the margin from inner chart card)
+// =============================================================================
+
+/// Wraps the existing [EarningsChartCard] to remove its built-in margin
+/// so the outer padding controls positioning consistently.
+class _CardWrapper extends StatelessWidget {
+  const _CardWrapper({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        cardTheme: CardThemeData(
+          margin: EdgeInsets.zero,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+// =============================================================================
+// Recent Transactions
+// =============================================================================
+
+class _RecentTransactionsList extends StatelessWidget {
+  const _RecentTransactionsList({
+    required this.transactions,
+    required this.isLoading,
+    required this.onTransactionTap,
+  });
+
+  final List<TransactionModel> transactions;
+  final bool isLoading;
+  final void Function(TransactionModel) onTransactionTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading && transactions.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (transactions.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.receipt_long_outlined,
+                size: 40,
+                color: AppColors.textTertiaryLight,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'No transactions yet'.tr(context),
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Show up to 5 most recent transactions
+    final recentTx = transactions.take(5).toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderLight),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            for (int i = 0; i < recentTx.length; i++) ...[
+              _TransactionTile(
+                transaction: recentTx[i],
+                onTap: () => onTransactionTap(recentTx[i]),
+              ),
+              if (i < recentTx.length - 1)
+                Divider(
+                  height: 1,
+                  indent: 68,
+                  color: AppColors.borderLight,
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Clean transaction row with directional icon, description, amount, and date.
+class _TransactionTile extends StatelessWidget {
+  const _TransactionTile({
+    required this.transaction,
+    required this.onTap,
+  });
+
+  final TransactionModel transaction;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isCredit = transaction.type.isCredit;
+    final amountColor = isCredit ? AppColors.success : AppColors.error;
+    final arrowIcon = isCredit
+        ? Icons.arrow_downward_rounded
+        : Icons.arrow_upward_rounded;
+    final arrowBgColor = isCredit
+        ? AppColors.success.withValues(alpha: 0.1)
+        : AppColors.error.withValues(alpha: 0.1);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            // Directional arrow icon
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: arrowBgColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(arrowIcon, size: 20, color: amountColor),
+            ),
+            const SizedBox(width: 12),
+            // Description and date
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction.description ??
+                        transaction.type.displayName,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.textPrimaryLight,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${transaction.formattedDate}  ${transaction.formattedTime}',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textTertiaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Amount
+            Text(
+              transaction.formattedAmount,
+              style: AppTypography.titleSmall.copyWith(
+                color: amountColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Commission Breakdown Section
+// =============================================================================
+
+class _CommissionBreakdownSection extends StatelessWidget {
+  const _CommissionBreakdownSection({required this.breakdown});
+
+  final List<CommissionBreakdown> breakdown;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderLight),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            for (int i = 0; i < breakdown.length; i++) ...[
+              _CommissionRow(item: breakdown[i]),
+              if (i < breakdown.length - 1)
+                Divider(
+                  height: 1,
+                  indent: 68,
+                  color: AppColors.borderLight,
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A single commission category row showing category, projects count,
+/// percentage, and amount.
+class _CommissionRow extends StatelessWidget {
+  const _CommissionRow({required this.item});
+
+  final CommissionBreakdown item;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = item.color ?? AppColors.primary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          // Category color indicator
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                '${item.percentage.toStringAsFixed(0)}%',
+                style: AppTypography.labelSmall.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Category name and project count
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.category,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${item.projectCount} ${'projects'.tr(context)}',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textTertiaryLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Amount
+          Text(
+            '₹${item.amount.toStringAsFixed(2)}',
+            style: AppTypography.titleSmall.copyWith(
+              color: AppColors.textPrimaryLight,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Withdraw Dialog (preserved from original)
+// =============================================================================
 
 /// Withdrawal dialog.
 class _WithdrawDialog extends ConsumerStatefulWidget {
@@ -992,7 +890,13 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
     final transactionsState = ref.watch(transactionsProvider);
 
     return AlertDialog(
-      title: Text('Request Withdrawal'.tr(context)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      title: Text(
+        'Request Withdrawal'.tr(context),
+        style: AppTypography.titleLarge,
+      ),
       content: Form(
         key: _formKey,
         child: Column(
@@ -1004,8 +908,12 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
                 labelText: 'Amount'.tr(context),
                 prefixText: '₹',
                 hintText: '0.00',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter an amount'.tr(context);
@@ -1019,9 +927,12 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedMethod,
+              initialValue: _selectedMethod,
               decoration: InputDecoration(
                 labelText: 'Payment Method'.tr(context),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               items: const [
                 DropdownMenuItem(value: 'upi', child: Text('UPI')),
@@ -1044,6 +955,12 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
         ),
         FilledButton(
           onPressed: transactionsState.isWithdrawing ? null : _submit,
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
           child: transactionsState.isWithdrawing
               ? const SizedBox(
                   width: 20,
@@ -1059,18 +976,21 @@ class _WithdrawDialogState extends ConsumerState<_WithdrawDialog> {
   void _submit() async {
     if (_formKey.currentState!.validate()) {
       final amount = double.parse(_amountController.text);
-      final result = await ref.read(transactionsProvider.notifier).requestWithdrawal(
-            amount: amount,
-            paymentMethod: _selectedMethod,
-          );
+      final result =
+          await ref.read(transactionsProvider.notifier).requestWithdrawal(
+                amount: amount,
+                paymentMethod: _selectedMethod,
+              );
 
       if (mounted) {
         Navigator.pop(context);
         if (result != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Withdrawal request submitted successfully'.tr(context)),
-              backgroundColor: Colors.green,
+              content: Text(
+                'Withdrawal request submitted successfully'.tr(context),
+              ),
+              backgroundColor: AppColors.success,
             ),
           );
         }

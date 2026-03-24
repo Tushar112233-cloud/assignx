@@ -59,6 +59,7 @@ export async function getEarningsData(
     return (data.earnings || []).map(item => ({
       date: `${item._id.year}-${String(item._id.month).padStart(2, '0')}-01`,
       amount: item.total,
+      projectCount: item.count,
     }))
   } catch (err) {
     logger.error('Wallet', 'Error fetching earnings data:', err)

@@ -220,6 +220,7 @@ export default function ProfilePage() {
       qualification: supervisor.qualification || "",
       years_of_experience: supervisor.years_of_experience || 0,
       expertise_areas: expertiseAreas,
+      subjects: (supervisor as any).subjects || [],
       bio: undefined,
       rating: supervisor.average_rating || 0,
       total_reviews: supervisor.total_reviews || 0,

@@ -1520,6 +1520,23 @@ router.post('/registration', authenticate, async (req: Request, res: Response, n
   }
 });
 
+// GET /supervisor/registration - Get registration data for current supervisor
+router.get('/registration', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const supervisor = await Supervisor.findById(req.user!.id);
+    if (!supervisor) return res.json({ status: 'not_registered' });
+
+    const activation = await SupervisorActivation.findOne({ supervisorId: supervisor._id });
+    res.json({
+      supervisor,
+      activation,
+      status: supervisor.isActivated ? 'activated' : 'pending',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /supervisor/registration/status
 router.get('/registration/status', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {

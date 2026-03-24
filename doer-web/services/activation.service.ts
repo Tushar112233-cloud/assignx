@@ -108,6 +108,9 @@ export const activationService = {
         points: q.points || 1,
         sequence_order: q.order ?? q.sequence_order ?? 0,
         moduleId: (q.moduleId || '').toString(),
+        created_at: q.createdAt || q.created_at || new Date().toISOString(),
+        updated_at: q.updatedAt || q.updated_at || new Date().toISOString(),
+        is_active: q.isActive ?? q.is_active ?? true,
       }))
     } catch (err) {
       logger.error('Activation', 'Error fetching quiz questions:', err)

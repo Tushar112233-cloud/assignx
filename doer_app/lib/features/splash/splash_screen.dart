@@ -199,7 +199,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   /// Layout structure:
   /// - Full-screen animated mesh gradient background (teal/cyan)
   /// - Centered column with spring-animated logo, shimmer brand text, tagline
-  /// - Footer with "Powered by AssignX" text
+  /// - Footer with "Powered by DoLancer" text
   /// - Fade-out wrapper for smooth exit transition
   @override
   Widget build(BuildContext context) {
@@ -300,12 +300,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                             );
                           },
                           child: Text(
-                            'DOER'.tr(context),
+                            'DoLancer'.tr(context),
                             style: const TextStyle(
-                              fontSize: 48,
+                              fontSize: 40,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
-                              letterSpacing: 8,
+                              letterSpacing: 2,
                             ),
                           ),
                         )
@@ -330,7 +330,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   const Spacer(),
                   // Powered by footer
                   Text(
-                    'Powered by AssignX'.tr(context),
+                    'Powered by DoLancer'.tr(context),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.5),

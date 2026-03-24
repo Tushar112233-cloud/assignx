@@ -7,7 +7,7 @@ import '../config/constants.dart';
 ///
 /// Persists theme preference using SharedPreferences.
 class ThemeNotifier extends StateNotifier<ThemeMode> {
-  ThemeNotifier() : super(ThemeMode.system) {
+  ThemeNotifier() : super(ThemeMode.light) {
     _loadThemeMode();
   }
 
@@ -23,7 +23,7 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
       }
     } catch (e) {
       // Use default theme mode if loading fails
-      state = ThemeMode.system;
+      state = ThemeMode.light;
     }
   }
 

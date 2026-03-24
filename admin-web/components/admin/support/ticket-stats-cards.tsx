@@ -17,7 +17,10 @@ import {
 interface TicketStats {
   open_count: number;
   in_progress_count: number;
-  avg_resolution_time: number;
+  avg_resolution_time?: number;
+  resolved_count?: number;
+  closed_count?: number;
+  total_count?: number;
   by_priority?: {
     low: number;
     medium: number;
@@ -61,7 +64,7 @@ export function TicketStatsCards({ stats }: { stats: TicketStats }) {
         <CardHeader>
           <CardDescription>Avg Resolution Time</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {stats.avg_resolution_time > 0
+            {(stats.avg_resolution_time ?? 0) > 0
               ? `${stats.avg_resolution_time}h`
               : "N/A"}
           </CardTitle>

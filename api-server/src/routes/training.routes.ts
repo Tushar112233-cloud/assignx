@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
-import { TrainingModule, TrainingProgress, QuizQuestion, QuizAttempt, Doer } from '../models';
+import { TrainingModule, TrainingProgress, QuizQuestion, QuizAttempt, Doer, Supervisor } from '../models';
 import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
@@ -172,27 +172,39 @@ router.post('/complete', authenticate, async (req: Request, res: Response, next:
   }
 });
 
-// GET /training/status - Get training completion status for the current doer
+// GET /training/status - Get training completion status for the current doer or supervisor
 router.get('/status', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // JWT sub IS the doer _id
-    const doerId = req.user!.id;
+    const userId = req.user!.id;
+    const role = req.user!.role;
 
-    const doer = await Doer.findById(doerId);
-    if (!doer) {
-      throw new AppError('Doer profile not found.', 404);
+    // Support both doer and supervisor roles
+    let trainingCompleted = false;
+    if (role === 'supervisor') {
+      const supervisor = await Supervisor.findById(userId);
+      if (!supervisor) {
+        throw new AppError('Supervisor profile not found.', 404);
+      }
+      trainingCompleted = supervisor.isActivated || false;
+    } else {
+      const doer = await Doer.findById(userId);
+      if (!doer) {
+        throw new AppError('Doer profile not found.', 404);
+      }
+      trainingCompleted = doer.trainingCompleted || false;
     }
 
-    // Get all mandatory modules
+    // Get all mandatory modules for this role
+    const targetRole = role === 'supervisor' ? 'supervisor' : 'doer';
     const mandatoryModules = await TrainingModule.find({
       isActive: true,
-      $or: [{ targetRole: 'doer' }, { targetRole: 'all' }],
+      $or: [{ targetRole }, { targetRole: 'all' }],
     }).sort({ order: 1 });
 
     // Get progress for all modules
     const progress = await TrainingProgress.find({
-      userId: doerId,
-      userRole: req.user!.role,
+      userId,
+      userRole: role,
       moduleId: { $in: mandatoryModules.map(m => m._id) },
     });
 
@@ -212,7 +224,7 @@ router.get('/status', authenticate, async (req: Request, res: Response, next: Ne
     }));
 
     res.json({
-      trainingCompleted: doer.trainingCompleted,
+      trainingCompleted,
       totalModules: mandatoryModules.length,
       completedModules: progress.filter(p => p.completed).length,
       modules,

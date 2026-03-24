@@ -87,7 +87,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       position: MeshPosition.bottomRight,
       opacity: 0.3,
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,

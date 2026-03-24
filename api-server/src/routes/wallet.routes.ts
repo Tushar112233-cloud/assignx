@@ -49,7 +49,10 @@ router.get('/transactions', authenticate, async (req: Request, res: Response, ne
     const wallet = await WalletModel.findOne({ [field]: req.user!.id });
     if (!wallet) return res.json({ transactions: [], total: 0 });
 
-    const filter: Record<string, unknown> = { walletId: wallet._id };
+    // Match by walletId OR userId (for backward compat with seeded data)
+    const filter: Record<string, unknown> = {
+      $or: [{ walletId: wallet._id }, { userId: req.user!.id }],
+    };
     if (type) filter.transactionType = type;
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -72,7 +75,10 @@ router.get('/me/transactions', authenticate, async (req: Request, res: Response,
     const wallet = await WalletModel.findOne({ [field]: req.user!.id });
     if (!wallet) return res.json({ transactions: [], total: 0 });
 
-    const filter: Record<string, unknown> = { walletId: wallet._id };
+    // Match by walletId OR userId (for backward compat with seeded data)
+    const filter: Record<string, unknown> = {
+      $or: [{ walletId: wallet._id }, { userId: req.user!.id }],
+    };
     if (type) filter.transactionType = type;
 
     const skip = (Number(page) - 1) * Number(limit);

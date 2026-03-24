@@ -32,7 +32,7 @@ enum AppThemeMode {
         return AppThemeMode.dark;
       case 'system':
       default:
-        return AppThemeMode.system;
+        return AppThemeMode.light;
     }
   }
 }
@@ -84,7 +84,7 @@ final isDarkModeProvider = Provider<bool>((ref) {
 ///
 /// Handles loading from and saving to SharedPreferences.
 class ThemeNotifier extends StateNotifier<AppThemeMode> {
-  ThemeNotifier() : super(AppThemeMode.system) {
+  ThemeNotifier() : super(AppThemeMode.light) {
     _loadTheme();
   }
 

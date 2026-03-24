@@ -149,7 +149,7 @@ export async function uploadDeliverable(
   file: File
 ): Promise<ProjectDeliverable> {
   try {
-    const result = await apiUpload<{ project: Project }>(
+    const result = await apiUpload<{ project: Project & { deliverables?: ProjectDeliverable[] } }>(
       `/api/projects/${projectId}/deliverables`,
       file,
       'deliverables'
