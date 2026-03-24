@@ -132,95 +132,131 @@ class _ProPostDetailScreenState extends ConsumerState<ProPostDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final postAsync = ref.watch(proNetworkPostDetailProvider(widget.postId));
-    final commentsAsync = ref.watch(proPostCommentsProvider(widget.postId));
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => context.pop(),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: const Text('Post'),
+      ),
       body: postAsync.when(
         data: (post) {
           if (post == null) {
-            return _buildNotFound(context);
+            return const Center(child: Text('Post not found'));
           }
 
-          if (_likeCount == 0) {
-            _likeCount = post.likeCount;
-          }
+          _likeCount = post.likeCount;
 
-          return Column(
+          return ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              // Simple AppBar
-              SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => context.pop(),
-                        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: () => Share.share('Check out this post on AssignX: ${post.title}'),
-                        icon: const Icon(Icons.share_outlined, color: AppColors.textPrimary),
-                      ),
-                      IconButton(
-                        onPressed: () => _showMoreOptions(context, post),
-                        icon: const Icon(Icons.more_vert, color: AppColors.textPrimary),
-                      ),
-                    ],
-                  ),
+              // Title
+              Text(
+                post.title,
+                style: AppTextStyles.headingMedium.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
+              const SizedBox(height: 8),
+
+              // Author + time
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    child: Text(
+                      post.userName.isNotEmpty ? post.userName[0].toUpperCase() : '?',
+                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(post.userName, style: AppTextStyles.labelMedium),
+                        Text(post.timeAgo, style: AppTextStyles.caption),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
               // Content
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _PostContent(
-                        post: post,
-                        isLiked: _isLiked,
-                        isSaved: _isSaved,
-                        likeCount: _likeCount,
-                        onLike: _toggleLike,
-                        onSave: _toggleSave,
-                      ),
-                      const Divider(height: 32),
-                      commentsAsync.when(
-                        data: (comments) => CommentSection(
-                          comments: comments,
-                          postId: widget.postId,
-                          onAddComment: _addComment,
-                          onLikeComment: _likeComment,
-                          isVerified: true,
-                          isLoading: false,
-                        ),
-                        loading: () => CommentSection(
-                          comments: const [],
-                          postId: widget.postId,
-                          isLoading: true,
-                        ),
-                        error: (e, _) => Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Text(
-                            'Failed to load comments',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.error,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 100),
-                    ],
+              if (post.description != null)
+                Text(
+                  post.description!,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.6,
                   ),
                 ),
+              const SizedBox(height: 16),
+
+              // Tags
+              if (post.tags != null && post.tags!.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: post.tags!.map((tag) => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '#$tag',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  )).toList(),
+                ),
+              const SizedBox(height: 20),
+
+              // Like/comment counts
+              Row(
+                children: [
+                  Icon(Icons.favorite_border, size: 18, color: AppColors.textTertiary),
+                  const SizedBox(width: 4),
+                  Text('$_likeCount', style: AppTextStyles.caption),
+                  const SizedBox(width: 16),
+                  Icon(Icons.chat_bubble_outline, size: 18, color: AppColors.textTertiary),
+                  const SizedBox(width: 4),
+                  Text('${post.commentCount}', style: AppTextStyles.caption),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Divider
+              const Divider(),
+              const SizedBox(height: 16),
+
+              // Comments placeholder
+              Text(
+                'Comments',
+                style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'No comments yet. Be the first to comment!',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary),
               ),
             ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _buildError(context, e.toString()),
+        error: (e, _) => Center(
+          child: Text('Error: $e', style: AppTextStyles.bodyMedium),
+        ),
       ),
     );
   }
