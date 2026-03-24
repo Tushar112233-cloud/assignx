@@ -163,8 +163,8 @@ class _BusinessPostDetailScreenState
     final commentsAsync =
         ref.watch(businessPostCommentsProvider(widget.postId));
 
-    return SubtleGradientScaffold(
-      extendBodyBehindAppBar: false,
+    return Scaffold(
+      backgroundColor: AppColors.background,
       body: postAsync.when(
         data: (post) {
           if (post == null) return _buildNotFound(context);
