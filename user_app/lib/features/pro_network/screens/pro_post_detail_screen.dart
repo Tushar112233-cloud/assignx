@@ -172,48 +172,74 @@ class _ProPostDetailScreenState extends ConsumerState<ProPostDetailScreen> {
             _likeCount = post.likeCount;
           }
 
-          return CustomScrollView(
-            slivers: [
-              _buildAppBar(context, post),
-              SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _PostContent(
-                      post: post,
-                      isLiked: _isLiked,
-                      isSaved: _isSaved,
-                      likeCount: _likeCount,
-                      onLike: _toggleLike,
-                      onSave: _toggleSave,
-                    ),
-                    const Divider(height: 32),
-                    commentsAsync.when(
-                      data: (comments) => CommentSection(
-                        comments: comments,
-                        postId: widget.postId,
-                        onAddComment: _addComment,
-                        onLikeComment: _likeComment,
-                        isVerified: true,
-                        isLoading: false,
+          return Column(
+            children: [
+              // Simple AppBar
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => context.pop(),
+                        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
                       ),
-                      loading: () => CommentSection(
-                        comments: const [],
-                        postId: widget.postId,
-                        isLoading: true,
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () => Share.share('Check out this post on AssignX: ${post.title}'),
+                        icon: const Icon(Icons.share_outlined, color: AppColors.textPrimary),
                       ),
-                      error: (e, _) => Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Text(
-                          'Failed to load comments',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.error,
+                      IconButton(
+                        onPressed: () => _showMoreOptions(context, post),
+                        icon: const Icon(Icons.more_vert, color: AppColors.textPrimary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _PostContent(
+                        post: post,
+                        isLiked: _isLiked,
+                        isSaved: _isSaved,
+                        likeCount: _likeCount,
+                        onLike: _toggleLike,
+                        onSave: _toggleSave,
+                      ),
+                      const Divider(height: 32),
+                      commentsAsync.when(
+                        data: (comments) => CommentSection(
+                          comments: comments,
+                          postId: widget.postId,
+                          onAddComment: _addComment,
+                          onLikeComment: _likeComment,
+                          isVerified: true,
+                          isLoading: false,
+                        ),
+                        loading: () => CommentSection(
+                          comments: const [],
+                          postId: widget.postId,
+                          isLoading: true,
+                        ),
+                        error: (e, _) => Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Text(
+                            'Failed to load comments',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.error,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 100),
-                  ],
+                      const SizedBox(height: 100),
+                    ],
+                  ),
                 ),
               ),
             ],
