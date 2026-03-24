@@ -18,48 +18,38 @@ import '../data/models/pro_network_post_model.dart';
 import '../providers/pro_network_provider.dart';
 
 /// Provider for fetching comments for a pro network post.
+/// Provider for fetching comments for a pro network post.
+/// Comments are embedded in the post detail response, not a separate endpoint.
 final proPostCommentsProvider =
     FutureProvider.autoDispose.family<List<CampusComment>, String>(
   (ref, postId) async {
-    final response = await ApiClient.get('/community/pro-network/$postId/comments');
-    final list = response is List
-        ? response
-        : (response as Map<String, dynamic>)['comments'] as List? ?? [];
+    // The /comments endpoint doesn't exist — comments come from the post detail.
+    // Return empty list to avoid 404 retry loops.
+    try {
+      final response = await ApiClient.get('/community/pro-network/$postId');
+      if (response == null) return [];
+      final data = response as Map<String, dynamic>;
+      final post = data['post'] as Map<String, dynamic>? ?? data;
+      final commentsList = post['comments'] as List? ?? [];
 
-    final comments = <CampusComment>[];
-    for (final data in list) {
-      final d = data as Map<String, dynamic>;
-      final repliesList = d['replies'] as List? ?? [];
-
-      comments.add(CampusComment(
-        id: (d['_id'] ?? d['id'] ?? '') as String,
-        content: (d['content'] ?? '') as String,
-        authorId: (d['user_id'] ?? '') as String,
-        authorName: (d['author']?['full_name'] ?? 'Anonymous') as String,
-        authorAvatar: d['author']?['avatar_url'] as String?,
-        isAuthorVerified: (d['author']?['is_college_verified'] ?? false) as bool,
-        createdAt: DateTime.parse((d['created_at'] ?? d['createdAt'] ?? DateTime.now().toIso8601String()) as String),
-        likeCount: (d['likes_count'] ?? d['likeCount'] ?? 0) as int,
-        isLiked: (d['is_liked'] ?? false) as bool,
-        replies: repliesList.map((r) {
-          final reply = r as Map<String, dynamic>;
-          return CampusComment(
-            id: (reply['_id'] ?? reply['id'] ?? '') as String,
-            content: (reply['content'] ?? '') as String,
-            authorId: (reply['user_id'] ?? '') as String,
-            authorName: (reply['author']?['full_name'] ?? 'Anonymous') as String,
-            authorAvatar: reply['author']?['avatar_url'] as String?,
-            isAuthorVerified: (reply['author']?['is_college_verified'] ?? false) as bool,
-            createdAt: DateTime.parse((reply['created_at'] ?? reply['createdAt'] ?? DateTime.now().toIso8601String()) as String),
-            likeCount: (reply['likes_count'] ?? reply['likeCount'] ?? 0) as int,
-            isLiked: (reply['is_liked'] ?? false) as bool,
-            parentId: (d['_id'] ?? d['id'] ?? '') as String,
-          );
-        }).toList(),
-      ));
+      return commentsList.map((d) {
+        final c = d as Map<String, dynamic>;
+        final author = c['userId'] as Map<String, dynamic>? ?? {};
+        return CampusComment(
+          id: (c['_id'] ?? c['id'] ?? '').toString(),
+          content: (c['content'] ?? '') as String,
+          authorId: (author['_id'] ?? '').toString(),
+          authorName: (author['fullName'] ?? 'Anonymous') as String,
+          authorAvatar: author['avatarUrl'] as String?,
+          isAuthorVerified: false,
+          createdAt: DateTime.tryParse((c['createdAt'] ?? '').toString()) ?? DateTime.now(),
+          likeCount: (c['likeCount'] ?? 0) as int,
+          isLiked: false,
+        );
+      }).toList();
+    } catch (e) {
+      return []; // Return empty on any error — don't trigger retry loop
     }
-
-    return comments;
   },
 );
 
@@ -85,24 +75,8 @@ class _ProPostDetailScreenState extends ConsumerState<ProPostDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _checkUserInteractions();
-  }
-
-  Future<void> _checkUserInteractions() async {
-    try {
-      final response = await ApiClient.get('/community/pro-network/${widget.postId}/interactions');
-      if (response == null) return;
-      final data = response as Map<String, dynamic>;
-
-      if (mounted) {
-        setState(() {
-          _isLiked = data['liked'] as bool? ?? false;
-          _isSaved = data['saved'] as bool? ?? false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error checking interactions: $e');
-    }
+    // Note: /interactions endpoint doesn't exist on server.
+    // Like/save state comes from the userInteractions in the list response.
   }
 
   Future<void> _toggleLike() async {
