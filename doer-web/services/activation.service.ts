@@ -88,10 +88,27 @@ export const activationService = {
 
   async getQuizQuestions(): Promise<Omit<QuizQuestion, 'correct_option_ids'>[]> {
     try {
-      const data = await apiClient<{ questions: Omit<QuizQuestion, 'correct_option_ids'>[] }>(
+      const data = await apiClient<{ questions: any[] }>(
         '/api/training/quiz?role=doer'
       )
-      return data.questions || []
+      // Normalize API response (MongoDB camelCase) to frontend format (snake_case)
+      return (data.questions || []).map((q: any) => ({
+        id: (q._id || q.id || '').toString(),
+        target_role: q.targetRole || q.target_role || 'doer',
+        question_text: q.question || q.question_text || '',
+        question_type: q.questionType || q.question_type || 'multiple_choice',
+        options: Array.isArray(q.options)
+          ? q.options.map((opt: any, idx: number) =>
+              typeof opt === 'string'
+                ? { id: idx, text: opt }
+                : { id: opt.id ?? idx, text: opt.text || opt }
+            )
+          : [],
+        explanation: q.explanation || null,
+        points: q.points || 1,
+        sequence_order: q.order ?? q.sequence_order ?? 0,
+        moduleId: (q.moduleId || '').toString(),
+      }))
     } catch (err) {
       logger.error('Activation', 'Error fetching quiz questions:', err)
       return []

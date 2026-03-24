@@ -64,10 +64,18 @@ export default function TrainingPage() {
       setModules(mods)
       setProgress(prog)
 
-      // Check if training is already marked complete
-      const done = await isTrainingComplete('doer')
-      setAllDone(done)
-      if (done) setTrainingMarked(true)
+      // Check if training is already marked complete on the doer record
+      const trainingDone = await isTrainingComplete('doer')
+      if (trainingDone) {
+        setAllDone(true)
+        setTrainingMarked(true)
+      } else {
+        // Check if all mandatory modules are individually completed
+        const completedIds = new Set(prog.filter((p: TrainingProgressRecord) => p.status === 'completed').map((p: TrainingProgressRecord) => p.module_id))
+        const mandatoryMods = mods.filter((m: TrainingModule) => m.is_mandatory)
+        const allMandatoryDone = mandatoryMods.length > 0 && mandatoryMods.every((m: TrainingModule) => completedIds.has(m.id))
+        setAllDone(allMandatoryDone)
+      }
     } catch (err) {
       console.error('Error loading training data:', err)
       setError('Failed to load training modules. Please refresh the page.')
@@ -92,9 +100,11 @@ export default function TrainingPage() {
       const updatedProgress = await getTrainingProgress()
       setProgress(updatedProgress)
 
-      // Check if all done
-      const done = await isTrainingComplete('doer')
-      setAllDone(done)
+      // Check if all mandatory modules are now completed
+      const completedIds = new Set(updatedProgress.filter((p: TrainingProgressRecord) => p.status === 'completed').map((p: TrainingProgressRecord) => p.module_id))
+      const mandatoryModules = modules.filter(m => m.is_mandatory)
+      const allMandatoryDone = mandatoryModules.length > 0 && mandatoryModules.every(m => completedIds.has(m.id))
+      setAllDone(allMandatoryDone)
     } catch (err) {
       console.error('Error marking module complete:', err)
       setError('Failed to mark module as complete. Please try again.')
