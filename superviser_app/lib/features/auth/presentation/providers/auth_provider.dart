@@ -106,6 +106,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<Map<String, dynamic>> checkEmailAvailability(String email) async {
+    try {
+      state = state.copyWith(isLoading: true, clearError: true);
+      final result = await _repository.checkEmailAvailability(email);
+      state = state.copyWith(isLoading: false);
+      return result;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
+    }
+  }
+
   Future<void> sendOTP({required String email, required String purpose}) async {
     try {
       state = state.copyWith(isLoading: true, clearError: true);

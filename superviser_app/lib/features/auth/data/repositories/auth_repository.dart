@@ -20,6 +20,19 @@ class AuthRepository {
     }
   }
 
+  Future<Map<String, dynamic>> checkEmailAvailability(String email) async {
+    try {
+      final response = await ApiClient.post('/auth/check-account', {
+        'email': email,
+        'role': 'supervisor',
+      });
+      if (response == null) return {'available': true};
+      return response as Map<String, dynamic>;
+    } on ApiException catch (e) {
+      throw AppAuthException(e.message);
+    }
+  }
+
   Future<void> sendOTP({required String email, required String purpose, String role = 'supervisor'}) async {
     try {
       await ApiClient.post('/auth/send-otp', {

@@ -231,8 +231,8 @@ export function Header({
               </span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-96 p-0" sideOffset={8}>
-            <div className="flex items-center justify-between px-4 py-3 border-b">
+          <PopoverContent align="end" className="w-96 p-0 flex flex-col max-h-[500px]" sideOffset={8}>
+            <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
               <h4 className="text-sm font-semibold">Notifications</h4>
               {unreadCount > 0 && (
                 <Button
@@ -246,7 +246,7 @@ export function Header({
                 </Button>
               )}
             </div>
-            <ScrollArea className="max-h-[400px]">
+            <ScrollArea className="flex-1 min-h-0">
               {recentNotifs.length === 0 ? (
                 <div className="text-center py-8">
                   <Bell className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
@@ -267,7 +267,7 @@ export function Header({
                 ))
               )}
             </ScrollArea>
-            <div className="border-t px-4 py-2">
+            <div className="border-t px-4 py-2 shrink-0 bg-background">
               <Button
                 variant="ghost"
                 size="sm"

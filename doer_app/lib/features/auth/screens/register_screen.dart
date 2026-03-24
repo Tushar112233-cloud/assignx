@@ -15,6 +15,7 @@ import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../core/translation/translation_extensions.dart';
+import '../../../providers/subjects_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -33,26 +34,6 @@ const List<_ExperienceOption> _experienceLevels = [
   _ExperienceOption('Beginner', 'beginner', '0-1 years'),
   _ExperienceOption('Intermediate', 'intermediate', '1-3 years'),
   _ExperienceOption('Professional', 'pro', '3+ years'),
-];
-
-/// Skill areas available for selection.
-const List<_LabelValue> _skillAreas = [
-  _LabelValue('Engineering', 'engineering'),
-  _LabelValue('Computer Science', 'computer_science'),
-  _LabelValue('Mathematics', 'mathematics'),
-  _LabelValue('Physics', 'physics'),
-  _LabelValue('Chemistry', 'chemistry'),
-  _LabelValue('Biology', 'biology'),
-  _LabelValue('Business', 'business'),
-  _LabelValue('Finance', 'finance'),
-  _LabelValue('Economics', 'economics'),
-  _LabelValue('Literature', 'literature'),
-  _LabelValue('Arts & Design', 'arts'),
-  _LabelValue('Education', 'education'),
-  _LabelValue('Data Entry', 'data_entry'),
-  _LabelValue('Research', 'research'),
-  _LabelValue('Writing', 'writing'),
-  _LabelValue('Translation', 'translation'),
 ];
 
 /// Indian banks for the banking step dropdown.
@@ -146,6 +127,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String? _qualification;
   String? _experienceLevel;
   final Set<String> _selectedSkills = {};
+  final Map<String, String> _skillIdToName = {};
   final _bioController = TextEditingController();
 
   // Step 3 fields.
@@ -922,56 +904,72 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: _skillAreas.map((skill) {
-            final isSelected = _selectedSkills.contains(skill.value);
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  if (isSelected) {
-                    _selectedSkills.remove(skill.value);
-                  } else {
-                    _selectedSkills.add(skill.value);
-                  }
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : AppColors.surface,
-                  borderRadius:
-                      BorderRadius.circular(AppSpacing.radiusFull),
-                  border: isSelected
-                      ? null
-                      : Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      skill.label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color:
-                            isSelected ? Colors.white : AppColors.textSecondary,
+        ref.watch(subjectsProvider).when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+          error: (err, _) => GestureDetector(
+            onTap: () => ref.invalidate(subjectsProvider),
+            child: const Text(
+              'Failed to load subjects. Tap to retry.',
+              style: TextStyle(fontSize: 12, color: AppColors.error),
+            ),
+          ),
+          data: (subjects) => Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: subjects.map((subject) {
+              final isSelected = _selectedSkills.contains(subject.id);
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (isSelected) {
+                      _selectedSkills.remove(subject.id);
+                    } else {
+                      _selectedSkills.add(subject.id);
+                      _skillIdToName[subject.id] = subject.name;
+                    }
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primary : AppColors.surface,
+                    borderRadius:
+                        BorderRadius.circular(AppSpacing.radiusFull),
+                    border: isSelected
+                        ? null
+                        : Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        subject.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color:
+                              isSelected ? Colors.white : AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                    if (isSelected) ...[
-                      const SizedBox(width: 4),
-                      const Icon(Icons.close, size: 14, color: Colors.white),
+                      if (isSelected) ...[
+                        const SizedBox(width: 4),
+                        const Icon(Icons.close, size: 14, color: Colors.white),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
         ),
 
         const SizedBox(height: AppSpacing.md),
@@ -1153,7 +1151,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           BorderRadius.circular(AppSpacing.radiusFull),
                     ),
                     child: Text(
-                      _labelFor(_skillAreas, s),
+                      _skillIdToName[s] ?? s,
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,

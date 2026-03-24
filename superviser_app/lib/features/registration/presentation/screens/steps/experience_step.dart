@@ -8,6 +8,7 @@ import '../../../../../shared/widgets/inputs/app_text_field.dart';
 import '../../../data/models/registration_model.dart';
 import '../../providers/registration_provider.dart';
 import '../../widgets/file_upload_card.dart';
+import '../../../../common/presentation/providers/subjects_provider.dart';
 
 /// Step 2: Education & Experience
 ///
@@ -228,24 +229,39 @@ class _ExperienceStepState extends ConsumerState<ExperienceStep> {
             ),
             const SizedBox(height: 12),
 
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: expertiseAreaOptions.map((expertise) {
-                final isSelected = _selectedExpertise.contains(expertise);
-                return FilterChip(
-                  label: Text(expertise),
-                  selected: isSelected,
-                  onSelected: (_) => _toggleExpertise(expertise),
-                  selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                  checkmarkColor: AppColors.primary,
-                  labelStyle: AppTypography.labelMedium.copyWith(
-                    color: isSelected
-                        ? AppColors.primary
-                        : AppColors.textSecondaryLight,
-                  ),
-                );
-              }).toList(),
+            ref.watch(subjectsProvider).when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (err, _) => GestureDetector(
+                onTap: () => ref.invalidate(subjectsProvider),
+                child: Text(
+                  'Failed to load subjects. Tap to retry.',
+                  style: AppTypography.bodySmall.copyWith(color: AppColors.error),
+                ),
+              ),
+              data: (subjects) => Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: subjects.map((subject) {
+                  final isSelected = _selectedExpertise.contains(subject.id);
+                  return FilterChip(
+                    label: Text(subject.name),
+                    selected: isSelected,
+                    onSelected: (_) => _toggleExpertise(subject.id),
+                    selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                    checkmarkColor: AppColors.primary,
+                    labelStyle: AppTypography.labelMedium.copyWith(
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.textSecondaryLight,
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
             const SizedBox(height: 24),
 

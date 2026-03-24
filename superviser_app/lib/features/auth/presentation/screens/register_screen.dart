@@ -143,12 +143,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           _emailController.text.trim(),
         );
         if (!mounted) return;
-        final available = result['available'] as bool? ?? true;
+        final available = result['available'] as bool? ?? !(result['exists'] as bool? ?? false);
         final conflictingRole = result['conflictingRole'] as String?;
-        if (!available && conflictingRole != null) {
-          context.showErrorSnackBar(
-            'This email is already registered as a $conflictingRole. Please use a different email or log in to our website.',
-          );
+        final pendingApproval = result['pendingApproval'] as bool? ?? false;
+        if (!available) {
+          if (pendingApproval) {
+            context.showErrorSnackBar(
+              'This email already has a pending application awaiting approval. Please wait for admin review or log in to check your status.',
+            );
+          } else if (conflictingRole != null) {
+            context.showErrorSnackBar(
+              'This email is already registered as a $conflictingRole. Please use a different email or log in.',
+            );
+          } else {
+            context.showErrorSnackBar(
+              'This email is already registered. Please log in instead.',
+            );
+          }
           setState(() => _isCheckingEmail = false);
           return;
         }
@@ -217,10 +228,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final metadata = <String, dynamic>{
       'qualification': _qualification,
       'yearsOfExperience': int.tryParse(_yearsController.text.trim()) ?? 0,
-      'subjects': _selectedSubjectIds.asMap().entries.map((e) => ({
-        'subjectId': e.value,
-        'isPrimary': e.key == 0,
-      })).toList(),
+      'expertiseAreas': _selectedSubjectIds,
       'bio': _bioController.text.trim(),
       'bankName': _bankNameController.text.trim(),
       'accountNumber': _accountNumberController.text.trim(),

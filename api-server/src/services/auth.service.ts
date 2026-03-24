@@ -35,7 +35,39 @@ export const checkAccount = async (email: string, role?: string) => {
   if (role) {
     const Model = getModelByRole(role);
     const doc = await Model.findOne({ email: normalizedEmail });
-    return { exists: !!doc };
+
+    // Also check AccessRequest for pending applications (supervisor/doer)
+    if (!doc && (role === 'supervisor' || role === 'doer')) {
+      const pendingRequest = await AccessRequest.findOne({
+        email: normalizedEmail,
+        role,
+        status: 'pending',
+      });
+      if (pendingRequest) {
+        return { available: false, exists: true, conflictingRole: role, pendingApproval: true };
+      }
+    }
+
+    if (doc) {
+      return { available: false, exists: true, conflictingRole: role };
+    }
+
+    // Check all other role collections for conflicts
+    const allModels: { name: string; model: any }[] = [
+      { name: 'user', model: User },
+      { name: 'doer', model: Doer },
+      { name: 'supervisor', model: Supervisor },
+      { name: 'admin', model: Admin },
+    ].filter((m) => m.name !== (['student', 'professional', 'business'].includes(role) ? 'user' : role));
+
+    for (const { name, model } of allModels) {
+      const conflict = await model.findOne({ email: normalizedEmail });
+      if (conflict) {
+        return { available: false, exists: true, conflictingRole: name };
+      }
+    }
+
+    return { available: true, exists: false };
   }
   // Check all collections
   const [user, doer, supervisor, admin] = await Promise.all([
@@ -44,7 +76,8 @@ export const checkAccount = async (email: string, role?: string) => {
     Supervisor.findOne({ email: normalizedEmail }),
     Admin.findOne({ email: normalizedEmail }),
   ]);
-  return { exists: !!(user || doer || supervisor || admin) };
+  const exists = !!(user || doer || supervisor || admin);
+  return { available: !exists, exists };
 };
 
 export const sendOTP = async (email: string, purpose: 'login' | 'signup', role: string) => {

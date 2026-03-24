@@ -276,7 +276,7 @@ router.get('/rooms/:id/messages', authenticate, async (req: Request, res: Respon
 
     const [messages, total] = await Promise.all([
       ChatMessage.find(baseFilter)
-        .sort({ createdAt: -1 })
+        .sort({ createdAt: 1 })
         .skip(skip)
         .limit(Number(limit)),
       ChatMessage.countDocuments(baseFilter),

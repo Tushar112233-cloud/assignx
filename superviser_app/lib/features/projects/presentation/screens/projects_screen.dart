@@ -342,9 +342,22 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
     );
 
     if (confirmed == true) {
-      final success = await ref
-          .read(projectDetailProvider.notifier)
-          .approveDeliverable();
+      // Load project first so state.project and state.latestDeliverable are available
+      await ref.read(projectDetailProvider.notifier).loadProject(projectId);
+
+      final state = ref.read(projectDetailProvider);
+      bool success;
+
+      if (state.latestDeliverable != null) {
+        success = await ref
+            .read(projectDetailProvider.notifier)
+            .approveDeliverable();
+      } else {
+        // No deliverable — approve via status update directly
+        success = await ref
+            .read(projectDetailProvider.notifier)
+            .updateStatus('qc_approved');
+      }
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

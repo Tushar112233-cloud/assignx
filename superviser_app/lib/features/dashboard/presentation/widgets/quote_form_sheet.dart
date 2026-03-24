@@ -187,7 +187,7 @@ class _QuoteFormSheetState extends ConsumerState<QuoteFormSheet> {
               Expanded(
                 child: ListView(
                   controller: scrollController,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                   children: [
                     // Request summary card
                     _RequestSummary(request: widget.request),
@@ -229,12 +229,24 @@ class _QuoteFormSheetState extends ConsumerState<QuoteFormSheet> {
                         ref.read(quoteFormProvider.notifier).updateNotes(value);
                       },
                     ),
-                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+              // Pinned submit button at bottom
+              Container(
+                padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     // Error message display
                     if (formState.error != null)
                       Container(
                         padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
+                        margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
                           color: AppColors.error.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -253,13 +265,11 @@ class _QuoteFormSheetState extends ConsumerState<QuoteFormSheet> {
                           ],
                         ),
                       ),
-                    // Submit button
                     PrimaryButton(
                       text: 'Submit Quote'.tr(context),
                       isLoading: formState.isSubmitting,
                       onPressed: _submitQuote,
                     ),
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),

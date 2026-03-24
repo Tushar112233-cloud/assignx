@@ -7,6 +7,7 @@ import '../../../core/constants/app_spacing.dart';
 import '../../../core/router/route_names.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/subjects_provider.dart';
+import '../../../providers/skills_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -113,18 +114,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     'Other',
   ];
 
-  final List<ChipOption<String>> _skillOptions = [
-    const ChipOption(value: 'writing', label: 'Academic Writing', icon: Icons.edit),
-    const ChipOption(value: 'research', label: 'Research', icon: Icons.search),
-    const ChipOption(value: 'data_analysis', label: 'Data Analysis', icon: Icons.analytics),
-    const ChipOption(value: 'programming', label: 'Programming', icon: Icons.code),
-    const ChipOption(value: 'presentation', label: 'Presentations', icon: Icons.slideshow),
-    const ChipOption(value: 'excel', label: 'Excel/Spreadsheets', icon: Icons.table_chart),
-    const ChipOption(value: 'statistics', label: 'Statistics', icon: Icons.bar_chart),
-    const ChipOption(value: 'editing', label: 'Proofreading', icon: Icons.spellcheck),
-    const ChipOption(value: 'tutoring', label: 'Tutoring', icon: Icons.school),
-    const ChipOption(value: 'translation', label: 'Translation', icon: Icons.translate),
-  ];
+  // Skills are now fetched from the API via skillsProvider
 
   /// Disposes controllers to prevent memory leaks.
   @override
@@ -510,23 +500,44 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
           const SizedBox(height: AppSpacing.xl),
 
-          // Skills in a glass card
+          // Skills in a glass card (fetched from API)
           GlassContainer(
             blur: 12,
             opacity: 0.7,
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
             padding: AppSpacing.cardPadding,
-            child: ChipSelector<String>(
-              label: 'Your Skills',
-              helperText: 'Select up to 8 skills'.tr(context),
-              options: _skillOptions,
-              selectedValues: _selectedSkills,
-              maxSelections: 8,
-              onChanged: (values) {
-                setState(() => _selectedSkills
-                  ..clear()
-                  ..addAll(values));
-              },
+            child: ref.watch(skillsProvider).when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (err, _) => GestureDetector(
+                onTap: () => ref.invalidate(skillsProvider),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Text(
+                    'Failed to load skills. Tap to retry.'.tr(context),
+                    style: TextStyle(color: AppColors.error),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              data: (skills) => ChipSelector<String>(
+                label: 'Your Skills',
+                helperText: 'Select up to 8 skills'.tr(context),
+                options: skills
+                    .map((s) => ChipOption<String>(value: s.id, label: s.name))
+                    .toList(),
+                selectedValues: _selectedSkills,
+                maxSelections: 8,
+                onChanged: (values) {
+                  setState(() => _selectedSkills
+                    ..clear()
+                    ..addAll(values));
+                },
+              ),
             ),
           ),
         ],

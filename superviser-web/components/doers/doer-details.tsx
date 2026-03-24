@@ -62,8 +62,8 @@ function ProjectCard({ project }: { project: DoerProject }) {
         )}
       </div>
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">{project.status === "completed" ? `Completed ${formatDate(project.completed_at!)}` : `Due ${formatDate(project.deadline)}`}</span>
-        <span className="font-medium text-green-600">+{project.doer_payout?.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 })}</span>
+        <span className="text-muted-foreground">{project.status === "completed" && project.completed_at ? `Completed ${formatDate(project.completed_at)}` : `Due ${formatDate(project.deadline)}`}</span>
+        {project.doer_payout != null && <span className="font-medium text-green-600">+{project.doer_payout.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 })}</span>}
       </div>
     </div>
   )
@@ -210,12 +210,12 @@ export function DoerDetails({ doer, open, onOpenChange, onBlacklistChange }: Doe
           </div>
           <div className="grid grid-cols-4 gap-2">
             <div className="text-center p-2 bg-muted/50 rounded-lg">
-              <div className="flex items-center justify-center gap-1"><Star className="h-4 w-4 fill-amber-400 text-amber-400" /><span className="font-bold">{doer.rating.toFixed(1)}</span></div>
+              <div className="flex items-center justify-center gap-1"><Star className="h-4 w-4 fill-amber-400 text-amber-400" /><span className="font-bold">{(doer.rating ?? 0).toFixed(1)}</span></div>
               <p className="text-xs text-muted-foreground">Rating</p>
             </div>
-            <div className="text-center p-2 bg-muted/50 rounded-lg"><p className="font-bold">{doer.completed_projects}</p><p className="text-xs text-muted-foreground">Completed</p></div>
-            <div className="text-center p-2 bg-muted/50 rounded-lg"><p className="font-bold">{doer.success_rate}%</p><p className="text-xs text-muted-foreground">Success</p></div>
-            <div className="text-center p-2 bg-muted/50 rounded-lg"><p className="font-bold">{doer.active_projects}</p><p className="text-xs text-muted-foreground">Active</p></div>
+            <div className="text-center p-2 bg-muted/50 rounded-lg"><p className="font-bold">{doer.completed_projects ?? 0}</p><p className="text-xs text-muted-foreground">Completed</p></div>
+            <div className="text-center p-2 bg-muted/50 rounded-lg"><p className="font-bold">{doer.success_rate ?? 0}%</p><p className="text-xs text-muted-foreground">Success</p></div>
+            <div className="text-center p-2 bg-muted/50 rounded-lg"><p className="font-bold">{doer.active_projects ?? 0}</p><p className="text-xs text-muted-foreground">Active</p></div>
           </div>
         </SheetHeader>
 
@@ -257,8 +257,8 @@ export function DoerDetails({ doer, open, onOpenChange, onBlacklistChange }: Doe
                 <h4 className="text-sm font-medium">Performance</h4>
                 <div className="space-y-3">
                   <div>
-                    <div className="flex justify-between text-sm mb-1"><span className="text-muted-foreground">Success Rate</span><span className="font-medium">{doer.success_rate}%</span></div>
-                    <Progress value={doer.success_rate} className="h-2" />
+                    <div className="flex justify-between text-sm mb-1"><span className="text-muted-foreground">Success Rate</span><span className="font-medium">{doer.success_rate ?? 0}%</span></div>
+                    <Progress value={doer.success_rate ?? 0} className="h-2" />
                   </div>
                   {doer.average_response_time && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Avg Response Time</span><span className="font-medium">{doer.average_response_time}</span></div>}
                 </div>

@@ -35,8 +35,17 @@ enum ProjectStatus {
   /// Work delivered by doer
   delivered('delivered', 'Delivered', Icons.send),
 
+  /// Doer submitted for QC review
+  submittedForQc('submitted_for_qc', 'Submitted for QC', Icons.rate_review),
+
+  /// QC in progress by supervisor
+  qcInProgress('qc_in_progress', 'QC In Progress', Icons.rate_review),
+
   /// Under QC review by supervisor
   forReview('for_review', 'For Review', Icons.rate_review),
+
+  /// QC approved by supervisor
+  qcApproved('qc_approved', 'QC Approved', Icons.verified),
 
   /// Revision requested
   revisionRequested('revision_requested', 'Revision Requested', Icons.replay),
@@ -103,12 +112,15 @@ enum ProjectStatus {
         return Colors.blue;
       case ProjectStatus.delivered:
       case ProjectStatus.forReview:
+      case ProjectStatus.submittedForQc:
+      case ProjectStatus.qcInProgress:
         return Colors.teal;
       case ProjectStatus.revisionRequested:
       case ProjectStatus.inRevision:
       case ProjectStatus.clientRevision:
         return Colors.deepOrange;
       case ProjectStatus.approved:
+      case ProjectStatus.qcApproved:
       case ProjectStatus.deliveredToClient:
       case ProjectStatus.clientReview:
         return Colors.purple;
@@ -144,6 +156,8 @@ enum ProjectStatus {
     return [
       ProjectStatus.delivered,
       ProjectStatus.forReview,
+      ProjectStatus.submittedForQc,
+      ProjectStatus.qcInProgress,
     ].contains(this);
   }
 
