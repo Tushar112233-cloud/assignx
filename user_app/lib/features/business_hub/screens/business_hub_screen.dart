@@ -55,7 +55,8 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
 
     final canPop = Navigator.of(context).canPop();
 
-    return SubtleGradientScaffold.standard(
+    return Scaffold(
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           CustomScrollView(
