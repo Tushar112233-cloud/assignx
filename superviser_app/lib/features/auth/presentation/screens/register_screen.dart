@@ -476,7 +476,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 children: subjects.map((subject) {
                   final isSelected = _selectedSubjectIds.contains(subject.id);
                   return FilterChip(
-                    label: Text(subject.name),
+                    label: Text(
+                      subject.name,
+                      style: TextStyle(
+                        color: isSelected ? AppColors.accent : Colors.grey[800],
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
                     selected: isSelected,
                     onSelected: (selected) {
                       setState(() {
@@ -487,8 +494,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         }
                       });
                     },
-                    selectedColor: AppColors.accent.withValues(alpha: 0.2),
+                    backgroundColor: Colors.white,
+                    selectedColor: AppColors.accent.withValues(alpha: 0.15),
                     checkmarkColor: AppColors.accent,
+                    side: BorderSide(
+                      color: isSelected ? AppColors.accent : Colors.grey[300]!,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   );
                 }).toList(),
               ),

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginWithPassword } from "@/lib/api/auth";
 
-const DEV_BYPASS_EMAILS = ["admin@gmail.com"];
+const DEV_BYPASS_EMAILS: string[] = [];
 
 export function LoginForm() {
   const router = useRouter();

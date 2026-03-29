@@ -2,7 +2,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -13,9 +12,8 @@ import '../widgets/business_filter_tabs_bar.dart';
 import '../widgets/business_hub_hero.dart';
 import '../widgets/business_post_card.dart';
 import '../widgets/business_search_bar.dart';
-import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
-/// Business Hub screen with staggered feed of business content.
+/// Business Hub screen showing investors with funding stage filters.
 class BusinessHubScreen extends ConsumerStatefulWidget {
   const BusinessHubScreen({super.key});
 
@@ -24,25 +22,26 @@ class BusinessHubScreen extends ConsumerStatefulWidget {
 }
 
 class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
-  BusinessCategory? _selectedCategory;
+  FundingStage? _selectedStage;
   String _searchQuery = '';
 
-  List<BusinessHubPost> _filterPosts(List<BusinessHubPost> posts) {
-    var filtered = posts;
+  List<Investor> _filterInvestors(List<Investor> investors) {
+    var filtered = investors;
 
-    if (_selectedCategory != null &&
-        _selectedCategory != BusinessCategory.all) {
-      filtered =
-          filtered.where((p) => p.category == _selectedCategory).toList();
+    if (_selectedStage != null && _selectedStage != FundingStage.all) {
+      filtered = filtered
+          .where((i) => i.fundingStages.contains(_selectedStage))
+          .toList();
     }
 
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
-      filtered = filtered.where((p) {
-        return p.title.toLowerCase().contains(query) ||
-            (p.description?.toLowerCase().contains(query) ?? false) ||
-            p.userName.toLowerCase().contains(query) ||
-            (p.companyName?.toLowerCase().contains(query) ?? false);
+      filtered = filtered.where((i) {
+        return i.name.toLowerCase().contains(query) ||
+            i.firm.toLowerCase().contains(query) ||
+            i.sectors.any((s) => s.toLowerCase().contains(query)) ||
+            (i.description?.toLowerCase().contains(query) ?? false) ||
+            (i.location?.toLowerCase().contains(query) ?? false);
       }).toList();
     }
 
@@ -51,15 +50,12 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final postsAsync = ref.watch(businessHubPostsProvider);
-
+    final investorsAsync = ref.watch(investorsProvider);
     final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          CustomScrollView(
+      body: CustomScrollView(
         slivers: [
           // Back button (only shown when navigated to directly via route)
           if (canPop)
@@ -79,6 +75,7 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
                 ),
               ),
             ),
+
           // Hero section
           const SliverToBoxAdapter(child: BusinessHubHero()),
 
@@ -89,26 +86,26 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
             ),
           ),
 
-          // Filter tabs
+          // Funding stage filter tabs
           SliverToBoxAdapter(
             child: BusinessFilterTabsBar(
-              selectedCategory: _selectedCategory,
-              onCategoryChanged: (category) {
-                setState(() => _selectedCategory = category);
+              selectedStage: _selectedStage,
+              onStageChanged: (stage) {
+                setState(() => _selectedStage = stage);
               },
             ),
           ),
 
-          // Posts count
+          // Investor count
           SliverToBoxAdapter(
-            child: postsAsync.when(
-              data: (posts) {
-                final filtered = _filterPosts(posts);
+            child: investorsAsync.when(
+              data: (investors) {
+                final filtered = _filterInvestors(investors);
                 return Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: Text(
-                    '${filtered.length} posts',
+                    '${filtered.length} investor${filtered.length == 1 ? '' : 's'}',
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -120,20 +117,20 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
             ),
           ),
 
-          // Posts grid
-          postsAsync.when(
-            data: (posts) {
-              final filtered = _filterPosts(posts);
+          // Investor list
+          investorsAsync.when(
+            data: (investors) {
+              final filtered = _filterInvestors(investors);
 
               if (filtered.isEmpty) {
                 return SliverFillRemaining(
                   hasScrollBody: false,
                   child: _EmptyState(
-                    hasFilters: _selectedCategory != null ||
+                    hasFilters: _selectedStage != null ||
                         _searchQuery.isNotEmpty,
                     onClearFilters: () {
                       setState(() {
-                        _selectedCategory = null;
+                        _selectedStage = null;
                         _searchQuery = '';
                       });
                     },
@@ -143,24 +140,23 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
 
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverMasonryGrid.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final post = filtered[index];
-                    return buildBusinessPostCard(
-                      post: post,
-                      onTap: () {
-                        context.push('/business-hub/post/${post.id}');
-                      },
-                      onLike: () {},
-                      onComment: () {
-                        context.push('/business-hub/post/${post.id}');
-                      },
-                    );
-                  },
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final investor = filtered[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: InvestorCard(
+                          investor: investor,
+                          onTap: () {
+                            context
+                                .push('/business-hub/post/${investor.id}');
+                          },
+                        ),
+                      );
+                    },
+                    childCount: filtered.length,
+                  ),
                 ),
               );
             },
@@ -178,14 +174,13 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
                         size: 48, color: AppColors.textTertiary),
                     const SizedBox(height: 12),
                     Text(
-                      'Failed to load posts',
+                      'Failed to load investors',
                       style: AppTextStyles.bodyMedium
                           .copyWith(color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 12),
                     FilledButton(
-                      onPressed: () =>
-                          ref.invalidate(businessHubPostsProvider),
+                      onPressed: () => ref.invalidate(investorsProvider),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -196,9 +191,6 @@ class _BusinessHubScreenState extends ConsumerState<BusinessHubScreen> {
 
           // Bottom padding
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
-        ],
-      ),
-          // Business Hub posts are admin-managed — no create FAB for users
         ],
       ),
     );
@@ -225,13 +217,13 @@ class _EmptyState extends StatelessWidget {
             Icon(
               hasFilters
                   ? Icons.filter_list_off
-                  : Icons.business_center_outlined,
+                  : Icons.account_balance_outlined,
               size: 64,
               color: AppColors.textTertiary.withAlpha(128),
             ),
             const SizedBox(height: 16),
             Text(
-              hasFilters ? 'No matching posts' : 'No posts yet',
+              hasFilters ? 'No matching investors' : 'No investors yet',
               style: AppTextStyles.headingSmall.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -240,7 +232,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               hasFilters
                   ? 'Try adjusting your filters or search query'
-                  : 'Be the first to share with the business community!',
+                  : 'Investor profiles will appear here soon',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textTertiary,
               ),

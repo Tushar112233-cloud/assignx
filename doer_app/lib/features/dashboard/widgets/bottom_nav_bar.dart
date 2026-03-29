@@ -221,17 +221,17 @@ class _ProfileNavItem extends StatelessWidget {
                     color: isActive ? AppColors.primary : AppColors.border,
                     width: isActive ? 2 : 1.5,
                   ),
-                  image: imageUrl != null
+                  image: imageUrl != null && imageUrl!.isNotEmpty && imageUrl!.startsWith('http')
                       ? DecorationImage(
                           image: NetworkImage(imageUrl!),
                           fit: BoxFit.cover,
                         )
                       : null,
-                  color: imageUrl == null
+                  color: (imageUrl == null || imageUrl!.isEmpty)
                       ? AppColors.surfaceVariant
                       : null,
                 ),
-                child: imageUrl == null
+                child: (imageUrl == null || imageUrl!.isEmpty || !imageUrl!.startsWith('http'))
                     ? Icon(
                         LucideIcons.user,
                         size: iconSize,

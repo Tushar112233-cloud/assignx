@@ -110,7 +110,7 @@ export const SessionCard = memo(function SessionCard({
   const canJoinMeet = () => {
     if (!booking.meetLink) return false;
     if (booking.status === "in_progress") return true;
-    if (booking.status === "upcoming" && isStartingSoon()) return true;
+    if (booking.status === "upcoming") return true;
     return false;
   };
 

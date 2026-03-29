@@ -957,6 +957,9 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevMessageCountRef = useRef(0);
+  const isLoadingOlderRef = useRef(false);
+  const hasScrolledInitially = useRef(false);
 
   const { messages, isLoading, isSending, hasMore, sendMessage, sendMessageWithAttachment, loadMore } = useChat(projectId, userId);
 
@@ -972,11 +975,29 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
     fetchTimeline();
   }, [projectId]);
 
+  // Scroll to bottom only on initial load or when new messages are appended (not loadMore)
   useEffect(() => {
-    if (scrollRef.current && messages.length > 0) {
-      setTimeout(() => {
-        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-      }, 100);
+    if (!scrollRef.current || messages.length === 0) return;
+
+    const prevCount = prevMessageCountRef.current;
+    prevMessageCountRef.current = messages.length;
+
+    // Initial load — scroll to bottom instantly
+    if (!hasScrolledInitially.current) {
+      hasScrolledInitially.current = true;
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      return;
+    }
+
+    // If loading older messages (prepended), don't scroll
+    if (isLoadingOlderRef.current) {
+      isLoadingOlderRef.current = false;
+      return;
+    }
+
+    // New message appended — scroll to bottom smoothly
+    if (messages.length > prevCount) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
     }
   }, [messages]);
 
@@ -1052,7 +1073,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
       <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
         {hasMore && !isLoading && messages.length > 0 && (
           <button
-            onClick={loadMore}
+            onClick={() => { isLoadingOlderRef.current = true; loadMore(); }}
             className="w-full py-2 text-xs text-violet-600 hover:underline flex items-center justify-center gap-1 mb-4"
           >
             <ChevronUp className="h-3 w-3" /> Load earlier

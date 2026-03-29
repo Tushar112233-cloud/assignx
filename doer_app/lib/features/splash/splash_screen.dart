@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -259,14 +260,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                                 ),
                               ],
                             ),
-                            child: const Center(
-                              child: Text(
-                                'D',
-                                style: TextStyle(
-                                  fontSize: 64,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
-                                ),
+                            child: Center(
+                              child: SvgPicture.asset(
+                                'assets/images/logo.svg',
+                                width: 80,
+                                height: 80,
                               ),
                             ),
                           ),

@@ -115,6 +115,9 @@ class SupervisorProfile {
       specializations: (json['specializations'] as List?)
               ?.map((e) => e.toString())
               .toList() ??
+          (json['expertise'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
           [],
       languages:
           (json['languages'] as List?)?.map((e) => e.toString()).toList() ?? [],

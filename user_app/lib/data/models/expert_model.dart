@@ -172,7 +172,7 @@ class Expert {
       education: (json['education'] as String?),
       institution: json['institution'] as String?,
       currency: json['currency'] as String? ?? 'INR',
-      featured: json['featured'] as bool? ?? false,
+      featured: json['featured'] as bool? ?? json['isFeatured'] as bool? ?? json['is_featured'] as bool? ?? false,
       availabilitySlots: (json['availability_slots'] as List<dynamic>? ??
               json['availabilitySlots'] as List<dynamic>? ??
               [])
@@ -462,21 +462,37 @@ class ConsultationBooking {
   });
 
   factory ConsultationBooking.fromJson(Map<String, dynamic> json) {
+    // Handle populated expertId (object with _id) or plain string
+    final rawExpertId = json['expert_id'] ?? json['expertId'];
+    final expertId = rawExpertId is Map
+        ? (rawExpertId['_id'] ?? rawExpertId['id'] ?? '').toString()
+        : (rawExpertId ?? '').toString();
+
+    // Map API statuses to UI statuses
+    final rawStatus = json['status'] as String? ?? 'upcoming';
+    final statusMap = {
+      'confirmed': 'upcoming',
+      'pending': 'upcoming',
+      'completed': 'completed',
+      'cancelled': 'cancelled',
+    };
+    final mappedStatus = statusMap[rawStatus] ?? rawStatus;
+
     return ConsultationBooking(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
-      expertId: (json['expert_id'] ?? json['expertId'] ?? '').toString(),
+      expertId: expertId,
       userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
       date: DateTime.tryParse((json['date'] ?? '').toString()) ?? DateTime.now(),
-      startTime: (json['start_time'] ?? json['startTime'] ?? '').toString(),
+      startTime: (json['start_time'] ?? json['startTime'] ?? json['timeSlot'] ?? '').toString(),
       endTime: (json['end_time'] ?? json['endTime'] ?? '').toString(),
       sessionType: ExpertSessionType.values.firstWhere(
-        (t) => t.minutes == (json['duration_minutes'] ?? json['durationMinutes']),
+        (t) => t.minutes == (json['duration_minutes'] ?? json['durationMinutes'] ?? json['duration']),
         orElse: () => ExpertSessionType.oneHour,
       ),
       topic: json['topic'] as String?,
       notes: json['notes'] as String?,
-      totalAmount: ((json['total_amount'] ?? json['totalAmount'] ?? 0) as num).toDouble(),
-      status: BookingStatus.fromString(json['status'] as String? ?? 'upcoming'),
+      totalAmount: ((json['total_amount'] ?? json['totalAmount'] ?? json['amount'] ?? 0) as num).toDouble(),
+      status: BookingStatus.fromString(mappedStatus),
       meetLink: (json['meet_link'] ?? json['meetLink']) as String?,
       createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );

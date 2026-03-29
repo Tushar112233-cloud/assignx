@@ -28,10 +28,18 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
     const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) throw new AppError('Supervisor not found', 404);
 
+    // Populate expertise subject names
+    const expertiseIds = supervisor.expertise || [];
+    const subjectDocs = expertiseIds.length > 0
+      ? await Subject.find({ _id: { $in: expertiseIds } }).select('name')
+      : [];
+    const specializations = subjectDocs.map(s => s.name);
+
     const obj = supervisor.toObject();
     res.json({
       ...obj,
       id: obj._id,
+      specializations,
       // Flat snake_case bank fields expected by frontend types
       bank_name: obj.bankDetails?.bankName || null,
       bank_account_number: obj.bankDetails?.accountNumber || null,
@@ -239,17 +247,29 @@ router.delete('/me/blacklist/:doerId', authenticate, async (req: Request, res: R
   }
 });
 
-// GET /supervisors/me/expertise - Get supervisor expertise/subjects
+// GET /supervisors/me/expertise - Get supervisor expertise/subjects with names
 router.get('/me/expertise', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const supervisor = await Supervisor.findById(req.user!.id);
     if (!supervisor) return res.json({ expertise: [], subjects: [] });
 
-    const subjects: any[] = [];
+    const expertiseIds = supervisor.expertise || [];
+    // Populate subject names from IDs
+    const subjectDocs = expertiseIds.length > 0
+      ? await Subject.find({ _id: { $in: expertiseIds } }).select('name category')
+      : [];
+
+    const subjects = subjectDocs.map(s => ({
+      id: s._id,
+      name: s.name,
+      category: (s as any).category || null,
+      isPrimary: false,
+    }));
 
     res.json({
-      expertise: supervisor.expertise || [],
-      subjects,
+      expertise: subjects,
+      subjectIds: expertiseIds,
+      subjectNames: subjectDocs.map(s => s.name),
     });
   } catch (err) {
     next(err);
@@ -497,6 +517,8 @@ router.get('/projects', authenticate, async (req: Request, res: Response, next: 
         clientEmail: user?.email || null,
         doerName: doer?.fullName || null,
         subject: subject?.name || null,
+        subject_name: subject?.name || null,
+        subject_id: subject?._id || (typeof obj.subjectId === 'string' ? obj.subjectId : null),
         userQuote: obj.pricing?.userQuote || 0,
         user_quote: obj.pricing?.userQuote || 0,
         doerAmount: obj.pricing?.doerPayout || 0,
@@ -799,14 +821,39 @@ router.put('/projects/:id/deliverables/:deliverableId/approve', authenticate, as
 router.get('/dashboard/requests', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { status, subject } = req.query;
-    const filter: Record<string, unknown> = { supervisorId: req.user!.id };
+
+    // For submitted/analyzing, also show unassigned projects matching expertise
+    let filter: Record<string, unknown>;
 
     if (status === 'submitted') {
-      filter.status = { $in: ['submitted', 'analyzing'] };
-    } else if (status === 'paid') {
-      filter.status = 'paid';
-    } else if (status) {
-      filter.status = status;
+      const supervisorDoc = await Supervisor.findById(req.user!.id).select('expertise');
+      const expertiseIds = (supervisorDoc?.expertise ?? []).map((id: string) => {
+        try { return new (require('mongoose').Types.ObjectId)(id); } catch { return id; }
+      });
+
+      filter = {
+        $or: [
+          // Projects already assigned to this supervisor
+          { supervisorId: req.user!.id, status: { $in: ['submitted', 'analyzing'] } },
+          // Unassigned projects matching supervisor's expertise (open pool)
+          ...(expertiseIds.length > 0
+            ? [
+                { supervisorId: { $exists: false }, status: { $in: ['submitted', 'analyzing'] }, subjectId: { $in: expertiseIds } },
+                { supervisorId: null, status: { $in: ['submitted', 'analyzing'] }, subjectId: { $in: expertiseIds } },
+              ]
+            : [
+                { supervisorId: { $exists: false }, status: { $in: ['submitted', 'analyzing'] } },
+                { supervisorId: null, status: { $in: ['submitted', 'analyzing'] } },
+              ]),
+        ],
+      };
+    } else {
+      filter = { supervisorId: req.user!.id };
+      if (status === 'paid') {
+        filter.status = 'paid';
+      } else if (status) {
+        filter.status = status;
+      }
     }
 
     if (subject && subject !== 'All') {

@@ -39,6 +39,26 @@ class DashboardRepository {
     }
   }
 
+  /// Fetches quoted projects awaiting client payment.
+  Future<List<RequestModel>> getQuotedRequests() async {
+    try {
+      final response = await ApiClient.get(
+        '/supervisor/dashboard/requests?status=quoted',
+      );
+      final list = response is List
+          ? response
+          : (response as Map<String, dynamic>)['projects'] as List? ?? [];
+
+      return list
+          .map((json) => RequestModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ServerException('Failed to fetch quoted requests: \$e', null);
+    }
+  }
+
   /// Fetches paid projects ready for doer assignment.
   Future<List<RequestModel>> getPaidRequests() async {
     try {

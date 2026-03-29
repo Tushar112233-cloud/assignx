@@ -227,7 +227,7 @@ export function useNewRequests() {
       }
 
       const data = await apiFetch<{ projects: ProjectWithRelations[] }>(
-        "/api/projects?status=submitted,analyzing"
+        "/api/projects?unassigned=true&status=submitted,analyzing"
       )
 
       setProjects(data.projects || [])

@@ -9,7 +9,6 @@ import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/router/routes.dart';
 import '../../../../shared/widgets/buttons/app_button.dart';
 import '../../../../shared/widgets/glass_container.dart';
-import '../../../../shared/widgets/mesh_gradient_background.dart';
 import '../../data/models/project_model.dart';
 import '../providers/projects_provider.dart';
 import '../widgets/deadline_timer.dart';
@@ -48,14 +47,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(projectDetailProvider);
 
-    return MeshGradientBackground(
-      position: MeshPosition.topRight,
-      colors: MeshColors.warmColors,
-      opacity: 0.5,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
+    return Scaffold(
+        backgroundColor: const Color(0xFFFAF8F5),
         appBar: AppBar(
-          backgroundColor: Colors.transparent,
+          backgroundColor: const Color(0xFFFAF8F5),
           elevation: 0,
           title: Text(state.project?.projectNumber ?? 'Project Details'.tr(context)),
           actions: [
@@ -202,7 +197,6 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 onDeliver: _deliverToClient,
               )
             : null,
-      ),
     );
   }
 

@@ -3,68 +3,32 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import '../../../core/api/api_client.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
-import '../../../core/utils/extensions.dart';
-import '../../campus_connect/widgets/comment_section.dart';
-import '../../campus_connect/widgets/like_button.dart';
-import '../../campus_connect/widgets/save_button.dart';
-import '../../campus_connect/widgets/report_button.dart';
-import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 import '../data/models/business_hub_post_model.dart';
 import '../providers/business_hub_provider.dart';
 
-/// Provider for fetching comments for a business hub post.
-final businessPostCommentsProvider =
-    FutureProvider.autoDispose.family<List<CampusComment>, String>(
-  (ref, postId) async {
-    final response = await ApiClient.get('/community/business-hub/$postId/comments');
-    final list = response is List
-        ? response
-        : (response as Map<String, dynamic>)['comments'] as List? ?? [];
+/// Colors for firm avatar placeholders.
+const List<Color> _avatarColors = [
+  Color(0xFF765341),
+  Color(0xFF2563EB),
+  Color(0xFF059669),
+  Color(0xFF7C3AED),
+  Color(0xFFDB2777),
+  Color(0xFFD97706),
+  Color(0xFF0891B2),
+  Color(0xFF4F46E5),
+];
 
-    final comments = <CampusComment>[];
-    for (final data in list) {
-      final d = data as Map<String, dynamic>;
-      final repliesList = d['replies'] as List? ?? [];
+Color _colorForFirm(String firm) {
+  if (firm.isEmpty) return _avatarColors[0];
+  return _avatarColors[firm.codeUnitAt(0) % _avatarColors.length];
+}
 
-      comments.add(CampusComment(
-        id: (d['_id'] ?? d['id'] ?? '') as String,
-        content: (d['content'] ?? '') as String,
-        authorId: (d['user_id'] ?? '') as String,
-        authorName: (d['author']?['full_name'] ?? 'Anonymous') as String,
-        authorAvatar: d['author']?['avatar_url'] as String?,
-        isAuthorVerified: (d['author']?['is_college_verified'] ?? false) as bool,
-        createdAt: DateTime.parse((d['created_at'] ?? d['createdAt'] ?? DateTime.now().toIso8601String()) as String),
-        likeCount: (d['likes_count'] ?? d['likeCount'] ?? 0) as int,
-        isLiked: (d['is_liked'] ?? false) as bool,
-        replies: repliesList.map((r) {
-          final reply = r as Map<String, dynamic>;
-          return CampusComment(
-            id: (reply['_id'] ?? reply['id'] ?? '') as String,
-            content: (reply['content'] ?? '') as String,
-            authorId: (reply['user_id'] ?? '') as String,
-            authorName: (reply['author']?['full_name'] ?? 'Anonymous') as String,
-            authorAvatar: reply['author']?['avatar_url'] as String?,
-            isAuthorVerified: (reply['author']?['is_college_verified'] ?? false) as bool,
-            createdAt: DateTime.parse((reply['created_at'] ?? reply['createdAt'] ?? DateTime.now().toIso8601String()) as String),
-            likeCount: (reply['likes_count'] ?? reply['likeCount'] ?? 0) as int,
-            isLiked: (reply['is_liked'] ?? false) as bool,
-            parentId: (d['_id'] ?? d['id'] ?? '') as String,
-          );
-        }).toList(),
-      ));
-    }
-
-    return comments;
-  },
-);
-
-/// Detailed view for a Business Hub post.
-class BusinessPostDetailScreen extends ConsumerStatefulWidget {
+/// Detailed view for an Investor.
+class BusinessPostDetailScreen extends ConsumerWidget {
   final String postId;
 
   const BusinessPostDetailScreen({
@@ -73,209 +37,19 @@ class BusinessPostDetailScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<BusinessPostDetailScreen> createState() =>
-      _BusinessPostDetailScreenState();
-}
-
-class _BusinessPostDetailScreenState
-    extends ConsumerState<BusinessPostDetailScreen> {
-  bool _isLiked = false;
-  bool _isSaved = false;
-  int _likeCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkUserInteractions();
-  }
-
-  Future<void> _checkUserInteractions() async {
-    try {
-      final response = await ApiClient.get('/community/business-hub/${widget.postId}/interactions');
-      if (response == null) return;
-      final data = response as Map<String, dynamic>;
-
-      if (mounted) {
-        setState(() {
-          _isLiked = data['liked'] as bool? ?? false;
-          _isSaved = data['saved'] as bool? ?? false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error checking interactions: $e');
-    }
-  }
-
-  Future<void> _toggleLike() async {
-    final wasLiked = _isLiked;
-    setState(() {
-      _isLiked = !_isLiked;
-      _likeCount += _isLiked ? 1 : -1;
-    });
-
-    try {
-      await ApiClient.post('/community/business-hub/${widget.postId}/like', {});
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLiked = wasLiked;
-          _likeCount += _isLiked ? 1 : -1;
-        });
-      }
-    }
-  }
-
-  Future<void> _toggleSave() async {
-    final wasSaved = _isSaved;
-    setState(() {
-      _isSaved = !_isSaved;
-    });
-
-    try {
-      await ApiClient.post('/community/business-hub/${widget.postId}/save', {});
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isSaved = wasSaved;
-        });
-      }
-    }
-  }
-
-  Future<void> _addComment(String content, String? parentId) async {
-    await ApiClient.post('/community/business-hub/${widget.postId}/comments', {
-      'content': content,
-      'parent_id': parentId,
-    });
-
-    ref.invalidate(businessPostCommentsProvider(widget.postId));
-  }
-
-  void _likeComment(String commentId) async {
-    // Comment liking not yet supported - no campus_comment_likes table exists
-    debugPrint('Comment liking not yet supported for business hub posts');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final postAsync =
-        ref.watch(businessHubPostDetailProvider(widget.postId));
-    final commentsAsync =
-        ref.watch(businessPostCommentsProvider(widget.postId));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final investorAsync = ref.watch(investorDetailProvider(postId));
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: postAsync.when(
-        data: (post) {
-          if (post == null) return _buildNotFound(context);
-
-          if (_likeCount == 0) _likeCount = post.likeCount;
-
-          return CustomScrollView(
-            slivers: [
-              _buildAppBar(context, post),
-              SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _PostContent(
-                      post: post,
-                      isLiked: _isLiked,
-                      isSaved: _isSaved,
-                      likeCount: _likeCount,
-                      onLike: _toggleLike,
-                      onSave: _toggleSave,
-                    ),
-                    const Divider(height: 32),
-                    commentsAsync.when(
-                      data: (comments) => CommentSection(
-                        comments: comments,
-                        postId: widget.postId,
-                        onAddComment: _addComment,
-                        onLikeComment: _likeComment,
-                        isVerified: true,
-                        isLoading: false,
-                      ),
-                      loading: () => CommentSection(
-                        comments: const [],
-                        postId: widget.postId,
-                        isLoading: true,
-                      ),
-                      error: (e, _) => Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Text(
-                          'Failed to load comments',
-                          style: AppTextStyles.bodyMedium
-                              .copyWith(color: AppColors.error),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 100),
-                  ],
-                ),
-              ),
-            ],
-          );
+      body: investorAsync.when(
+        data: (investor) {
+          if (investor == null) return _buildNotFound(context);
+          return _InvestorDetailBody(investor: investor);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _buildError(context, e.toString()),
+        error: (e, _) => _buildError(context, ref, e.toString()),
       ),
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context, BusinessHubPost post) {
-    final hasImages = post.hasImages;
-
-    return SliverAppBar(
-      expandedHeight: hasImages ? 280 : 56,
-      pinned: true,
-      backgroundColor: AppColors.background,
-      leading: IconButton(
-        onPressed: () => context.pop(),
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: hasImages
-                ? Colors.black.withAlpha(100)
-                : AppColors.surfaceVariant,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.arrow_back,
-            color: hasImages ? Colors.white : AppColors.textPrimary,
-            size: 20,
-          ),
-        ),
-      ),
-      actions: [
-        IconButton(
-          onPressed: () {
-            Share.share(
-              'Check out this post on AssignX: ${post.title}',
-              subject: post.title,
-            );
-          },
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: hasImages
-                  ? Colors.black.withAlpha(100)
-                  : AppColors.surfaceVariant,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.share_outlined,
-              color: hasImages ? Colors.white : AppColors.textPrimary,
-              size: 20,
-            ),
-          ),
-        ),
-      ],
-      flexibleSpace: hasImages
-          ? FlexibleSpaceBar(
-              background: _ImageGallery(images: post.images),
-            )
-          : null,
     );
   }
 
@@ -290,10 +64,11 @@ class _BusinessPostDetailScreenState
               Icon(Icons.search_off,
                   size: 80, color: AppColors.textTertiary),
               const SizedBox(height: 16),
-              Text('Post not found', style: AppTextStyles.headingMedium),
+              Text('Investor not found',
+                  style: AppTextStyles.headingMedium),
               const SizedBox(height: 8),
               Text(
-                'This post may have been removed',
+                'This investor profile may have been removed',
                 style: AppTextStyles.bodyMedium
                     .copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
@@ -310,7 +85,7 @@ class _BusinessPostDetailScreenState
     );
   }
 
-  Widget _buildError(BuildContext context, String error) {
+  Widget _buildError(BuildContext context, WidgetRef ref, String error) {
     return SafeArea(
       child: Center(
         child: Padding(
@@ -318,8 +93,7 @@ class _BusinessPostDetailScreenState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline,
-                  size: 64, color: AppColors.error),
+              Icon(Icons.error_outline, size: 64, color: AppColors.error),
               const SizedBox(height: 16),
               Text('Failed to load', style: AppTextStyles.headingSmall),
               const SizedBox(height: 8),
@@ -331,8 +105,8 @@ class _BusinessPostDetailScreenState
               ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () => ref.invalidate(
-                    businessHubPostDetailProvider(widget.postId)),
+                onPressed: () =>
+                    ref.invalidate(investorDetailProvider(postId)),
                 child: const Text('Retry'),
               ),
             ],
@@ -343,367 +117,528 @@ class _BusinessPostDetailScreenState
   }
 }
 
-/// Post content section.
-class _PostContent extends StatelessWidget {
-  final BusinessHubPost post;
-  final bool isLiked;
-  final bool isSaved;
-  final int likeCount;
-  final VoidCallback onLike;
-  final VoidCallback onSave;
+/// Main scrollable body for investor detail.
+class _InvestorDetailBody extends StatelessWidget {
+  final Investor investor;
 
-  const _PostContent({
-    required this.post,
-    required this.isLiked,
-    required this.isSaved,
-    required this.likeCount,
-    required this.onLike,
-    required this.onSave,
+  const _InvestorDetailBody({required this.investor});
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _launchEmail(String email) async {
+    final uri = Uri(scheme: 'mailto', path: email);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarColor = _colorForFirm(investor.firm);
+
+    return CustomScrollView(
+      slivers: [
+        // App bar
+        SliverAppBar(
+          pinned: true,
+          backgroundColor: AppColors.background,
+          leading: IconButton(
+            onPressed: () => context.pop(),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.arrow_back,
+                color: AppColors.textPrimary,
+                size: 20,
+              ),
+            ),
+          ),
+          title: Text(
+            investor.firm,
+            style: AppTextStyles.labelLarge.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header card
+                _HeaderCard(investor: investor, avatarColor: avatarColor),
+                const SizedBox(height: 20),
+
+                // Description
+                if (investor.description != null &&
+                    investor.description!.isNotEmpty) ...[
+                  _SectionCard(
+                    title: 'About',
+                    icon: Icons.info_outline,
+                    child: Text(
+                      investor.description!,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.6,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Funding stages
+                if (investor.fundingStages.isNotEmpty) ...[
+                  _SectionCard(
+                    title: 'Funding Stages',
+                    icon: Icons.rocket_launch_outlined,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: investor.fundingStages.map((stage) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withAlpha(20),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(stage.icon,
+                                  size: 14, color: AppColors.primary),
+                              const SizedBox(width: 6),
+                              Text(
+                                stage.label,
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Sectors
+                if (investor.sectors.isNotEmpty) ...[
+                  _SectionCard(
+                    title: 'Sectors',
+                    icon: Icons.category_outlined,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: investor.sectors.map((sector) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceVariant,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.border.withAlpha(77),
+                            ),
+                          ),
+                          child: Text(
+                            sector,
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Ticket size
+                if (investor.ticketSize != null) ...[
+                  _SectionCard(
+                    title: 'Ticket Size',
+                    icon: Icons.account_balance_wallet_outlined,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary.withAlpha(10),
+                            AppColors.primaryLight.withAlpha(8),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primary.withAlpha(30),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.attach_money,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            investor.ticketSize!.formatted,
+                            style: AppTextStyles.headingSmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Portfolio companies
+                if (investor.portfolioCompanies.isNotEmpty) ...[
+                  _SectionCard(
+                    title:
+                        'Portfolio (${investor.portfolioCompanies.length})',
+                    icon: Icons.business_outlined,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          investor.portfolioCompanies.map((company) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.border.withAlpha(77),
+                            ),
+                          ),
+                          child: Text(
+                            company,
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Location
+                if (investor.location != null &&
+                    investor.location!.isNotEmpty) ...[
+                  _SectionCard(
+                    title: 'Location',
+                    icon: Icons.location_on_outlined,
+                    child: Row(
+                      children: [
+                        Icon(Icons.location_on,
+                            size: 18, color: AppColors.textSecondary),
+                        const SizedBox(width: 8),
+                        Text(
+                          investor.location!,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Contact buttons
+                if (investor.contactEmail != null ||
+                    investor.linkedinUrl != null ||
+                    investor.websiteUrl != null) ...[
+                  Text(
+                    'Get in Touch',
+                    style: AppTextStyles.labelLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (investor.contactEmail != null)
+                    _ContactButton(
+                      icon: Icons.email_outlined,
+                      label: 'Email',
+                      subtitle: investor.contactEmail!,
+                      color: const Color(0xFFDB2777),
+                      onTap: () =>
+                          _launchEmail(investor.contactEmail!),
+                    ),
+                  if (investor.linkedinUrl != null) ...[
+                    const SizedBox(height: 8),
+                    _ContactButton(
+                      icon: Icons.link,
+                      label: 'LinkedIn',
+                      subtitle: 'View profile',
+                      color: const Color(0xFF0077B5),
+                      onTap: () =>
+                          _launchUrl(investor.linkedinUrl!),
+                    ),
+                  ],
+                  if (investor.websiteUrl != null) ...[
+                    const SizedBox(height: 8),
+                    _ContactButton(
+                      icon: Icons.language,
+                      label: 'Website',
+                      subtitle: investor.websiteUrl!,
+                      color: const Color(0xFF059669),
+                      onTap: () =>
+                          _launchUrl(investor.websiteUrl!),
+                    ),
+                  ],
+                ],
+
+                const SizedBox(height: 100),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Header card with firm logo, name, and investor name.
+class _HeaderCard extends StatelessWidget {
+  final Investor investor;
+  final Color avatarColor;
+
+  const _HeaderCard({
+    required this.investor,
+    required this.avatarColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Firm avatar
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: avatarColor.withAlpha(26),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Center(
+              child: Text(
+                investor.firmInitial,
+                style: AppTextStyles.headingLarge.copyWith(
+                  color: avatarColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 32,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            investor.firm,
+            style: AppTextStyles.headingMedium.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            investor.name,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (investor.location != null &&
+              investor.location!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.location_on_outlined,
+                    size: 14, color: AppColors.textTertiary),
+                const SizedBox(width: 4),
+                Text(
+                  investor.location!,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Reusable section card for detail groups.
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  const _SectionCard({
+    required this.title,
+    required this.icon,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              _CategoryBadge(postType: post.postType),
-              const Spacer(),
+              Icon(icon, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
               Text(
-                post.timeAgo,
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.textTertiary),
+                title,
+                style: AppTextStyles.labelLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            post.title,
-            style: AppTextStyles.headingMedium
-                .copyWith(fontWeight: FontWeight.bold),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Contact action button.
+class _ContactButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ContactButton({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.border.withAlpha(77),
+            ),
           ),
-          const SizedBox(height: 16),
-          _AuthorCard(post: post),
-          const SizedBox(height: 16),
-          if (post.description != null) ...[
-            Text(
-              post.description!,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.6,
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-          if (post.location != null) ...[
-            Row(
-              children: [
-                Icon(Icons.location_on_outlined,
-                    size: 18, color: AppColors.textSecondary),
-                const SizedBox(width: 8),
-                Text(
-                  post.location!,
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-          ],
-          if (post.tags != null && post.tags!.isNotEmpty) ...[
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: post.tags!.map((tag) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight.withAlpha(26),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '#$tag',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-          ],
-          const SizedBox(height: 8),
-          Row(
+          child: Row(
             children: [
-              LikeButton(
-                isLiked: isLiked,
-                likeCount: likeCount,
-                onToggle: onLike,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 20, color: color),
               ),
-              const SizedBox(width: 8),
-              SaveButton(
-                isSaved: isSaved,
-                onToggle: onSave,
-                showLabel: true,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-              const Spacer(),
-              ReportButton(
-                listingId: post.id,
-                size: ReportButtonSize.small,
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 14,
+                color: AppColors.textTertiary,
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CategoryBadge extends StatelessWidget {
-  final BusinessPostType postType;
-
-  const _CategoryBadge({required this.postType});
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, color, icon) = _getConfig();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withAlpha(26),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: AppTextStyles.caption
-                .copyWith(color: color, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-
-  (String, Color, IconData) _getConfig() {
-    switch (postType) {
-      case BusinessPostType.insight:
-        return (
-          'Insight',
-          AppColors.categoryBlue,
-          Icons.insights_outlined
-        );
-      case BusinessPostType.recruitment:
-        return (
-          'Recruitment',
-          AppColors.categoryOrange,
-          Icons.people_outline
-        );
-      case BusinessPostType.opportunity:
-        return (
-          'Opportunity',
-          AppColors.categoryTeal,
-          Icons.business_center_outlined
-        );
-      case BusinessPostType.marketAnalysis:
-        return (
-          'Market Trends',
-          AppColors.categoryGreen,
-          Icons.trending_up
-        );
-      case BusinessPostType.leadership:
-        return (
-          'Leadership',
-          AppColors.categoryIndigo,
-          Icons.emoji_events_outlined
-        );
-      case BusinessPostType.innovation:
-        return (
-          'Innovation',
-          AppColors.categoryAmber,
-          Icons.lightbulb_outline
-        );
-      case BusinessPostType.partnership:
-        return (
-          'Partnership',
-          AppColors.categoryTeal,
-          Icons.handshake_outlined
-        );
-      case BusinessPostType.event:
-        return (
-          'Event',
-          AppColors.categoryIndigo,
-          Icons.event_outlined
-        );
-      case BusinessPostType.funding:
-        return (
-          'Funding',
-          AppColors.categoryGreen,
-          Icons.account_balance_outlined
-        );
-    }
-  }
-}
-
-class _AuthorCard extends StatelessWidget {
-  final BusinessHubPost post;
-
-  const _AuthorCard({required this.post});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColors.avatarWarm,
-            backgroundImage: isValidImageUrl(post.userAvatar)
-                ? NetworkImage(post.userAvatar!)
-                : null,
-            child: !isValidImageUrl(post.userAvatar)
-                ? Text(
-                    post.userName.isNotEmpty
-                        ? post.userName[0].toUpperCase()
-                        : '?',
-                    style: AppTextStyles.labelLarge.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  )
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  post.userName,
-                  style: AppTextStyles.labelLarge
-                      .copyWith(fontWeight: FontWeight.w600),
-                ),
-                if (post.companyName != null || post.userTitle != null)
-                  Text(
-                    [post.userTitle, post.companyName]
-                        .where((s) => s != null)
-                        .join(' at '),
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.textSecondary),
-                  ),
-              ],
-            ),
-          ),
-          OutlinedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Opening chat...')),
-              );
-            },
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            child: const Text('Contact'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ImageGallery extends StatefulWidget {
-  final List<String>? images;
-
-  const _ImageGallery({this.images});
-
-  @override
-  State<_ImageGallery> createState() => _ImageGalleryState();
-}
-
-class _ImageGalleryState extends State<_ImageGallery> {
-  int _currentIndex = 0;
-  final _pageController = PageController();
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.images == null || widget.images!.isEmpty) {
-      return Container(
-        color: AppColors.surfaceVariant,
-        child: Center(
-          child: Icon(Icons.image_not_supported_outlined,
-              size: 48, color: AppColors.textTertiary),
         ),
-      );
-    }
-
-    return Stack(
-      children: [
-        PageView.builder(
-          controller: _pageController,
-          itemCount: widget.images!.length,
-          onPageChanged: (index) =>
-              setState(() => _currentIndex = index),
-          itemBuilder: (context, index) {
-            return CachedNetworkImage(
-              imageUrl: widget.images![index],
-              fit: BoxFit.cover,
-              placeholder: (context, url) =>
-                  Container(color: AppColors.shimmerBase),
-              errorWidget: (context, url, error) => Container(
-                color: AppColors.surfaceVariant,
-                child: Icon(Icons.broken_image_outlined,
-                    size: 48, color: AppColors.textTertiary),
-              ),
-            );
-          },
-        ),
-        if (widget.images!.length > 1)
-          Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                widget.images!.length,
-                (index) => Container(
-                  width: _currentIndex == index ? 20 : 8,
-                  height: 8,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    color: _currentIndex == index
-                        ? Colors.white
-                        : Colors.white.withAlpha(100),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }

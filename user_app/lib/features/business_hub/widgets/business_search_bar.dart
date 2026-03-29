@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../../campus_connect/widgets/search_bar_widget.dart';
 
-/// Search bar for Business Hub.
+/// Search bar for Business Hub (Investors).
 ///
-/// Reuses [SearchBarWidget] with business-specific placeholder.
+/// Reuses [SearchBarWidget] with investor-specific placeholder.
 class BusinessSearchBar extends StatelessWidget {
   final Function(String)? onChanged;
   final String? initialValue;
@@ -25,7 +25,7 @@ class BusinessSearchBar extends StatelessWidget {
       onChanged: onChanged,
       initialValue: initialValue,
       onFilterTap: onFilterTap,
-      placeholder: 'Search insights, opportunities, recruitment...',
+      placeholder: 'Search investors, firms, sectors...',
     );
   }
 }

@@ -95,7 +95,7 @@ class ServicesGrid extends StatelessWidget {
               Expanded(
                 child: _ServiceCard(
                   icon: Icons.description_outlined,
-                  title: 'Project Support'.tr(context),
+                  title: 'New Project'.tr(context),
                   subtitle: 'Get expert help with your projects'.tr(context),
                   color: AppColors.primary,
                   onTap: onNewProject,

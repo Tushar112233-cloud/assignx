@@ -25,7 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { sendOTP, verifyOTP } from "@/lib/api/auth";
+import { checkAccount, sendOTP, verifyOTP } from "@/lib/api/auth";
 import { toast } from "sonner";
 
 import "../onboarding/onboarding.css";
@@ -412,6 +412,15 @@ function SignupContent() {
     }
 
     setIsLoading(true);
+
+    // Check if account already exists before sending OTP
+    const accountCheck = await checkAccount(trimmedEmail);
+    if (accountCheck.exists) {
+      setIsLoading(false);
+      setAccountExistsError(true);
+      setError(null);
+      return;
+    }
 
     const result = await sendOTP(trimmedEmail, "signup", selectedRole);
 

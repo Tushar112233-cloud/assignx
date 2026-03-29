@@ -2,7 +2,7 @@ import { apiClient } from "./client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-const DEV_BYPASS_EMAILS = ['admin@gmail.com', 'testuser@gmail.com', 'omrajpal.exe@gmail.com'];
+const DEV_BYPASS_EMAILS: string[] = [];
 
 export function isDevBypassEmail(email: string): boolean {
   return DEV_BYPASS_EMAILS.includes(email.toLowerCase().trim());

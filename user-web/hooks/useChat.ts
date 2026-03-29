@@ -79,42 +79,20 @@ export function useChat(projectId: string | null, userId: string | null) {
             return
           }
 
-          // Fetch the complete message with sender info
-          try {
-            const messagesWithSender = await chatService.getMessages(room.id, 1)
-            const fullMessage = messagesWithSender.find(m => m.id === newMessage.id)
-
-            // If API didn't return the message (filtered out), skip it
-            if (!fullMessage) return
-
-            setState((prev) => {
-              if (prev.messages.some(m => m.id === newMessage.id)) {
-                return prev
-              }
-              return {
-                ...prev,
-                messages: [...prev.messages, fullMessage],
-              }
-            })
-
-            // Mark as read if from other user
-            if (newMessage.sender_id !== userId) {
-              chatService.markMessagesAsRead(room.id, userId)
+          // Add the message directly — avoid re-fetching which causes flicker
+          setState((prev) => {
+            if (prev.messages.some(m => m.id === newMessage.id)) {
+              return prev
             }
-          } catch (error) {
-            console.error("Error fetching new message:", error)
-            // Only add the raw message if it's from the current user (safe to show)
-            if (isSenderCurrentUser) {
-              setState((prev) => {
-                if (prev.messages.some(m => m.id === newMessage.id)) {
-                  return prev
-                }
-                return {
-                  ...prev,
-                  messages: [...prev.messages, newMessage],
-                }
-              })
+            return {
+              ...prev,
+              messages: [...prev.messages, newMessage],
             }
+          })
+
+          // Mark as read if from other user
+          if (newMessage.sender_id !== userId) {
+            chatService.markMessagesAsRead(room.id, userId)
           }
         })
       } catch (error: any) {

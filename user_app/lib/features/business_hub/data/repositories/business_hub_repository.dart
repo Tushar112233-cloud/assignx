@@ -3,140 +3,62 @@ library;
 import 'package:logger/logger.dart';
 
 import '../../../../core/api/api_client.dart';
-import '../../../../core/storage/token_storage.dart';
 import '../models/business_hub_post_model.dart';
 
-/// Repository for Business Hub community operations.
+/// Repository for fetching investors from the API.
 class BusinessHubRepository {
   final Logger _logger = Logger(printer: PrettyPrinter(methodCount: 0));
 
   BusinessHubRepository();
 
-  Future<String?> get _currentUserId async {
-    final hasTokens = await TokenStorage.hasTokens();
-    if (!hasTokens) return null;
-    try {
-      final data = await ApiClient.get('/auth/me');
-      if (data == null) return null;
-      return ((data as Map<String, dynamic>)['_id'] ?? data['id']) as String?;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Get business hub posts with optional filters.
-  Future<List<BusinessHubPost>> getPosts({
-    BusinessCategory? category,
+  /// Get investors with optional filters.
+  Future<List<Investor>> getInvestors({
+    FundingStage? stage,
+    String? sector,
     String? searchQuery,
+    int page = 1,
     int limit = 20,
-    int offset = 0,
   }) async {
     try {
       final queryParams = <String, String>{
+        'page': page.toString(),
         'limit': limit.toString(),
-        'offset': offset.toString(),
       };
-      if (category != null && category != BusinessCategory.all) {
-        queryParams['category'] = category.name;
+      if (stage != null && stage != FundingStage.all) {
+        queryParams['stage'] = stage.apiValue;
+      }
+      if (sector != null && sector.isNotEmpty) {
+        queryParams['sector'] = sector;
       }
       if (searchQuery != null && searchQuery.isNotEmpty) {
         queryParams['search'] = searchQuery;
       }
 
-      final response = await ApiClient.get('/community/business-hub', queryParams: queryParams);
-      final list = response is List
-          ? response
-          : (response as Map<String, dynamic>)['posts'] as List? ?? [];
+      final response =
+          await ApiClient.get('/investors', queryParams: queryParams);
+      final data = response as Map<String, dynamic>;
+      final list = data['investors'] as List? ?? [];
       return list
-          .map((row) =>
-              BusinessHubPost.fromJson(row as Map<String, dynamic>))
+          .map((row) => Investor.fromJson(row as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      _logger.e('Error fetching business hub posts: $e');
+      _logger.e('Error fetching investors: $e');
       return [];
     }
   }
 
-  /// Get a single post by ID.
-  Future<BusinessHubPost?> getPostById(String id) async {
+  /// Get a single investor by ID.
+  Future<Investor?> getInvestorById(String id) async {
     try {
-      final response = await ApiClient.get('/community/business-hub/$id');
+      final response = await ApiClient.get('/investors/$id');
       if (response == null) return null;
       final data = response as Map<String, dynamic>;
-      final postData = data['post'] as Map<String, dynamic>? ?? data;
-      return BusinessHubPost.fromJson(postData);
+      final investorData =
+          data['investor'] as Map<String, dynamic>? ?? data;
+      return Investor.fromJson(investorData);
     } catch (e) {
-      _logger.e('Error fetching business hub post: $e');
+      _logger.e('Error fetching investor: $e');
       return null;
     }
   }
-
-  /// Create a new business hub post.
-  Future<BusinessHubPost> createPost({
-    required BusinessCategory category,
-    required BusinessPostType postType,
-    required String title,
-    String? description,
-    List<String>? images,
-    String? companyName,
-    String? industry,
-    List<String>? tags,
-  }) async {
-    try {
-      final response = await ApiClient.post('/community/business-hub', {
-        'category': category.name,
-        'title': title,
-        'content': description,
-        'imageUrls': images ?? [],
-        'tags': tags ?? [],
-      });
-
-      final data = response as Map<String, dynamic>;
-      final postData = data['post'] as Map<String, dynamic>? ?? data;
-      return BusinessHubPost.fromJson(postData);
-    } catch (e) {
-      _logger.e('Error creating business hub post: $e');
-      rethrow;
-    }
-  }
-
-  /// Toggle like on a post.
-  Future<bool> toggleLike(String postId) async {
-    try {
-      final response = await ApiClient.post('/community/business-hub/$postId/like', {});
-      return (response as Map<String, dynamic>)['liked'] as bool? ?? false;
-    } catch (e) {
-      _logger.e('Error toggling like: $e');
-      rethrow;
-    }
-  }
-
-  /// Toggle save on a post.
-  Future<bool> toggleSave(String postId) async {
-    try {
-      final response = await ApiClient.post('/community/business-hub/$postId/save', {});
-      return (response as Map<String, dynamic>)['saved'] as bool? ?? false;
-    } catch (e) {
-      _logger.e('Error toggling save: $e');
-      rethrow;
-    }
-  }
-
-  /// Get saved business hub posts.
-  Future<List<BusinessHubPost>> getSavedPosts() async {
-    try {
-      final response = await ApiClient.get('/community/business-hub/saved');
-      final list = response is List
-          ? response
-          : (response as Map<String, dynamic>)['posts'] as List? ?? [];
-      return list
-          .map((row) =>
-              BusinessHubPost.fromJson(row as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      _logger.e('Error fetching saved posts: $e');
-      return [];
-    }
-  }
-
 }

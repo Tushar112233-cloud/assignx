@@ -24,10 +24,10 @@ class AdminXApp extends ConsumerWidget {
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
 
-      // Theme
+      // Theme — force light mode (dark mode not fully designed)
       theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: themeMode,
+      darkTheme: AppTheme.light,
+      themeMode: ThemeMode.light,
 
       // Router
       routerConfig: router,

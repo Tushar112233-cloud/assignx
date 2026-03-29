@@ -3,136 +3,65 @@ library;
 import 'package:logger/logger.dart';
 
 import '../../../../core/api/api_client.dart';
-import '../../../../core/storage/token_storage.dart';
 import '../models/pro_network_post_model.dart';
 
-/// Repository for Pro Network community operations.
+/// Repository for fetching job listings from the /api/jobs endpoint.
 class ProNetworkRepository {
   final Logger _logger = Logger(printer: PrettyPrinter(methodCount: 0));
 
   ProNetworkRepository();
 
-  Future<String?> get _currentUserId async {
-    final hasTokens = await TokenStorage.hasTokens();
-    if (!hasTokens) return null;
-    try {
-      final data = await ApiClient.get('/auth/me');
-      if (data == null) return null;
-      return ((data as Map<String, dynamic>)['_id'] ?? data['id']) as String?;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Get pro network posts with optional filters.
-  Future<List<ProNetworkPost>> getPosts({
-    ProfessionalCategory? category,
+  /// Fetch a paginated list of jobs with optional filters.
+  Future<List<Job>> getJobs({
+    JobCategory? category,
+    JobType? type,
     String? searchQuery,
+    bool? remoteOnly,
+    int page = 1,
     int limit = 20,
-    int offset = 0,
   }) async {
     try {
       final queryParams = <String, String>{
+        'page': page.toString(),
         'limit': limit.toString(),
-        'offset': offset.toString(),
       };
-      if (category != null && category != ProfessionalCategory.all) {
+      if (category != null && category != JobCategory.all) {
         queryParams['category'] = category.name;
+      }
+      if (type != null && type != JobType.all) {
+        queryParams['type'] = type.apiValue;
       }
       if (searchQuery != null && searchQuery.isNotEmpty) {
         queryParams['search'] = searchQuery;
       }
+      if (remoteOnly == true) {
+        queryParams['remote'] = 'true';
+      }
 
-      final response = await ApiClient.get('/community/pro-network', queryParams: queryParams);
-      final list = response is List
-          ? response
-          : (response as Map<String, dynamic>)['posts'] as List? ?? [];
+      final response =
+          await ApiClient.get('/jobs', queryParams: queryParams);
+      final data = response is Map<String, dynamic> ? response : {};
+      final list = data['jobs'] as List? ?? [];
       return list
-          .map((row) => ProNetworkPost.fromJson(row as Map<String, dynamic>))
+          .map((row) => Job.fromJson(row as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      _logger.e('Error fetching pro network posts: $e');
+      _logger.e('Error fetching jobs: $e');
       return [];
     }
   }
 
-  /// Get a single post by ID.
-  Future<ProNetworkPost?> getPostById(String id) async {
+  /// Fetch a single job by its ID.
+  Future<Job?> getJobById(String id) async {
     try {
-      final response = await ApiClient.get('/community/pro-network/$id');
+      final response = await ApiClient.get('/jobs/$id');
       if (response == null) return null;
       final data = response as Map<String, dynamic>;
-      final postData = data['post'] as Map<String, dynamic>? ?? data;
-      return ProNetworkPost.fromJson(postData);
+      final jobData = data['job'] as Map<String, dynamic>? ?? data;
+      return Job.fromJson(jobData);
     } catch (e) {
-      _logger.e('Error fetching pro network post: $e');
+      _logger.e('Error fetching job: $e');
       return null;
     }
   }
-
-  /// Create a new pro network post.
-  Future<ProNetworkPost> createPost({
-    required ProfessionalCategory category,
-    required ProfessionalPostType postType,
-    required String title,
-    String? description,
-    List<String>? images,
-    List<String>? tags,
-  }) async {
-    try {
-      final response = await ApiClient.post('/community/pro-network', {
-        'category': category.name,
-        'title': title,
-        'content': description,
-        'imageUrls': images ?? [],
-        'tags': tags ?? [],
-      });
-
-      final data = response as Map<String, dynamic>;
-      final postData = data['post'] as Map<String, dynamic>? ?? data;
-      return ProNetworkPost.fromJson(postData);
-    } catch (e) {
-      _logger.e('Error creating pro network post: $e');
-      rethrow;
-    }
-  }
-
-  /// Toggle like on a post.
-  Future<bool> toggleLike(String postId) async {
-    try {
-      final response = await ApiClient.post('/community/pro-network/$postId/like', {});
-      return (response as Map<String, dynamic>)['liked'] as bool? ?? false;
-    } catch (e) {
-      _logger.e('Error toggling like: $e');
-      rethrow;
-    }
-  }
-
-  /// Toggle save on a post.
-  Future<bool> toggleSave(String postId) async {
-    try {
-      final response = await ApiClient.post('/community/pro-network/$postId/save', {});
-      return (response as Map<String, dynamic>)['saved'] as bool? ?? false;
-    } catch (e) {
-      _logger.e('Error toggling save: $e');
-      rethrow;
-    }
-  }
-
-  /// Get saved pro network posts.
-  Future<List<ProNetworkPost>> getSavedPosts() async {
-    try {
-      final response = await ApiClient.get('/community/pro-network/saved');
-      final list = response is List
-          ? response
-          : (response as Map<String, dynamic>)['posts'] as List? ?? [];
-      return list
-          .map((row) => ProNetworkPost.fromJson(row as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      _logger.e('Error fetching saved posts: $e');
-      return [];
-    }
-  }
-
 }

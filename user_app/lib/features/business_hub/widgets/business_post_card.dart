@@ -4,21 +4,41 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
-import '../../campus_connect/widgets/like_button.dart';
 import '../data/models/business_hub_post_model.dart';
 
-/// Base card wrapper with consistent styling.
-class _BasePostCard extends StatelessWidget {
-  final Widget child;
+/// Colors for firm avatar placeholders based on first letter hash.
+const List<Color> _avatarColors = [
+  Color(0xFF765341), // primary
+  Color(0xFF2563EB), // blue
+  Color(0xFF059669), // emerald
+  Color(0xFF7C3AED), // violet
+  Color(0xFFDB2777), // pink
+  Color(0xFFD97706), // amber
+  Color(0xFF0891B2), // cyan
+  Color(0xFF4F46E5), // indigo
+];
+
+/// Get a deterministic color for an investor's firm.
+Color _colorForFirm(String firm) {
+  if (firm.isEmpty) return _avatarColors[0];
+  return _avatarColors[firm.codeUnitAt(0) % _avatarColors.length];
+}
+
+/// Investor card widget for the Business Hub list.
+class InvestorCard extends StatelessWidget {
+  final Investor investor;
   final VoidCallback? onTap;
 
-  const _BasePostCard({
-    required this.child,
+  const InvestorCard({
+    super.key,
+    required this.investor,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final avatarColor = _colorForFirm(investor.firm);
+
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
@@ -38,813 +58,182 @@ class _BasePostCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: child,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Insight post card for industry insights.
-class InsightPostCard extends StatelessWidget {
-  final BusinessHubPost post;
-  final VoidCallback? onTap;
-  final VoidCallback? onLike;
-  final VoidCallback? onComment;
-  final bool isLiked;
-
-  const InsightPostCard({
-    super.key,
-    required this.post,
-    this.onTap,
-    this.onLike,
-    this.onComment,
-    this.isLiked = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _BasePostCard(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.categoryBlue.withAlpha(26),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.insights_outlined,
-                      size: 20, color: AppColors.categoryBlue),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    post.title,
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            if (post.description != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                post.description!,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _BusinessPostFooter(
-                    userName: post.userName,
-                    companyName: post.companyName,
-                    categoryLabel: 'Insight',
-                    categoryColor: AppColors.categoryBlue,
-                  ),
-                ),
-                if (post.likeCount > 0)
-                  CompactLikeButton(
-                    isLiked: isLiked,
-                    likeCount: post.likeCount,
-                    onToggle: onLike,
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Recruitment post card.
-class RecruitmentPostCard extends StatelessWidget {
-  final BusinessHubPost post;
-  final VoidCallback? onTap;
-  final VoidCallback? onLike;
-  final VoidCallback? onComment;
-  final bool isLiked;
-
-  const RecruitmentPostCard({
-    super.key,
-    required this.post,
-    this.onTap,
-    this.onLike,
-    this.onComment,
-    this.isLiked = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _BasePostCard(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 100,
-            width: double.infinity,
-            color: AppColors.neutralLight,
-            child: Center(
-              child: Icon(Icons.people_outline,
-                  size: 32, color: AppColors.neutralGray),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(14),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  post.title,
-                  style: AppTextStyles.labelLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                // Header: logo + firm + name
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: avatarColor.withAlpha(26),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          investor.firmInitial,
+                          style: AppTextStyles.headingSmall.copyWith(
+                            color: avatarColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            investor.firm,
+                            style: AppTextStyles.labelLarge.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            investor.name,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                if (post.description != null) ...[
-                  const SizedBox(height: 4),
+
+                const SizedBox(height: 12),
+
+                // Funding stage badges
+                if (investor.fundingStages.isNotEmpty)
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: investor.fundingStages.map((stage) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withAlpha(20),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          stage.label,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+
+                if (investor.fundingStages.isNotEmpty)
+                  const SizedBox(height: 10),
+
+                // Sectors
+                if (investor.sectors.isNotEmpty)
                   Text(
-                    post.description!,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
+                    investor.sectors.join(' \u2022 '),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textTertiary,
+                      fontSize: 12,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ],
-                const SizedBox(height: 12),
+
+                if (investor.sectors.isNotEmpty) const SizedBox(height: 10),
+
+                // Bottom row: ticket size + portfolio count
                 Row(
                   children: [
-                    Expanded(
-                      child: _BusinessPostFooter(
-                        userName: post.userName,
-                        companyName: post.companyName,
-                        categoryLabel: 'Recruitment',
-                        categoryColor: AppColors.categoryOrange,
+                    if (investor.ticketSize != null) ...[
+                      Icon(
+                        Icons.account_balance_wallet_outlined,
+                        size: 14,
+                        color: AppColors.textTertiary,
                       ),
-                    ),
-                    if (post.likeCount > 0)
-                      CompactLikeButton(
-                        isLiked: isLiked,
-                        likeCount: post.likeCount,
-                        onToggle: onLike,
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          investor.ticketSize!.formatted,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    if (post.commentCount > 0) ...[
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: onComment,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.chat_bubble_outline_rounded,
-                                size: 16, color: AppColors.textTertiary),
-                            const SizedBox(width: 4),
-                            Text(
-                              post.commentCount.toString(),
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.textTertiary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                    ] else
+                      const Spacer(),
+                    if (investor.portfolioCompanies.isNotEmpty) ...[
+                      Icon(
+                        Icons.business_outlined,
+                        size: 14,
+                        color: AppColors.textTertiary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${investor.portfolioCompanies.length} portfolio',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textTertiary,
+                          fontSize: 11,
                         ),
                       ),
                     ],
                   ],
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
-/// Business opportunity post card.
-class OpportunityPostCard extends StatelessWidget {
-  final BusinessHubPost post;
-  final VoidCallback? onTap;
-  final VoidCallback? onLike;
-  final bool isLiked;
-
-  const OpportunityPostCard({
-    super.key,
-    required this.post,
-    this.onTap,
-    this.onLike,
-    this.isLiked = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _BasePostCard(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 100,
-            width: double.infinity,
-            color: AppColors.neutralLight,
-            child: Center(
-              child: Icon(Icons.business_center_outlined,
-                  size: 32, color: AppColors.neutralGray),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  post.title,
-                  style: AppTextStyles.labelLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (post.description != null) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    post.description!,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _BusinessPostFooter(
-                        userName: post.userName,
-                        companyName: post.companyName,
-                        categoryLabel: 'Opportunity',
-                        categoryColor: AppColors.categoryTeal,
+                // Location
+                if (investor.location != null &&
+                    investor.location!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 14,
+                        color: AppColors.textTertiary,
                       ),
-                    ),
-                    if (post.likeCount > 0)
-                      CompactLikeButton(
-                        isLiked: isLiked,
-                        likeCount: post.likeCount,
-                        onToggle: onLike,
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          investor.location!,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textTertiary,
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Innovation post card.
-class InnovationPostCard extends StatelessWidget {
-  final BusinessHubPost post;
-  final VoidCallback? onTap;
-
-  const InnovationPostCard({
-    super.key,
-    required this.post,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _BasePostCard(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.categoryAmber.withAlpha(26),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.lightbulb_outline,
-                      size: 20, color: AppColors.categoryAmber),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    post.title,
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            if (post.description != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                post.description!,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            const SizedBox(height: 12),
-            _BusinessPostFooter(
-              userName: post.userName,
-              companyName: post.companyName,
-              categoryLabel: 'Innovation',
-              categoryColor: AppColors.categoryAmber,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Funding post card.
-class FundingPostCard extends StatelessWidget {
-  final BusinessHubPost post;
-  final VoidCallback? onTap;
-  final VoidCallback? onLike;
-  final bool isLiked;
-
-  const FundingPostCard({
-    super.key,
-    required this.post,
-    this.onTap,
-    this.onLike,
-    this.isLiked = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _BasePostCard(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Container(
-                height: 120,
-                width: double.infinity,
-                color: AppColors.neutralLight,
-                child: Center(
-                  child: Icon(Icons.account_balance_outlined,
-                      size: 36, color: AppColors.neutralGray),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child:
-                    FloatingLikeButton(isLiked: isLiked, onToggle: onLike),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  post.title,
-                  style: AppTextStyles.labelLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (post.description != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    post.description!,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    ],
                   ),
                 ],
-                const SizedBox(height: 12),
-                _BusinessPostFooter(
-                  userName: post.userName,
-                  companyName: post.companyName,
-                  categoryLabel: 'Funding',
-                  categoryColor: AppColors.categoryGreen,
-                ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Event post card.
-class BusinessEventPostCard extends StatelessWidget {
-  final BusinessHubPost post;
-  final VoidCallback? onTap;
-
-  const BusinessEventPostCard({
-    super.key,
-    required this.post,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _BasePostCard(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 100,
-            width: double.infinity,
-            color: AppColors.neutralLight,
-            child: Center(
-              child: Icon(Icons.event_outlined,
-                  size: 32, color: AppColors.neutralGray),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  post.title,
-                  style: AppTextStyles.labelLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (post.description != null) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    post.description!,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                const SizedBox(height: 12),
-                _BusinessPostFooter(
-                  userName: post.userName,
-                  companyName: post.companyName,
-                  categoryLabel: 'Event',
-                  categoryColor: AppColors.categoryIndigo,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Partnership post card.
-class PartnershipPostCard extends StatelessWidget {
-  final BusinessHubPost post;
-  final VoidCallback? onTap;
-
-  const PartnershipPostCard({
-    super.key,
-    required this.post,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _BasePostCard(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.categoryTeal.withAlpha(26),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.handshake_outlined,
-                      size: 20, color: AppColors.categoryTeal),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    post.title,
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            if (post.description != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                post.description!,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            const SizedBox(height: 12),
-            _BusinessPostFooter(
-              userName: post.userName,
-              companyName: post.companyName,
-              categoryLabel: 'Partnership',
-              categoryColor: AppColors.categoryTeal,
-            ),
-          ],
         ),
       ),
     );
-  }
-}
-
-/// Market analysis post card.
-class MarketAnalysisPostCard extends StatelessWidget {
-  final BusinessHubPost post;
-  final VoidCallback? onTap;
-  final VoidCallback? onLike;
-  final bool isLiked;
-
-  const MarketAnalysisPostCard({
-    super.key,
-    required this.post,
-    this.onTap,
-    this.onLike,
-    this.isLiked = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _BasePostCard(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.categoryGreen.withAlpha(26),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.trending_up,
-                      size: 20, color: AppColors.categoryGreen),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    post.title,
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            if (post.description != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                post.description!,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _BusinessPostFooter(
-                    userName: post.userName,
-                    companyName: post.companyName,
-                    categoryLabel: 'Market Trends',
-                    categoryColor: AppColors.categoryGreen,
-                  ),
-                ),
-                if (post.likeCount > 0)
-                  CompactLikeButton(
-                    isLiked: isLiked,
-                    likeCount: post.likeCount,
-                    onToggle: onLike,
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Post footer with avatar, username, company, and category tag.
-class _BusinessPostFooter extends StatelessWidget {
-  final String userName;
-  final String? companyName;
-  final String categoryLabel;
-  final Color categoryColor;
-
-  const _BusinessPostFooter({
-    required this.userName,
-    this.companyName,
-    required this.categoryLabel,
-    required this.categoryColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isUnknown = userName.isEmpty || userName.toLowerCase() == 'unknown';
-    final displayName = companyName != null
-        ? '$userName - $companyName'
-        : userName;
-
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 12,
-          backgroundColor:
-              isUnknown ? AppColors.avatarGray : AppColors.avatarWarm,
-          child: isUnknown
-              ? Icon(Icons.person_outline,
-                  size: 14, color: AppColors.neutralMuted)
-              : Text(
-                  userName[0].toUpperCase(),
-                  style: AppTextStyles.labelSmall.copyWith(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            isUnknown ? 'Unknown' : displayName,
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Text(
-          categoryLabel,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: categoryColor,
-            fontWeight: FontWeight.w500,
-            fontSize: 11,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Builds the appropriate post card widget based on post type.
-Widget buildBusinessPostCard({
-  required BusinessHubPost post,
-  required VoidCallback onTap,
-  VoidCallback? onLike,
-  VoidCallback? onComment,
-  bool isLiked = false,
-}) {
-  switch (post.postType) {
-    case BusinessPostType.insight:
-      return InsightPostCard(
-        post: post,
-        onTap: onTap,
-        onLike: onLike,
-        onComment: onComment,
-        isLiked: isLiked,
-      );
-    case BusinessPostType.recruitment:
-      return RecruitmentPostCard(
-        post: post,
-        onTap: onTap,
-        onLike: onLike,
-        onComment: onComment,
-        isLiked: isLiked,
-      );
-    case BusinessPostType.opportunity:
-      return OpportunityPostCard(
-        post: post,
-        onTap: onTap,
-        onLike: onLike,
-        isLiked: isLiked,
-      );
-    case BusinessPostType.marketAnalysis:
-      return MarketAnalysisPostCard(
-        post: post,
-        onTap: onTap,
-        onLike: onLike,
-        isLiked: isLiked,
-      );
-    case BusinessPostType.leadership:
-      return InsightPostCard(
-        post: post,
-        onTap: onTap,
-        onLike: onLike,
-        isLiked: isLiked,
-      );
-    case BusinessPostType.innovation:
-      return InnovationPostCard(post: post, onTap: onTap);
-    case BusinessPostType.partnership:
-      return PartnershipPostCard(post: post, onTap: onTap);
-    case BusinessPostType.event:
-      return BusinessEventPostCard(post: post, onTap: onTap);
-    case BusinessPostType.funding:
-      return FundingPostCard(
-        post: post,
-        onTap: onTap,
-        onLike: onLike,
-        isLiked: isLiked,
-      );
   }
 }

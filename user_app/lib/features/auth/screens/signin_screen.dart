@@ -64,7 +64,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   bool get _isEmailValid {
     final regex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-    return regex.hasMatch(_email);
+    if (!regex.hasMatch(_email)) return false;
+    // For student signups, require educational email
+    final userType = GoRouterState.of(context).uri.queryParameters['type'];
+    if (userType == 'student') {
+      return EmailValidators.isCollegeEmail(_email);
+    }
+    return true;
   }
 
   void _startResendCooldown() {
@@ -114,6 +120,19 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     });
 
     try {
+      // Check if account already exists before sending OTP
+      final exists = await ref
+          .read(authStateProvider.notifier)
+          .checkAccount(_email);
+
+      if (exists) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _showAccountExistsSnackBar();
+        }
+        return;
+      }
+
       await ref.read(authStateProvider.notifier).sendOTP(
             email: _email,
             purpose: 'signup',
@@ -338,12 +357,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           emailController: _emailController,
                           errorMessage: _errorMessage,
                           userType: userType,
+                          isEmailValid: _isEmailValid,
                           onSubmit: _submitEmail,
                           onErrorClear: () {
                             if (_errorMessage != null) {
                               setState(() => _errorMessage = null);
                             }
                           },
+                          onEmailChanged: () => setState(() {}),
                         ),
                 ),
               ],
@@ -417,16 +438,20 @@ class _EmailEntrySection extends StatelessWidget {
   final TextEditingController emailController;
   final String? errorMessage;
   final String? userType;
+  final bool isEmailValid;
   final VoidCallback onSubmit;
   final VoidCallback onErrorClear;
+  final VoidCallback onEmailChanged;
 
   const _EmailEntrySection({
     super.key,
     required this.emailController,
     this.errorMessage,
     this.userType,
+    required this.isEmailValid,
     required this.onSubmit,
     required this.onErrorClear,
+    required this.onEmailChanged,
   });
 
   @override
@@ -522,11 +547,14 @@ class _EmailEntrySection extends StatelessWidget {
           // Email field
           TextField(
             controller: emailController,
-            onChanged: (_) => onErrorClear(),
+            onChanged: (_) {
+              onErrorClear();
+              onEmailChanged();
+            },
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
             textInputAction: TextInputAction.done,
-            onSubmitted: (_) => onSubmit(),
+            onSubmitted: (_) { if (isEmailValid) onSubmit(); },
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.textPrimary,
             ),
@@ -565,10 +593,12 @@ class _EmailEntrySection extends StatelessWidget {
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: onSubmit,
+              onPressed: isEmailValid ? onSubmit : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
+                disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.3),
+                disabledForegroundColor: Colors.white.withValues(alpha: 0.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),

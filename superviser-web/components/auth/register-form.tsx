@@ -40,7 +40,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { apiFetch } from "@/lib/api/client"
 import { sendSupervisorOTP, supervisorSignup } from "@/lib/api/auth"
 import { professionalProfileSchema, bankingSchema } from "@/lib/validations/auth"
 import { QUALIFICATIONS, INDIAN_BANKS } from "@/lib/constants"
@@ -181,25 +180,25 @@ export function RegisterForm() {
     try {
       const trimmed = data.email.trim().toLowerCase()
 
-      // Check if email is registered on another platform
-      const crossCheck = await apiFetch<{ available: boolean; conflictingRole: string | null }>(
-        "/api/auth/check-account",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: trimmed, role: "supervisor" }),
-        }
-      ).catch(() => null)
+      // Check if email is registered on another platform (no auth needed)
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+      const crossCheckRes = await fetch(`${API_BASE}/api/auth/check-account`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed, role: "supervisor" }),
+      }).catch(() => null)
+      const crossCheck = crossCheckRes?.ok ? await crossCheckRes.json().catch(() => null) : null
 
       if (crossCheck && !crossCheck.available) {
         setError(`This email is already registered as a ${crossCheck.conflictingRole}. Each role requires a unique email.`)
         return
       }
 
-      // Check if email already has a request
-      const existing = await apiFetch<{ id?: string; status?: string } | null>(
-        `/api/access-requests/check?email=${encodeURIComponent(trimmed)}&role=supervisor`
+      // Check if email already has a request (no auth needed)
+      const existingRes = await fetch(
+        `${API_BASE}/api/access-requests/check?email=${encodeURIComponent(trimmed)}&role=supervisor`
       ).catch(() => null)
+      const existing = existingRes?.ok ? await existingRes.json().catch(() => null) : null
 
       if (existing && existing.id) {
         const s = existing.status

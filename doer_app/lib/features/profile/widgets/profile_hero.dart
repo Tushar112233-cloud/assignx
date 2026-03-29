@@ -26,14 +26,14 @@ class ProfileHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primaryDark,
             AppColors.primary,
-            AppColors.accent,
+            AppColors.primary.withValues(alpha: 0.85),
+            AppColors.accent.withValues(alpha: 0.9),
           ],
         ),
       ),
@@ -158,7 +158,7 @@ class ProfileHero extends StatelessWidget {
           child: CircleAvatar(
             radius: 52,
             backgroundColor: Colors.white.withValues(alpha: 0.2),
-            child: profile.avatarUrl != null
+            child: _hasValidAvatar
                 ? ClipOval(
                     child: CachedNetworkImage(
                       imageUrl: profile.avatarUrl!,
@@ -210,11 +210,25 @@ class ProfileHero extends StatelessWidget {
     );
   }
 
+  bool get _hasValidAvatar =>
+      profile.avatarUrl != null &&
+      profile.avatarUrl!.isNotEmpty &&
+      profile.avatarUrl!.startsWith('http');
+
+  /// Returns initials (up to 2 characters) from the full name.
+  String get _initials {
+    final parts = profile.fullName.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+    return profile.fullName.isNotEmpty ? profile.fullName[0].toUpperCase() : 'U';
+  }
+
   Widget _buildAvatarText() {
     return Text(
-      profile.fullName.isNotEmpty ? profile.fullName[0].toUpperCase() : 'U',
+      _initials,
       style: const TextStyle(
-        fontSize: 40,
+        fontSize: 36,
         fontWeight: FontWeight.bold,
         color: Colors.white,
       ),

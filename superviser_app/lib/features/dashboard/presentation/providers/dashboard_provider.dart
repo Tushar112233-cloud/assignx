@@ -39,6 +39,7 @@ class DashboardState {
   /// All parameters have sensible defaults for an initial state.
   const DashboardState({
     this.newRequests = const [],
+    this.quotedRequests = const [],
     this.paidRequests = const [],
     this.isLoading = false,
     this.error,
@@ -47,15 +48,12 @@ class DashboardState {
   });
 
   /// List of new requests awaiting quotes.
-  ///
-  /// These are projects with status "submitted" assigned to
-  /// the current supervisor.
   final List<RequestModel> newRequests;
 
+  /// List of quoted requests awaiting client payment.
+  final List<RequestModel> quotedRequests;
+
   /// List of paid requests ready for doer assignment.
-  ///
-  /// These are projects with status "paid" that need a doer
-  /// to be assigned.
   final List<RequestModel> paidRequests;
 
   /// Whether data is currently being loaded.
@@ -82,7 +80,12 @@ class DashboardState {
   /// Total count of pending requests (new + paid).
   ///
   /// Useful for displaying badge counts in notifications.
-  int get pendingCount => newRequests.length + paidRequests.length;
+  int get pendingCount => newRequests.length + quotedRequests.length + paidRequests.length;
+
+  List<RequestModel> get filteredQuotedRequests {
+    if (selectedSubject == 'All') return quotedRequests;
+    return quotedRequests.where((r) => r.subject == selectedSubject).toList();
+  }
 
   /// Filtered list of new requests based on selected subject.
   ///
@@ -114,6 +117,7 @@ class DashboardState {
   /// Returns a new [DashboardState] instance with updated values.
   DashboardState copyWith({
     List<RequestModel>? newRequests,
+    List<RequestModel>? quotedRequests,
     List<RequestModel>? paidRequests,
     bool? isLoading,
     String? error,
@@ -123,6 +127,7 @@ class DashboardState {
   }) {
     return DashboardState(
       newRequests: newRequests ?? this.newRequests,
+      quotedRequests: quotedRequests ?? this.quotedRequests,
       paidRequests: paidRequests ?? this.paidRequests,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
@@ -180,14 +185,16 @@ class DashboardNotifier extends StateNotifier<DashboardState> {
 
       final results = await Future.wait([
         _repository.getNewRequests(),
+        _repository.getQuotedRequests(),
         _repository.getPaidRequests(),
         _repository.getAvailability(),
       ]);
 
       state = state.copyWith(
         newRequests: results[0] as List<RequestModel>,
-        paidRequests: results[1] as List<RequestModel>,
-        isAvailable: results[2] as bool,
+        quotedRequests: results[1] as List<RequestModel>,
+        paidRequests: results[2] as List<RequestModel>,
+        isAvailable: results[3] as bool,
         isLoading: false,
       );
     } catch (e) {

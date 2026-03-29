@@ -280,15 +280,15 @@ class _ProfileNavItem extends StatelessWidget {
                     color: isActive ? AppColors.primary : AppColors.borderLight,
                     width: isActive ? 2 : 1.5,
                   ),
-                  image: imageUrl != null
+                  image: imageUrl != null && imageUrl!.isNotEmpty && imageUrl!.startsWith('http')
                       ? DecorationImage(
                           image: NetworkImage(imageUrl!),
                           fit: BoxFit.cover,
                         )
                       : null,
-                  color: imageUrl == null ? AppColors.surfaceVariantLight : null,
+                  color: (imageUrl == null || imageUrl!.isEmpty) ? AppColors.surfaceVariantLight : null,
                 ),
-                child: imageUrl == null
+                child: (imageUrl == null || imageUrl!.isEmpty || !imageUrl!.startsWith('http'))
                     ? Icon(
                         Icons.person,
                         size: iconSize,

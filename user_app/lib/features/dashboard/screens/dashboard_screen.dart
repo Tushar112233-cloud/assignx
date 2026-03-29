@@ -649,7 +649,7 @@ class _QuickActions extends StatelessWidget {
               Expanded(
                 child: _ActionTile(
                   icon: LucideIcons.filePlus,
-                  title: 'Project Support'.tr(context),
+                  title: 'New Project'.tr(context),
                   subtitle: 'Get expert help',
                   accentColor: _C.violet,
                   onTap: () => context.push('/add-project/wizard'),

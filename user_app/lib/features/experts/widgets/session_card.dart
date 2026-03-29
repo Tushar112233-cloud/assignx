@@ -192,11 +192,10 @@ class SessionCard extends StatelessWidget {
                 ),
 
                 // Action buttons
-                if (isUpcoming && booking.status != BookingStatus.inProgress)
-                  _buildActionButtons()
-                else if (booking.status == BookingStatus.inProgress &&
-                    booking.meetLink != null)
-                  _buildJoinButton(context),
+                if (isUpcoming && booking.meetLink != null && booking.meetLink!.isNotEmpty)
+                  _buildJoinButton(context)
+                else if (isUpcoming)
+                  _buildActionButtons(),
               ],
             ),
           ],

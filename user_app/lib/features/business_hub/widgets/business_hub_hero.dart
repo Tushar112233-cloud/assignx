@@ -2,12 +2,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 
-/// Hero section for Business Hub - Coffee Bean themed with emerald accent.
+/// Hero section for Business Hub - Investor Portal themed.
 ///
 /// Clean design matching the overall app theme while maintaining
 /// a business identity through subtle color accents.
@@ -50,7 +49,6 @@ class BusinessHubHero extends StatelessWidget {
         child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [
-
           // Subtle decorative circles
           Positioned(
             top: -25,
@@ -87,7 +85,7 @@ class BusinessHubHero extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // "Business" badge
+                      // "Investors" badge
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -110,7 +108,7 @@ class BusinessHubHero extends StatelessWidget {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              'BUSINESS',
+                              'INVESTORS',
                               style: AppTextStyles.labelSmall.copyWith(
                                 color: const Color(0xFF6EE7B7),
                                 fontWeight: FontWeight.w800,
@@ -144,7 +142,7 @@ class BusinessHubHero extends StatelessWidget {
 
                       // Subtitle
                       Text(
-                        'Industry insights, recruitment, business opportunities',
+                        'Discover investors, funding stages, and connect with VCs',
                         style: AppTextStyles.bodySmall.copyWith(
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
@@ -154,13 +152,6 @@ class BusinessHubHero extends StatelessWidget {
                       )
                           .animate()
                           .fadeIn(duration: 500.ms, delay: 300.ms),
-                      const SizedBox(height: 14),
-
-                      // Quick action chips
-                      _QuickActionChips()
-                          .animate()
-                          .fadeIn(duration: 500.ms, delay: 400.ms)
-                          .slideY(begin: 0.2, end: 0),
                     ],
                   ),
                 ),
@@ -174,7 +165,7 @@ class BusinessHubHero extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(
-                    Icons.business_center_rounded,
+                    Icons.account_balance_rounded,
                     size: 32,
                     color: Color(0xFF6EE7B7),
                   ),
@@ -189,70 +180,6 @@ class BusinessHubHero extends StatelessWidget {
           ),
         ],
       ),
-      ),
-    );
-  }
-}
-
-class _QuickActionChips extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _ActionChip(
-          icon: Icons.add_circle_outline,
-          label: 'Post',
-          onTap: () => context.push('/business-hub/create'),
-        ),
-        _ActionChip(
-          icon: Icons.bookmark_outline,
-          label: 'Saved',
-          onTap: () => context.push('/business-hub/saved'),
-        ),
-      ],
-    );
-  }
-}
-
-class _ActionChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _ActionChip({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(22),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.8)),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: AppTextStyles.labelMedium.copyWith(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

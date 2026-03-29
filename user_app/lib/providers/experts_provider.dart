@@ -171,7 +171,7 @@ final expertsProvider = FutureProvider.autoDispose<List<Expert>>((ref) async {
   }
 });
 
-/// Provider for featured experts.
+/// Provider for featured experts — only shows experts flagged as featured by admin.
 final featuredExpertsProvider =
     FutureProvider.autoDispose<List<Expert>>((ref) async {
   try {
@@ -185,15 +185,8 @@ final featuredExpertsProvider =
         .map((json) => Expert.fromJson(json as Map<String, dynamic>))
         .toList();
 
-    // Fallback: if API doesn't filter by featured, do it client-side
-    if (experts.any((e) => e.featured)) {
-      return experts.where((e) => e.featured).take(5).toList();
-    }
-    // Otherwise return top-rated verified experts
-    return experts
-        .where((e) => e.rating >= 4.5 && e.verified)
-        .take(5)
-        .toList();
+    // Only return experts explicitly marked as featured by admin
+    return experts.where((e) => e.featured).toList();
   } catch (e) {
     debugPrint('Failed to fetch featured experts: $e');
     rethrow;
@@ -215,15 +208,21 @@ final expertDetailProvider =
   }
 });
 
-/// Provider for expert reviews.
-///
-/// Currently returns an empty list since there is no dedicated review-listing
-/// endpoint. Reviews can be added once `GET /api/experts/:id/reviews` exists.
+/// Provider for expert reviews from the API.
 final expertReviewsProvider =
     FutureProvider.autoDispose.family<List<ExpertReview>, String>(
         (ref, expertId) async {
-  // No review-listing endpoint yet; return empty list.
-  return [];
+  try {
+    final response = await ApiClient.get('/experts/$expertId/reviews');
+    final data = response as Map<String, dynamic>;
+    final list = data['reviews'] as List<dynamic>? ?? [];
+    return list
+        .map((json) => ExpertReview.fromJson(json as Map<String, dynamic>))
+        .toList();
+  } catch (e) {
+    debugPrint('Failed to fetch expert reviews: $e');
+    return [];
+  }
 });
 
 /// Provider for user bookings from the API.

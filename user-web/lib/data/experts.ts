@@ -19,8 +19,12 @@ export const MOCK_BOOKINGS: ConsultationBooking[] = [];
  */
 export async function fetchExperts(): Promise<{ experts: Expert[]; total: number }> {
   try {
-    const data = await apiClient<{ experts: Expert[]; total: number }>("/api/experts");
-    return { experts: data.experts || [], total: data.total || 0 };
+    const data = await apiClient<{ experts: any[]; total: number }>("/api/experts");
+    const experts: Expert[] = (data.experts || []).map((e: any) => ({
+      ...e,
+      featured: e.featured ?? e.isFeatured ?? e.is_featured ?? false,
+    }));
+    return { experts, total: data.total || 0 };
   } catch (error) {
     console.error("Failed to fetch experts:", error);
     return { experts: [], total: 0 };
@@ -32,8 +36,12 @@ export async function fetchExperts(): Promise<{ experts: Expert[]; total: number
  */
 export async function fetchExpertById(id: string): Promise<Expert | null> {
   try {
-    const data = await apiClient<{ expert: Expert }>(`/api/experts/${id}`);
-    return data.expert || null;
+    const data = await apiClient<{ expert: any }>(`/api/experts/${id}`);
+    if (!data.expert) return null;
+    return {
+      ...data.expert,
+      featured: data.expert.featured ?? data.expert.isFeatured ?? data.expert.is_featured ?? false,
+    };
   } catch (error) {
     console.error("Failed to fetch expert:", error);
     return null;
@@ -58,8 +66,45 @@ export async function fetchExpertReviews(expertId: string): Promise<ExpertReview
  */
 export async function fetchUserBookings(): Promise<ConsultationBooking[]> {
   try {
-    const data = await apiClient<{ bookings: ConsultationBooking[] }>("/api/experts/bookings/me");
-    return data.bookings || [];
+    const data = await apiClient<{ bookings: any[] }>("/api/experts/bookings/me");
+    const raw = data.bookings || [];
+    return raw.map((b: any) => {
+      // Map API status to UI status
+      const statusMap: Record<string, string> = {
+        confirmed: "upcoming",
+        pending: "upcoming",
+        completed: "completed",
+        cancelled: "cancelled",
+      };
+      // Extract expert info from populated expertId
+      const expert = typeof b.expertId === "object" ? b.expertId : null;
+      const expertId = expert?._id || expert?.id || b.expertId || "";
+      return {
+        id: b._id || b.id || "",
+        expertId,
+        clientId: b.userId || "",
+        date: b.date,
+        startTime: b.startTime || b.timeSlot || "",
+        endTime: b.endTime || "",
+        duration: b.duration || 60,
+        topic: b.topic || "",
+        notes: b.notes || "",
+        status: statusMap[b.status] || b.status || "upcoming",
+        meetLink: b.meetLink || b.meet_link || undefined,
+        totalAmount: b.amount || 0,
+        expertAmount: (b.amount || 0) - (b.platformFee || 0),
+        platformFee: b.platformFee || 0,
+        currency: "INR",
+        paymentId: b.paymentId,
+        paymentStatus: b.paymentStatus || "pending",
+        createdAt: b.createdAt,
+        updatedAt: b.updatedAt,
+        // Attach expert details for display
+        expertName: expert?.name || "",
+        expertAvatar: expert?.avatarUrl || "",
+        expertDesignation: expert?.designation || expert?.title || "",
+      } as ConsultationBooking & { expertName?: string; expertAvatar?: string; expertDesignation?: string };
+    });
   } catch (error) {
     console.error("Failed to fetch bookings:", error);
     return [];

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/project_model.dart';
+
+String _formatDate(DateTime date) {
+  return DateFormat('EEE, MMM d, yyyy').format(date);
+}
 
 /// Expandable accordion showing project brief details.
 class ProjectBriefAccordion extends StatefulWidget {
@@ -108,25 +113,27 @@ class _ProjectBriefAccordionState extends State<ProjectBriefAccordion>
                       ],
                     ),
                   ),
-                  if (widget.project.userQuote != null) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withAlpha(20),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        widget.project.formattedQuote,
-                        style: AppTextStyles.labelMedium.copyWith(
-                          color: AppColors.success,
-                        ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.project.userQuote != null
+                          ? AppColors.success.withAlpha(20)
+                          : AppColors.surfaceVariant,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      widget.project.formattedQuote,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: widget.project.userQuote != null
+                            ? AppColors.success
+                            : AppColors.textTertiary,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                  ],
+                  ),
+                  const SizedBox(width: 8),
                   AnimatedRotation(
                     turns: _isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
@@ -174,12 +181,68 @@ class _ProjectBriefAccordionState extends State<ProjectBriefAccordion>
                       ),
 
                       // Description
-                      if (widget.project.description != null) ...[
+                      if (widget.project.description != null &&
+                          widget.project.description!.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _DetailRow(
-                          label: 'Instructions',
+                          label: 'Description',
                           value: widget.project.description!,
                           isMultiLine: true,
+                        ),
+                      ],
+
+                      // Word Count
+                      if (widget.project.wordCount != null) ...[
+                        const SizedBox(height: 12),
+                        _DetailRow(
+                          label: 'Word Count',
+                          value: '${widget.project.wordCount} words',
+                        ),
+                      ],
+
+                      // Page Count
+                      if (widget.project.pageCount != null) ...[
+                        const SizedBox(height: 12),
+                        _DetailRow(
+                          label: 'Pages',
+                          value: '${widget.project.pageCount} pages',
+                        ),
+                      ],
+
+                      // Specific Instructions
+                      if (widget.project.specificInstructions != null &&
+                          widget.project.specificInstructions!.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _DetailRow(
+                          label: 'Requirements',
+                          value: widget.project.specificInstructions!,
+                          isMultiLine: true,
+                        ),
+                      ],
+
+                      // Focus Areas
+                      if (widget.project.focusAreas != null &&
+                          widget.project.focusAreas!.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _DetailRow(
+                          label: 'Focus Areas',
+                          value: widget.project.focusAreas!.join(', '),
+                        ),
+                      ],
+
+                      // Deadline
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                        label: 'Deadline',
+                        value: _formatDate(widget.project.deadline),
+                      ),
+
+                      // Quote
+                      if (widget.project.userQuote != null) ...[
+                        const SizedBox(height: 12),
+                        _DetailRow(
+                          label: 'Quote',
+                          value: widget.project.formattedQuote,
                         ),
                       ],
 

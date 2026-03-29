@@ -82,12 +82,18 @@ class EarningsState {
 class EarningsNotifier extends Notifier<EarningsState> {
   @override
   EarningsState build() {
-    // Trigger initial load.
-    _loadAll();
+    // Defer load to avoid circular provider reads.
+    Future.microtask(() => _loadAll());
     return const EarningsState(isLoading: true);
   }
 
-  DoerWalletRepository get _repo => ref.read(doerWalletRepositoryProvider);
+  DoerWalletRepository get _repo {
+    try {
+      return ref.read(doerWalletRepositoryProvider);
+    } catch (_) {
+      return DoerWalletRepository();
+    }
+  }
 
   /// Loads wallet, transactions, and monthly summaries in parallel.
   Future<void> _loadAll() async {

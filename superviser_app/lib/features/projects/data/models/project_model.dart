@@ -232,13 +232,17 @@ class ProjectModel {
     final qualityCheck = json['qualityCheck'] as Map<String, dynamic>?
         ?? json['quality_check'] as Map<String, dynamic>? ?? {};
 
-    // Handle subject - could be a string, Map from Supabase join, or populated MongoDB object.
+    // Handle subject - prefer explicit name fields, fall back to populated object.
     String subject = 'General';
-    final subjectRaw = json['subject'] ?? json['subjectId'] ?? json['subject_id'];
-    if (subjectRaw is Map<String, dynamic>) {
-      subject = (subjectRaw['name'] as String?) ?? 'General';
-    } else if (subjectRaw is String) {
-      subject = subjectRaw;
+    final subjectName = json['subject_name'] ?? json['subject'];
+    final subjectObj = json['subjectId'] ?? json['subject_id'];
+    if (subjectName is String && subjectName.isNotEmpty && !subjectName.contains(RegExp(r'^[0-9a-f]{24}$'))) {
+      // It's a readable name, not an ObjectId
+      subject = subjectName;
+    } else if (subjectObj is Map<String, dynamic>) {
+      subject = (subjectObj['name'] as String?) ?? 'General';
+    } else if (subjectName is String && subjectName.isNotEmpty) {
+      subject = subjectName;
     }
 
     // Handle userId - may be a populated object.

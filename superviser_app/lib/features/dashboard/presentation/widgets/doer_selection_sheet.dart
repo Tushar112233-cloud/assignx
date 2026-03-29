@@ -121,9 +121,7 @@ class _DoerSelectionSheetState extends ConsumerState<DoerSelectionSheet> {
     super.initState();
     // Load available doers filtered by the request's subject
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(doerSelectionProvider.notifier).loadDoers(
-            expertise: widget.request.subject,
-          );
+      ref.read(doerSelectionProvider.notifier).loadDoers();
     });
   }
 
@@ -448,10 +446,10 @@ class DoerCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 24,
                   backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  backgroundImage: doer.avatarUrl != null
+                  backgroundImage: doer.avatarUrl != null && doer.avatarUrl!.isNotEmpty && doer.avatarUrl!.startsWith('http')
                       ? NetworkImage(doer.avatarUrl!)
                       : null,
-                  child: doer.avatarUrl == null
+                  child: (doer.avatarUrl == null || doer.avatarUrl!.isEmpty)
                       ? Text(
                           doer.initials,
                           style: TextStyle(

@@ -2,124 +2,118 @@ library;
 
 import 'package:flutter/material.dart';
 
-/// Filter categories for Pro Network.
-enum ProfessionalCategory {
+/// Job category filters for the Job Portal.
+enum JobCategory {
   all('All', Icons.dashboard_outlined),
-  jobDiscussions('Job Discussions', Icons.work_outline),
-  portfolioShowcase('Portfolio', Icons.photo_library_outlined),
-  skillExchange('Skill Exchange', Icons.swap_horiz),
-  industryNews('Industry News', Icons.newspaper_outlined),
-  networking('Networking', Icons.people_outline),
-  freelanceOpportunities('Freelance', Icons.rocket_launch_outlined),
-  tools('Tools & Resources', Icons.build_outlined),
-  events('Events', Icons.event_outlined),
-  helpAdvice('Help & Advice', Icons.help_outline);
+  engineering('Engineering', Icons.code_outlined),
+  design('Design', Icons.palette_outlined),
+  marketing('Marketing', Icons.campaign_outlined),
+  sales('Sales', Icons.trending_up_outlined),
+  finance('Finance', Icons.account_balance_outlined),
+  product('Product', Icons.inventory_2_outlined),
+  data('Data', Icons.storage_outlined),
+  operations('Operations', Icons.settings_outlined),
+  hr('HR', Icons.people_outline);
 
   final String label;
   final IconData icon;
 
-  const ProfessionalCategory(this.label, this.icon);
+  const JobCategory(this.label, this.icon);
+
+  /// Match a category string from the API to a [JobCategory].
+  static JobCategory fromApi(String? value) {
+    if (value == null || value.isEmpty) return JobCategory.all;
+    return JobCategory.values.firstWhere(
+      (c) => c.name == value,
+      orElse: () => JobCategory.all,
+    );
+  }
 }
 
-/// Post type variants for professional content.
-enum ProfessionalPostType {
-  discussion('Discussion'),
-  portfolioItem('Portfolio'),
-  skillOffer('Skill Offer'),
-  newsArticle('News'),
-  freelanceGig('Freelance Gig'),
-  event('Event'),
-  question('Question'),
-  resource('Resource');
+/// Employment type for a job listing.
+enum JobType {
+  all('All', ''),
+  fullTime('Full-time', 'full-time'),
+  partTime('Part-time', 'part-time'),
+  contract('Contract', 'contract'),
+  internship('Internship', 'internship'),
+  freelance('Freelance', 'freelance');
 
   final String label;
+  final String apiValue;
 
-  const ProfessionalPostType(this.label);
+  const JobType(this.label, this.apiValue);
+
+  /// Match a type string from the API to a [JobType].
+  static JobType fromApi(String? value) {
+    if (value == null || value.isEmpty) return JobType.fullTime;
+    return JobType.values.firstWhere(
+      (t) => t.apiValue == value,
+      orElse: () => JobType.fullTime,
+    );
+  }
 }
 
-/// Pro Network post model.
-class ProNetworkPost {
+/// A single job listing from the /api/jobs endpoint.
+class Job {
   final String id;
-  final String userId;
-  final String userName;
-  final String? userAvatar;
-  final String? userTitle;
-  final ProfessionalCategory category;
-  final ProfessionalPostType postType;
   final String title;
-  final String? description;
-  final List<String>? images;
+  final String company;
+  final String? companyLogo;
   final String? location;
-  final List<String>? tags;
-  final int likeCount;
-  final int commentCount;
-  final bool isLiked;
-  final bool isSaved;
-  final DateTime createdAt;
-  final Map<String, dynamic>? metadata;
+  final JobType type;
+  final JobCategory category;
+  final bool isRemote;
+  final String? salary;
+  final String? description;
+  final List<String> requirements;
+  final List<String> skills;
+  final int applicationCount;
+  final String? postedAt;
+  final String? applyUrl;
+  final bool isActive;
 
-  const ProNetworkPost({
+  const Job({
     required this.id,
-    this.userId = '',
-    required this.userName,
-    this.userAvatar,
-    this.userTitle,
-    this.category = ProfessionalCategory.all,
-    this.postType = ProfessionalPostType.discussion,
     required this.title,
-    this.description,
-    this.images,
+    required this.company,
+    this.companyLogo,
     this.location,
-    this.tags,
-    this.likeCount = 0,
-    this.commentCount = 0,
-    this.isLiked = false,
-    this.isSaved = false,
-    required this.createdAt,
-    this.metadata,
+    this.type = JobType.fullTime,
+    this.category = JobCategory.all,
+    this.isRemote = false,
+    this.salary,
+    this.description,
+    this.requirements = const [],
+    this.skills = const [],
+    this.applicationCount = 0,
+    this.postedAt,
+    this.applyUrl,
+    this.isActive = true,
   });
 
-  String get timeAgo {
-    final now = DateTime.now();
-    final diff = now.difference(createdAt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
-    return '${(diff.inDays / 30).floor()}mo ago';
-  }
-
-  bool get hasImages => images != null && images!.isNotEmpty;
-
-  factory ProNetworkPost.fromJson(Map<String, dynamic> json) {
-    final author = json['author'] ?? json['userId'];
-    final authorMap = author is Map<String, dynamic> ? author : null;
-    return ProNetworkPost(
+  /// Build a [Job] from an API JSON map.
+  factory Job.fromJson(Map<String, dynamic> json) {
+    return Job(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
-      userId: (json['user_id'] ?? (authorMap != null ? (authorMap['_id'] ?? authorMap['id']) : null) ?? '').toString(),
-      userName: (authorMap != null ? (authorMap['full_name'] ?? authorMap['fullName']) : json['authorName']) as String? ?? 'Anonymous',
-      userAvatar: (authorMap != null ? (authorMap['avatar_url'] ?? authorMap['avatarUrl']) : null) as String?,
-      userTitle: json['author_title'] as String?,
-      category: ProfessionalCategory.values.firstWhere(
-        (c) => c.name == (json['category'] ?? ''),
-        orElse: () => ProfessionalCategory.all,
-      ),
-      postType: ProfessionalPostType.values.firstWhere(
-        (t) => t.name == (json['post_type'] ?? json['postType'] ?? ''),
-        orElse: () => ProfessionalPostType.discussion,
-      ),
       title: json['title'] as String? ?? '',
-      description: json['content'] as String?,
-      images: (json['images'] ?? json['imageUrls'] ?? json['image_urls']) != null
-          ? List<String>.from(json['images'] ?? json['imageUrls'] ?? json['image_urls'])
-          : null,
+      company: json['company'] as String? ?? '',
+      companyLogo: json['companyLogo'] as String?,
       location: json['location'] as String?,
-      tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
-      likeCount: (json['likes_count'] ?? json['likeCount'] ?? json['like_count']) as int? ?? 0,
-      commentCount: (json['comments_count'] ?? json['commentCount'] ?? json['comment_count']) as int? ?? 0,
-      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
-      metadata: json['metadata'] as Map<String, dynamic>?,
+      type: JobType.fromApi(json['type'] as String?),
+      category: JobCategory.fromApi(json['category'] as String?),
+      isRemote: json['isRemote'] as bool? ?? false,
+      salary: json['salary'] as String?,
+      description: json['description'] as String?,
+      requirements: json['requirements'] != null
+          ? List<String>.from(json['requirements'])
+          : [],
+      skills: json['skills'] != null ? List<String>.from(json['skills']) : [],
+      applicationCount:
+          (json['applicationCount'] ?? json['application_count'] ?? 0) as int,
+      postedAt: (json['postedAt'] ?? json['posted_at']) as String?,
+      applyUrl: (json['applyUrl'] ?? json['apply_url']) as String?,
+      isActive: json['isActive'] as bool? ?? true,
     );
   }
 }

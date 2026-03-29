@@ -2,125 +2,193 @@ library;
 
 import 'package:flutter/material.dart';
 
-/// Filter categories for Business Hub.
-enum BusinessCategory {
-  all('All', Icons.dashboard_outlined),
-  industryInsights('Industry Insights', Icons.insights_outlined),
-  recruitment('Recruitment', Icons.people_outline),
-  businessOpportunities('Opportunities', Icons.business_center_outlined),
-  marketTrends('Market Trends', Icons.trending_up),
-  leadership('Leadership', Icons.emoji_events_outlined),
-  innovation('Innovation', Icons.lightbulb_outline),
-  partnerships('Partnerships', Icons.handshake_outlined),
-  events('Events', Icons.event_outlined),
-  funding('Funding', Icons.account_balance_outlined);
+/// Funding stage filter for investors.
+enum FundingStage {
+  all('All', 'all', Icons.dashboard_outlined),
+  preSeed('Pre-Seed', 'pre-seed', Icons.rocket_launch_outlined),
+  seed('Seed', 'seed', Icons.spa_outlined),
+  seriesA('Series A', 'series-a', Icons.trending_up),
+  seriesB('Series B', 'series-b', Icons.show_chart),
+  seriesC('Series C', 'series-c', Icons.stacked_line_chart),
+  growth('Growth', 'growth', Icons.auto_graph);
 
   final String label;
+  final String apiValue;
   final IconData icon;
 
-  const BusinessCategory(this.label, this.icon);
-}
+  const FundingStage(this.label, this.apiValue, this.icon);
 
-/// Post type variants for business content.
-enum BusinessPostType {
-  insight('Insight'),
-  recruitment('Recruitment'),
-  opportunity('Opportunity'),
-  marketAnalysis('Market Analysis'),
-  leadership('Leadership'),
-  innovation('Innovation'),
-  partnership('Partnership'),
-  event('Event'),
-  funding('Funding');
-
-  final String label;
-
-  const BusinessPostType(this.label);
-}
-
-/// Business Hub post model.
-class BusinessHubPost {
-  final String id;
-  final String userId;
-  final String userName;
-  final String? userAvatar;
-  final String? userTitle;
-  final String? companyName;
-  final BusinessCategory category;
-  final BusinessPostType postType;
-  final String title;
-  final String? description;
-  final List<String>? images;
-  final String? location;
-  final List<String>? tags;
-  final int likeCount;
-  final int commentCount;
-  final bool isLiked;
-  final bool isSaved;
-  final DateTime createdAt;
-  final Map<String, dynamic>? metadata;
-
-  const BusinessHubPost({
-    required this.id,
-    this.userId = '',
-    required this.userName,
-    this.userAvatar,
-    this.userTitle,
-    this.companyName,
-    this.category = BusinessCategory.all,
-    this.postType = BusinessPostType.insight,
-    required this.title,
-    this.description,
-    this.images,
-    this.location,
-    this.tags,
-    this.likeCount = 0,
-    this.commentCount = 0,
-    this.isLiked = false,
-    this.isSaved = false,
-    required this.createdAt,
-    this.metadata,
-  });
-
-  String get timeAgo {
-    final now = DateTime.now();
-    final diff = now.difference(createdAt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
-    return '${(diff.inDays / 30).floor()}mo ago';
-  }
-
-  bool get hasImages => images != null && images!.isNotEmpty;
-
-  factory BusinessHubPost.fromJson(Map<String, dynamic> json) {
-    return BusinessHubPost(
-      id: json['id'] as String,
-      userId: json['user_id'] as String? ?? '',
-      userName: json['author']?['full_name'] as String? ?? 'Anonymous',
-      userAvatar: json['author']?['avatar_url'] as String?,
-      userTitle: json['author_title'] as String?,
-      companyName: json['company_name'] as String?,
-      category: BusinessCategory.values.firstWhere(
-        (c) => c.name == json['category'],
-        orElse: () => BusinessCategory.all,
-      ),
-      postType: BusinessPostType.values.firstWhere(
-        (t) => t.name == json['post_type'],
-        orElse: () => BusinessPostType.insight,
-      ),
-      title: json['title'] as String? ?? '',
-      description: json['content'] as String?,
-      images:
-          json['images'] != null ? List<String>.from(json['images']) : null,
-      location: json['location'] as String?,
-      tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
-      likeCount: json['likes_count'] as int? ?? 0,
-      commentCount: json['comments_count'] as int? ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      metadata: json['metadata'] as Map<String, dynamic>?,
+  /// Parse a funding stage from an API string value.
+  static FundingStage fromApi(String value) {
+    return FundingStage.values.firstWhere(
+      (s) => s.apiValue == value,
+      orElse: () => FundingStage.seed,
     );
   }
+}
+
+/// Common investor sectors.
+class InvestorSectors {
+  InvestorSectors._();
+
+  static const String fintech = 'Fintech';
+  static const String healthtech = 'Healthtech';
+  static const String edtech = 'Edtech';
+  static const String saas = 'SaaS';
+  static const String ecommerce = 'E-commerce';
+  static const String ai = 'AI/ML';
+  static const String cleantech = 'Cleantech';
+  static const String deeptech = 'Deeptech';
+  static const String consumer = 'Consumer';
+  static const String enterprise = 'Enterprise';
+  static const String logistics = 'Logistics';
+  static const String agritech = 'Agritech';
+
+  static const List<String> all = [
+    fintech,
+    healthtech,
+    edtech,
+    saas,
+    ecommerce,
+    ai,
+    cleantech,
+    deeptech,
+    consumer,
+    enterprise,
+    logistics,
+    agritech,
+  ];
+}
+
+/// Ticket size range for an investor.
+class TicketSize {
+  final double min;
+  final double max;
+  final String currency;
+
+  const TicketSize({
+    required this.min,
+    required this.max,
+    this.currency = 'USD',
+  });
+
+  factory TicketSize.fromJson(Map<String, dynamic> json) {
+    return TicketSize(
+      min: (json['min'] as num?)?.toDouble() ?? 0,
+      max: (json['max'] as num?)?.toDouble() ?? 0,
+      currency: json['currency'] as String? ?? 'USD',
+    );
+  }
+
+  /// Format the ticket size as a human-readable range.
+  String get formatted {
+    final symbol = _currencySymbol;
+    return '$symbol${_formatAmount(min)} - $symbol${_formatAmount(max)}';
+  }
+
+  String get _currencySymbol {
+    switch (currency.toUpperCase()) {
+      case 'USD':
+        return '\$';
+      case 'INR':
+        return '\u20B9';
+      case 'EUR':
+        return '\u20AC';
+      case 'GBP':
+        return '\u00A3';
+      default:
+        return '$currency ';
+    }
+  }
+
+  static String _formatAmount(double amount) {
+    if (amount >= 1000000000) {
+      return '${(amount / 1000000000).toStringAsFixed(amount % 1000000000 == 0 ? 0 : 1)}B';
+    } else if (amount >= 1000000) {
+      return '${(amount / 1000000).toStringAsFixed(amount % 1000000 == 0 ? 0 : 1)}M';
+    } else if (amount >= 1000) {
+      return '${(amount / 1000).toStringAsFixed(amount % 1000 == 0 ? 0 : 1)}K';
+    }
+    return amount.toStringAsFixed(0);
+  }
+}
+
+/// Investor model from the /api/investors endpoint.
+class Investor {
+  final String id;
+  final String name;
+  final String firm;
+  final String? description;
+  final String? logoUrl;
+  final List<FundingStage> fundingStages;
+  final List<String> sectors;
+  final TicketSize? ticketSize;
+  final List<String> portfolioCompanies;
+  final String? contactEmail;
+  final String? linkedinUrl;
+  final String? websiteUrl;
+  final bool isActive;
+  final String? location;
+
+  const Investor({
+    required this.id,
+    required this.name,
+    required this.firm,
+    this.description,
+    this.logoUrl,
+    this.fundingStages = const [],
+    this.sectors = const [],
+    this.ticketSize,
+    this.portfolioCompanies = const [],
+    this.contactEmail,
+    this.linkedinUrl,
+    this.websiteUrl,
+    this.isActive = true,
+    this.location,
+  });
+
+  factory Investor.fromJson(Map<String, dynamic> json) {
+    // Handle both camelCase and snake_case field names
+    final stagesRaw = json['fundingStages'] ?? json['funding_stages'];
+    final stages = stagesRaw is List
+        ? stagesRaw.map((s) => FundingStage.fromApi(s as String)).toList()
+        : <FundingStage>[];
+
+    final sectorsRaw = json['sectors'];
+    final sectors = sectorsRaw is List
+        ? sectorsRaw.cast<String>().toList()
+        : <String>[];
+
+    final ticketRaw = json['ticketSize'] ?? json['ticket_size'];
+    final ticketSize = ticketRaw is Map<String, dynamic>
+        ? TicketSize.fromJson(ticketRaw)
+        : null;
+
+    final portfolioRaw =
+        json['portfolioCompanies'] ?? json['portfolio_companies'];
+    final portfolio = portfolioRaw is List
+        ? portfolioRaw.cast<String>().toList()
+        : <String>[];
+
+    return Investor(
+      id: (json['_id'] ?? json['id'] ?? '') as String,
+      name: (json['name'] ?? '') as String,
+      firm: (json['firm'] ?? '') as String,
+      description: json['description'] as String?,
+      logoUrl: (json['logoUrl'] ?? json['logo_url']) as String?,
+      fundingStages: stages,
+      sectors: sectors,
+      ticketSize: ticketSize,
+      portfolioCompanies: portfolio,
+      contactEmail: (json['contactEmail'] ?? json['contact_email']) as String?,
+      linkedinUrl: (json['linkedinUrl'] ?? json['linkedin_url']) as String?,
+      websiteUrl: (json['websiteUrl'] ?? json['website_url']) as String?,
+      isActive: (json['isActive'] ?? json['is_active'] ?? true) as bool,
+      location: json['location'] as String?,
+    );
+  }
+
+  /// Get the firm initial for avatar placeholder.
+  String get firmInitial =>
+      firm.isNotEmpty ? firm[0].toUpperCase() : '?';
 }

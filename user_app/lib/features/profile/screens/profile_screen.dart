@@ -13,6 +13,8 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../widgets/account_upgrade_card.dart';
+import '../widgets/subscription_card.dart';
+import '../../settings/widgets/my_roles_section.dart';
 import '../widgets/app_info_footer.dart';
 import '../widgets/avatar_upload_dialog.dart';
 import '../../../shared/widgets/subtle_gradient_scaffold.dart';
@@ -1304,40 +1306,39 @@ void _showRoleToggleDialog(BuildContext context, WidgetRef ref, dynamic profile)
   );
 }
 
-class _RoleToggleDialog extends ConsumerStatefulWidget {
+class _RoleToggleDialog extends ConsumerWidget {
   final dynamic profile;
   const _RoleToggleDialog({required this.profile});
 
-  @override
-  ConsumerState<_RoleToggleDialog> createState() => _RoleToggleDialogState();
-}
-
-class _RoleToggleDialogState extends ConsumerState<_RoleToggleDialog> {
-  late Set<String> _activeRoles;
-  late String _primaryRole;
+  String get _primaryRole => profile.userType?.toDbString() ?? 'professional';
 
   @override
-  void initState() {
-    super.initState();
-    final p = widget.profile;
-    // UserProfile uses userType (a UserType enum), not userRoles
-    _primaryRole = p.userType?.toDbString() ?? 'professional';
-    _activeRoles = {_primaryRole};
-  }
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Use the rolesProvider as single source of truth (persisted via API)
+    final rolesState = ref.watch(rolesProvider);
+    final notifier = ref.read(rolesProvider.notifier);
 
-  @override
-  Widget build(BuildContext context) {
-    const roles = [
+    const rolesDef = [
       ('student', 'Student', 'Access Campus Connect', Icons.school),
       ('professional', 'Professional', 'Access Job Portal', Icons.work_outline),
       ('business', 'Business', 'Access Business Portal & VC', Icons.business),
     ];
 
+    if (rolesState.isLoading) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: const SizedBox(
+          height: 100,
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+      );
+    }
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Row(
         children: [
-          Icon(Icons.people_outline, size: 22, color: Color(0xFF765341)),
+          const Icon(Icons.people_outline, size: 22, color: Color(0xFF765341)),
           const SizedBox(width: 10),
           const Text('My Roles', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         ],
@@ -1350,9 +1351,9 @@ class _RoleToggleDialogState extends ConsumerState<_RoleToggleDialog> {
             style: TextStyle(fontSize: 13, color: Colors.grey),
           ),
           const SizedBox(height: 16),
-          ...roles.map((r) {
+          ...rolesDef.map((r) {
             final (role, label, desc, icon) = r;
-            final isActive = _activeRoles.contains(role);
+            final isActive = _isRoleActive(rolesState, role);
             final isPrimary = _primaryRole == role;
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -1395,14 +1396,7 @@ class _RoleToggleDialogState extends ConsumerState<_RoleToggleDialog> {
                     value: isActive,
                     activeColor: const Color(0xFF765341),
                     onChanged: isPrimary ? null : (enabled) {
-                      setState(() {
-                        if (enabled) {
-                          _activeRoles.add(role);
-                        } else {
-                          _activeRoles.remove(role);
-                        }
-                      });
-                      // TODO: Sync with API (addUserRole/removeUserRole)
+                      notifier.toggleRole(role, enabled);
                     },
                   ),
                 ],
@@ -1418,6 +1412,15 @@ class _RoleToggleDialogState extends ConsumerState<_RoleToggleDialog> {
         ),
       ],
     );
+  }
+
+  bool _isRoleActive(RolesState state, String role) {
+    switch (role) {
+      case 'student': return state.student;
+      case 'professional': return state.professional;
+      case 'business': return state.business;
+      default: return false;
+    }
   }
 }
 

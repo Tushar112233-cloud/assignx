@@ -781,7 +781,7 @@ class _ReviewsSectionSkeleton extends StatelessWidget {
   }
 }
 
-/// Bottom booking bar.
+/// Bottom booking bar with expert summary and action.
 class _BookingBar extends StatelessWidget {
   final Expert expert;
 
@@ -790,9 +790,10 @@ class _BookingBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
         color: Colors.white,
+        border: Border(top: BorderSide(color: AppColors.border)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(10),
@@ -802,43 +803,107 @@ class _BookingBar extends StatelessWidget {
         ],
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Expert summary row
+            Row(
               children: [
-                Text(
-                  expert.priceString,
-                  style: AppTextStyles.headingMedium.copyWith(
-                    fontWeight: FontWeight.bold,
+                // Avatar
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.primaryLight.withAlpha(50),
+                  backgroundImage: isValidImageUrl(expert.avatar)
+                      ? NetworkImage(expert.avatar!)
+                      : null,
+                  child: !isValidImageUrl(expert.avatar)
+                      ? Text(
+                          expert.initials,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 10),
+                // Name + meta
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        expert.name,
+                        style: AppTextStyles.labelMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.star, size: 13, color: AppColors.warning),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${expert.ratingString} · ${expert.responseTime}'.tr(context),
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  'per session'.tr(context),
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
+                // Price
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      expert.priceString,
+                      style: AppTextStyles.labelLarge.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    Text(
+                      'per session'.tr(context),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textTertiary,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(width: 20),
-            Expanded(
+            const SizedBox(height: 10),
+            // Book button - full width
+            SizedBox(
+              width: double.infinity,
               child: Material(
                 color: AppColors.darkBrown,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 child: InkWell(
                   onTap: () => context.push('/experts/${expert.id}/book'),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     alignment: Alignment.center,
-                    child: Text(
-                      'Book Session'.tr(context),
-                      style: AppTextStyles.buttonMedium.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.calendar_today, size: 16, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Book Session'.tr(context),
+                          style: AppTextStyles.buttonMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

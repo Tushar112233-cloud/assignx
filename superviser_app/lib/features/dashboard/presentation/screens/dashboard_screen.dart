@@ -99,13 +99,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
       ),
-      // Quick action FAB
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showQuickActions,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.bolt_rounded),
-      ),
+      // FAB removed — quick actions available via dashboard button
     );
   }
 
@@ -175,7 +169,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void _showQuickActions() {
     showModalBottomSheet(
       context: context,
-      builder: (context) => _QuickActionsSheet(),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => const _QuickActionsSheet(),
     );
   }
 }
@@ -365,6 +363,38 @@ class _DashboardContentSection extends ConsumerWidget {
                 );
               },
               childCount: dashboardState.filteredNewRequests.length,
+            ),
+          ),
+        // Quoted Requests section (awaiting client payment)
+        SliverToBoxAdapter(
+          child: _SectionHeader(
+            title: 'Awaiting Payment'.tr(context),
+            subtitle: 'Quoted, waiting for client'.tr(context),
+            count: dashboardState.filteredQuotedRequests.length,
+            icon: Icons.hourglass_empty,
+            iconColor: Colors.orange,
+          ),
+        ),
+        if (dashboardState.filteredQuotedRequests.isEmpty)
+          SliverToBoxAdapter(
+            child: _EmptySection(
+              message: 'No projects awaiting payment'.tr(context),
+              icon: Icons.payments_outlined,
+            ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final request = dashboardState.filteredQuotedRequests[index];
+                return RepaintBoundary(
+                  child: RequestCard(
+                    request: request,
+                    onTap: () => onViewRequestDetails(request),
+                  ),
+                );
+              },
+              childCount: dashboardState.filteredQuotedRequests.length,
             ),
           ),
         // Paid Requests section
@@ -576,7 +606,7 @@ class _QuickActionCta extends StatelessWidget {
   }
 }
 
-/// A row of glass KPI stat cards displayed at the top of the dashboard.
+/// A 2x2 grid of KPI stat cards displayed at the top of the dashboard.
 class _GlassKpiCardsRow extends StatelessWidget {
   const _GlassKpiCardsRow({required this.newRequestsCount, this.paidRequestsCount = 0});
 
@@ -587,42 +617,50 @@ class _GlassKpiCardsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: _GlassKpiCard(
-              icon: Icons.fiber_new,
-              iconColor: AppColors.info,
-              value: newRequestsCount.toString(),
-              label: 'New Requests'.tr(context),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: _GlassKpiCard(
+                  icon: Icons.fiber_new,
+                  iconColor: AppColors.info,
+                  value: newRequestsCount.toString(),
+                  label: 'New Requests'.tr(context),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _GlassKpiCard(
+                  icon: Icons.assignment_ind,
+                  iconColor: AppColors.accent,
+                  value: paidRequestsCount.toString(),
+                  label: 'Ready to Assign'.tr(context),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _GlassKpiCard(
-              icon: Icons.assignment_ind,
-              iconColor: AppColors.accent,
-              value: paidRequestsCount.toString(),
-              label: 'Ready to Assign'.tr(context),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _GlassKpiCard(
-              icon: Icons.rate_review_outlined,
-              iconColor: AppColors.warning,
-              value: '--',
-              label: 'Pending QC'.tr(context),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _GlassKpiCard(
-              icon: Icons.currency_rupee,
-              iconColor: AppColors.success,
-              value: '--',
-              label: 'Earnings'.tr(context),
-            ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _GlassKpiCard(
+                  icon: Icons.rate_review_outlined,
+                  iconColor: AppColors.warning,
+                  value: '--',
+                  label: 'Pending QC'.tr(context),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _GlassKpiCard(
+                  icon: Icons.currency_rupee,
+                  iconColor: AppColors.success,
+                  value: '--',
+                  label: 'Earnings'.tr(context),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -630,7 +668,7 @@ class _GlassKpiCardsRow extends StatelessWidget {
   }
 }
 
-/// A single glass KPI stat card with a colored icon, bold value, and label.
+/// A single glass KPI stat card with icon, bold value, and label.
 class _GlassKpiCard extends StatelessWidget {
   const _GlassKpiCard({
     required this.icon,
@@ -649,39 +687,44 @@ class _GlassKpiCard extends StatelessWidget {
     return GlassCard(
       blur: 10,
       opacity: 0.6,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       borderRadius: BorderRadius.circular(16),
       borderColor: Colors.white.withAlpha(50),
       elevation: 1,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: iconColor.withAlpha(25),
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: iconColor, size: 18),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
                 ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.textSecondaryLight,
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondaryLight,
+                        fontSize: 12,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
+              ],
+            ),
           ),
         ],
       ),
@@ -841,14 +884,33 @@ class _ErrorBanner extends StatelessWidget {
 
 /// Quick actions bottom sheet widget.
 class _QuickActionsSheet extends StatelessWidget {
+  const _QuickActionsSheet();
+
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding + 40),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           Text(
             'Quick Actions'.tr(context),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -860,21 +922,29 @@ class _QuickActionsSheet extends StatelessWidget {
             icon: Icons.search,
             title: 'Search Doers'.tr(context),
             subtitle: 'Find available writers'.tr(context),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              context.pushNamed(RouteNames.doers);
+            },
           ),
           _QuickActionTile(
             icon: Icons.analytics_outlined,
             title: 'View Analytics'.tr(context),
             subtitle: 'Check your performance'.tr(context),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              context.pushNamed(RouteNames.earnings);
+            },
           ),
           _QuickActionTile(
             icon: Icons.history,
             title: 'Recent Projects'.tr(context),
             subtitle: 'View project history'.tr(context),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              context.pushNamed(RouteNames.projects);
+            },
           ),
-          const SizedBox(height: 20),
         ],
       ),
     );
@@ -914,7 +984,7 @@ class _QuickActionTile extends StatelessWidget {
   }
 }
 
-/// Recent activity feed section showing the last few events.
+/// Recent activity feed section — shows empty state until real activity API is integrated.
 class _RecentActivitySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -923,7 +993,6 @@ class _RecentActivitySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section header
           Row(
             children: [
               Container(
@@ -932,11 +1001,7 @@ class _RecentActivitySection extends StatelessWidget {
                   color: AppColors.info.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
-                  Icons.history,
-                  color: AppColors.info,
-                  size: 20,
-                ),
+                child: const Icon(Icons.history, color: AppColors.info, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -945,9 +1010,7 @@ class _RecentActivitySection extends StatelessWidget {
                   children: [
                     Text(
                       'Recent Activity'.tr(context),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     Text(
                       'Your latest events'.tr(context),
@@ -961,177 +1024,41 @@ class _RecentActivitySection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Activity items in a glass card
           GlassCard(
-            blur: 10,
-            opacity: 0.6,
+            blur: 8,
+            opacity: 0.5,
             borderRadius: BorderRadius.circular(16),
-            padding: EdgeInsets.zero,
+            padding: const EdgeInsets.all(32),
             elevation: 1,
             child: Column(
               children: [
-                _ActivityItem(
-                  icon: Icons.assignment_outlined,
-                  iconColor: AppColors.info,
-                  title: 'New project assigned'.tr(context),
-                  subtitle: 'Computer Science - Data Structures'.tr(context),
-                  time: '2m ago'.tr(context),
-                  isFirst: true,
+                Icon(
+                  Icons.history_rounded,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                 ),
-                Divider(
-                  height: 1,
-                  indent: 60,
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-                _ActivityItem(
-                  icon: Icons.send_outlined,
-                  iconColor: AppColors.accent,
-                  title: 'Quote sent to client'.tr(context),
-                  subtitle: 'Project #1842 - \u20b93,500'.tr(context),
-                  time: '15m ago'.tr(context),
-                ),
-                Divider(
-                  height: 1,
-                  indent: 60,
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-                _ActivityItem(
-                  icon: Icons.payment_outlined,
-                  iconColor: AppColors.success,
-                  title: 'Payment received'.tr(context),
-                  subtitle: 'Project #1838 - \u20b95,200'.tr(context),
-                  time: '1h ago'.tr(context),
-                ),
-                Divider(
-                  height: 1,
-                  indent: 60,
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-                _ActivityItem(
-                  icon: Icons.person_add_outlined,
-                  iconColor: Colors.purple,
-                  title: 'Doer assigned'.tr(context),
-                  subtitle: 'Rahul S. assigned to Project #1840'.tr(context),
-                  time: '2h ago'.tr(context),
-                ),
-                Divider(
-                  height: 1,
-                  indent: 60,
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-                _ActivityItem(
-                  icon: Icons.check_circle_outline,
-                  iconColor: AppColors.success,
-                  title: 'Deliverable approved'.tr(context),
-                  subtitle: 'Project #1835 - Mathematics'.tr(context),
-                  time: '3h ago'.tr(context),
-                ),
-                Divider(
-                  height: 1,
-                  indent: 60,
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-                _ActivityItem(
-                  icon: Icons.rate_review_outlined,
-                  iconColor: AppColors.warning,
-                  title: 'Revision requested'.tr(context),
-                  subtitle: 'Project #1830 - English Essay'.tr(context),
-                  time: '5h ago'.tr(context),
-                ),
-                Divider(
-                  height: 1,
-                  indent: 60,
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-                _ActivityItem(
-                  icon: Icons.chat_outlined,
-                  iconColor: AppColors.info,
-                  title: 'New message from client'.tr(context),
-                  subtitle: 'Project #1837 - "When can I expect..."'.tr(context),
-                  time: '6h ago'.tr(context),
-                  isLast: true,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A single activity item in the recent activity feed.
-class _ActivityItem extends StatelessWidget {
-  const _ActivityItem({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.time,
-    this.isFirst = false,
-    this.isLast = false,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final String time;
-  final bool isFirst;
-  final bool isLast;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        isFirst ? 16 : 12,
-        16,
-        isLast ? 16 : 12,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: iconColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+                const SizedBox(height: 12),
                 Text(
-                  title,
+                  'No recent activity'.tr(context),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Activity from your projects will appear here'.tr(context),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            time,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
           ),
         ],
       ),
     );
   }
 }
+
+// _ActivityItem removed — mock data replaced with empty state

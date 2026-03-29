@@ -3,58 +3,15 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import '../../../core/api/api_client.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
-import '../../../core/utils/extensions.dart';
-import '../../campus_connect/widgets/comment_section.dart';
-import '../../campus_connect/widgets/like_button.dart';
-import '../../campus_connect/widgets/save_button.dart';
-import '../../campus_connect/widgets/report_button.dart';
-import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 import '../data/models/pro_network_post_model.dart';
 import '../providers/pro_network_provider.dart';
 
-/// Provider for fetching comments for a pro network post.
-/// Provider for fetching comments for a pro network post.
-/// Comments are embedded in the post detail response, not a separate endpoint.
-final proPostCommentsProvider =
-    FutureProvider.autoDispose.family<List<CampusComment>, String>(
-  (ref, postId) async {
-    // The /comments endpoint doesn't exist — comments come from the post detail.
-    // Return empty list to avoid 404 retry loops.
-    try {
-      final response = await ApiClient.get('/community/pro-network/$postId');
-      if (response == null) return [];
-      final data = response as Map<String, dynamic>;
-      final post = data['post'] as Map<String, dynamic>? ?? data;
-      final commentsList = post['comments'] as List? ?? [];
-
-      return commentsList.map((d) {
-        final c = d as Map<String, dynamic>;
-        final author = c['userId'] as Map<String, dynamic>? ?? {};
-        return CampusComment(
-          id: (c['_id'] ?? c['id'] ?? '').toString(),
-          content: (c['content'] ?? '') as String,
-          authorId: (author['_id'] ?? '').toString(),
-          authorName: (author['fullName'] ?? 'Anonymous') as String,
-          authorAvatar: author['avatarUrl'] as String?,
-          isAuthorVerified: false,
-          createdAt: DateTime.tryParse((c['createdAt'] ?? '').toString()) ?? DateTime.now(),
-          likeCount: (c['likeCount'] ?? 0) as int,
-          isLiked: false,
-        );
-      }).toList();
-    } catch (e) {
-      return []; // Return empty on any error — don't trigger retry loop
-    }
-  },
-);
-
-/// Detailed view for a Pro Network post.
-class ProPostDetailScreen extends ConsumerStatefulWidget {
+/// Detailed view for a single job listing.
+class ProPostDetailScreen extends ConsumerWidget {
   final String postId;
 
   const ProPostDetailScreen({
@@ -63,75 +20,8 @@ class ProPostDetailScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ProPostDetailScreen> createState() =>
-      _ProPostDetailScreenState();
-}
-
-class _ProPostDetailScreenState extends ConsumerState<ProPostDetailScreen> {
-  bool _isLiked = false;
-  bool _isSaved = false;
-  int _likeCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    // Note: /interactions endpoint doesn't exist on server.
-    // Like/save state comes from the userInteractions in the list response.
-  }
-
-  Future<void> _toggleLike() async {
-    final wasLiked = _isLiked;
-    setState(() {
-      _isLiked = !_isLiked;
-      _likeCount += _isLiked ? 1 : -1;
-    });
-
-    try {
-      await ApiClient.post('/community/pro-network/${widget.postId}/like', {});
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLiked = wasLiked;
-          _likeCount += _isLiked ? 1 : -1;
-        });
-      }
-    }
-  }
-
-  Future<void> _toggleSave() async {
-    final wasSaved = _isSaved;
-    setState(() {
-      _isSaved = !_isSaved;
-    });
-
-    try {
-      await ApiClient.post('/community/pro-network/${widget.postId}/save', {});
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isSaved = wasSaved;
-        });
-      }
-    }
-  }
-
-  Future<void> _addComment(String content, String? parentId) async {
-    await ApiClient.post('/community/pro-network/${widget.postId}/comments', {
-      'content': content,
-      'parent_id': parentId,
-    });
-
-    ref.invalidate(proPostCommentsProvider(widget.postId));
-  }
-
-  void _likeComment(String commentId) async {
-    // Comment liking not yet supported - no campus_comment_likes table exists
-    debugPrint('Comment liking not yet supported for pro network posts');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final postAsync = ref.watch(proNetworkPostDetailProvider(widget.postId));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final jobAsync = ref.watch(jobDetailProvider(postId));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -142,244 +32,42 @@ class _ProPostDetailScreenState extends ConsumerState<ProPostDetailScreen> {
           onPressed: () => context.pop(),
           icon: const Icon(Icons.arrow_back),
         ),
-        title: const Text('Post'),
+        title: const Text('Job Details'),
       ),
-      body: postAsync.when(
-        data: (post) {
-          if (post == null) {
-            return const Center(child: Text('Post not found'));
+      body: jobAsync.when(
+        data: (job) {
+          if (job == null) {
+            return _buildNotFound(context, ref);
           }
-
-          _likeCount = post.likeCount;
-
-          return ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              // Title
-              Text(
-                post.title,
-                style: AppTextStyles.headingMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Author + time
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                    child: Text(
-                      post.userName.isNotEmpty ? post.userName[0].toUpperCase() : '?',
-                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(post.userName, style: AppTextStyles.labelMedium),
-                        Text(post.timeAgo, style: AppTextStyles.caption),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Content
-              if (post.description != null)
-                Text(
-                  post.description!,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.6,
-                  ),
-                ),
-              const SizedBox(height: 16),
-
-              // Tags
-              if (post.tags != null && post.tags!.isNotEmpty)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: post.tags!.map((tag) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '#$tag',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  )).toList(),
-                ),
-              const SizedBox(height: 20),
-
-              // Like/comment counts
-              Row(
-                children: [
-                  Icon(Icons.favorite_border, size: 18, color: AppColors.textTertiary),
-                  const SizedBox(width: 4),
-                  Text('$_likeCount', style: AppTextStyles.caption),
-                  const SizedBox(width: 16),
-                  Icon(Icons.chat_bubble_outline, size: 18, color: AppColors.textTertiary),
-                  const SizedBox(width: 4),
-                  Text('${post.commentCount}', style: AppTextStyles.caption),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Divider
-              const Divider(),
-              const SizedBox(height: 16),
-
-              // Comments placeholder
-              Text(
-                'Comments',
-                style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'No comments yet. Be the first to comment!',
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary),
-              ),
-            ],
-          );
+          return _JobDetailBody(job: job);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text('Error: $e', style: AppTextStyles.bodyMedium),
-        ),
+        error: (error, _) => _buildError(context, ref, error.toString()),
       ),
     );
   }
 
-  Widget _buildAppBar(BuildContext context, ProNetworkPost post) {
-    final hasImages = post.hasImages;
-
-    return SliverAppBar(
-      expandedHeight: hasImages ? 280 : 56,
-      pinned: true,
-      backgroundColor: AppColors.background,
-      leading: IconButton(
-        onPressed: () => context.pop(),
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: hasImages
-                ? Colors.black.withAlpha(100)
-                : AppColors.surfaceVariant,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.arrow_back,
-            color: hasImages ? Colors.white : AppColors.textPrimary,
-            size: 20,
-          ),
-        ),
-      ),
-      actions: [
-        IconButton(
-          onPressed: () {
-            Share.share(
-              'Check out this post on AssignX: ${post.title}',
-              subject: post.title,
-            );
-          },
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: hasImages
-                  ? Colors.black.withAlpha(100)
-                  : AppColors.surfaceVariant,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.share_outlined,
-              color: hasImages ? Colors.white : AppColors.textPrimary,
-              size: 20,
-            ),
-          ),
-        ),
-        IconButton(
-          onPressed: () => _showMoreOptions(context, post),
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: hasImages
-                  ? Colors.black.withAlpha(100)
-                  : AppColors.surfaceVariant,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.more_vert,
-              color: hasImages ? Colors.white : AppColors.textPrimary,
-              size: 20,
-            ),
-          ),
-        ),
-      ],
-      flexibleSpace: hasImages
-          ? FlexibleSpaceBar(
-              background: _ImageGallery(images: post.images),
-            )
-          : null,
-    );
-  }
-
-  void _showMoreOptions(BuildContext context, ProNetworkPost post) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
+  Widget _buildNotFound(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Icon(Icons.search_off, size: 80, color: AppColors.textTertiary),
+            const SizedBox(height: 16),
+            Text('Job not found', style: AppTextStyles.headingMedium),
             const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
+            Text(
+              'This job may have been removed or is no longer active.',
+              style: AppTextStyles.bodyMedium
+                  .copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
             ),
-            ListTile(
-              leading: Icon(
-                _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                color: _isSaved ? AppColors.primary : null,
-              ),
-              title: Text(_isSaved ? 'Remove from saved' : 'Save post'),
-              onTap: () {
-                Navigator.pop(context);
-                _toggleSave();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.flag_outlined),
-              title: const Text('Report post'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.block, color: AppColors.error),
-              title: Text(
-                'Block user',
-                style:
-                    AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
-              ),
-              onTap: () => Navigator.pop(context),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: () => context.pop(),
+              child: const Text('Go Back'),
             ),
           ],
         ),
@@ -387,222 +75,353 @@ class _ProPostDetailScreenState extends ConsumerState<ProPostDetailScreen> {
     );
   }
 
-  Widget _buildNotFound(BuildContext context) {
-    return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.search_off,
-                size: 80,
-                color: AppColors.textTertiary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Post not found',
-                style: AppTextStyles.headingMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'This post may have been removed',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () => context.pop(),
-                child: const Text('Go Back'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildError(BuildContext context, String error) {
-    return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: AppColors.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load',
-                style: AppTextStyles.headingSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                error,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () {
-                  ref.invalidate(
-                      proNetworkPostDetailProvider(widget.postId));
-                },
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+  Widget _buildError(BuildContext context, WidgetRef ref, String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
+            const SizedBox(height: 16),
+            Text('Failed to load', style: AppTextStyles.headingSmall),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              style: AppTextStyles.bodySmall
+                  .copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: () => ref.invalidate(jobDetailProvider(postId)),
+              child: const Text('Retry'),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Post content section.
-class _PostContent extends StatelessWidget {
-  final ProNetworkPost post;
-  final bool isLiked;
-  final bool isSaved;
-  final int likeCount;
-  final VoidCallback onLike;
-  final VoidCallback onSave;
+// ---------------------------------------------------------------------------
+// Job detail body
+// ---------------------------------------------------------------------------
 
-  const _PostContent({
-    required this.post,
-    required this.isLiked,
-    required this.isSaved,
-    required this.likeCount,
-    required this.onLike,
-    required this.onSave,
-  });
+class _JobDetailBody extends StatelessWidget {
+  final Job job;
+
+  const _JobDetailBody({required this.job});
+
+  Future<void> _launchApplyUrl(BuildContext context) async {
+    if (job.applyUrl == null || job.applyUrl!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No application link available')),
+      );
+      return;
+    }
+    final uri = Uri.tryParse(job.applyUrl!);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open application link')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Category badge and time
-          Row(
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              _CategoryBadge(postType: post.postType),
-              const Spacer(),
+              // Company row
+              _CompanyHeader(job: job),
+              const SizedBox(height: 20),
+
+              // Title
               Text(
-                post.timeAgo,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textTertiary,
+                job.title,
+                style: AppTextStyles.headingMedium.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
-          ),
+              const SizedBox(height: 12),
 
-          const SizedBox(height: 12),
-
-          // Title
-          Text(
-            post.title,
-            style: AppTextStyles.headingMedium.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Author info
-          _AuthorCard(post: post),
-
-          const SizedBox(height: 16),
-
-          // Description
-          if (post.description != null) ...[
-            Text(
-              post.description!,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.6,
+              // Meta chips: type, location, remote, salary
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _MetaChip(
+                    icon: Icons.schedule_outlined,
+                    label: job.type.label,
+                    color: const Color(0xFF2563EB),
+                  ),
+                  if (job.location != null)
+                    _MetaChip(
+                      icon: Icons.location_on_outlined,
+                      label: job.location!,
+                      color: AppColors.textSecondary,
+                    ),
+                  if (job.isRemote)
+                    _MetaChip(
+                      icon: Icons.wifi_outlined,
+                      label: 'Remote',
+                      color: const Color(0xFF059669),
+                    ),
+                  if (job.salary != null && job.salary!.isNotEmpty)
+                    _MetaChip(
+                      icon: Icons.payments_outlined,
+                      label: job.salary!,
+                      color: AppColors.primary,
+                    ),
+                ],
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 8),
 
-          // Location
-          if (post.location != null) ...[
-            Row(
-              children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  size: 18,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(width: 8),
+              // Application count
+              if (job.applicationCount > 0) ...[
+                const SizedBox(height: 4),
                 Text(
-                  post.location!,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                  '${job.applicationCount} application${job.applicationCount == 1 ? '' : 's'}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-          ],
 
-          // Tags
-          if (post.tags != null && post.tags!.isNotEmpty) ...[
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: post.tags!.map((tag) {
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight.withAlpha(26),
-                    borderRadius: BorderRadius.circular(12),
+              if (job.postedAt != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Posted ${job.postedAt}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textTertiary,
                   ),
-                  child: Text(
-                    '#$tag',
+                ),
+              ],
+              const SizedBox(height: 20),
+
+              const Divider(),
+              const SizedBox(height: 16),
+
+              // Description
+              if (job.description != null &&
+                  job.description!.isNotEmpty) ...[
+                Text(
+                  'Description',
+                  style: AppTextStyles.labelLarge
+                      .copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  job.description!,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // Requirements
+              if (job.requirements.isNotEmpty) ...[
+                Text(
+                  'Requirements',
+                  style: AppTextStyles.labelLarge
+                      .copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                ...job.requirements.map((req) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              req,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.textSecondary,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+                const SizedBox(height: 20),
+              ],
+
+              // Skills
+              if (job.skills.isNotEmpty) ...[
+                Text(
+                  'Skills',
+                  style: AppTextStyles.labelLarge
+                      .copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: job.skills
+                      .map((skill) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color:
+                                  AppColors.primary.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              skill,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ],
+          ),
+        ),
+
+        // Bottom apply bar
+        SafeArea(
+          top: false,
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.border.withValues(alpha: 0.4),
+                ),
+              ),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => _launchApplyUrl(context),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'Apply Now',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helper widgets
+// ---------------------------------------------------------------------------
+
+/// Company header with logo placeholder, name, and category.
+class _CompanyHeader extends StatelessWidget {
+  final Job job;
+
+  const _CompanyHeader({required this.job});
+
+  Color get _logoColor {
+    const palette = [
+      Color(0xFF2563EB),
+      Color(0xFF8B5CF6),
+      Color(0xFF059669),
+      Color(0xFFF59E0B),
+      Color(0xFFEC4899),
+      Color(0xFF14B8A6),
+      Color(0xFFEF4444),
+      Color(0xFF4F46E5),
+    ];
+    if (job.company.isEmpty) return palette[0];
+    return palette[job.company.codeUnitAt(0) % palette.length];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          // Logo
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: _logoColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                job.company.isNotEmpty
+                    ? job.company[0].toUpperCase()
+                    : '?',
+                style: AppTextStyles.headingMedium.copyWith(
+                  color: _logoColor,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  job.company,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (job.category != JobCategory.all)
+                  Text(
+                    job.category.label,
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
                     ),
                   ),
-                );
-              }).toList(),
+              ],
             ),
-            const SizedBox(height: 20),
-          ],
-
-          // Actions row
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              LikeButton(
-                isLiked: isLiked,
-                likeCount: likeCount,
-                onToggle: onLike,
-              ),
-              const SizedBox(width: 8),
-              SaveButton(
-                isSaved: isSaved,
-                onToggle: onSave,
-                showLabel: true,
-              ),
-              const Spacer(),
-              ReportButton(
-                listingId: post.id,
-                size: ReportButtonSize.small,
-              ),
-            ],
           ),
         ],
       ),
@@ -610,21 +429,25 @@ class _PostContent extends StatelessWidget {
   }
 }
 
-/// Category badge widget.
-class _CategoryBadge extends StatelessWidget {
-  final ProfessionalPostType postType;
+/// Small metadata chip used in the detail header.
+class _MetaChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
 
-  const _CategoryBadge({required this.postType});
+  const _MetaChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final (label, color, icon) = _getConfig();
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withAlpha(26),
-        borderRadius: BorderRadius.circular(20),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -635,207 +458,11 @@ class _CategoryBadge extends StatelessWidget {
             label,
             style: AppTextStyles.caption.copyWith(
               color: color,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
       ),
-    );
-  }
-
-  (String, Color, IconData) _getConfig() {
-    switch (postType) {
-      case ProfessionalPostType.discussion:
-        return (
-          'Discussion',
-          AppColors.categoryOrange,
-          Icons.chat_bubble_outline
-        );
-      case ProfessionalPostType.portfolioItem:
-        return (
-          'Portfolio',
-          AppColors.categoryIndigo,
-          Icons.photo_library_outlined
-        );
-      case ProfessionalPostType.skillOffer:
-        return ('Skill Exchange', AppColors.categoryTeal, Icons.swap_horiz);
-      case ProfessionalPostType.newsArticle:
-        return ('News', AppColors.categoryBlue, Icons.newspaper_outlined);
-      case ProfessionalPostType.freelanceGig:
-        return (
-          'Freelance',
-          AppColors.categoryGreen,
-          Icons.rocket_launch_outlined
-        );
-      case ProfessionalPostType.event:
-        return ('Event', AppColors.categoryIndigo, Icons.event_outlined);
-      case ProfessionalPostType.question:
-        return ('Question', AppColors.categoryAmber, Icons.help_outline);
-      case ProfessionalPostType.resource:
-        return ('Resource', AppColors.categoryGreen, Icons.build_outlined);
-    }
-  }
-}
-
-/// Author info card.
-class _AuthorCard extends StatelessWidget {
-  final ProNetworkPost post;
-
-  const _AuthorCard({required this.post});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColors.avatarWarm,
-            backgroundImage: isValidImageUrl(post.userAvatar)
-                ? NetworkImage(post.userAvatar!)
-                : null,
-            child: !isValidImageUrl(post.userAvatar)
-                ? Text(
-                    post.userName.isNotEmpty
-                        ? post.userName[0].toUpperCase()
-                        : '?',
-                    style: AppTextStyles.labelLarge.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  )
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  post.userName,
-                  style: AppTextStyles.labelLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (post.userTitle != null)
-                  Text(
-                    post.userTitle!,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          OutlinedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Opening chat...')),
-              );
-            },
-            style: OutlinedButton.styleFrom(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            child: const Text('Contact'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Image gallery widget.
-class _ImageGallery extends StatefulWidget {
-  final List<String>? images;
-
-  const _ImageGallery({this.images});
-
-  @override
-  State<_ImageGallery> createState() => _ImageGalleryState();
-}
-
-class _ImageGalleryState extends State<_ImageGallery> {
-  int _currentIndex = 0;
-  final _pageController = PageController();
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.images == null || widget.images!.isEmpty) {
-      return Container(
-        color: AppColors.surfaceVariant,
-        child: Center(
-          child: Icon(
-            Icons.image_not_supported_outlined,
-            size: 48,
-            color: AppColors.textTertiary,
-          ),
-        ),
-      );
-    }
-
-    return Stack(
-      children: [
-        PageView.builder(
-          controller: _pageController,
-          itemCount: widget.images!.length,
-          onPageChanged: (index) => setState(() => _currentIndex = index),
-          itemBuilder: (context, index) {
-            return CachedNetworkImage(
-              imageUrl: widget.images![index],
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                color: AppColors.shimmerBase,
-              ),
-              errorWidget: (context, url, error) => Container(
-                color: AppColors.surfaceVariant,
-                child: Icon(
-                  Icons.broken_image_outlined,
-                  size: 48,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            );
-          },
-        ),
-        if (widget.images!.length > 1)
-          Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                widget.images!.length,
-                (index) => Container(
-                  width: _currentIndex == index ? 20 : 8,
-                  height: 8,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    color: _currentIndex == index
-                        ? Colors.white
-                        : Colors.white.withAlpha(100),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

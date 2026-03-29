@@ -10,30 +10,23 @@ final businessHubRepositoryProvider = Provider<BusinessHubRepository>((ref) {
   return BusinessHubRepository();
 });
 
-/// Provider for business hub posts.
-final businessHubPostsProvider =
-    FutureProvider.autoDispose<List<BusinessHubPost>>((ref) async {
+/// Provider for all investors (unfiltered).
+final investorsProvider =
+    FutureProvider.autoDispose<List<Investor>>((ref) async {
   final repository = ref.watch(businessHubRepositoryProvider);
-  return repository.getPosts();
+  return repository.getInvestors();
 });
 
-/// Provider for filtered business hub posts.
-final filteredBusinessHubPostsProvider = FutureProvider.autoDispose
-    .family<List<BusinessHubPost>, BusinessCategory?>((ref, category) async {
+/// Provider for filtered investors by funding stage.
+final filteredInvestorsProvider = FutureProvider.autoDispose
+    .family<List<Investor>, FundingStage?>((ref, stage) async {
   final repository = ref.watch(businessHubRepositoryProvider);
-  return repository.getPosts(category: category);
+  return repository.getInvestors(stage: stage);
 });
 
-/// Provider for a single business hub post.
-final businessHubPostDetailProvider = FutureProvider.autoDispose
-    .family<BusinessHubPost?, String>((ref, postId) async {
+/// Provider for a single investor by ID.
+final investorDetailProvider = FutureProvider.autoDispose
+    .family<Investor?, String>((ref, investorId) async {
   final repository = ref.watch(businessHubRepositoryProvider);
-  return repository.getPostById(postId);
-});
-
-/// Provider for saved business hub posts.
-final savedBusinessHubPostsProvider =
-    FutureProvider.autoDispose<List<BusinessHubPost>>((ref) async {
-  final repository = ref.watch(businessHubRepositoryProvider);
-  return repository.getSavedPosts();
+  return repository.getInvestorById(investorId);
 });

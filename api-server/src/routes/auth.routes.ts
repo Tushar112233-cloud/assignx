@@ -10,7 +10,7 @@ import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 
-const DEV_BYPASS_EMAILS = ['admin@gmail.com', 'admin@assignx.in'];
+const DEV_BYPASS_EMAILS: string[] = [];
 
 function getModelByRole(role: string): any {
   switch (role) {
@@ -38,7 +38,7 @@ async function directLogin(email: string, role: string) {
       account = await User.create({
         email,
         fullName: '',
-        userType: (role as 'student' | 'professional' | 'business') || 'student',
+        userType: ['student', 'professional', 'business'].includes(role) ? role as 'student' | 'professional' | 'business' : 'student',
         onboardingCompleted: true,
       });
     } else if (effectiveRole === 'doer') {
@@ -126,20 +126,20 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
       throw new AppError('Invalid credentials', 401);
     }
 
+    // Check if account exists in the role's collection
+    const Model = getModelByRole(loginRole);
+    const account = await Model.findOne({ email: normalizedEmail });
+    if (!account) {
+      throw new AppError('No account found for this email. Please sign up first.', 404);
+    }
+
     if (!password) {
-      // In dev mode, allow passwordless login
+      // In dev mode, allow passwordless login for existing accounts
       if (process.env.NODE_ENV === 'development') {
         const result = await directLogin(normalizedEmail, loginRole);
         return res.json(result);
       }
       throw new AppError('Password is required', 400);
-    }
-
-    // Check if account exists in the role's collection
-    const Model = getModelByRole(loginRole);
-    const account = await Model.findOne({ email: normalizedEmail });
-    if (!account) {
-      throw new AppError('No account found for this email', 404);
     }
 
     if (process.env.NODE_ENV === 'development') {

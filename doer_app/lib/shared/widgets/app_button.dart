@@ -344,7 +344,7 @@ class _AppButtonState extends State<AppButton>
         children: [
           Icon(widget.icon, size: iconSize, color: color),
           const SizedBox(width: AppSpacing.sm),
-          textWidget,
+          Flexible(child: textWidget),
           const SizedBox(width: AppSpacing.sm),
           Icon(widget.suffixIcon, size: iconSize, color: color),
         ],
@@ -357,7 +357,7 @@ class _AppButtonState extends State<AppButton>
         children: [
           Icon(widget.icon, size: iconSize, color: color),
           const SizedBox(width: AppSpacing.sm),
-          textWidget,
+          Flexible(child: textWidget),
         ],
       );
     }
@@ -366,7 +366,7 @@ class _AppButtonState extends State<AppButton>
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          textWidget,
+          Flexible(child: textWidget),
           const SizedBox(width: AppSpacing.sm),
           Icon(widget.suffixIcon, size: iconSize, color: color),
         ],

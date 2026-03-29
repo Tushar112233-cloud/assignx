@@ -49,7 +49,7 @@ export function clearStoredUser(): void {
 }
 
 /** Emails that bypass OTP and login directly */
-const DEV_BYPASS_EMAILS = ['admin@gmail.com', 'testdoer@gmail.com']
+const DEV_BYPASS_EMAILS: string[] = []
 
 export function isDevBypassEmail(email: string): boolean {
   return DEV_BYPASS_EMAILS.includes(email.toLowerCase().trim())

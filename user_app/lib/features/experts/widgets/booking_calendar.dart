@@ -78,6 +78,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
   }
 
   /// Build the list of selectable dates (next 30 days, filtered by available weekdays).
+  /// Today is always included if it's an available weekday (past times are handled at slot level).
   void _buildAvailableDates() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -92,6 +93,11 @@ class _BookingCalendarState extends State<BookingCalendar> {
         _availableDates.add(date);
       }
     }
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -246,10 +252,24 @@ class _BookingCalendarState extends State<BookingCalendar> {
               runSpacing: 10,
               children: widget.timeSlots.map((slot) {
                 final isSelected = widget.selectedTimeSlot?.id == slot.id;
+                // For today, disable slots whose hour has already passed
+                bool isAvailable = slot.available;
+                if (isAvailable && widget.selectedDate != null && _isToday(widget.selectedDate!)) {
+                  final now = DateTime.now();
+                  final parts = slot.time.split(':');
+                  if (parts.length >= 2) {
+                    final slotHour = int.tryParse(parts[0]) ?? 0;
+                    final slotMinute = int.tryParse(parts[1]) ?? 0;
+                    if (slotHour < now.hour || (slotHour == now.hour && slotMinute <= now.minute)) {
+                      isAvailable = false;
+                    }
+                  }
+                }
                 return _TimeSlotChip(
                   slot: slot,
                   isSelected: isSelected,
-                  onTap: slot.available
+                  isAvailable: isAvailable,
+                  onTap: isAvailable
                       ? () => widget.onTimeSlotSelected(slot)
                       : null,
                 );
@@ -330,17 +350,18 @@ class _DateChip extends StatelessWidget {
 class _TimeSlotChip extends StatelessWidget {
   final ExpertTimeSlot slot;
   final bool isSelected;
+  final bool isAvailable;
   final VoidCallback? onTap;
 
   const _TimeSlotChip({
     required this.slot,
     required this.isSelected,
+    required this.isAvailable,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isAvailable = slot.available;
 
     return GestureDetector(
       onTap: onTap,

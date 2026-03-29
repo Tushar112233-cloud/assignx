@@ -251,66 +251,53 @@ class _QuickContactSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Contact Us',
-          style: AppTextStyles.headingSmall,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Reach out through any of these channels',
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textTertiary,
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // WhatsApp card
-        _ContactCard(
-          icon: Icons.message_outlined,
-          iconColor: const Color(0xFF25D366),
-          title: 'WhatsApp',
-          subtitle: 'Chat with us instantly',
-          onTap: onWhatsAppTap,
-        ),
-        const SizedBox(height: 12),
-
-        // Email card
-        _ContactCard(
-          icon: Icons.email_outlined,
-          iconColor: AppColors.primary,
-          title: 'Email Support',
-          subtitle: 'support@assignx.com',
-          onTap: onEmailTap,
-        ),
-        const SizedBox(height: 12),
-
-        // Phone card
-        _ContactCard(
-          icon: Icons.phone_outlined,
-          iconColor: AppColors.success,
-          title: 'Call Us',
-          subtitle: '+91 98765 43210',
-          onTap: onCallTap,
+        // Compact horizontal contact buttons
+        Row(
+          children: [
+            Expanded(
+              child: _CompactContactButton(
+                icon: Icons.message_outlined,
+                iconColor: const Color(0xFF25D366),
+                label: 'WhatsApp',
+                onTap: onWhatsAppTap,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _CompactContactButton(
+                icon: Icons.email_outlined,
+                iconColor: AppColors.primary,
+                label: 'Email',
+                onTap: onEmailTap,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _CompactContactButton(
+                icon: Icons.phone_outlined,
+                iconColor: AppColors.success,
+                label: 'Call',
+                onTap: onCallTap,
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-/// Individual contact card with flat design: white bg, border, icon in
-/// tinted circle, title + subtitle, and a trailing chevron.
-class _ContactCard extends StatelessWidget {
+/// Compact contact button for horizontal row layout.
+class _CompactContactButton extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
-  final String title;
-  final String subtitle;
+  final String label;
   final VoidCallback onTap;
 
-  const _ContactCard({
+  const _CompactContactButton({
     required this.icon,
     required this.iconColor,
-    required this.title,
-    required this.subtitle,
+    required this.label,
     required this.onTap,
   });
 
@@ -319,54 +306,30 @@ class _ContactCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppColors.border),
-          boxShadow: AppShadows.sm,
         ),
-        child: Row(
+        child: Column(
           children: [
-            // Tinted circle with icon
             Container(
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: iconColor.withAlpha(25),
-                borderRadius: BorderRadius.circular(12),
+                color: iconColor.withAlpha(20),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: iconColor, size: 22),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-            const SizedBox(width: 14),
-
-            // Title and subtitle
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: AppTextStyles.labelSmall.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
-            ),
-
-            // Chevron
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.textTertiary,
-              size: 20,
             ),
           ],
         ),

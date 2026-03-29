@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -1178,18 +1180,31 @@ class _CountLabel extends StatelessWidget {
 
 enum _BookingTabType { upcoming, completed, cancelled }
 
-class _MyBookingsSection extends StatefulWidget {
+class _MyBookingsSection extends ConsumerStatefulWidget {
   const _MyBookingsSection();
 
   @override
-  State<_MyBookingsSection> createState() => _MyBookingsSectionState();
+  ConsumerState<_MyBookingsSection> createState() => _MyBookingsSectionState();
 }
 
-class _MyBookingsSectionState extends State<_MyBookingsSection> {
+class _MyBookingsSectionState extends ConsumerState<_MyBookingsSection> {
   _BookingTabType _activeTab = _BookingTabType.upcoming;
+
+  List<BookingStatus> _statusesForTab(_BookingTabType tab) {
+    switch (tab) {
+      case _BookingTabType.upcoming:
+        return [BookingStatus.upcoming, BookingStatus.inProgress];
+      case _BookingTabType.completed:
+        return [BookingStatus.completed];
+      case _BookingTabType.cancelled:
+        return [BookingStatus.cancelled, BookingStatus.noShow];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final bookingsAsync = ref.watch(userBookingsProvider);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -1199,8 +1214,242 @@ class _MyBookingsSectionState extends State<_MyBookingsSection> {
             activeTab: _activeTab,
             onTabChanged: (tab) => setState(() => _activeTab = tab),
           ),
-          const SizedBox(height: 20),
-          _BookingEmptyState(tabType: _activeTab),
+          const SizedBox(height: 16),
+          bookingsAsync.when(
+            data: (bookings) {
+              final filtered = bookings
+                  .where((b) => _statusesForTab(_activeTab).contains(b.status))
+                  .toList();
+              if (filtered.isEmpty) {
+                return _BookingEmptyState(tabType: _activeTab);
+              }
+              return Column(
+                children: filtered.map((booking) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _BookingCard(booking: booking),
+                  );
+                }).toList(),
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            error: (e, _) => Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Icon(LucideIcons.alertCircle, size: 32, color: AppColors.error),
+                  const SizedBox(height: 8),
+                  Text('Failed to load bookings'.tr(context),
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () => ref.invalidate(userBookingsProvider),
+                    child: Text('Retry'.tr(context),
+                        style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Inline booking card for the experts screen bookings tab.
+class _BookingCard extends ConsumerWidget {
+  final ConsultationBooking booking;
+  const _BookingCard({required this.booking});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final expertAsync = ref.watch(expertDetailProvider(booking.expertId));
+    final isUpcoming = booking.status == BookingStatus.upcoming ||
+        booking.status == BookingStatus.inProgress;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Expert info row
+          Row(
+            children: [
+              expertAsync.when(
+                data: (expert) => CircleAvatar(
+                  radius: 22,
+                  backgroundColor: AppColors.primaryLight.withAlpha(50),
+                  backgroundImage: expert != null && isValidImageUrl(expert.avatar)
+                      ? NetworkImage(expert.avatar!)
+                      : null,
+                  child: expert == null || !isValidImageUrl(expert.avatar)
+                      ? Text(
+                          expert?.initials ?? '?',
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        )
+                      : null,
+                ),
+                loading: () => const CircleAvatar(radius: 22, backgroundColor: AppColors.surfaceVariant),
+                error: (_, __) => const CircleAvatar(radius: 22, backgroundColor: AppColors.surfaceVariant, child: Icon(Icons.person, size: 20)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    expertAsync.when(
+                      data: (expert) => Text(
+                        expert?.name ?? 'Expert',
+                        style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      loading: () => Container(height: 14, width: 100, decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(4))),
+                      error: (_, __) => Text('Expert', style: AppTextStyles.labelMedium),
+                    ),
+                    if (booking.topic != null && booking.topic!.isNotEmpty)
+                      Text(
+                        booking.topic!,
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+              // Status badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _statusColor(booking.status).withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  booking.status.label.tr(context),
+                  style: AppTextStyles.caption.copyWith(
+                    color: _statusColor(booking.status),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Date & time chips
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              _InfoChip(
+                icon: LucideIcons.calendar,
+                label: DateFormat('EEE, MMM d').format(booking.date),
+              ),
+              if (booking.startTime.isNotEmpty)
+                _InfoChip(
+                  icon: LucideIcons.clock,
+                  label: booking.startTime,
+                ),
+              if (booking.meetLink != null && booking.meetLink!.isNotEmpty)
+                _InfoChip(
+                  icon: LucideIcons.video,
+                  label: 'Meet link'.tr(context),
+                  highlight: true,
+                ),
+            ],
+          ),
+
+          // Join button for upcoming with meet link
+          if (isUpcoming && booking.meetLink != null && booking.meetLink!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse(booking.meetLink!),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(LucideIcons.video, size: 16),
+                label: Text('Join Meeting'.tr(context)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _statusColor(BookingStatus status) {
+    switch (status) {
+      case BookingStatus.upcoming:
+      case BookingStatus.inProgress:
+        return AppColors.primary;
+      case BookingStatus.completed:
+        return AppColors.success;
+      case BookingStatus.cancelled:
+      case BookingStatus.noShow:
+        return AppColors.error;
+    }
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool highlight;
+
+  const _InfoChip({required this.icon, required this.label, this.highlight = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: highlight ? AppColors.primary.withAlpha(15) : AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: highlight ? AppColors.primary : AppColors.textSecondary),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              fontSize: 11,
+              color: highlight ? AppColors.primary : AppColors.textSecondary,
+              fontWeight: highlight ? FontWeight.w600 : FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

@@ -147,20 +147,53 @@ function LoginContent() {
     }
   }, [searchParams]);
 
-  // Redirect if already logged in or login not required
+  // Redirect if already logged in or login not required (runs once on mount)
   useEffect(() => {
     const qError = searchParams.get("error");
-    if (qError === "unauthorized") return;
 
-    if (!isLoginRequired()) {
-      router.replace("/home");
+    // If redirected here due to auth failure, clear stale tokens
+    if (qError === "unauthorized" || qError === "auth_failed") {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      document.cookie = "accessToken=; path=/; max-age=0";
+      document.cookie = "loggedIn=; path=/; max-age=0";
+      document.cookie = "onboardingCompleted=; path=/; max-age=0";
+      // Clean URL without re-triggering
+      window.history.replaceState({}, "", "/login");
       return;
     }
 
-    if (isLoggedIn()) {
-      router.replace("/home");
+    if (!isLoginRequired()) {
+      window.location.href = "/home";
+      return;
     }
-  }, [router, searchParams]);
+
+    // If we have a token, verify it's still valid before redirecting
+    if (isLoggedIn()) {
+      const token = localStorage.getItem("accessToken");
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => {
+          if (res.ok) {
+            window.location.href = "/home";
+          } else {
+            // Token is invalid — clear everything
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("user");
+            document.cookie = "accessToken=; path=/; max-age=0";
+            document.cookie = "loggedIn=; path=/; max-age=0";
+            document.cookie = "onboardingCompleted=; path=/; max-age=0";
+          }
+        })
+        .catch(() => {
+          // Network error — don't redirect, stay on login
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -190,7 +223,7 @@ function LoginContent() {
       if (isDevBypassEmail(trimmed)) {
         const result = await devLogin(trimmed);
         if (result.success) {
-          router.push("/home");
+          window.location.href = "/home";
           return;
         }
         setError(result.error || "Dev login failed");
@@ -243,7 +276,7 @@ function LoginContent() {
         setError(result.error || "Verification failed");
         return;
       }
-      router.push("/home");
+      window.location.href = "/home";
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

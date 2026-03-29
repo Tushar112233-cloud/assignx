@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../../campus_connect/widgets/search_bar_widget.dart';
 
-/// Search bar for Pro Network.
+/// Search bar for the Job Portal.
 ///
-/// Reuses [SearchBarWidget] with professional-specific placeholder.
+/// Reuses [SearchBarWidget] with a job-specific placeholder.
 class ProSearchBar extends StatelessWidget {
   final Function(String)? onChanged;
   final String? initialValue;
@@ -25,7 +25,7 @@ class ProSearchBar extends StatelessWidget {
       onChanged: onChanged,
       initialValue: initialValue,
       onFilterTap: onFilterTap,
-      placeholder: 'Search gigs, portfolios, discussions...',
+      placeholder: 'Search jobs, companies, skills...',
     );
   }
 }

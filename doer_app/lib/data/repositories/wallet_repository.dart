@@ -90,7 +90,7 @@ class DoerWalletRepository {
       if (kDebugMode) {
         debugPrint('DoerWalletRepository.getPendingEarnings error: $e');
       }
-      rethrow;
+      return 0.0;
     }
   }
 

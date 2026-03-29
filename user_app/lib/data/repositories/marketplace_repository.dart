@@ -55,28 +55,28 @@ class MarketplaceRepository {
     final category = row['category'] as Map<String, dynamic>?;
 
     return MarketplaceListing(
-      id: (row['_id'] ?? row['id']) as String,
-      userId: (row['sellerId'] ?? row['seller_id']) as String,
-      userName: seller?['fullName'] ?? seller?['full_name'] as String? ?? 'Anonymous',
-      userAvatar: seller?['avatarUrl'] ?? seller?['avatar_url'] as String?,
+      id: (row['_id'] ?? row['id'] ?? '').toString(),
+      userId: (row['sellerId'] ?? row['seller_id'] ?? '').toString(),
+      userName: (seller?['fullName'] ?? seller?['full_name'] ?? 'Anonymous').toString(),
+      userAvatar: (seller?['avatarUrl'] ?? seller?['avatar_url']) as String?,
       userUniversity: null,
-      category: _mapCategory(category?['name'] as String? ?? row['categoryName'] as String?),
-      type: _mapListingType(row['listingType'] ?? row['listing_type'] as String?),
-      title: row['title'] as String,
+      category: _mapCategory((category?['name'] ?? row['categoryName']) as String?),
+      type: _mapListingType((row['listingType'] ?? row['listing_type']) as String?),
+      title: (row['title'] ?? '').toString(),
       description: row['description'] as String?,
       price: (row['price'] as num?)?.toDouble(),
-      isNegotiable: row['priceNegotiable'] ?? row['price_negotiable'] as bool? ?? false,
+      isNegotiable: (row['priceNegotiable'] ?? row['price_negotiable'] ?? false) == true,
       images: _extractImages(row),
-      location: row['locationText'] ?? row['location_text'] as String?,
-      distanceKm: (row['distanceKm'] ?? row['distance_km'] as num?)?.toDouble(),
+      location: (row['locationText'] ?? row['location_text']) as String?,
+      distanceKm: ((row['distanceKm'] ?? row['distance_km']) as num?)?.toDouble(),
       status: _mapStatus(row['status'] as String?),
-      createdAt: DateTime.parse(row['createdAt'] ?? row['created_at'] as String),
-      expiresAt: row['expiresAt'] != null || row['expires_at'] != null
-          ? DateTime.parse((row['expiresAt'] ?? row['expires_at']) as String)
+      createdAt: DateTime.tryParse((row['createdAt'] ?? row['created_at'] ?? '').toString()) ?? DateTime.now(),
+      expiresAt: (row['expiresAt'] ?? row['expires_at']) != null
+          ? DateTime.tryParse((row['expiresAt'] ?? row['expires_at']).toString())
           : null,
-      viewCount: row['viewCount'] ?? row['view_count'] as int? ?? 0,
-      likeCount: row['favoritesCount'] ?? row['favorites_count'] as int? ?? 0,
-      commentCount: row['inquiryCount'] ?? row['inquiry_count'] as int? ?? 0,
+      viewCount: (row['viewCount'] ?? row['view_count'] ?? 0) as int,
+      likeCount: (row['favoritesCount'] ?? row['favorites_count'] ?? 0) as int,
+      commentCount: (row['inquiryCount'] ?? row['inquiry_count'] ?? 0) as int,
       metadata: row['pollOptions'] != null
           ? {'pollOptions': row['pollOptions'], 'totalVotes': row['totalVotes']}
           : null,

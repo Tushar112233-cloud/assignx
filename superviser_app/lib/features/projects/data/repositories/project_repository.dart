@@ -34,10 +34,14 @@ class ProjectRepository {
     }
   }
 
-  /// Fetches active projects (in progress, assigned, etc.).
+  /// Fetches active projects (quoted, paid, assigned, in progress, etc.).
   Future<List<ProjectModel>> getActiveProjects() async {
     try {
       final statuses = [
+        'submitted',
+        'analyzing',
+        'quoted',
+        'paid',
         ProjectStatus.assigned.value,
         ProjectStatus.inProgress.value,
         ProjectStatus.delivered.value,

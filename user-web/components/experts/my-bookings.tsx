@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatINR } from "@/lib/utils";
 import type { ConsultationBooking, SessionStatus } from "@/types/expert";
-import { MOCK_EXPERTS } from "@/lib/data/experts";
+import type { Expert } from "@/types/expert";
 import { ReviewForm } from "@/components/experts/review-form";
 import { apiClient } from "@/lib/api/client";
 
@@ -71,10 +71,17 @@ const TABS: Array<{
 ];
 
 /**
- * Get expert by ID
+ * Extract expert info from booking (populated by API) or return fallback
  */
-function getExpertById(expertId: string) {
-  return MOCK_EXPERTS.find((e) => e.id === expertId);
+function getExpertFromBooking(booking: any): Partial<Expert> & { name: string; designation: string; avatar?: string; verified?: boolean; availability?: string } {
+  return {
+    id: booking.expertId,
+    name: (booking as any).expertName || "Expert",
+    designation: (booking as any).expertDesignation || "",
+    avatar: (booking as any).expertAvatar || undefined,
+    verified: true,
+    availability: "available",
+  };
 }
 
 /**
@@ -183,7 +190,7 @@ function BookingCard({
   onCancel?: () => void;
   onJoin?: () => void;
 }) {
-  const expert = getExpertById(booking.expertId);
+  const expert = getExpertFromBooking(booking);
   const statusConfig = getStatusConfig(booking.status);
   const isUpcoming =
     booking.status === "upcoming" || booking.status === "in_progress";

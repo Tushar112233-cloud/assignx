@@ -106,13 +106,11 @@ router.get('/preferences', authenticate, async (req: Request, res: Response, nex
 // PUT /users/preferences
 router.put('/preferences', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await User.findById(req.user!.id).select('preferences');
-    if (!user) throw new AppError('User not found', 404);
+    const existing = await User.findById(req.user!.id).select('preferences').lean();
+    if (!existing) throw new AppError('User not found', 404);
 
-    const merged = { ...(user.preferences || {}), ...req.body };
-    user.preferences = merged;
-    user.markModified('preferences');
-    await user.save();
+    const merged = { ...(existing.preferences || {}), ...req.body };
+    await User.updateOne({ _id: req.user!.id }, { $set: { preferences: merged } });
 
     res.json({ preferences: merged });
   } catch (err) {
@@ -134,13 +132,11 @@ router.get('/me/preferences', authenticate, async (req: Request, res: Response, 
 // PUT /users/me/preferences (alias)
 router.put('/me/preferences', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await User.findById(req.user!.id).select('preferences');
-    if (!user) throw new AppError('User not found', 404);
+    const existing = await User.findById(req.user!.id).select('preferences').lean();
+    if (!existing) throw new AppError('User not found', 404);
 
-    const merged = { ...(user.preferences || {}), ...req.body };
-    user.preferences = merged;
-    user.markModified('preferences');
-    await user.save();
+    const merged = { ...(existing.preferences || {}), ...req.body };
+    await User.updateOne({ _id: req.user!.id }, { $set: { preferences: merged } });
 
     res.json(merged);
   } catch (err) {
@@ -278,13 +274,11 @@ router.get('/:id/preferences', authenticate, async (req: Request, res: Response,
 // PUT /users/:id/preferences
 router.put('/:id/preferences', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await User.findById(req.params.id).select('preferences');
-    if (!user) throw new AppError('User not found', 404);
+    const existing = await User.findById(req.params.id).select('preferences').lean();
+    if (!existing) throw new AppError('User not found', 404);
 
-    const merged = { ...(user.preferences || {}), ...req.body };
-    user.preferences = merged;
-    user.markModified('preferences');
-    await user.save();
+    const merged = { ...(existing.preferences || {}), ...req.body };
+    await User.updateOne({ _id: req.params.id }, { $set: { preferences: merged } });
 
     res.json(merged);
   } catch (err) {

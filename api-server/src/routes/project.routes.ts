@@ -48,10 +48,16 @@ router.get('/', authenticate, async (req: Request, res: Response, next: NextFunc
     } else if (req.user!.role === 'supervisor') {
       if (unassigned === 'true') {
         // Supervisor requesting unassigned projects (global pool to claim)
-        filter.supervisorId = { $exists: false };
+        // Match projects where supervisorId is null, undefined, or doesn't exist
+        filter.$or = [
+          { supervisorId: { $exists: false } },
+          { supervisorId: null },
+        ];
         const supervisorDoc = await Supervisor.findById(req.user!.id).select('expertise');
         if (supervisorDoc?.expertise?.length) {
-          filter.subjectId = { $in: supervisorDoc.expertise };
+          // expertise is stored as strings, subjectId is ObjectId — cast for comparison
+          const mongoose = require('mongoose');
+          filter.subjectId = { $in: supervisorDoc.expertise.map((id: string) => new mongoose.Types.ObjectId(id)) };
         } else {
           // No expertise set — show all unassigned projects
         }

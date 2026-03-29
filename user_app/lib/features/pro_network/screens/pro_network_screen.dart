@@ -2,7 +2,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -13,9 +12,8 @@ import '../widgets/pro_filter_tabs_bar.dart';
 import '../widgets/pro_network_hero.dart';
 import '../widgets/pro_post_card.dart';
 import '../widgets/pro_search_bar.dart';
-import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
-/// Pro Network screen with staggered feed of professional content.
+/// Job Portal screen that lists jobs with category, type, and search filters.
 class ProNetworkScreen extends ConsumerStatefulWidget {
   const ProNetworkScreen({super.key});
 
@@ -24,43 +22,27 @@ class ProNetworkScreen extends ConsumerStatefulWidget {
 }
 
 class _ProNetworkScreenState extends ConsumerState<ProNetworkScreen> {
-  ProfessionalCategory? _selectedCategory;
+  JobCategory? _selectedCategory;
+  JobType? _selectedType;
   String _searchQuery = '';
 
-  List<ProNetworkPost> _filterPosts(List<ProNetworkPost> posts) {
-    var filtered = posts;
-
-    if (_selectedCategory != null &&
-        _selectedCategory != ProfessionalCategory.all) {
-      filtered =
-          filtered.where((p) => p.category == _selectedCategory).toList();
-    }
-
-    if (_searchQuery.isNotEmpty) {
-      final query = _searchQuery.toLowerCase();
-      filtered = filtered.where((p) {
-        return p.title.toLowerCase().contains(query) ||
-            (p.description?.toLowerCase().contains(query) ?? false) ||
-            p.userName.toLowerCase().contains(query);
-      }).toList();
-    }
-
-    return filtered;
-  }
+  /// Build the current [JobFilters] from local state.
+  JobFilters get _filters => JobFilters(
+        category: _selectedCategory,
+        type: _selectedType,
+        searchQuery: _searchQuery,
+      );
 
   @override
   Widget build(BuildContext context) {
-    final postsAsync = ref.watch(proNetworkPostsProvider);
-
+    final jobsAsync = ref.watch(filteredJobsProvider(_filters));
     final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          CustomScrollView(
+      body: CustomScrollView(
         slivers: [
-          // Back button (only shown when navigated to directly via route)
+          // Back button (only when navigated directly via route)
           if (canPop)
             SliverToBoxAdapter(
               child: SafeArea(
@@ -70,7 +52,8 @@ class _ProNetworkScreenState extends ConsumerState<ProNetworkScreen> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                      icon:
+                          const Icon(Icons.arrow_back_ios_new, size: 20),
                       onPressed: () => Navigator.of(context).pop(),
                       color: AppColors.textPrimary,
                     ),
@@ -78,6 +61,7 @@ class _ProNetworkScreenState extends ConsumerState<ProNetworkScreen> {
                 ),
               ),
             ),
+
           // Hero section
           const SliverToBoxAdapter(child: ProNetworkHero()),
 
@@ -88,7 +72,7 @@ class _ProNetworkScreenState extends ConsumerState<ProNetworkScreen> {
             ),
           ),
 
-          // Filter tabs
+          // Category filter pills
           SliverToBoxAdapter(
             child: ProFilterTabsBar(
               selectedCategory: _selectedCategory,
@@ -98,16 +82,23 @@ class _ProNetworkScreenState extends ConsumerState<ProNetworkScreen> {
             ),
           ),
 
-          // Posts count
+          // Job type filter row
+          SliverToBoxAdapter(child: _JobTypeFilterRow(
+            selectedType: _selectedType,
+            onTypeChanged: (type) {
+              setState(() => _selectedType = type);
+            },
+          )),
+
+          // Results count
           SliverToBoxAdapter(
-            child: postsAsync.when(
-              data: (posts) {
-                final filtered = _filterPosts(posts);
+            child: jobsAsync.when(
+              data: (jobs) {
                 return Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: Text(
-                    '${filtered.length} posts',
+                    '${jobs.length} job${jobs.length == 1 ? '' : 's'} found',
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -115,24 +106,24 @@ class _ProNetworkScreenState extends ConsumerState<ProNetworkScreen> {
                 );
               },
               loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
             ),
           ),
 
-          // Posts grid
-          postsAsync.when(
-            data: (posts) {
-              final filtered = _filterPosts(posts);
-
-              if (filtered.isEmpty) {
+          // Job list
+          jobsAsync.when(
+            data: (jobs) {
+              if (jobs.isEmpty) {
                 return SliverFillRemaining(
                   hasScrollBody: false,
                   child: _EmptyState(
                     hasFilters: _selectedCategory != null ||
+                        _selectedType != null ||
                         _searchQuery.isNotEmpty,
                     onClearFilters: () {
                       setState(() {
                         _selectedCategory = null;
+                        _selectedType = null;
                         _searchQuery = '';
                       });
                     },
@@ -142,21 +133,15 @@ class _ProNetworkScreenState extends ConsumerState<ProNetworkScreen> {
 
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverMasonryGrid.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childCount: filtered.length,
+                sliver: SliverList.separated(
+                  itemCount: jobs.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final post = filtered[index];
-                    return buildProPostCard(
-                      post: post,
+                    final job = jobs[index];
+                    return JobCard(
+                      job: job,
                       onTap: () {
-                        context.push('/pro-network/post/${post.id}');
-                      },
-                      onLike: () {},
-                      onComment: () {
-                        context.push('/pro-network/post/${post.id}');
+                        context.push('/pro-network/post/${job.id}');
                       },
                     );
                   },
@@ -177,14 +162,14 @@ class _ProNetworkScreenState extends ConsumerState<ProNetworkScreen> {
                         size: 48, color: AppColors.textTertiary),
                     const SizedBox(height: 12),
                     Text(
-                      'Failed to load posts',
+                      'Failed to load jobs',
                       style: AppTextStyles.bodyMedium
                           .copyWith(color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 12),
                     FilledButton(
                       onPressed: () =>
-                          ref.invalidate(proNetworkPostsProvider),
+                          ref.invalidate(filteredJobsProvider(_filters)),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -193,16 +178,86 @@ class _ProNetworkScreenState extends ConsumerState<ProNetworkScreen> {
             ),
           ),
 
-          // Bottom padding
+          // Bottom padding for nav bar
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
-        ],
-      ),
-          // Pro Network posts are admin-managed — no create FAB for users
         ],
       ),
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Job type filter row (All / Full-time / Part-time / Internship / ...)
+// ---------------------------------------------------------------------------
+
+class _JobTypeFilterRow extends StatelessWidget {
+  final JobType? selectedType;
+  final ValueChanged<JobType?> onTypeChanged;
+
+  const _JobTypeFilterRow({
+    required this.selectedType,
+    required this.onTypeChanged,
+  });
+
+  static const _types = JobType.values;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: _types.asMap().entries.map((entry) {
+          final index = entry.key;
+          final type = entry.value;
+          final isSelected = selectedType == type ||
+              (selectedType == null && type == JobType.all);
+          return Padding(
+            padding:
+                EdgeInsets.only(right: index < _types.length - 1 ? 8 : 0),
+            child: GestureDetector(
+              onTap: () => onTypeChanged(
+                  type == JobType.all ? null : (selectedType == type ? null : type)),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary.withValues(alpha: 0.12)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.4)
+                        : AppColors.border.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  type.label,
+                  style: AppTextStyles.caption.copyWith(
+                    fontSize: 12,
+                    fontWeight:
+                        isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Empty state widget
+// ---------------------------------------------------------------------------
 
 class _EmptyState extends StatelessWidget {
   final bool hasFilters;
@@ -222,13 +277,13 @@ class _EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              hasFilters ? Icons.filter_list_off : Icons.hub_outlined,
+              hasFilters ? Icons.filter_list_off : Icons.work_off_outlined,
               size: 64,
               color: AppColors.textTertiary.withAlpha(128),
             ),
             const SizedBox(height: 16),
             Text(
-              hasFilters ? 'No matching posts' : 'No posts yet',
+              hasFilters ? 'No matching jobs' : 'No jobs yet',
               style: AppTextStyles.headingSmall.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -237,7 +292,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               hasFilters
                   ? 'Try adjusting your filters or search query'
-                  : 'Be the first to share with the community!',
+                  : 'Check back later for new opportunities!',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textTertiary,
               ),

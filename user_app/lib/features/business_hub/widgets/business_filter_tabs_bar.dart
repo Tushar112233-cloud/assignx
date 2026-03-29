@@ -6,18 +6,18 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../data/models/business_hub_post_model.dart';
 
-/// Horizontal filter tabs bar for Business Hub categories.
+/// Horizontal filter tabs bar for funding stage filters.
 class BusinessFilterTabsBar extends StatelessWidget {
-  final BusinessCategory? selectedCategory;
-  final Function(BusinessCategory?) onCategoryChanged;
+  final FundingStage? selectedStage;
+  final Function(FundingStage?) onStageChanged;
 
   const BusinessFilterTabsBar({
     super.key,
-    this.selectedCategory,
-    required this.onCategoryChanged,
+    this.selectedStage,
+    required this.onStageChanged,
   });
 
-  static const List<BusinessCategory> categories = BusinessCategory.values;
+  static const List<FundingStage> stages = FundingStage.values;
 
   @override
   Widget build(BuildContext context) {
@@ -26,18 +26,18 @@ class BusinessFilterTabsBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       physics: const BouncingScrollPhysics(),
       child: Row(
-        children: categories.asMap().entries.map((entry) {
+        children: stages.asMap().entries.map((entry) {
           final index = entry.key;
-          final category = entry.value;
+          final stage = entry.value;
           return Padding(
             padding: EdgeInsets.only(
-                right: index < categories.length - 1 ? 8 : 0),
+                right: index < stages.length - 1 ? 8 : 0),
             child: _FilterCapsule(
-              icon: category.icon,
-              label: category.label,
-              isSelected: selectedCategory == category,
-              onTap: () => onCategoryChanged(
-                selectedCategory == category ? null : category,
+              icon: stage.icon,
+              label: stage.label,
+              isSelected: selectedStage == stage,
+              onTap: () => onStageChanged(
+                selectedStage == stage ? null : stage,
               ),
             ),
           );

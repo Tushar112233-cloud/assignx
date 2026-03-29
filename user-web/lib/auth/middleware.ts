@@ -64,12 +64,21 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect logged-in users away from login page
+  // Redirect logged-in users away from login page (unless they came back due to auth error)
   const isLoginPage = pathname === "/login";
-  if (isLoginPage && loggedIn) {
+  const hasAuthError = request.nextUrl.searchParams.get("error") === "unauthorized"
+    || request.nextUrl.searchParams.get("error") === "auth_failed";
+  if (isLoginPage && loggedIn && !hasAuthError) {
     const url = request.nextUrl.clone();
     url.pathname = "/home";
     return NextResponse.redirect(url);
+  }
+  // If redirected to login with auth error, clear the loggedIn cookie
+  if (isLoginPage && hasAuthError) {
+    const response = NextResponse.next({ request });
+    response.cookies.set("loggedIn", "", { path: "/", maxAge: 0 });
+    response.cookies.set("accessToken", "", { path: "/", maxAge: 0 });
+    return response;
   }
 
   // Onboarding routes need auth
