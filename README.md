@@ -143,4 +143,4 @@ MongoDB with collections: users, doers, supervisors, admins, projects, experts, 
 
 ## License
 
-Proprietary - All rights reserved.
+Proprietary - All rights reserved
