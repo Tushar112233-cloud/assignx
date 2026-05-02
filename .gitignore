@@ -145,8 +145,13 @@ release-builds/
 .claude/
 .gitnexus/
 .mcp.json
+.kiro/
 AGENTS.md
 CLAUDE.md
+GEMINI.md
+.cursorrules
+.windsurfrules
+.opencode.json
 .playwright-mcp/
 **/screenshot_*.png
 
@@ -162,9 +167,16 @@ CLAUDE.md
 # ----------------------------------------------
 # Database Files
 # ----------------------------------------------
-*.db
-*.db-journal
-*.db-wal
 *.sqlite
 *.sqlite-journal
 *.sqlite3
+
+# ----------------------------------------------
+# Knowledge Graphs (keep outputs, ignore caches)
+# ----------------------------------------------
+graphify-out/cache/
+graphify-out/.graphify_*
+graphify-out/manifest.json
+.code-review-graph/._*
+.code-review-graph/*.db
+.code-review-graph/*.db-journal
