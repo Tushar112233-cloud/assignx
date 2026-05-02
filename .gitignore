@@ -1,0 +1,170 @@
+# ==============================================
+# AssignX Monorepo .gitignore
+# ==============================================
+
+# ----------------------------------------------
+# Dependencies
+# ----------------------------------------------
+node_modules/
+.pnpm-store/
+
+# ----------------------------------------------
+# Node.js / Next.js
+# ----------------------------------------------
+.next/
+out/
+.turbo/
+.vercel/
+next-env.d.ts
+
+# ----------------------------------------------
+# Flutter / Dart
+# ----------------------------------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+.metadata
+*.iml
+
+# ----------------------------------------------
+# Android
+# ----------------------------------------------
+**/android/.gradle/
+**/android/local.properties
+**/android/key.properties
+**/android/*.iml
+**/android/.idea/
+**/android/**/*.keystore
+**/android/**/gradle-wrapper.jar
+**/android/captures/
+**/android/.cxx/
+
+# ----------------------------------------------
+# iOS / macOS
+# ----------------------------------------------
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/engine/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/flutter_assets/
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/.generated/
+**/macos/Pods/
+**/macos/.symlinks/
+**/macos/Flutter/Flutter-Debug.xcconfig
+**/macos/Flutter/Flutter-Release.xcconfig
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Flutter platform ephemeral
+**/linux/flutter/ephemeral/
+**/windows/flutter/ephemeral/
+
+# ----------------------------------------------
+# IDE / Editor
+# ----------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ----------------------------------------------
+# Operating System
+# ----------------------------------------------
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+
+# ----------------------------------------------
+# Environment / Secrets
+# ----------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+credentials/
+google-services.json
+GoogleService-Info.plist
+
+# ----------------------------------------------
+# Logs
+# ----------------------------------------------
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ----------------------------------------------
+# Testing / Coverage
+# ----------------------------------------------
+coverage/
+.nyc_output/
+*.lcov
+playwright-report/
+test-results/
+**/test_screenshots/
+**/test_results/
+
+# ----------------------------------------------
+# Build Artifacts
+# ----------------------------------------------
+dist/
+*.js.map
+*.aab
+*.apk
+*.ipa
+release-builds/
+
+# ----------------------------------------------
+# Screenshots / Images (root level)
+# ----------------------------------------------
+/*.png
+/*.jpg
+/*.jpeg
+
+# ----------------------------------------------
+# AI Tools
+# ----------------------------------------------
+.claude/
+.gitnexus/
+.mcp.json
+AGENTS.md
+CLAUDE.md
+.playwright-mcp/
+**/screenshot_*.png
+
+# ----------------------------------------------
+# Temporary / Cache
+# ----------------------------------------------
+*.tmp
+*.temp
+*.bak
+*.cache
+.cache/
+
+# ----------------------------------------------
+# Database Files
+# ----------------------------------------------
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite-journal
+*.sqlite3

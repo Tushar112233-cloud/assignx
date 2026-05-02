@@ -1,0 +1,1197 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_spacing.dart';
+import '../../../core/constants/app_text_styles.dart';
+import '../../../core/translation/translation_extensions.dart';
+import '../../../data/models/tutor_model.dart';
+import '../../../providers/connect_provider.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
+import '../../marketplace/widgets/tutor_card.dart';
+import '../../marketplace/widgets/tutor_profile_sheet.dart';
+import '../../marketplace/widgets/book_session_sheet.dart';
+import '../widgets/advanced_filter_sheet.dart';
+import '../widgets/ask_question_sheet.dart';
+import '../widgets/connect_search.dart';
+import '../widgets/qa_section.dart';
+import '../widgets/resource_cards.dart';
+import '../widgets/study_group_card.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
+
+/// Main Connect screen with tabs for Tutors, Study Groups, and Resources.
+///
+/// Clean Coffee Bean themed design with simple cards and clear layout.
+class ConnectScreen extends ConsumerStatefulWidget {
+  const ConnectScreen({super.key});
+
+  @override
+  ConsumerState<ConnectScreen> createState() => _ConnectScreenState();
+}
+
+class _ConnectScreenState extends ConsumerState<ConnectScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        // Clear search when switching tabs
+        ref.read(connectFilterProvider.notifier).setSearchQuery(null);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filters = ref.watch(connectFilterProvider);
+
+    return SubtleGradientScaffold.standard(
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            // Hero section
+            SliverToBoxAdapter(
+              child: _ConnectHero(),
+            ),
+
+            // Search bar
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: ConnectSearchBar(
+                  showFilterButton: true,
+                  activeFilterCount: filters.activeFilterCount,
+                  onFilterTap: () => AdvancedFilterSheet.show(context),
+                  onSearchSubmit: (query) {
+                    // Search is handled via provider
+                  },
+                ),
+              ),
+            ),
+
+            // Tab bar
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _TabBarDelegate(
+                tabController: _tabController,
+                filters: filters,
+              ),
+            ),
+          ];
+        },
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _TutorsTab(),
+            _StudyGroupsTab(),
+            _ResourcesTab(),
+            const QaSection(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Clean hero section with coffee brown gradient.
+class _ConnectHero extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF54442B),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDark.withValues(alpha: 0.18),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Connect'.tr(context),
+                    style: AppTextStyles.headingLarge.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Learn together, grow together'.tr(context),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white.withAlpha(180),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.people_rounded,
+                size: 28,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tab bar delegate for persistent header.
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabController tabController;
+  final ConnectFilterState filters;
+
+  _TabBarDelegate({
+    required this.tabController,
+    required this.filters,
+  });
+
+  @override
+  double get minExtent => 52;
+
+  @override
+  double get maxExtent => 52;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: AppColors.background,
+      child: TabBar(
+        controller: tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.textSecondary,
+        indicatorColor: AppColors.primary,
+        indicatorWeight: 3,
+        dividerColor: AppColors.border.withAlpha(50),
+        labelStyle: AppTextStyles.labelLarge.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: AppTextStyles.labelLarge,
+        tabs: [
+          Tab(text: 'Tutors'.tr(context)),
+          Tab(text: 'Study Groups'.tr(context)),
+          Tab(text: 'Resources'.tr(context)),
+          Tab(text: 'Q&A'.tr(context)),
+        ],
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _TabBarDelegate oldDelegate) {
+    return tabController != oldDelegate.tabController;
+  }
+}
+
+/// Tutors tab content.
+class _TutorsTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tutorsAsync = ref.watch(connectTutorsProvider);
+    final filters = ref.watch(connectFilterProvider);
+
+    return CustomScrollView(
+      slivers: [
+        // Active filters display
+        if (filters.hasFilters)
+          SliverToBoxAdapter(
+            child: _ActiveFiltersDisplay(
+              onClear: () => ref.read(connectFilterProvider.notifier).clearFilters(),
+            ),
+          ),
+
+        // Featured section header
+        SliverToBoxAdapter(
+          child: _SectionHeader(
+            title: 'Expert Tutors'.tr(context),
+            subtitle: 'Book 1-on-1 sessions'.tr(context),
+            icon: Icons.school_rounded,
+          ),
+        ),
+
+        // Tutors grid
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: tutorsAsync.when(
+            data: (tutors) {
+              if (tutors.isEmpty) {
+                return SliverToBoxAdapter(
+                  child: filters.hasFilters
+                      ? _EmptyState(
+                          icon: Icons.person_search,
+                          title: 'No tutors found'.tr(context),
+                          subtitle: 'Try adjusting your filters'.tr(context),
+                          showClearButton: true,
+                          onClear: () =>
+                              ref.read(connectFilterProvider.notifier).clearFilters(),
+                        )
+                      : _ComingSoonState(
+                          icon: Icons.school_rounded,
+                          title: 'Tutors Coming Soon'.tr(context),
+                          subtitle: 'We\'re onboarding expert tutors. Check back shortly!'.tr(context),
+                        ),
+                );
+              }
+
+              return SliverMasonryGrid.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childCount: tutors.length,
+                itemBuilder: (context, index) {
+                  final tutor = tutors[index];
+                  return TutorCard(
+                    tutor: tutor,
+                    onTap: () => _showTutorProfile(context, ref, tutor),
+                    onBook: () => _showBookSession(context, tutor),
+                  );
+                },
+              );
+            },
+            loading: () => SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _TutorCardSkeleton(),
+                ),
+                childCount: 4,
+              ),
+            ),
+            error: (error, _) => SliverToBoxAdapter(
+              child: _ErrorState(
+                error: error.toString(),
+                onRetry: () => ref.invalidate(connectTutorsProvider),
+              ),
+            ),
+          ),
+        ),
+
+        // Bottom padding
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100),
+        ),
+      ],
+    );
+  }
+
+  void _showTutorProfile(BuildContext context, WidgetRef ref, Tutor tutor) {
+    TutorProfileSheet.show(
+      context: context,
+      tutor: tutor,
+      onBookSession: () {
+        Navigator.of(context).pop();
+        _showBookSession(context, tutor);
+      },
+      onAskQuestion: () {
+        Navigator.of(context).pop();
+        AskQuestionSheet.show(
+          context: context,
+          onQuestionPosted: () {
+            ref.invalidate(connectQuestionsProvider);
+          },
+        );
+      },
+    );
+  }
+
+  void _showBookSession(BuildContext context, Tutor tutor) {
+    BookSessionSheet.show(
+      context: context,
+      tutor: tutor,
+      onBookingComplete: (session) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${'Session booked with'.tr(context)} ${tutor.name}!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Study Groups tab content.
+class _StudyGroupsTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final groupsAsync = ref.watch(studyGroupsProvider);
+    final userGroupsAsync = ref.watch(userStudyGroupsProvider);
+    final filters = ref.watch(connectFilterProvider);
+
+    return CustomScrollView(
+      slivers: [
+        // Active filters display
+        if (filters.hasFilters)
+          SliverToBoxAdapter(
+            child: _ActiveFiltersDisplay(
+              onClear: () => ref.read(connectFilterProvider.notifier).clearFilters(),
+            ),
+          ),
+
+        // My groups section
+        SliverToBoxAdapter(
+          child: userGroupsAsync.when(
+            data: (groups) {
+              if (groups.isEmpty) return const SizedBox.shrink();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionHeader(
+                    title: 'My Groups'.tr(context),
+                    icon: Icons.group,
+                    onSeeAll: () => context.push('/connect/groups'),
+                  ),
+                  SizedBox(
+                    height: 140,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: groups.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (context, index) {
+                        return CompactStudyGroupCard(
+                          group: groups[index],
+                          isJoined: true,
+                          onTap: () {},
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+        ),
+
+        // Available groups header
+        SliverToBoxAdapter(
+          child: _SectionHeader(
+            title: 'Available Groups'.tr(context),
+            subtitle: 'Join a group to study together'.tr(context),
+            icon: Icons.groups_rounded,
+            onSeeAll: () => context.push('/connect/groups'),
+          ),
+        ),
+
+        // Groups list
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: groupsAsync.when(
+            data: (groups) {
+              if (groups.isEmpty) {
+                return SliverToBoxAdapter(
+                  child: filters.hasFilters
+                      ? _EmptyState(
+                          icon: Icons.group_add,
+                          title: 'No groups found'.tr(context),
+                          subtitle: 'Try adjusting your filters'.tr(context),
+                          showClearButton: true,
+                          onClear: () =>
+                              ref.read(connectFilterProvider.notifier).clearFilters(),
+                        )
+                      : _ComingSoonState(
+                          icon: Icons.groups_rounded,
+                          title: 'Study Groups Coming Soon'.tr(context),
+                          subtitle: 'Collaborative study groups are on the way!'.tr(context),
+                        ),
+                );
+              }
+
+              final userGroups = userGroupsAsync.valueOrNull ?? [];
+
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final group = groups[index];
+                    final isJoined = userGroups.any((g) => g.id == group.id);
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: StudyGroupCard(
+                        group: group,
+                        isJoined: isJoined,
+                        onTap: () {},
+                        onJoinLeave: () {
+                          final message = isJoined
+                              ? '${'Left'.tr(context)} ${group.name}'
+                              : '${'Joined'.tr(context)} ${group.name}!';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(message),
+                              backgroundColor:
+                                  isJoined ? AppColors.textSecondary : AppColors.success,
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  childCount: groups.length,
+                ),
+              );
+            },
+            loading: () => SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _GroupCardSkeleton(),
+                ),
+                childCount: 4,
+              ),
+            ),
+            error: (error, _) => SliverToBoxAdapter(
+              child: _ErrorState(
+                error: error.toString(),
+                onRetry: () => ref.invalidate(studyGroupsProvider),
+              ),
+            ),
+          ),
+        ),
+
+        // Bottom padding
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100),
+        ),
+      ],
+    );
+  }
+}
+
+/// Resources tab content.
+class _ResourcesTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final resourcesAsync = ref.watch(sharedResourcesProvider);
+    final filters = ref.watch(connectFilterProvider);
+
+    return CustomScrollView(
+      slivers: [
+        // Resource type filters
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: ResourceTypeChips(
+              selectedType: filters.resourceType,
+              onTypeSelected: (type) {
+                ref.read(connectFilterProvider.notifier).setResourceType(type);
+              },
+            ),
+          ),
+        ),
+
+        // Active filters display
+        if (filters.hasFilters)
+          SliverToBoxAdapter(
+            child: _ActiveFiltersDisplay(
+              onClear: () => ref.read(connectFilterProvider.notifier).clearFilters(),
+            ),
+          ),
+
+        // Featured section header
+        SliverToBoxAdapter(
+          child: _SectionHeader(
+            title: 'Study Materials'.tr(context),
+            subtitle: 'Notes, videos, and more'.tr(context),
+            icon: Icons.folder_open_rounded,
+            onSeeAll: () => context.push('/connect/resources'),
+          ),
+        ),
+
+        // Resources list
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: resourcesAsync.when(
+            data: (resources) {
+              if (resources.isEmpty) {
+                return SliverToBoxAdapter(
+                  child: filters.hasFilters
+                      ? _EmptyState(
+                          icon: Icons.folder_off_outlined,
+                          title: 'No resources found'.tr(context),
+                          subtitle: 'Try adjusting your filters'.tr(context),
+                          showClearButton: true,
+                          onClear: () =>
+                              ref.read(connectFilterProvider.notifier).clearFilters(),
+                        )
+                      : _ComingSoonState(
+                          icon: Icons.folder_open_rounded,
+                          title: 'Resources Coming Soon'.tr(context),
+                          subtitle: 'Shared study materials will be available here soon!'.tr(context),
+                        ),
+                );
+              }
+
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final resource = resources[index];
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: ResourceCard(
+                        resource: resource,
+                        onTap: () {},
+                        onSave: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${'Saved'.tr(context)} ${resource.title}'),
+                              backgroundColor: AppColors.success,
+                            ),
+                          );
+                        },
+                        onDownload: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${'Downloading'.tr(context)} ${resource.title}...'),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  childCount: resources.length,
+                ),
+              );
+            },
+            loading: () => SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _ResourceCardSkeleton(),
+                ),
+                childCount: 4,
+              ),
+            ),
+            error: (error, _) => SliverToBoxAdapter(
+              child: _ErrorState(
+                error: error.toString(),
+                onRetry: () => ref.invalidate(sharedResourcesProvider),
+              ),
+            ),
+          ),
+        ),
+
+        // Bottom padding
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100),
+        ),
+      ],
+    );
+  }
+}
+
+/// Section header widget - clean card style with icon.
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final IconData icon;
+  final VoidCallback? onSeeAll;
+
+  const _SectionHeader({
+    required this.title,
+    this.subtitle,
+    required this.icon,
+    this.onSeeAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.labelLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          if (onSeeAll != null)
+            Material(
+              color: AppColors.primary.withAlpha(15),
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                onTap: onSeeAll,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Row(
+                    children: [
+                      Text(
+                        'See all'.tr(context),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 12,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Active filters display chip - clean card style.
+class _ActiveFiltersDisplay extends StatelessWidget {
+  final VoidCallback onClear;
+
+  const _ActiveFiltersDisplay({required this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.border.withValues(alpha: 0.3),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(6),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.filter_list,
+              size: 18,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Filtered results'.tr(context),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: onClear,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withAlpha(20),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  'Clear all'.tr(context),
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Empty state widget - clean card.
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool showClearButton;
+  final VoidCallback? onClear;
+
+  const _EmptyState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.showClearButton = false,
+    this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 48,
+              color: AppColors.textTertiary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: AppTextStyles.headingSmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textTertiary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (showClearButton && onClear != null) ...[
+            const SizedBox(height: 16),
+            Material(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: onClear,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.filter_alt_off, size: 16, color: Colors.white),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Clear Filters'.tr(context),
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Coming soon state for features without a backend yet.
+class _ComingSoonState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _ComingSoonState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withAlpha(15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 48,
+              color: AppColors.primary.withAlpha(180),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withAlpha(25),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              'Coming Soon'.tr(context),
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.warning,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: AppTextStyles.headingSmall.copyWith(
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textTertiary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Error state widget - clean card.
+class _ErrorState extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+
+  const _ErrorState({
+    required this.error,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.errorLight,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.error_outline,
+              size: 48,
+              color: AppColors.error,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Something went wrong'.tr(context),
+            style: AppTextStyles.headingSmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            error,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textTertiary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Material(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: onRetry,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.refresh, size: 16, color: Colors.white),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Retry'.tr(context),
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Loading skeleton for tutor card - clean card style.
+class _TutorCardSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              SkeletonLoader.circle(size: 56),
+              SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonLoader(height: 14, width: 80),
+                    SizedBox(height: 6),
+                    SkeletonLoader(height: 10, width: 60),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const SkeletonLoader(height: 22, width: 120),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              SkeletonLoader(height: 16, width: 60),
+              SkeletonLoader(height: 32, width: 60),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Loading skeleton for group card - clean card style.
+class _GroupCardSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              SkeletonLoader(height: 48, width: 48, borderRadius: 12),
+              SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonLoader(height: 14, width: 120),
+                    SizedBox(height: 6),
+                    SkeletonLoader(height: 18, width: 80),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const SkeletonLoader(height: 12, width: double.infinity),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              SkeletonLoader(height: 12, width: 100),
+              SkeletonLoader(height: 28, width: 60),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Loading skeleton for resource card - clean card style.
+class _ResourceCardSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              SkeletonLoader(height: 44, width: 44, borderRadius: 12),
+              SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonLoader(height: 14, width: 140),
+                    SizedBox(height: 6),
+                    SkeletonLoader(height: 18, width: 100),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const SkeletonLoader(height: 12, width: double.infinity),
+          const SizedBox(height: 8),
+          const SkeletonLoader(height: 12, width: 200),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              SkeletonLoader(height: 12, width: 80),
+              SkeletonLoader(height: 32, width: 80),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

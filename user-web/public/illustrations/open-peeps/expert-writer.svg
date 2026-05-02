@@ -1,0 +1,7 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Placeholder writer expert -->
+  <circle cx="256" cy="180" r="80" fill="#A07A65"/>
+  <path d="M256 280 C180 280, 140 320, 140 400 L140 480 L372 480 L372 400 C372 320, 332 280, 256 280 Z" fill="#765341"/>
+  <rect x="200" y="160" width="112" height="12" rx="6" fill="#E4E1C7"/>
+  <rect x="320" y="320" width="60" height="8" rx="4" fill="#14110F" transform="rotate(45 320 320)"/>
+</svg>

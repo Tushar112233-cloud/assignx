@@ -1,0 +1,6 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Placeholder supervisor with shield -->
+  <circle cx="256" cy="160" r="90" fill="#765341"/>
+  <path d="M256 270 C170 270, 120 320, 120 420 L120 512 L392 512 L392 420 C392 320, 342 270, 256 270 Z" fill="#A07A65"/>
+  <path d="M256 100 L200 140 L200 220 C200 260, 220 290, 256 310 C292 290, 312 260, 312 220 L312 140 Z" fill="#E4E1C7" stroke="#765341" stroke-width="4"/>
+</svg>

@@ -1,0 +1,371 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_spacing.dart';
+import '../../../providers/profile_provider.dart';
+import '../../../core/translation/translation_extensions.dart';
+
+/// Profile hero section with gradient background, avatar, name, and key info.
+///
+/// Matches the doer-web profile page hero design with a #5A7CFF gradient
+/// palette, large avatar, availability badge, and edit profile button.
+class ProfileHero extends StatelessWidget {
+  final UserProfile profile;
+  final VoidCallback? onEditProfile;
+
+  const ProfileHero({
+    super.key,
+    required this.profile,
+    this.onEditProfile,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary,
+            AppColors.primary.withValues(alpha: 0.85),
+            AppColors.accent.withValues(alpha: 0.9),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            60, // Extra bottom padding for scorecard overlap
+          ),
+          child: Column(
+            children: [
+              // Top bar with back and settings
+              _buildTopBar(context),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // Avatar with verification badge
+              _buildAvatar(),
+
+              const SizedBox(height: AppSpacing.md),
+
+              // Full name
+              Text(
+                profile.fullName,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.3,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 4),
+
+              // Email
+              Text(
+                profile.email,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withValues(alpha: 0.85),
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              if (profile.bio != null && profile.bio!.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  profile.bio!,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.75),
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+
+              const SizedBox(height: AppSpacing.md),
+
+              // Badges row: availability + member since
+              _buildBadgesRow(),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // Edit profile button
+              _buildEditButton(context),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.white.withValues(alpha: 0.15),
+          ),
+        ),
+        Text(
+          'My Profile'.tr(context),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        IconButton(
+          onPressed: () => context.push('/settings'),
+          icon: const Icon(Icons.settings_outlined, color: Colors.white),
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.white.withValues(alpha: 0.15),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAvatar() {
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 3,
+            ),
+          ),
+          child: CircleAvatar(
+            radius: 52,
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            child: _hasValidAvatar
+                ? ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: profile.avatarUrl!,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) =>
+                          _buildAvatarText(),
+                    ),
+                  )
+                : _buildAvatarText(),
+          ),
+        ),
+        if (profile.isVerified)
+          Positioned(
+            bottom: 4,
+            right: 4,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x30000000),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.verified,
+                size: 22,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  bool get _hasValidAvatar =>
+      profile.avatarUrl != null &&
+      profile.avatarUrl!.isNotEmpty &&
+      profile.avatarUrl!.startsWith('http');
+
+  /// Returns initials (up to 2 characters) from the full name.
+  String get _initials {
+    final parts = profile.fullName.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+    return profile.fullName.isNotEmpty ? profile.fullName[0].toUpperCase() : 'U';
+  }
+
+  Widget _buildAvatarText() {
+    return Text(
+      _initials,
+      style: const TextStyle(
+        fontSize: 36,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildBadgesRow() {
+    final memberSince = DateFormat('MMM yyyy').format(profile.joinedAt);
+
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Availability badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: profile.isAvailable
+                ? AppColors.success.withValues(alpha: 0.25)
+                : Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: profile.isAvailable
+                  ? AppColors.success.withValues(alpha: 0.5)
+                  : Colors.white.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.circle,
+                size: 8,
+                color: profile.isAvailable
+                    ? AppColors.success
+                    : AppColors.textTertiary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                profile.isAvailable ? 'Available' : 'Unavailable',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(width: 10),
+
+        // Rating badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.star, size: 14, color: Colors.amber),
+              const SizedBox(width: 4),
+              Text(
+                profile.rating.toStringAsFixed(1),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(width: 10),
+
+        // Member since badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.calendar_today, size: 12, color: Colors.white70),
+              const SizedBox(width: 6),
+              Text(
+                memberSince,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+    );
+  }
+
+  Widget _buildEditButton(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: OutlinedButton.icon(
+        onPressed: onEditProfile,
+        icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.white),
+        label: Text(
+          'Edit Profile'.tr(context),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+          side: BorderSide(color: AppColors.primary.withValues(alpha: 0.8), width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          backgroundColor: AppColors.primary.withValues(alpha: 0.85),
+        ),
+      ),
+    );
+  }
+}

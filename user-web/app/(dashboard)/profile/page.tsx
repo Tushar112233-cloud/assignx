@@ -1,0 +1,527 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { UserCircle, Loader2 } from "lucide-react";
+import {
+  ProfileHeader,
+  PersonalInfoForm,
+  AcademicInfoSection,
+  PreferencesSection,
+  SecuritySection,
+  SubscriptionCard,
+  DangerZone,
+  SettingsSection,
+  PaymentMethodsSection,
+  SubjectsSection,
+} from "@/components/profile";
+import { ProfilePro } from "./profile-pro";
+import { useUserStore, type User } from "@/stores/user-store";
+import {
+  updateProfile,
+  updateStudentProfile,
+  getUserPreferences,
+  updateUserPreferences,
+} from "@/lib/actions/data";
+import { apiClient } from "@/lib/api/client";
+import { logout } from "@/lib/api/auth";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type {
+  ProfileTab,
+  UserProfile,
+  AcademicInfo,
+  UserPreferences,
+  PasswordChangeData,
+  SecuritySettings,
+  UserSubscription,
+} from "@/types/profile";
+
+/**
+ * Transform database profile to component format
+ */
+function transformToUserProfile(user: User | null): UserProfile | null {
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    full_name: user.full_name || "",
+    avatar_url: user.avatar_url || null,
+    phone: user.phone || undefined,
+    user_type: user.user_type as UserProfile["user_type"],
+    onboarding_completed: user.onboarding_completed,
+    createdAt: user.created_at,
+    updatedAt: user.updated_at,
+  };
+}
+
+/**
+ * Transform database student to academic info format
+ */
+function transformToAcademicInfo(user: User | null): AcademicInfo | null {
+  if (!user?.students) return null;
+
+  const student = user.students;
+
+  // Map semester to year level
+  const yearLevelMap: Record<number, AcademicInfo["yearLevel"]> = {
+    1: "freshman", 2: "freshman",
+    3: "sophomore", 4: "sophomore",
+    5: "junior", 6: "junior",
+    7: "senior", 8: "senior",
+  };
+
+  return {
+    university: student.university?.name || "Unknown University",
+    universityId: student.university_id,
+    major: student.course?.name || "Unknown Course",
+    yearLevel: yearLevelMap[student.semester || 1] || "freshman",
+    studentId: student.student_id || undefined,
+    expectedGraduation: student.enrollment_year
+      ? `${(student.enrollment_year || 0) + 4}-05-01`
+      : undefined,
+  };
+}
+
+/**
+ * Default preferences when not stored in database
+ */
+const defaultPreferences: UserPreferences = {
+  theme: "system",
+  language: "en",
+  notifications: {
+    emailNotifications: true,
+    pushNotifications: true,
+    inAppNotifications: true,
+    projectUpdates: true,
+    marketingEmails: false,
+    weeklyDigest: true,
+  },
+};
+
+/**
+ * Default security settings
+ */
+const defaultSecurity: SecuritySettings = {
+  twoFactorAuth: { enabled: false },
+  activeSessions: [
+    {
+      id: "current",
+      device: "Current Device",
+      browser: "Current Browser",
+      location: "Unknown",
+      ipAddress: "Unknown",
+      lastActive: new Date().toISOString(),
+      current: true,
+    },
+  ],
+  passwordLastChanged: new Date().toISOString(),
+};
+
+/**
+ * Default subscription (free tier)
+ */
+const defaultSubscription: UserSubscription = {
+  tier: "free",
+  status: "active",
+  currentPeriodStart: new Date().toISOString(),
+  currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  cancelAtPeriodEnd: false,
+};
+
+/**
+ * Profile settings page
+ * Complete user profile and settings management
+ * Header is now rendered by the dashboard layout
+ */
+export default function ProfilePage() {
+  const { user, isLoading, fetchUser } = useUserStore();
+  const [activeTab, setActiveTab] = useState<ProfileTab>("personal");
+  const [isSaving, setIsSaving] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Transform user data to component format
+  const profile = transformToUserProfile(user);
+  const academicInfo = transformToAcademicInfo(user);
+
+  // Local state for preferences and security
+  const [preferences, setPreferences] = useState(defaultPreferences);
+  const [security, setSecurity] = useState(defaultSecurity);
+  const [subscription, setSubscription] = useState(defaultSubscription);
+
+  // Fetch user on mount if not loaded
+  useEffect(() => {
+    if (!user && !isLoading) {
+      fetchUser();
+    }
+  }, [user, isLoading, fetchUser]);
+
+  // Fetch preferences from database on mount
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      try {
+        const prefs = await getUserPreferences();
+        setPreferences({
+          theme: prefs.theme,
+          language: prefs.language || "en",
+          notifications: prefs.notifications,
+        });
+      } catch {
+        // Use defaults on error
+      }
+    };
+
+    if (user) {
+      fetchPreferences();
+    }
+  }, [user]);
+
+  // Handle avatar change via Cloudinary
+  const handleAvatarChange = async (file: File) => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "avatars");
+
+      const uploadResult = await apiClient<{ url: string }>("/api/upload", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
+
+      // Update profile with new avatar URL
+      await updateProfile({ avatarUrl: uploadResult.url });
+
+      toast.success("Avatar updated successfully");
+      await fetchUser();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload avatar");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle profile save
+  const handleProfileSave = async (data: Partial<UserProfile>) => {
+    setIsSaving(true);
+    try {
+      const result = await updateProfile({
+        fullName: data.full_name || "",
+        phone: data.phone,
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Profile updated successfully");
+        await fetchUser(); // Refresh user data
+      }
+    } catch (error) {
+      toast.error("Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle academic info save
+  const handleAcademicSave = async (data: AcademicInfo) => {
+    setIsSaving(true);
+    try {
+      const result = await updateStudentProfile({
+        universityId: data.universityId,
+        studentId: data.studentId,
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Academic info updated successfully");
+        await fetchUser();
+      }
+    } catch (error) {
+      toast.error("Failed to update academic info");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle preferences save
+  const handlePreferencesSave = async (data: UserPreferences) => {
+    setIsSaving(true);
+    try {
+      const result = await updateUserPreferences({
+        theme: data.theme,
+        notifications: data.notifications,
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        setPreferences(data);
+        toast.success("Preferences saved");
+      }
+    } catch {
+      toast.error("Failed to save preferences");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle password change via API
+  const handlePasswordChange = async (data: PasswordChangeData) => {
+    setIsSaving(true);
+    try {
+      await apiClient("/api/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify({
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        }),
+      });
+
+      toast.success("Password changed successfully");
+      setSecurity((prev) => ({
+        ...prev,
+        passwordLastChanged: new Date().toISOString(),
+      }));
+    } catch (error: any) {
+      toast.error(error.message || "Failed to change password");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle 2FA toggle (called after setup dialog completes or disable confirmation)
+  const handleToggle2FA = async (enabled: boolean) => {
+    if (!enabled) {
+      // Disable 2FA
+      setIsSaving(true);
+      try {
+        const { disable2FA } = await import("@/lib/actions/auth");
+        const result = await disable2FA();
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          setSecurity((prev) => ({
+            ...prev,
+            twoFactorAuth: { enabled: false },
+          }));
+          toast.success("2FA disabled successfully");
+        }
+      } catch {
+        toast.error("Failed to disable 2FA");
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      // Enable 2FA - update local state (setup dialog handles the actual enabling)
+      setSecurity((prev) => ({
+        ...prev,
+        twoFactorAuth: { enabled: true, verifiedAt: new Date().toISOString() },
+      }));
+    }
+  };
+
+  // Handle session revoke
+  const handleRevokeSession = async (sessionId: string) => {
+    // TODO: Implement session revoke via API
+    setSecurity((prev) => ({
+      ...prev,
+      activeSessions: prev.activeSessions.filter((s) => s.id !== sessionId),
+    }));
+    toast.success("Session revoked");
+  };
+
+  // Handle revoke all sessions
+  const handleRevokeAllSessions = async () => {
+    // TODO: Implement revoke all sessions via API
+    setSecurity((prev) => ({
+      ...prev,
+      activeSessions: prev.activeSessions.filter((s) => s.current),
+    }));
+    toast.success("All other sessions revoked");
+  };
+
+  // Handle upgrade
+  const handleUpgrade = async (planId: string) => {
+    // TODO: Implement subscription upgrade via payment provider
+    toast.info("Subscription upgrade coming soon");
+  };
+
+  // Handle billing management
+  const handleManageBilling = () => {
+    // TODO: Open billing portal
+    toast.info("Billing portal coming soon");
+  };
+
+  // Handle account deletion
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      await apiClient("/api/users/me/delete", {
+        method: "POST",
+      });
+
+      logout();
+      toast.success("Account deleted successfully");
+      window.location.href = '/login';
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete account");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <main className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Loading profile...</p>
+      </main>
+    );
+  }
+
+  // Show error if no profile
+  if (!profile) {
+    return (
+      <main className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
+        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+          <UserCircle className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-medium text-foreground">Failed to load profile</p>
+          <p className="text-xs text-muted-foreground">Please try refreshing the page</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Render active tab content
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "personal":
+        return (
+          <PersonalInfoForm
+            profile={profile}
+            onSave={handleProfileSave}
+          />
+        );
+      case "academic":
+        return (
+          <div className="space-y-4">
+            {academicInfo ? (
+              <AcademicInfoSection
+                academicInfo={academicInfo}
+                onSave={handleAcademicSave}
+              />
+            ) : (
+              <div className="p-4 text-muted-foreground">
+                Academic info not available for {user?.user_type} accounts
+              </div>
+            )}
+            <SubjectsSection />
+          </div>
+        );
+      case "preferences":
+        return (
+          <PreferencesSection
+            preferences={preferences}
+            onSave={handlePreferencesSave}
+          />
+        );
+      case "security":
+        return (
+          <SettingsSection>
+            <SecuritySection
+              security={security}
+              onPasswordChange={handlePasswordChange}
+              onToggle2FA={handleToggle2FA}
+              onRevokeSession={handleRevokeSession}
+              onRevokeAllSessions={handleRevokeAllSessions}
+            />
+            <DangerZone
+              userEmail={profile.email}
+              onDeleteAccount={handleDeleteAccount}
+            />
+          </SettingsSection>
+        );
+      case "subscription":
+        return (
+          <SubscriptionCard
+            subscription={subscription}
+            onUpgrade={handleUpgrade}
+            onManageBilling={handleManageBilling}
+          />
+        );
+      case "payment":
+        return <PaymentMethodsSection />;
+      default:
+        return null;
+    }
+  };
+
+  // Handle settings navigation from ProfilePro
+  const handleSettingsClick = (tab: string) => {
+    setActiveTab(tab as ProfileTab);
+    setSettingsOpen(true);
+  };
+
+  const getTabTitle = (tab: ProfileTab) => {
+    switch (tab) {
+      case "personal": return "Personal Information";
+      case "academic": return "Academic Details";
+      case "preferences": return "Preferences";
+      case "security": return "Security & Privacy";
+      case "subscription": return "Subscription";
+      case "payment": return "Payment Methods";
+      default: return "Settings";
+    }
+  };
+
+  const getTabDescription = (tab: ProfileTab) => {
+    switch (tab) {
+      case "personal": return "Update your name, phone and other details";
+      case "academic": return "University, course and subject information";
+      case "preferences": return "Notification and display preferences";
+      case "security": return "Password, 2FA and session management";
+      case "subscription": return "Manage your plan and billing";
+      case "payment": return "Manage your saved payment methods";
+      default: return "Manage your account settings";
+    }
+  };
+
+  return (
+    <>
+      {/* Premium Profile View */}
+      <ProfilePro
+        profile={profile}
+        subscription={subscription}
+        onAvatarChange={handleAvatarChange}
+        onSettingsClick={handleSettingsClick}
+      />
+
+      {/* Settings Dialog — individual per section, no tabs */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/40">
+            <DialogTitle className="text-base font-medium">{getTabTitle(activeTab)}</DialogTitle>
+            <DialogDescription>{getTabDescription(activeTab)}</DialogDescription>
+          </DialogHeader>
+          <div className="p-6">
+            {renderTabContent()}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

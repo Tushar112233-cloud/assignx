@@ -1,0 +1,684 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../features/add_project/screens/expert_opinion_form.dart';
+import '../../features/add_project/screens/new_project_form.dart';
+import '../../features/add_project/screens/project_wizard_screen.dart';
+import '../../features/add_project/screens/proofreading_form.dart';
+import '../../features/add_project/screens/report_request_form.dart';
+import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/signin_screen.dart';
+import '../../features/auth/screens/user_type_screen.dart';
+import '../../features/chat/screens/project_chat_screen.dart';
+import '../../features/experts/screens/booking_screen.dart';
+import '../../features/experts/screens/expert_detail_screen.dart';
+import '../../features/experts/screens/experts_screen.dart';
+import '../../features/experts/screens/my_bookings_screen.dart';
+import '../../features/home/screens/main_shell.dart';
+import '../../features/campus_connect/screens/create_post_screen.dart';
+import '../../features/campus_connect/screens/post_detail_screen.dart';
+import '../../features/campus_connect/screens/saved_listings_screen.dart';
+import '../../features/marketplace/screens/create_listing_screen.dart';
+import '../../features/marketplace/screens/item_detail_screen.dart';
+import '../../features/marketplace/screens/marketplace_screen.dart';
+import '../../features/notifications/screens/notifications_screen.dart';
+import '../../features/onboarding/screens/onboarding_screen.dart';
+import '../../features/onboarding/screens/profile_completion_screen.dart';
+import '../../features/onboarding/screens/professional_profile_screen.dart';
+import '../../features/onboarding/screens/role_selection_screen.dart';
+import '../../features/onboarding/screens/signup_success_screen.dart';
+import '../../features/onboarding/screens/student_profile_screen.dart';
+import '../../features/profile/screens/account_upgrade_screen.dart';
+import '../../features/profile/screens/edit_profile_screen.dart';
+import '../../features/profile/screens/help_support_screen.dart';
+import '../../features/profile/screens/payment_methods_screen.dart';
+import '../../features/profile/screens/wallet_screen.dart';
+import '../../features/profile/widgets/account_upgrade_card.dart';
+import '../../features/projects/screens/live_draft_webview.dart';
+import '../../features/projects/screens/project_detail_screen.dart';
+import '../../features/projects/screens/project_timeline_screen.dart';
+import '../../features/profile/screens/security_screen.dart';
+import '../../features/auth/screens/college_verification_screen.dart';
+import '../../features/connect/screens/connect_screen.dart';
+import '../../features/connect/screens/study_groups_screen.dart';
+import '../../features/projects/screens/project_payment_screen.dart';
+import '../../features/pro_network/screens/pro_network_screen.dart';
+import '../../features/pro_network/screens/pro_create_post_screen.dart';
+import '../../features/pro_network/screens/pro_post_detail_screen.dart';
+import '../../features/pro_network/screens/pro_saved_posts_screen.dart';
+import '../../features/business_hub/screens/business_hub_screen.dart';
+import '../../features/business_hub/screens/business_create_post_screen.dart';
+import '../../features/business_hub/screens/business_post_detail_screen.dart';
+import '../../features/business_hub/screens/business_saved_posts_screen.dart';
+import '../../features/settings/screens/settings_screen.dart';
+import '../../features/splash/splash_screen.dart';
+import '../../providers/auth_provider.dart';
+import '../../shared/animations/page_transitions.dart';
+import 'route_names.dart';
+
+/// Global navigator key for navigation without context.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
+/// A ChangeNotifier that fires when the auth state changes,
+/// so GoRouter re-runs its redirect without being recreated.
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier(Ref ref) {
+    ref.listen(authStateProvider, (_, _) {
+      notifyListeners();
+    });
+  }
+}
+
+/// App router provider with auth-based redirects.
+///
+/// Uses refreshListenable so the GoRouter instance is created ONCE
+/// and only re-evaluates its redirect when auth state changes.
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final authChangeNotifier = _AuthChangeNotifier(ref);
+
+  return GoRouter(
+    navigatorKey: rootNavigatorKey,
+    initialLocation: RouteNames.splash,
+    debugLogDiagnostics: true,
+    refreshListenable: authChangeNotifier,
+    redirect: (context, state) {
+      final authState = ref.read(authStateProvider);
+      final isLoading = authState.isLoading;
+      final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
+      final currentPath = state.matchedLocation;
+
+      // Don't redirect while loading or on splash screen
+      if (isLoading || currentPath == RouteNames.splash) {
+        return null;
+      }
+
+      // Public routes that don't require auth
+      final publicRoutes = [
+        RouteNames.onboarding,
+        RouteNames.login,
+        RouteNames.userType,
+        RouteNames.signin,
+      ];
+
+      // Profile completion routes
+      final profileRoutes = [
+        RouteNames.profileCompletion,
+        RouteNames.roleSelection,
+        RouteNames.studentProfile,
+        RouteNames.professionalProfile,
+        RouteNames.signupSuccess,
+      ];
+
+      // If not authenticated and not on public route, go to onboarding
+      if (!isAuthenticated) {
+        if (!publicRoutes.contains(currentPath)) {
+          return RouteNames.onboarding;
+        }
+        return null;
+      }
+
+      // Check if onboarding is truly completed
+      final profile = authState.valueOrNull?.profile;
+      final onboardingDone = profile?.onboardingCompleted ?? false;
+
+      // If authenticated but onboarding not completed, go to profile completion
+      if (isAuthenticated && !onboardingDone) {
+        if (!profileRoutes.contains(currentPath)) {
+          return RouteNames.profileCompletion;
+        }
+        return null;
+      }
+
+      // If authenticated with completed onboarding and on auth routes, go to home
+      if (isAuthenticated && onboardingDone) {
+        if (publicRoutes.contains(currentPath) || profileRoutes.contains(currentPath)) {
+          return RouteNames.home;
+        }
+        return null;
+      }
+
+      return null;
+    },
+    routes: [
+      // Splash - no transition for initial load
+      GoRoute(
+        path: RouteNames.splash,
+        name: 'splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
+
+      // Onboarding - fade scale transition
+      GoRoute(
+        path: RouteNames.onboarding,
+        name: 'onboarding',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const OnboardingScreen(),
+          state: state,
+        ),
+      ),
+
+      // Auth - fade scale transition
+      GoRoute(
+        path: RouteNames.login,
+        name: 'login',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const LoginScreen(),
+          state: state,
+        ),
+      ),
+
+      // User Type Selection - first step of signup
+      GoRoute(
+        path: RouteNames.userType,
+        name: 'userType',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const UserTypeScreen(),
+          state: state,
+        ),
+      ),
+
+      // Sign In - for returning users
+      GoRoute(
+        path: RouteNames.signin,
+        name: 'signin',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const SignInScreen(),
+          state: state,
+        ),
+      ),
+
+      // Profile Completion - simple name + phone after signup
+      GoRoute(
+        path: RouteNames.profileCompletion,
+        name: 'profileCompletion',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const ProfileCompletionScreen(),
+          state: state,
+        ),
+      ),
+
+      // Role Selection - fade scale transition
+      GoRoute(
+        path: RouteNames.roleSelection,
+        name: 'roleSelection',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const RoleSelectionScreen(),
+          state: state,
+        ),
+      ),
+
+      // Student Profile - slide right transition
+      GoRoute(
+        path: RouteNames.studentProfile,
+        name: 'studentProfile',
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const StudentProfileScreen(),
+          state: state,
+        ),
+      ),
+
+      // Professional Profile - slide right transition
+      GoRoute(
+        path: RouteNames.professionalProfile,
+        name: 'professionalProfile',
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const ProfessionalProfileScreen(),
+          state: state,
+        ),
+      ),
+
+      // Signup Success - fade scale transition
+      GoRoute(
+        path: RouteNames.signupSuccess,
+        name: 'signupSuccess',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const SignupSuccessScreen(),
+          state: state,
+        ),
+      ),
+
+      // Main App Shell (Home with dock navigation)
+      GoRoute(
+        path: RouteNames.home,
+        name: 'home',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const MainShell(),
+          state: state,
+        ),
+      ),
+
+      // Add Project routes - slide up transitions for modal-like forms
+      GoRoute(
+        path: RouteNames.projectWizard,
+        name: 'projectWizard',
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const ProjectWizardScreen(),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: '/add-project/new',
+        name: 'addProjectNew',
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const NewProjectForm(),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: '/add-project/proofread',
+        name: 'addProjectProofread',
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const ProofreadingForm(),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: '/add-project/report',
+        name: 'addProjectReport',
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const ReportRequestForm(),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: '/add-project/expert',
+        name: 'addProjectExpert',
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const ExpertOpinionForm(),
+          state: state,
+        ),
+      ),
+
+      // Marketplace - fade scale for main, slide for details
+      GoRoute(
+        path: '/marketplace',
+        name: 'marketplace',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const MarketplaceScreen(),
+          state: state,
+        ),
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: 'createListing',
+            pageBuilder: (context, state) => AppPageTransitions.slideUp(
+              child: const CreateListingScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: ':id',
+            name: 'listingDetail',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideRight(
+                child: ItemDetailScreen(listingId: id),
+                state: state,
+              );
+            },
+          ),
+        ],
+      ),
+
+      // Experts/Consultations routes
+      GoRoute(
+        path: '/experts',
+        name: 'experts',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const ExpertsScreen(),
+          state: state,
+        ),
+        routes: [
+          GoRoute(
+            path: 'my-bookings',
+            name: 'myBookings',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const MyBookingsScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: ':id',
+            name: 'expertDetail',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideRight(
+                child: ExpertDetailScreen(expertId: id),
+                state: state,
+              );
+            },
+            routes: [
+              GoRoute(
+                path: 'book',
+                name: 'expertBook',
+                pageBuilder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return AppPageTransitions.slideUp(
+                    child: BookingScreen(expertId: id),
+                    state: state,
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+
+      // Campus Connect routes - for post details, create, and saved listings
+      GoRoute(
+        path: '/campus-connect',
+        name: 'campusConnect',
+        redirect: (context, state) {
+          // Only redirect if navigating to /campus-connect exactly (no sub-path)
+          final fullPath = state.uri.toString();
+          if (fullPath == '/campus-connect' || fullPath == '/campus-connect/') {
+            return RouteNames.home;
+          }
+          return null;
+        },
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: 'createPost',
+            pageBuilder: (context, state) => AppPageTransitions.slideUp(
+              child: const CreatePostScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'saved',
+            name: 'savedListings',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const SavedListingsScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'post/:id',
+            name: 'postDetail',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideRight(
+                child: PostDetailScreen(postId: id),
+                state: state,
+            );
+            },
+          ),
+        ],
+      ),
+
+      // Pro Network routes - for post details, create, and saved posts
+      GoRoute(
+        path: '/pro-network',
+        name: 'proNetwork',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const ProNetworkScreen(),
+          state: state,
+        ),
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: 'proNetworkCreate',
+            pageBuilder: (context, state) => AppPageTransitions.slideUp(
+              child: const ProCreatePostScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'saved',
+            name: 'proNetworkSaved',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const ProSavedPostsScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'post/:id',
+            name: 'proNetworkPostDetail',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideRight(
+                child: ProPostDetailScreen(postId: id),
+                state: state,
+              );
+            },
+          ),
+        ],
+      ),
+
+      // Business Hub routes - for post details, create, and saved posts
+      GoRoute(
+        path: '/business-hub',
+        name: 'businessHub',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const BusinessHubScreen(),
+          state: state,
+        ),
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: 'businessHubCreate',
+            pageBuilder: (context, state) => AppPageTransitions.slideUp(
+              child: const BusinessCreatePostScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'saved',
+            name: 'businessHubSaved',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const BusinessSavedPostsScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'post/:id',
+            name: 'businessHubPostDetail',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideRight(
+                child: BusinessPostDetailScreen(postId: id),
+                state: state,
+              );
+            },
+          ),
+        ],
+      ),
+
+      // Settings - slide right transition
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const SettingsScreen(),
+          state: state,
+        ),
+      ),
+
+      // Notifications - slide right transition
+      GoRoute(
+        path: '/notifications',
+        name: 'notifications',
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const NotificationsScreen(),
+          state: state,
+        ),
+      ),
+
+      // Wallet - slide right transition
+      GoRoute(
+        path: '/wallet',
+        name: 'wallet',
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const WalletScreen(),
+          state: state,
+        ),
+      ),
+
+      // Profile routes - slide right transitions
+      GoRoute(
+        path: '/profile/edit',
+        name: 'editProfile',
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const EditProfileScreen(),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: '/profile/help',
+        name: 'helpSupport',
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const HelpSupportScreen(),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: '/profile/payment-methods',
+        name: 'paymentMethods',
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const PaymentMethodsScreen(),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: '/profile/upgrade',
+        name: 'accountUpgrade',
+        pageBuilder: (context, state) {
+          // Get the current account type from query params or default to student
+          final typeStr = state.uri.queryParameters['type'] ?? 'student';
+          final currentType = AccountType.fromDbString(typeStr);
+          return AppPageTransitions.slideUp(
+            child: AccountUpgradeScreen(currentType: currentType),
+            state: state,
+          );
+        },
+      ),
+
+      // Security Settings
+      GoRoute(
+        path: '/profile/security',
+        name: 'security',
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const SecurityScreen(),
+          state: state,
+        ),
+      ),
+
+      // College Email Verification
+      GoRoute(
+        path: '/verify-college',
+        name: 'verifyCollege',
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const CollegeVerificationScreen(),
+          state: state,
+        ),
+      ),
+
+      // Connect - Peer-to-peer features (tutors, study groups, resources)
+      GoRoute(
+        path: '/connect',
+        name: 'connect',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const ConnectScreen(),
+          state: state,
+        ),
+        routes: [
+          GoRoute(
+            path: 'groups',
+            name: 'studyGroups',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const StudyGroupsScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'groups/:id',
+            name: 'studyGroupDetail',
+            pageBuilder: (context, state) {
+              // TODO: Create dedicated detail screen using state.pathParameters['id']
+              return AppPageTransitions.slideRight(
+                child: const StudyGroupsScreen(),
+                state: state,
+              );
+            },
+          ),
+          GoRoute(
+            path: 'resources',
+            name: 'resources',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const ConnectScreen(), // TODO: Create dedicated resources screen
+              state: state,
+            ),
+          ),
+        ],
+      ),
+
+      // Projects - slide right for detail, sub-routes
+      GoRoute(
+        path: '/projects/:id',
+        name: 'projectDetail',
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return AppPageTransitions.slideRight(
+            child: ProjectDetailScreen(projectId: id),
+            state: state,
+          );
+        },
+        routes: [
+          GoRoute(
+            path: 'pay',
+            name: 'projectPay',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideUp(
+                child: ProjectPaymentScreen(projectId: id),
+                state: state,
+              );
+            },
+          ),
+          GoRoute(
+            path: 'timeline',
+            name: 'projectTimeline',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideRight(
+                child: ProjectTimelineScreen(projectId: id),
+                state: state,
+              );
+            },
+          ),
+          GoRoute(
+            path: 'chat',
+            name: 'projectChat',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideRight(
+                child: ProjectChatScreen(projectId: id),
+                state: state,
+              );
+            },
+          ),
+          GoRoute(
+            path: 'draft',
+            name: 'projectDraft',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              // Get draft URL from query params or fetch from project
+              final draftUrl = state.uri.queryParameters['url'];
+              return AppPageTransitions.slideRight(
+                child: LiveDraftWebview(projectId: id, draftUrl: draftUrl),
+                state: state,
+              );
+            },
+          ),
+        ],
+      ),
+    ],
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(
+        child: Text('Route not found: ${state.matchedLocation}'),
+      ),
+    ),
+  );
+});

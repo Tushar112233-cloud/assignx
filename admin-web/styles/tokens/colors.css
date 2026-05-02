@@ -1,0 +1,211 @@
+/* AssignX Admin Design System - Color Tokens */
+/* Inspired by ChainLinked - Professional Blue Palette */
+
+:root {
+  /* ============================================
+     BRAND COLORS - Professional Blue Identity
+     ============================================ */
+  --brand-primary-hex: #2563EB;    /* Vibrant blue */
+  --brand-secondary-hex: #7C3AED;  /* Vibrant purple */
+  --brand-accent-hex: #06B6D4;     /* Cyan accent */
+
+  /* ============================================
+     BACKGROUND COLORS
+     ============================================ */
+  --background: 220 30% 98%;           /* #F5F7FF - Blue-tinted white */
+  --surface: 220 25% 99%;              /* Near white */
+  --surface-muted: 220 20% 96%;        /* Subtle blue-gray */
+  --surface-hover: 220 20% 93%;
+
+  /* ============================================
+     TEXT COLORS
+     ============================================ */
+  --foreground: 224 71% 10%;           /* Deep navy text */
+  --muted: 220 14% 40%;
+  --muted-foreground: 220 10% 55%;
+
+  /* ============================================
+     PRIMARY - Vibrant Blue
+     ============================================ */
+  --primary: 221 83% 53%;              /* #2563EB - Vibrant blue */
+  --primary-rgb: 37, 99, 235;
+  --primary-foreground: 0 0% 100%;
+
+  --primary-hover: 221 83% 45%;
+  --primary-light: 221 83% 95%;        /* Very light blue bg */
+
+  /* ============================================
+     SECONDARY - Purple
+     ============================================ */
+  --secondary: 262 83% 57%;            /* #7C3AED - Purple */
+  --secondary-rgb: 124, 58, 237;
+  --secondary-foreground: 0 0% 100%;
+
+  --secondary-hover: 262 83% 50%;
+
+  /* ============================================
+     ACCENT - Cyan
+     ============================================ */
+  --accent: 188 94% 42%;               /* #06B6D4 - Cyan */
+  --accent-rgb: 6, 182, 212;
+  --accent-foreground: 0 0% 100%;
+  --accent-light: 188 94% 95%;
+
+  /* ============================================
+     STATUS COLORS
+     ============================================ */
+  --success: 142 71% 45%;              /* #22C55E green */
+  --success-rgb: 34, 197, 94;
+  --success-foreground: 0 0% 100%;
+  --success-muted: 142 71% 95%;
+
+  --warning: 38 92% 50%;
+  --warning-rgb: 245, 158, 11;
+  --warning-foreground: 224 71% 10%;
+  --warning-muted: 38 92% 95%;
+
+  --info: 221 83% 53%;
+  --info-rgb: 37, 99, 235;
+  --info-foreground: 0 0% 100%;
+  --info-muted: 221 83% 95%;
+
+  --destructive: 0 84% 60%;
+  --destructive-rgb: 239, 68, 68;
+  --destructive-foreground: 0 0% 100%;
+  --destructive-muted: 0 84% 95%;
+
+  /* ============================================
+     BORDERS & INPUTS
+     ============================================ */
+  --border: 220 20% 88%;
+  --border-hover: 221 83% 70%;
+  --border-focus: 221 83% 53%;
+
+  --ring: 221 83% 53%;
+  --ring-offset: 0 0% 100%;
+
+  --input: 220 20% 96%;
+  --input-border: 220 20% 85%;
+
+  /* ============================================
+     CARDS & POPOVERS
+     ============================================ */
+  --card: 0 0% 100%;
+  --card-foreground: 224 71% 10%;
+  --card-hover: 220 30% 99%;
+  --card-border: 220 20% 90%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 71% 10%;
+
+  /* ============================================
+     SIDEBAR - Dark Navy Theme
+     ============================================ */
+  --sidebar-background: 224 71% 8%;    /* Deep navy #0F172A */
+  --sidebar-foreground: 220 20% 92%;
+  --sidebar-muted: 224 50% 14%;
+  --sidebar-muted-foreground: 220 14% 60%;
+  --sidebar-accent: 221 83% 53%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 224 40% 15%;
+  --sidebar-ring: 221 83% 53%;
+
+  /* ============================================
+     CHART COLORS - Vibrant
+     ============================================ */
+  --chart-1: 221 83% 53%;              /* Blue */
+  --chart-2: 262 83% 57%;              /* Purple */
+  --chart-3: 188 94% 42%;              /* Cyan */
+  --chart-4: 142 71% 45%;              /* Green */
+  --chart-5: 38 92% 50%;               /* Amber */
+  --chart-6: 0 84% 60%;               /* Red */
+
+  /* ============================================
+     SHADOWS
+     ============================================ */
+  --shadow-color: 221 83% 20%;
+  --shadow-sm: 0 1px 3px hsl(var(--shadow-color) / 0.08);
+  --shadow-md: 0 4px 12px hsl(var(--shadow-color) / 0.12);
+  --shadow-lg: 0 8px 24px hsl(var(--shadow-color) / 0.16);
+  --shadow-xl: 0 16px 40px hsl(var(--shadow-color) / 0.20);
+
+  --overlay: 224 71% 8%;
+  --overlay-opacity: 0.5;
+
+  /* ============================================
+     GRADIENTS - Beautiful Blue/Purple
+     ============================================ */
+  --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(262 83% 57%) 100%);
+  --gradient-accent: linear-gradient(135deg, hsl(188 94% 42%) 0%, hsl(221 83% 53%) 100%);
+  --gradient-subtle: linear-gradient(180deg, hsl(220 30% 98%) 0%, hsl(220 20% 96%) 100%);
+  --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(220 30% 98%) 100%);
+  --gradient-sidebar: linear-gradient(180deg, hsl(224 71% 8%) 0%, hsl(224 60% 12%) 100%);
+  --gradient-hero: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(262 83% 57%) 50%, hsl(188 94% 42%) 100%);
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+.dark {
+  --background: 224 71% 5%;
+  --surface: 224 60% 8%;
+  --surface-muted: 224 50% 11%;
+  --surface-hover: 224 50% 14%;
+
+  --foreground: 220 20% 95%;
+  --muted: 220 14% 60%;
+  --muted-foreground: 220 10% 50%;
+
+  --primary: 221 83% 60%;
+  --primary-hover: 221 83% 65%;
+  --primary-light: 221 83% 15%;
+
+  --secondary: 262 83% 65%;
+  --secondary-hover: 262 83% 70%;
+
+  --accent: 188 94% 48%;
+  --accent-light: 188 94% 12%;
+
+  --success: 142 71% 50%;
+  --success-muted: 142 50% 12%;
+
+  --warning: 38 92% 55%;
+  --warning-muted: 38 60% 12%;
+
+  --info: 221 83% 60%;
+  --info-muted: 221 60% 12%;
+
+  --destructive: 0 84% 65%;
+  --destructive-muted: 0 60% 12%;
+
+  --border: 224 40% 20%;
+  --border-hover: 221 83% 45%;
+  --border-focus: 221 83% 60%;
+
+  --ring: 221 83% 60%;
+  --input: 224 40% 12%;
+  --input-border: 224 40% 20%;
+
+  --card: 224 60% 8%;
+  --card-foreground: 220 20% 95%;
+  --card-hover: 224 50% 11%;
+  --card-border: 224 40% 18%;
+
+  --popover: 224 60% 8%;
+  --popover-foreground: 220 20% 95%;
+
+  --sidebar-background: 224 71% 4%;
+  --sidebar-foreground: 220 20% 90%;
+  --sidebar-muted: 224 50% 8%;
+  --sidebar-muted-foreground: 220 14% 55%;
+  --sidebar-accent: 221 83% 60%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 224 40% 12%;
+
+  --chart-1: 221 83% 60%;
+  --chart-2: 262 83% 65%;
+  --chart-3: 188 94% 48%;
+  --chart-4: 142 71% 50%;
+  --chart-5: 38 92% 55%;
+  --chart-6: 0 84% 65%;
+}

@@ -1,0 +1,591 @@
+/**
+ * @fileoverview Minimal Onboarding Styles - Notion/Linear Inspired
+ *
+ * Clean split-screen onboarding with refined typography and subtle animations.
+ * Matches the landing page aesthetic with monochromatic colors.
+ */
+
+.onboarding-page {
+  /* Color tokens - Coffee Bean Brand Palette */
+  --onboarding-bg: #FFFFFF;
+  --onboarding-bg-dark: #14110F;                 /* Pitch Black */
+  --onboarding-bg-elevated: #F8F6F4;
+  --onboarding-accent: #765341;                  /* Coffee Bean - Primary */
+  --onboarding-accent-hover: #5C4233;            /* Coffee Bean darker */
+  --onboarding-accent-light: #A07A65;            /* Coffee Bean lighter */
+  --onboarding-secondary: #34312D;               /* Graphite */
+  --onboarding-text: #14110F;                    /* Pitch Black */
+  --onboarding-text-secondary: #54442B;
+  --onboarding-text-muted: #8A846E;
+  --onboarding-border: #E8E6E1;
+  --onboarding-white: #FFFFFF;
+  --onboarding-cream: #E4E1C7;                   /* Vanilla Cream */
+
+  min-height: 100vh;
+  display: flex;
+  background: var(--onboarding-bg);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Dark mode - Coffee Bean Brand */
+.dark .onboarding-page {
+  --onboarding-bg: #14110F;                      /* Pitch Black */
+  --onboarding-bg-dark: #14110F;
+  --onboarding-bg-elevated: #1E1A17;             /* Slightly lighter */
+  --onboarding-text: #F5F3F0;                    /* Off-white */
+  --onboarding-text-secondary: #C4B8A8;          /* Muted cream */
+  --onboarding-text-muted: #8A7E6D;              /* Muted brown */
+  --onboarding-border: rgba(118, 83, 65, 0.2);   /* Coffee Bean border */
+  --onboarding-white: #1E1A17;
+  --onboarding-accent: #A07A65;                  /* Coffee Bean lighter for dark mode */
+  --onboarding-accent-hover: #C49A80;            /* Even lighter on hover */
+  --onboarding-cream: #E4E1C7;                   /* Vanilla Cream */
+}
+
+/* ===== LEFT PANEL - Visual Side ===== */
+.onboarding-visual {
+  display: none;
+  flex: 1.2;
+  max-width: 55%;
+  background: var(--onboarding-bg-dark);
+  position: relative;
+  overflow: hidden;
+  padding: 48px;
+}
+
+@media (min-width: 1024px) {
+  .onboarding-visual {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+}
+
+/* Subtle gradient animation - Coffee Bean mesh */
+.onboarding-visual::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(118, 83, 65, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(52, 49, 45, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 40% 80%, rgba(160, 122, 101, 0.10) 0%, transparent 40%);
+  animation: onboarding-gradient 30s linear infinite;
+  z-index: 0;
+}
+
+@keyframes onboarding-gradient {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Minimal grid pattern */
+.onboarding-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Visual content */
+.onboarding-visual-content {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 520px;
+}
+
+/* Logo badge */
+.onboarding-visual-logo {
+  margin-bottom: 56px;
+}
+
+.onboarding-visual-logo span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Typography */
+.onboarding-visual-heading {
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--onboarding-white);
+  margin-bottom: 20px;
+}
+
+.onboarding-visual-subheading {
+  font-size: 17px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 480px;
+}
+
+/* Floating cards - Minimal version */
+.onboarding-floating-cards {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.onboarding-float-card {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--onboarding-white);
+  animation: onboarding-float 8s ease-in-out infinite;
+  width: 140px;
+}
+
+.onboarding-float-card.position-1 {
+  top: 12%;
+  right: 8%;
+  animation-delay: 0s;
+}
+
+.onboarding-float-card.position-2 {
+  top: 48%;
+  right: 15%;
+  animation-delay: 2s;
+}
+
+.onboarding-float-card.position-3 {
+  bottom: 20%;
+  right: 10%;
+  animation-delay: 4s;
+}
+
+@keyframes onboarding-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.onboarding-float-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+/* Coffee Bean floating card icon variants */
+.onboarding-float-card-icon.bg-primary {
+  background: rgba(118, 83, 65, 0.3);            /* Coffee Bean */
+}
+
+.onboarding-float-card-icon.bg-accent {
+  background: rgba(160, 122, 101, 0.25);         /* Coffee Bean lighter */
+}
+
+.onboarding-float-card-icon.bg-success {
+  background: rgba(228, 225, 199, 0.2);          /* Vanilla Cream */
+}
+
+.onboarding-float-card-title {
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.onboarding-float-card-value {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.onboarding-float-card-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Step indicators */
+.onboarding-steps-indicator {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: 32px;
+}
+
+.onboarding-step-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.onboarding-step-dot.active {
+  width: 24px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.onboarding-step-dot.completed {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* ===== RIGHT PANEL - Form ===== */
+.onboarding-form-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 24px;
+  min-height: 100vh;
+  background: var(--onboarding-bg);
+}
+
+@media (min-width: 1024px) {
+  .onboarding-form-panel {
+    flex: 0.8;
+    min-width: 45%;
+    padding: 56px;
+  }
+}
+
+.onboarding-form-container {
+  width: 100%;
+  max-width: 440px;
+}
+
+/* Mobile logo */
+.onboarding-mobile-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+@media (min-width: 1024px) {
+  .onboarding-mobile-logo {
+    display: none;
+  }
+}
+
+.onboarding-mobile-logo span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--onboarding-bg-dark);
+  border-radius: 100px;
+  color: var(--onboarding-white);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Progress bar */
+.onboarding-progress {
+  margin-bottom: 32px;
+}
+
+.onboarding-progress-bar {
+  height: 2px;
+  background: var(--onboarding-border);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.onboarding-progress-fill {
+  height: 100%;
+  background: var(--onboarding-accent);
+  border-radius: 1px;
+}
+
+.onboarding-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--onboarding-text-muted);
+}
+
+/* Form content */
+.onboarding-form-content {
+  animation: onboarding-fade-in 0.4s ease;
+}
+
+@keyframes onboarding-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Form header */
+.onboarding-form-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.onboarding-form-title {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--onboarding-text);
+  margin-bottom: 8px;
+}
+
+.onboarding-form-subtitle {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--onboarding-text-secondary);
+}
+
+/* Role selection cards */
+.onboarding-role-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.onboarding-role-card {
+  width: 100%;
+  padding: 20px;
+  background: var(--onboarding-bg);
+  border: 1.5px solid var(--onboarding-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.onboarding-role-card:hover {
+  border-color: rgba(118, 83, 65, 0.5); /* Coffee Bean #765341 at 50% */
+  background: linear-gradient(to right, rgba(118, 83, 65, 0.1), rgba(160, 122, 101, 0.1)); /* from-coffee/10 to-coffee-light/10 */
+  box-shadow: 0 10px 15px -3px rgba(20, 17, 15, 0.1), 0 4px 6px -4px rgba(20, 17, 15, 0.1);
+  transform: translateY(-2px);
+}
+
+.dark .onboarding-role-card:hover {
+  border-color: rgba(118, 83, 65, 0.5); /* Coffee Bean #765341 at 50% */
+  background: linear-gradient(to right, rgba(118, 83, 65, 0.15), rgba(160, 122, 101, 0.15));
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+}
+
+.onboarding-role-card:active {
+  transform: scale(0.99);
+}
+
+.onboarding-role-card-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.onboarding-role-card-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.onboarding-role-card:hover .onboarding-role-card-icon {
+  background: #765341 !important; /* Coffee Bean */
+  color: #ffffff !important; /* white */
+  border-color: #765341 !important; /* Coffee Bean */
+}
+
+.dark .onboarding-role-card:hover .onboarding-role-card-icon {
+  background: #765341 !important; /* Coffee Bean */
+  color: #ffffff !important; /* white */
+  border-color: #765341 !important; /* Coffee Bean */
+}
+
+.onboarding-role-card-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.onboarding-role-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--onboarding-text);
+  margin-bottom: 4px;
+}
+
+.onboarding-role-card-description {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--onboarding-text-secondary);
+}
+
+.onboarding-role-card-arrow {
+  flex-shrink: 0;
+  color: var(--onboarding-text-muted);
+  transition: all 0.2s ease;
+}
+
+.onboarding-role-card:hover .onboarding-role-card-arrow {
+  transform: translateX(2px);
+  color: #765341; /* Coffee Bean */
+}
+
+/* Google button */
+.onboarding-google-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 24px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 10px;
+}
+
+/* Back button */
+.onboarding-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--onboarding-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 20px;
+  transition: color 0.2s;
+}
+
+.onboarding-back-button:hover {
+  color: var(--onboarding-text);
+}
+
+/* Form fields */
+.onboarding-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.onboarding-form-field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--onboarding-text);
+  margin-bottom: 8px;
+}
+
+.onboarding-form-field input,
+.onboarding-form-field select {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 15px;
+  color: var(--onboarding-text);
+  background: var(--onboarding-bg);
+  border: 1.5px solid var(--onboarding-border);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.onboarding-form-field input:focus,
+.onboarding-form-field select:focus {
+  outline: none;
+  border-color: var(--onboarding-accent);
+  background: var(--onboarding-bg-elevated);
+}
+
+/* Buttons */
+.onboarding-button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.onboarding-button-primary {
+  flex: 1;
+  height: 48px;
+  font-size: 15px;
+  font-weight: 500;
+  color: white;
+  background: var(--onboarding-accent);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.onboarding-button-primary:hover {
+  background: var(--onboarding-accent-hover);
+}
+
+.onboarding-button-primary:active {
+  transform: scale(0.98);
+}
+
+.onboarding-button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.onboarding-button-secondary {
+  height: 48px;
+  padding: 0 20px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--onboarding-text-secondary);
+  background: transparent;
+  border: 1.5px solid var(--onboarding-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.onboarding-button-secondary:hover {
+  border-color: var(--onboarding-text-muted);
+  background: var(--onboarding-bg-elevated);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-float-card,
+  .onboarding-visual::before {
+    animation: none;
+  }
+}

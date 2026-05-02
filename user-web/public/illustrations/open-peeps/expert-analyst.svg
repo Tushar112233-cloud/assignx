@@ -1,0 +1,7 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Placeholder analyst expert -->
+  <circle cx="256" cy="180" r="80" fill="#5C4233"/>
+  <path d="M256 280 C180 280, 140 320, 140 400 L140 480 L372 480 L372 400 C372 320, 332 280, 256 280 Z" fill="#A07A65"/>
+  <circle cx="220" cy="170" r="25" fill="#E4E1C7" stroke="#765341" stroke-width="3"/>
+  <circle cx="292" cy="170" r="25" fill="#E4E1C7" stroke="#765341" stroke-width="3"/>
+</svg>

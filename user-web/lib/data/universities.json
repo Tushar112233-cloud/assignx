@@ -1,0 +1,72 @@
+[
+  {
+    "id": "ea941e74-2dd0-48f6-bc72-93f1a9ab9a68",
+    "name": "Amity University",
+    "shortName": "Amity",
+    "city": "Noida",
+    "state": "Uttar Pradesh"
+  },
+  {
+    "id": "c79147b4-87f8-41b5-a1d9-b430227ff0bf",
+    "name": "Anna University",
+    "shortName": "AU",
+    "city": "Chennai",
+    "state": "Tamil Nadu"
+  },
+  {
+    "id": "cff594dd-ed93-4eaa-a37a-d473c81c6f22",
+    "name": "Banaras Hindu University",
+    "shortName": "BHU",
+    "city": "Varanasi",
+    "state": "Uttar Pradesh"
+  },
+  {
+    "id": "567e9c95-92d5-4039-bbf6-86da6962a442",
+    "name": "Delhi University",
+    "shortName": "DU",
+    "city": "New Delhi",
+    "state": "Delhi"
+  },
+  {
+    "id": "cf0d0d6a-4a46-479c-87f3-e0a2240fa83a",
+    "name": "Indian Institute of Management Ahmedabad",
+    "shortName": "IIM-A",
+    "city": "Ahmedabad",
+    "state": "Gujarat"
+  },
+  {
+    "id": "60f12d69-2783-4a41-bf3b-668a366dec62",
+    "name": "Indian Institute of Technology Delhi",
+    "shortName": "IIT Delhi",
+    "city": "New Delhi",
+    "state": "Delhi"
+  },
+  {
+    "id": "e78a6a3d-72f6-4768-bff7-870af9128c90",
+    "name": "Jawaharlal Nehru University",
+    "shortName": "JNU",
+    "city": "New Delhi",
+    "state": "Delhi"
+  },
+  {
+    "id": "cbf24f19-8473-49ef-bbe0-6f0de8f7c682",
+    "name": "Lovely Professional University",
+    "shortName": "LPU",
+    "city": "Jalandhar",
+    "state": "Punjab"
+  },
+  {
+    "id": "b3e5b6bd-8ff5-423f-af04-417e9c4dfc32",
+    "name": "Mumbai University",
+    "shortName": "MU",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  {
+    "id": "8056e353-0231-439c-b297-1547823404cc",
+    "name": "VIT University",
+    "shortName": "VIT",
+    "city": "Vellore",
+    "state": "Tamil Nadu"
+  }
+]
