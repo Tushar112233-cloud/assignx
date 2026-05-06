@@ -2,6 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -31,6 +32,9 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Local file uploads (when Cloudinary is not configured)
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Health check
 app.get('/health', (_req, res) => {

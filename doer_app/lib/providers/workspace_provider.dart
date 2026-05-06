@@ -154,6 +154,17 @@ class WorkspaceNotifier extends ChangeNotifier {
   WorkspaceState _state = const WorkspaceState(isLoading: true);
   WorkspaceState get state => _state;
 
+  /// Keep chat in deterministic chronological order (oldest -> newest).
+  List<ChatMessageModel> _sortMessagesChronologically(List<ChatMessageModel> messages) {
+    final sorted = [...messages];
+    sorted.sort((a, b) {
+      final byTime = a.sentAt.compareTo(b.sentAt);
+      if (byTime != 0) return byTime;
+      return a.id.compareTo(b.id);
+    });
+    return sorted;
+  }
+
   WorkspaceNotifier(this._ref, this._projectId) {
     _projectRepository = _ref.read(doerProjectRepositoryProvider);
     _chatRepository = _ref.read(doerChatRepositoryProvider);
@@ -238,7 +249,9 @@ class WorkspaceNotifier extends ChangeNotifier {
 
         // Load messages
         final messages = await _chatRepository.getMessages(chatRoom.id);
-        _updateState(_state.copyWith(messages: messages));
+        _updateState(_state.copyWith(
+          messages: _sortMessagesChronologically(messages),
+        ));
       }
     } catch (e) {
       if (kDebugMode) {
@@ -278,7 +291,7 @@ class WorkspaceNotifier extends ChangeNotifier {
       if (isDuplicate) return;
 
       _updateState(_state.copyWith(
-        messages: [..._state.messages, message],
+        messages: _sortMessagesChronologically([..._state.messages, message]),
       ));
     });
   }
@@ -427,7 +440,7 @@ class WorkspaceNotifier extends ChangeNotifier {
         final alreadyExists = _state.messages.any((m) => m.id == message.id);
         if (!alreadyExists) {
           _updateState(_state.copyWith(
-            messages: [..._state.messages, message],
+            messages: _sortMessagesChronologically([..._state.messages, message]),
           ));
         }
         return true;
@@ -436,6 +449,35 @@ class WorkspaceNotifier extends ChangeNotifier {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('WorkspaceNotifier.sendMessage error: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Sends a voice note via the chat file upload endpoint.
+  Future<bool> sendVoiceMessage(String filePath) async {
+    if (_state.chatRoom == null || filePath.isEmpty) return false;
+
+    try {
+      final message = await _chatRepository.sendChatFileUpload(
+        chatRoomId: _state.chatRoom!.id,
+        filePath: filePath,
+        content: 'Voice note',
+      );
+
+      if (message != null) {
+        final alreadyExists = _state.messages.any((m) => m.id == message.id);
+        if (!alreadyExists) {
+          _updateState(_state.copyWith(
+            messages: _sortMessagesChronologically([..._state.messages, message]),
+          ));
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('WorkspaceNotifier.sendVoiceMessage error: $e');
       }
       return false;
     }
@@ -474,7 +516,7 @@ class WorkspaceNotifier extends ChangeNotifier {
         final alreadyExists = _state.messages.any((m) => m.id == message.id);
         if (!alreadyExists) {
           _updateState(_state.copyWith(
-            messages: [..._state.messages, message],
+            messages: _sortMessagesChronologically([..._state.messages, message]),
           ));
         }
         return true;

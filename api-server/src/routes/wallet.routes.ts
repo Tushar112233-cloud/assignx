@@ -41,6 +41,20 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
   }
 });
 
+// GET /wallets/me/pending-earnings — held balance not yet paid out (doer wallet).
+router.get('/me/pending-earnings', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user!.role !== 'doer') {
+      return res.json({ amount: 0 });
+    }
+    const wallet = await DoerWallet.findOne({ doerId: req.user!.id });
+    const amount = wallet?.lockedAmount ?? 0;
+    res.json({ amount });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /wallets/transactions (frontend-compatible path)
 router.get('/transactions', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {

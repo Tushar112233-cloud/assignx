@@ -1,5 +1,11 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:record/record.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
@@ -8,6 +14,7 @@ import '../../../providers/workspace_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../core/translation/translation_extensions.dart';
+import '../widgets/voice_message_bar.dart';
 
 /// Chat screen for real-time project communication with supervisor.
 ///
@@ -65,12 +72,100 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  final ValueNotifier<int> _recordingSeconds = ValueNotifier<int>(0);
+  Timer? _recordingTimer;
+  bool _isRecording = false;
+  bool _isSendingVoice = false;
 
   @override
   void dispose() {
+    _recordingTimer?.cancel();
+    _recordingSeconds.dispose();
+    _audioRecorder.dispose();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleRecording() async {
+    if (_isSendingVoice) return;
+
+    if (_isRecording) {
+      _recordingTimer?.cancel();
+      String? filePath;
+      try {
+        filePath = await _audioRecorder.stop();
+      } catch (_) {
+        filePath = null;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _isRecording = false;
+        _isSendingVoice = true;
+      });
+
+      if (filePath != null && filePath.isNotEmpty) {
+        final sent = await ref
+            .read(workspaceProvider(widget.projectId))
+            .sendVoiceMessage(filePath);
+        if (mounted && !sent) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to send voice note')),
+          );
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save recording')),
+        );
+      }
+
+      if (filePath != null && filePath.isNotEmpty) {
+        unawaited(() async {
+          try {
+            await File(filePath!).delete();
+          } catch (_) {}
+        }());
+      }
+      if (mounted) {
+        setState(() {
+          _isSendingVoice = false;
+        });
+      }
+      return;
+    }
+
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) return;
+
+    final tempDir = await getTemporaryDirectory();
+    final filePath =
+        '${tempDir.path}/voice_note_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+    await _audioRecorder.start(
+      const RecordConfig(
+        encoder: AudioEncoder.aacLc,
+        bitRate: 128000,
+        sampleRate: 44100,
+      ),
+      path: filePath,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _isRecording = true;
+      _recordingSeconds.value = 0;
+    });
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _recordingSeconds.value += 1;
+    });
+  }
+
+  String _formatRecordingTime(int seconds) {
+    final mins = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return '$mins:$secs';
   }
 
   @override
@@ -324,9 +419,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ],
               ),
               child: IconButton(
-                onPressed: _sendMessage,
+                onPressed: _isSendingVoice ? null : _sendMessage,
                 icon: const Icon(Icons.send, size: 18),
                 color: Colors.white,
+                padding: EdgeInsets.zero,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              height: 40,
+              width: 40,
+              decoration: BoxDecoration(
+                color: _isRecording ? Colors.red : AppColors.surface,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.3),
+                ),
+              ),
+              child: IconButton(
+                onPressed: _isSendingVoice ? null : _toggleRecording,
+                icon: Icon(
+                  _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                  size: 22,
+                  color: _isRecording ? Colors.white : AppColors.primary,
+                ),
                 padding: EdgeInsets.zero,
               ),
             ),
@@ -439,7 +555,10 @@ class _ChatBubble extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
-          Flexible(
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.74,
+            ),
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 14,
@@ -494,35 +613,101 @@ class _ChatBubble extends StatelessWidget {
                         ),
                       ),
                     ),
-                  Text(
-                    message.content,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isFromDoer ? Colors.white : AppColors.textPrimary,
+                  if (!_voiceOnlyCaption(message) &&
+                      message.content.trim().isNotEmpty)
+                    Text(
+                      message.content,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isFromDoer ? Colors.white : AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatTime(message.sentAt),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isFromDoer
-                          ? Colors.white.withValues(alpha: 0.7)
-                          : AppColors.textTertiary,
-                    ),
+                  if (message.hasFile) ...[
+                    if (!_voiceOnlyCaption(message) &&
+                        message.content.trim().isNotEmpty)
+                      const SizedBox(height: 8),
+                    if (_isAudioMessage(message))
+                      Align(
+                        alignment: Alignment.center,
+                        child: VoiceMessageBar(
+                          roomId: message.chatRoomId,
+                          messageId: _voiceClipId(message),
+                          audioUrl: message.fileUrl!,
+                          playIconColor:
+                              isFromDoer ? Colors.white : AppColors.primary,
+                          progressBackgroundColor: isFromDoer
+                              ? Colors.white.withValues(alpha: 0.35)
+                              : AppColors.surface,
+                          progressForegroundColor:
+                              isFromDoer ? Colors.white : AppColors.primary,
+                          timeLabelColor: isFromDoer
+                              ? Colors.white.withValues(alpha: 0.95)
+                              : AppColors.textSecondary,
+                          pillBackgroundColor: isFromDoer
+                              ? Colors.white.withValues(alpha: 0.18)
+                              : AppColors.surface,
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isFromDoer
+                              ? Colors.white.withValues(alpha: 0.2)
+                              : AppColors.surface,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.attach_file,
+                              size: 18,
+                              color: isFromDoer ? Colors.white : AppColors.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              (message.fileName ?? 'Attachment').toString(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isFromDoer ? Colors.white : AppColors.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _formatTime(message.sentAt),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isFromDoer
+                              ? Colors.white.withValues(alpha: 0.75)
+                              : AppColors.textTertiary,
+                        ),
+                      ),
+                      if (isFromDoer) ...[
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.done_all,
+                          size: 14,
+                          color: Color(0xFF9FD7FF),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
             ),
           ),
-          if (isFromDoer) ...[
-            const SizedBox(width: 8),
-            const Icon(
-              Icons.done_all,
-              size: 16,
-              color: AppColors.accent,
-            ),
-          ],
         ],
       ),
     );
@@ -570,5 +755,44 @@ class _ChatBubble extends StatelessWidget {
     final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
     final period = time.hour >= 12 ? 'PM' : 'AM';
     return '$hour:${time.minute.toString().padLeft(2, '0')} $period';
+  }
+
+  bool _isAudioMessage(ChatMessageModel msg) {
+    final type = (msg.fileType ?? '').toLowerCase();
+    final url = (msg.fileUrl ?? '').toLowerCase();
+    final name = (msg.fileName ?? '').toLowerCase();
+    final isVoiceByName = name.startsWith('voice_note_') ||
+        name.contains('voice') ||
+        name.contains('audio');
+    final isAudioByExtension = url.endsWith('.m4a') ||
+        url.endsWith('.mp3') ||
+        url.endsWith('.wav') ||
+        url.endsWith('.aac') ||
+        url.endsWith('.ogg') ||
+        url.endsWith('.webm') ||
+        url.endsWith('.mp4');
+    final looksLikeVoiceUpload =
+        type == 'application/octet-stream' && (isVoiceByName || isAudioByExtension);
+    return type.startsWith('audio/') ||
+        isAudioByExtension ||
+        looksLikeVoiceUpload ||
+        msg.messageType.value == 'audio' ||
+        msg.messageType.value == 'voice' ||
+        isVoiceByName ||
+        msg.content.toLowerCase().contains('voice');
+  }
+
+  bool _voiceOnlyCaption(ChatMessageModel msg) {
+    if (!_isAudioMessage(msg)) return false;
+    final t = msg.content.trim().toLowerCase();
+    return t.isEmpty || t == 'voice note';
+  }
+
+  /// Build a stable unique key for voice playback rows.
+  /// Some API payloads can carry empty/duplicate message IDs.
+  String _voiceClipId(ChatMessageModel msg) {
+    final rawId = msg.id.trim();
+    if (rawId.isNotEmpty) return rawId;
+    return '${msg.chatRoomId}:${msg.fileUrl ?? ''}:${msg.sentAt.microsecondsSinceEpoch}';
   }
 }

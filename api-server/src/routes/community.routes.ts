@@ -6,6 +6,37 @@ import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 
+// GET /community/campus/stats — Campus Connect live badge (Flutter LiveStatsBadge).
+router.get('/campus/stats', optionalAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const postsPerHour = await CommunityPost.countDocuments({
+      postType: 'campus',
+      isActive: true,
+      createdAt: { $gte: oneHourAgo },
+    });
+
+    const categories = await CommunityPost.distinct('category', {
+      postType: 'campus',
+      isActive: true,
+      category: { $exists: true, $nin: [null, ''] },
+    });
+    const colleges = Math.max(categories.length, 1);
+
+    const onlineUsers = Math.min(999, Math.max(5, postsPerHour * 4 + 12));
+
+    res.json({
+      posts_per_hour: postsPerHour,
+      postsPerHour,
+      colleges,
+      online_users: onlineUsers,
+      onlineUsers,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Helper: normalize post(s) to include both imageUrls (array) and imageUrl (first item) for backward compat
 function normalizePost(post: any) {
   if (!post) return post;

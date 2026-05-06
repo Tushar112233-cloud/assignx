@@ -248,6 +248,12 @@ class ChatMessageModel {
       }
     }
 
+    final fileData = json['file'] as Map<String, dynamic>?;
+    int? fileSizeBytes = (json['file_size_bytes'] ?? json['fileSizeBytes']) as int?;
+    if (fileSizeBytes == null && fileData != null) {
+      fileSizeBytes = fileData['sizeBytes'] as int? ?? fileData['size_bytes'] as int?;
+    }
+
     return ChatMessageModel(
       id: (json['_id'] ?? json['id'] ?? '').toString(),
       chatRoomId: chatRoomId,
@@ -256,10 +262,10 @@ class ChatMessageModel {
       senderAvatarUrl: senderAvatarUrl,
       messageType: MessageType.fromString((json['message_type'] ?? json['messageType'] ?? 'text').toString()),
       content: json['content'] as String? ?? '',
-      fileUrl: json['file_url'] as String? ?? json['fileUrl'] as String?,
-      fileName: json['file_name'] as String? ?? json['fileName'] as String?,
-      fileType: json['file_type'] as String? ?? json['fileType'] as String?,
-      fileSizeBytes: (json['file_size_bytes'] ?? json['fileSizeBytes']) as int?,
+      fileUrl: (json['file_url'] ?? json['fileUrl'] ?? fileData?['url']) as String?,
+      fileName: (json['file_name'] ?? json['fileName'] ?? fileData?['name']) as String?,
+      fileType: (json['file_type'] ?? json['fileType'] ?? fileData?['type']) as String?,
+      fileSizeBytes: fileSizeBytes,
       replyToId: json['reply_to_id'] as String? ?? json['replyToId'] as String?,
       replyToContent: replyToContent,
       replyToSenderName: replyToSenderName,

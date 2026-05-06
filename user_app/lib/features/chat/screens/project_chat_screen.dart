@@ -4,10 +4,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:record/record.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
-import '../../../core/api/api_client.dart';
 import '../../../core/socket/socket_client.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -19,6 +22,7 @@ import '../widgets/typing_indicator.dart';
 import '../widgets/chat_presence_banner.dart';
 import '../widgets/message_approval_badge.dart';
 import '../widgets/message_status_indicator.dart';
+import '../widgets/voice_message_bar.dart';
 
 /// Chat screen colors matching the Coffee Bean Design System.
 class _ChatColors {
@@ -637,6 +641,8 @@ class _ChatContentState extends ConsumerState<_ChatContent>
 
                 // Input area
                 _ChatInputArea(
+                  roomId: widget.roomId,
+                  projectId: widget.projectId,
                   controller: widget.messageController,
                   isSending: chatState.isSending,
                   onSend: widget.onSend,
@@ -943,7 +949,9 @@ class _EmptyChat extends StatelessWidget {
   }
 }
 
-class _ChatInputArea extends StatelessWidget {
+class _ChatInputArea extends ConsumerStatefulWidget {
+  final String roomId;
+  final String projectId;
   final TextEditingController controller;
   final bool isSending;
   final VoidCallback onSend;
@@ -951,6 +959,8 @@ class _ChatInputArea extends StatelessWidget {
   final bool showApprovalNote;
 
   const _ChatInputArea({
+    required this.roomId,
+    required this.projectId,
     required this.controller,
     required this.isSending,
     required this.onSend,
@@ -959,12 +969,75 @@ class _ChatInputArea extends StatelessWidget {
   });
 
   @override
+  ConsumerState<_ChatInputArea> createState() => _ChatInputAreaState();
+}
+
+class _ChatInputAreaState extends ConsumerState<_ChatInputArea> {
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  Timer? _recordingTimer;
+  bool _isRecording = false;
+  int _recordingSeconds = 0;
+
+  @override
+  void dispose() {
+    _recordingTimer?.cancel();
+    _audioRecorder.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      final filePath = await _audioRecorder.stop();
+      _recordingTimer?.cancel();
+      if (!mounted) return;
+      setState(() {
+        _isRecording = false;
+      });
+      if (filePath != null && filePath.isNotEmpty) {
+        await ref
+            .read(chatNotifierProvider((roomId: widget.roomId, projectId: widget.projectId)).notifier)
+            .sendVoiceMessage(filePath);
+      }
+      return;
+    }
+
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) return;
+
+    final tempDir = await getTemporaryDirectory();
+    final filePath = '${tempDir.path}/voice_note_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+    await _audioRecorder.start(
+      const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000, sampleRate: 44100),
+      path: filePath,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _isRecording = true;
+      _recordingSeconds = 0;
+    });
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        _recordingSeconds += 1;
+      });
+    });
+  }
+
+  String _formatRecordingTime(int seconds) {
+    final mins = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return '$mins:$secs';
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
         left: 16,
         right: 16,
-        top: showApprovalNote ? 8 : 12,
+        top: widget.showApprovalNote ? 8 : 12,
         bottom: MediaQuery.of(context).padding.bottom + 12,
       ),
       decoration: BoxDecoration(
@@ -987,7 +1060,7 @@ class _ChatInputArea extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Approval note for non-supervisor users
-          if (showApprovalNote)
+          if (widget.showApprovalNote)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
@@ -1010,7 +1083,7 @@ class _ChatInputArea extends StatelessWidget {
                 ),
                 child: IconButton(
                   icon: Icon(Icons.attach_file, color: _ChatColors.warmAccent),
-                  onPressed: onAttachment,
+                  onPressed: widget.onAttachment,
                 ),
               ),
 
@@ -1027,7 +1100,7 @@ class _ChatInputArea extends StatelessWidget {
                     ),
                   ),
                   child: TextField(
-                    controller: controller,
+                    controller: widget.controller,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: _ChatColors.primaryText,
                     ),
@@ -1045,7 +1118,7 @@ class _ChatInputArea extends StatelessWidget {
                     maxLines: 4,
                     minLines: 1,
                     textCapitalization: TextCapitalization.sentences,
-                    onSubmitted: (_) => onSend(),
+                    onSubmitted: (_) => widget.onSend(),
                   ),
                 ),
               ),
@@ -1073,7 +1146,7 @@ class _ChatInputArea extends StatelessWidget {
                   ],
                 ),
                 child: IconButton(
-                  icon: isSending
+                  icon: widget.isSending
                       ? const SizedBox(
                           width: 22,
                           height: 22,
@@ -1083,11 +1156,38 @@ class _ChatInputArea extends StatelessWidget {
                           ),
                         )
                       : const Icon(Icons.send, size: 22, color: Colors.white),
-                  onPressed: isSending ? null : onSend,
+                  onPressed: widget.isSending ? null : widget.onSend,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: _isRecording ? Colors.red : _ChatColors.creamBackground,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                    color: _isRecording ? Colors.white : _ChatColors.warmAccent,
+                  ),
+                  onPressed: widget.isSending ? null : _toggleRecording,
                 ),
               ),
             ],
           ),
+          if (_isRecording)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Recording ${_formatRecordingTime(_recordingSeconds)}',
+                style: AppTextStyles.caption.copyWith(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -1502,44 +1602,78 @@ class _MessageBubble extends ConsumerWidget {
                         const SizedBox(height: 4),
                       ],
 
-                      // Message content
-                      Text(
-                        message.content,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: isMe ? Colors.white : _ChatColors.primaryText,
+                      // Message body (omit redundant “Voice note” line for audio-only bubbles)
+                      if (!_voiceOnlyCaption(message) &&
+                          message.content.trim().isNotEmpty)
+                        Text(
+                          message.content,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: isMe ? Colors.white : _ChatColors.primaryText,
+                          ),
                         ),
-                      ),
 
-                      // File attachment
                       if (message.fileUrl != null) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: isMe
-                                ? Colors.white.withValues(alpha: 0.2)
+                        if (!_voiceOnlyCaption(message) &&
+                            message.content.trim().isNotEmpty)
+                          const SizedBox(height: 8),
+                        if (_isAudioMessage(message))
+                          VoiceMessageBar(
+                            roomId: roomId,
+                            messageId: message.id,
+                            audioUrl: message.fileUrl!,
+                            playIconColor:
+                                isMe ? Colors.white : _ChatColors.warmAccent,
+                            progressBackgroundColor: isMe
+                                ? Colors.white.withValues(alpha: 0.35)
+                                : _ChatColors.borderColor,
+                            progressForegroundColor:
+                                isMe ? Colors.white : _ChatColors.warmAccent,
+                            timeLabelColor: isMe
+                                ? Colors.white.withValues(alpha: 0.95)
+                                : _ChatColors.secondaryText,
+                            pillBackgroundColor: isMe
+                                ? Colors.white.withValues(alpha: 0.18)
                                 : _ChatColors.creamBackground,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.attach_file,
-                                size: 16,
-                                color: isMe ? Colors.white : _ChatColors.warmAccent,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Attachment'.tr(context),
-                                style: AppTextStyles.caption.copyWith(
-                                  fontSize: 12,
-                                  color: isMe ? Colors.white : _ChatColors.secondaryText,
+                          )
+                        else ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isMe
+                                  ? Colors.white.withValues(alpha: 0.2)
+                                  : _ChatColors.creamBackground,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.attach_file,
+                                  size: 16,
+                                  color: isMe
+                                      ? Colors.white
+                                      : _ChatColors.warmAccent,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                GestureDetector(
+                                  onTap: () =>
+                                      _openAttachmentUrl(message.fileUrl),
+                                  child: Text(
+                                    'Attachment'.tr(context),
+                                    style: AppTextStyles.caption.copyWith(
+                                      fontSize: 12,
+                                      color: isMe
+                                          ? Colors.white
+                                          : _ChatColors.secondaryText,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ],
 
                       const SizedBox(height: 6),
@@ -1634,6 +1768,46 @@ class _MessageBubble extends ConsumerWidget {
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+
+  bool _isAudioMessage(ChatMessage msg) {
+    final type = (msg.fileType ?? '').toLowerCase();
+    final url = (msg.fileUrl ?? '').toLowerCase();
+    final name = (msg.fileName ?? '').toLowerCase();
+    final isVoiceByName = name.startsWith('voice_note_') ||
+        name.contains('voice') ||
+        name.contains('audio');
+    final isAudioByExtension = url.endsWith('.m4a') ||
+        url.endsWith('.mp3') ||
+        url.endsWith('.wav') ||
+        url.endsWith('.aac') ||
+        url.endsWith('.ogg') ||
+        url.endsWith('.webm') ||
+        // Cloudinary can transcode m4a voice notes into mp4 URLs.
+        url.endsWith('.mp4');
+    final looksLikeVoiceUpload =
+        type == 'application/octet-stream' && (isVoiceByName || isAudioByExtension);
+    return type.startsWith('audio/') ||
+        isAudioByExtension ||
+        looksLikeVoiceUpload ||
+        msg.messageType.toLowerCase() == 'audio' ||
+        msg.messageType.toLowerCase() == 'voice' ||
+        isVoiceByName ||
+        msg.content.toLowerCase().contains('voice');
+  }
+
+  /// Hide redundant “Voice note” caption when the bubble is audio-only.
+  bool _voiceOnlyCaption(ChatMessage msg) {
+    if (!_isAudioMessage(msg)) return false;
+    final t = msg.content.trim().toLowerCase();
+    return t.isEmpty || t == 'voice note';
+  }
+
+  Future<void> _openAttachmentUrl(String? url) async {
+    if (url == null || url.isEmpty) return;
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
 

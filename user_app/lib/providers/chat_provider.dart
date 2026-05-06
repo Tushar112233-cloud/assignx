@@ -159,6 +159,35 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
+  /// Sends a voice note/audio file to the chat room.
+  Future<void> sendVoiceMessage(String filePath) async {
+    state = state.copyWith(isSending: true);
+    try {
+      final message = await _repository.sendFileMessage(
+        roomId,
+        filePath,
+        content: 'Voice note',
+      );
+
+      final messageWithSender = message.copyWith(
+        sender: ChatSender(
+          id: userId,
+          fullName: 'You',
+        ),
+      );
+
+      state = state.copyWith(
+        messages: _dedup([...state.messages, messageWithSender]),
+        isSending: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isSending: false,
+        error: e.toString(),
+      );
+    }
+  }
+
   /// Loads more messages (pagination).
   Future<void> loadMoreMessages() async {
     if (state.messages.isEmpty || state.isLoadingMore) return;

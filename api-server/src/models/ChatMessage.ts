@@ -6,7 +6,7 @@ export interface IChatMessage extends Document {
   senderRole: 'user' | 'supervisor' | 'doer' | 'system';
   messageType: 'text' | 'file' | 'image' | 'system' | 'revision' | 'action';
   content: string;
-  file: {
+  file?: {
     url: string;
     name: string;
     type: string;
@@ -26,18 +26,23 @@ export interface IChatMessage extends Document {
   createdAt: Date;
 }
 
+const chatFileSchema = new Schema(
+  {
+    url: { type: String },
+    name: { type: String },
+    type: { type: String },
+    sizeBytes: { type: Number },
+  },
+  { _id: false }
+);
+
 const chatMessageSchema = new Schema<IChatMessage>({
   chatRoomId: { type: Schema.Types.ObjectId, ref: 'ChatRoom', required: true },
   senderId: { type: Schema.Types.ObjectId, required: true },
   senderRole: { type: String, enum: ['user', 'supervisor', 'doer', 'system'], default: 'user' },
   messageType: { type: String, enum: ['text', 'file', 'image', 'system', 'revision', 'action'], default: 'text' },
   content: { type: String, default: '' },
-  file: {
-    url: String,
-    name: String,
-    type: String,
-    sizeBytes: Number,
-  },
+  file: { type: chatFileSchema, required: false },
   replyToId: { type: Schema.Types.ObjectId, ref: 'ChatMessage' },
   isEdited: { type: Boolean, default: false },
   isDeleted: { type: Boolean, default: false },

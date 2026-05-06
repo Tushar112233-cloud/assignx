@@ -68,6 +68,8 @@ class ChatMessage {
   final String content;
   final String messageType;
   final String? fileUrl;
+  final String? fileName;
+  final String? fileType;
   final List<String> readBy;
   final DateTime? deliveredAt;
   final DateTime createdAt;
@@ -87,6 +89,8 @@ class ChatMessage {
     required this.content,
     this.messageType = 'text',
     this.fileUrl,
+    this.fileName,
+    this.fileType,
     this.readBy = const [],
     this.deliveredAt,
     required this.createdAt,
@@ -128,6 +132,7 @@ class ChatMessage {
     final deliveredStr = (json['delivered_at'] ?? json['deliveredAt'])?.toString();
     final createdStr = (json['created_at'] ?? json['createdAt'] ?? '').toString();
     final senderData = json['sender'] ?? json['senderProfile'];
+    final fileData = json['file'] as Map<String, dynamic>?;
 
     // Parse approval workflow fields
     final approvalStatusStr = (json['approval_status'] ?? json['approvalStatus']) as String?;
@@ -141,7 +146,9 @@ class ChatMessage {
       senderId: (json['sender_id'] ?? json['senderId'] ?? '').toString(),
       content: json['content'] as String? ?? '',
       messageType: (json['message_type'] ?? json['messageType']) as String? ?? 'text',
-      fileUrl: (json['file_url'] ?? json['fileUrl']) as String?,
+      fileUrl: (json['file_url'] ?? json['fileUrl'] ?? fileData?['url']) as String?,
+      fileName: (json['file_name'] ?? json['fileName'] ?? fileData?['name']) as String?,
+      fileType: (json['file_type'] ?? json['fileType'] ?? fileData?['type']) as String?,
       readBy: readByList,
       deliveredAt: deliveredStr != null ? DateTime.tryParse(deliveredStr) : null,
       createdAt: DateTime.tryParse(createdStr) ?? DateTime.now(),
@@ -166,6 +173,8 @@ class ChatMessage {
       'content': content,
       'message_type': messageType,
       'file_url': fileUrl,
+      'file_name': fileName,
+      'file_type': fileType,
       'read_by': readBy,
       'delivered_at': deliveredAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
@@ -184,6 +193,8 @@ class ChatMessage {
     String? content,
     String? messageType,
     String? fileUrl,
+    String? fileName,
+    String? fileType,
     List<String>? readBy,
     DateTime? deliveredAt,
     DateTime? createdAt,
@@ -201,6 +212,8 @@ class ChatMessage {
       content: content ?? this.content,
       messageType: messageType ?? this.messageType,
       fileUrl: fileUrl ?? this.fileUrl,
+      fileName: fileName ?? this.fileName,
+      fileType: fileType ?? this.fileType,
       readBy: readBy ?? this.readBy,
       deliveredAt: deliveredAt ?? this.deliveredAt,
       createdAt: createdAt ?? this.createdAt,

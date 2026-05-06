@@ -13,6 +13,22 @@ const JWT_ROLE_MAP: Record<string, 'user' | 'supervisor' | 'doer'> = {
   doer: 'doer',
 };
 
+const EXTENSION_MIME_MAP: Record<string, string> = {
+  m4a: 'audio/mp4',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  aac: 'audio/aac',
+  ogg: 'audio/ogg',
+  webm: 'audio/webm',
+  mp4: 'audio/mp4',
+};
+
+function normalizeUploadedMimeType(originalName: string, mimeType: string): string {
+  if (mimeType && mimeType !== 'application/octet-stream') return mimeType;
+  const ext = originalName.split('.').pop()?.toLowerCase() || '';
+  return EXTENSION_MIME_MAP[ext] || mimeType || 'application/octet-stream';
+}
+
 // GET /chat/unread - Get unread message counts
 router.get('/unread', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -418,7 +434,11 @@ router.put('/rooms/:id/read', authenticate, async (req: Request, res: Response, 
 router.post('/rooms/:id/files', authenticate, upload.single('file'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.file) throw new AppError('No file provided', 400);
-    const result = await uploadBufferToCloudinary(req.file.buffer, 'assignx/chat');
+    const result = await uploadBufferToCloudinary(
+      req.file.buffer,
+      'assignx/chat',
+      req.file.originalname
+    );
 
     // Derive senderRole from JWT only — never trust the request body for role claims.
     const senderRole: 'user' | 'supervisor' | 'doer' = JWT_ROLE_MAP[req.user!.role] ?? 'user';
@@ -434,7 +454,7 @@ router.post('/rooms/:id/files', authenticate, upload.single('file'), async (req:
       file: {
         url: result.url,
         name: req.file.originalname,
-        type: req.file.mimetype,
+        type: normalizeUploadedMimeType(req.file.originalname, req.file.mimetype),
         sizeBytes: result.bytes,
       },
       approvalStatus: fileApprovalStatus,

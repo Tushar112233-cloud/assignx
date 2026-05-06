@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -134,6 +136,36 @@ class DoerChatRepository {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('DoerChatRepository.sendMessage error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Uploads a file to the chat room (Cloudinary) and creates a message.
+  ///
+  /// Prefer this for voice notes and attachments — matches `POST /chat/rooms/:id/files`.
+  Future<ChatMessageModel?> sendChatFileUpload({
+    required String chatRoomId,
+    required String filePath,
+    String content = '',
+  }) async {
+    try {
+      final userId = await _getUserId();
+      final file = File(filePath);
+      final response = await ApiClient.uploadFile(
+        '/chat/rooms/$chatRoomId/files',
+        file,
+        extraFields: content.isNotEmpty ? {'content': content} : null,
+      );
+
+      if (response == null) return null;
+      final data = response is Map<String, dynamic> && response.containsKey('message')
+          ? response['message'] as Map<String, dynamic>
+          : response as Map<String, dynamic>;
+      return ChatMessageModel.fromJson(data, userId ?? '');
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('DoerChatRepository.sendChatFileUpload error: $e');
       }
       rethrow;
     }

@@ -96,6 +96,20 @@ class ChatRepository {
     return (response as Map<String, dynamic>)['url'] as String;
   }
 
+  /// Sends a chat file message using the dedicated chat upload endpoint.
+  Future<ChatMessage> sendFileMessage(
+    String roomId,
+    String filePath, {
+    String content = '',
+  }) async {
+    final file = File(filePath);
+    final response = await ApiClient.uploadFile('/chat/rooms/$roomId/files', file);
+    final data = response is Map<String, dynamic> && response.containsKey('message')
+        ? response['message'] as Map<String, dynamic>
+        : response as Map<String, dynamic>;
+    return ChatMessage.fromJson(data);
+  }
+
   /// Marks messages as read.
   Future<void> markAsRead(String roomId, String userId) async {
     await ApiClient.put('/chat/rooms/$roomId/read', {});

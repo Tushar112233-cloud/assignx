@@ -12,7 +12,7 @@ router.post('/', authenticate, upload.single('file'), async (req: Request, res: 
   try {
     if (!req.file) throw new AppError('No file provided', 400);
     const folder = (req.body.folder as string) || 'assignx';
-    const result = await uploadBufferToCloudinary(req.file.buffer, folder);
+    const result = await uploadBufferToCloudinary(req.file.buffer, folder, req.file.originalname);
     res.json({ success: true, ...result });
   } catch (err) {
     next(err);
