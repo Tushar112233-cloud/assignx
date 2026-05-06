@@ -341,6 +341,39 @@ class ActiveChatNotifier extends StateNotifier<ActiveChatState> {
     }
   }
 
+  /// Sends a recorded voice note.
+  Future<bool> sendVoiceMessage(String filePath) async {
+    if (state.room == null || filePath.isEmpty) return false;
+    if (state.isSuspended) return false;
+
+    state = state.copyWith(isSending: true, error: null);
+    try {
+      final message = await _repository.sendVoiceMessage(
+        roomId: state.room!.id,
+        filePath: filePath,
+      );
+      if (message != null) {
+        if (_messagesSubscription == null) {
+          state = state.copyWith(
+            messages: [...state.messages, message],
+            isSending: false,
+          );
+        } else {
+          state = state.copyWith(isSending: false);
+        }
+        return true;
+      }
+      state = state.copyWith(isSending: false);
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        isSending: false,
+        error: 'Failed to send voice message: $e',
+      );
+      return false;
+    }
+  }
+
   /// Sends an attachment from local file path.
   ///
   /// This uploads the file via ApiClient, then sends as a message.

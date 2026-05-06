@@ -1,4 +1,10 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:record/record.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
 import '../../../../core/utils/validators.dart';
@@ -18,6 +24,7 @@ class MessageInput extends StatefulWidget {
     this.enabled = true,
     this.isSending = false,
     this.disabledMessage,
+    this.onSendVoice,
   });
 
   /// Called when a message is sent
@@ -41,6 +48,9 @@ class MessageInput extends StatefulWidget {
   /// Message to show when disabled
   final String? disabledMessage;
 
+  /// Called when a voice note recording has been saved.
+  final Future<void> Function(String filePath)? onSendVoice;
+
   @override
   State<MessageInput> createState() => _MessageInputState();
 }
@@ -48,8 +58,13 @@ class MessageInput extends StatefulWidget {
 class _MessageInputState extends State<MessageInput> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  final AudioRecorder _audioRecorder = AudioRecorder();
   bool _hasText = false;
   ContactDetectionResult? _contactWarning;
+  Timer? _recordingTimer;
+  bool _isRecording = false;
+  bool _isSendingVoice = false;
+  int _recordingSeconds = 0;
 
   @override
   void initState() {
@@ -60,9 +75,74 @@ class _MessageInputState extends State<MessageInput> {
   @override
   void dispose() {
     _controller.removeListener(_onTextChanged);
+    _recordingTimer?.cancel();
+    _audioRecorder.dispose();
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleRecording() async {
+    if (widget.onSendVoice == null || _isSendingVoice) return;
+
+    if (_isRecording) {
+      _recordingTimer?.cancel();
+      String? filePath;
+      try {
+        filePath = await _audioRecorder.stop();
+      } catch (_) {
+        filePath = null;
+      }
+      if (!mounted) return;
+      setState(() {
+        _isRecording = false;
+        _isSendingVoice = true;
+      });
+      if (filePath != null && filePath.isNotEmpty) {
+        await widget.onSendVoice!(filePath);
+        unawaited(() async {
+          try {
+            await File(filePath!).delete();
+          } catch (_) {}
+        }());
+      }
+      if (!mounted) return;
+      setState(() {
+        _isSendingVoice = false;
+      });
+      return;
+    }
+
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) return;
+    final tempDir = await getTemporaryDirectory();
+    final filePath =
+        '${tempDir.path}/voice_note_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    await _audioRecorder.start(
+      const RecordConfig(
+        encoder: AudioEncoder.aacLc,
+        bitRate: 128000,
+        sampleRate: 44100,
+      ),
+      path: filePath,
+    );
+    if (!mounted) return;
+    setState(() {
+      _isRecording = true;
+      _recordingSeconds = 0;
+    });
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        _recordingSeconds += 1;
+      });
+    });
+  }
+
+  String _fmtRecordingTime(int seconds) {
+    final mins = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return '$mins:$secs';
   }
 
   void _onTextChanged() {
@@ -300,9 +380,38 @@ class _MessageInputState extends State<MessageInput> {
                             ),
                           ),
                   ),
+                  if (widget.onSendVoice != null) ...[
+                    const SizedBox(width: 6),
+                    IconButton(
+                      onPressed: widget.enabled ? _toggleRecording : null,
+                      icon: Icon(
+                        _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                        color: _isRecording
+                            ? Colors.red
+                            : AppColors.textSecondaryLight,
+                      ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: _isRecording
+                            ? Colors.red.withValues(alpha: 0.12)
+                            : null,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
+            if (_isRecording || _isSendingVoice)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  _isRecording
+                      ? 'Recording ${_fmtRecordingTime(_recordingSeconds)}'
+                      : 'Sending voice note...',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: _isRecording ? Colors.red : AppColors.textSecondaryLight,
+                      ),
+                ),
+              ),
           ],
         ),
       ),

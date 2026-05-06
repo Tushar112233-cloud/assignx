@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/translation/translation_extensions.dart';
 import '../../data/models/message_model.dart';
+import 'voice_message_bar.dart';
 
 /// Message bubble widget for chat.
 ///
@@ -265,16 +266,41 @@ class MessageBubble extends StatelessWidget {
                         children: [
                           // File attachment
                           if (message.hasAttachment) ...[
-                            _FileAttachment(
-                              message: message,
-                              isMe: isMe,
-                              onTap: onFileTap,
-                            ),
-                            if (message.content?.isNotEmpty == true)
+                            if (message.isAudioAttachment)
+                              Align(
+                                alignment: Alignment.center,
+                                child: VoiceMessageBar(
+                                  roomId: message.chatRoomId,
+                                  messageId: _voiceClipId(message),
+                                  audioUrl: message.fileUrl!,
+                                  playIconColor:
+                                      isMe ? Colors.white : AppColors.primary,
+                                  progressBackgroundColor: isMe
+                                      ? Colors.white.withValues(alpha: 0.35)
+                                      : AppColors.surfaceLight,
+                                  progressForegroundColor:
+                                      isMe ? Colors.white : AppColors.primary,
+                                  timeLabelColor: isMe
+                                      ? Colors.white.withValues(alpha: 0.95)
+                                      : AppColors.textSecondaryLight,
+                                  pillBackgroundColor: isMe
+                                      ? Colors.white.withValues(alpha: 0.18)
+                                      : AppColors.surfaceLight,
+                                ),
+                              )
+                            else
+                              _FileAttachment(
+                                message: message,
+                                isMe: isMe,
+                                onTap: onFileTap,
+                              ),
+                            if (!message.isAudioAttachment &&
+                                message.content?.isNotEmpty == true)
                               const SizedBox(height: 8),
                           ],
                           // Text content
-                          if (message.content?.isNotEmpty == true)
+                          if (message.content?.isNotEmpty == true &&
+                              !_voiceOnlyCaption(message))
                             Text(
                               message.displayContent,
                               style: Theme.of(context)
@@ -393,6 +419,18 @@ class MessageBubble extends StatelessWidget {
 
   String _capitalizeRole(String role) {
     return role[0].toUpperCase() + role.substring(1);
+  }
+
+  bool _voiceOnlyCaption(MessageModel msg) {
+    if (!msg.isAudioAttachment) return false;
+    final t = (msg.content ?? '').trim().toLowerCase();
+    return t.isEmpty || t == 'voice note';
+  }
+
+  String _voiceClipId(MessageModel msg) {
+    final raw = msg.id.trim();
+    if (raw.isNotEmpty) return raw;
+    return '${msg.chatRoomId}:${msg.fileUrl ?? ''}:${msg.createdAt.microsecondsSinceEpoch}';
   }
 }
 

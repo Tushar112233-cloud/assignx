@@ -118,6 +118,8 @@ class MessageModel {
     senderRole ??= (json['senderRole'] ?? json['sender_role']) as String?;
     senderAvatar ??= (json['senderAvatar'] ?? json['sender_avatar']) as String?;
 
+    final fileData = json['file'] as Map<String, dynamic>?;
+
     return MessageModel(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       chatRoomId: (json['chatRoomId'] ?? json['chat_room_id'] ?? '').toString(),
@@ -128,10 +130,10 @@ class MessageModel {
       content: json['content'] as String?,
       type: MessageType.fromString(
           (json['messageType'] ?? json['message_type'] ?? json['type']) as String?),
-      fileUrl: (json['fileUrl'] ?? json['file_url']) as String?,
-      fileName: (json['fileName'] ?? json['file_name']) as String?,
-      fileType: (json['fileType'] ?? json['file_type']) as String?,
-      fileSize: ((json['fileSizeBytes'] ?? json['file_size_bytes'] ?? json['fileSize'] ?? json['file_size']) as num?)?.toInt(),
+      fileUrl: (json['fileUrl'] ?? json['file_url'] ?? fileData?['url']) as String?,
+      fileName: (json['fileName'] ?? json['file_name'] ?? fileData?['name']) as String?,
+      fileType: (json['fileType'] ?? json['file_type'] ?? fileData?['type']) as String?,
+      fileSize: ((json['fileSizeBytes'] ?? json['file_size_bytes'] ?? json['fileSize'] ?? json['file_size'] ?? fileData?['sizeBytes']) as num?)?.toInt(),
       replyToId: (json['replyToId'] ?? json['reply_to_id']) as String?,
       replyToContent: (json['replyToContent'] ?? json['reply_to_content']) as String?,
       isRead: (json['isRead'] ?? json['is_read']) as bool? ?? false,
@@ -281,6 +283,23 @@ class MessageModel {
           ext.endsWith('.webp');
     }
     return fileType!.startsWith('image/');
+  }
+
+  /// Whether this attachment is likely an audio/voice clip.
+  bool get isAudioAttachment {
+    final type = (fileType ?? '').toLowerCase();
+    final url = (fileUrl ?? '').toLowerCase();
+    final name = (fileName ?? '').toLowerCase();
+    final voiceName = name.startsWith('voice_note_') || name.contains('voice');
+    final audioExt = url.endsWith('.m4a') ||
+        url.endsWith('.mp3') ||
+        url.endsWith('.wav') ||
+        url.endsWith('.aac') ||
+        url.endsWith('.ogg') ||
+        url.endsWith('.webm') ||
+        url.endsWith('.mp4');
+    final octetVoice = type == 'application/octet-stream' && (voiceName || audioExt);
+    return type.startsWith('audio/') || audioExt || octetVoice || type == 'audio/mp4';
   }
 
   /// Sender initials for avatar.

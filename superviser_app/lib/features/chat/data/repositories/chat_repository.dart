@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -130,6 +131,26 @@ class ChatRepository {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ChatRepository.sendMessage error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Uploads and sends a voice message via chat file endpoint.
+  Future<MessageModel?> sendVoiceMessage({
+    required String roomId,
+    required String filePath,
+    String content = 'Voice note',
+  }) async {
+    try {
+      final file = File(filePath);
+      final response = await ApiClient.uploadFile('/chat/rooms/$roomId/files', file);
+      final data = response as Map<String, dynamic>;
+      final msg = data['message'] ?? data;
+      return MessageModel.fromJson(msg as Map<String, dynamic>).copyWith(content: content);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('ChatRepository.sendVoiceMessage error: $e');
       }
       rethrow;
     }

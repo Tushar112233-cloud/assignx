@@ -218,6 +218,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 onSend: (message) async {
                   await ref.read(activeChatProvider.notifier).sendMessage(message);
                 },
+                onSendVoice: (filePath) async {
+                  await ref
+                      .read(activeChatProvider.notifier)
+                      .sendVoiceMessage(filePath);
+                },
                 replyTo: state.replyTo,
                 onCancelReply: () =>
                     ref.read(activeChatProvider.notifier).clearReplyTo(),
