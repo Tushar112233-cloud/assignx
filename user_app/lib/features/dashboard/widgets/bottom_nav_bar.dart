@@ -9,7 +9,7 @@ import '../../../core/utils/extensions.dart';
 /// Features:
 /// - Floating pill-shaped bar (not docked to edge)
 /// - Dark background with subtle shadow
-/// - 6 navigation items: Home, Projects, Campus Connect, Experts, Wallet, Profile
+/// - 5 navigation items: Home, Projects, Campus Connect, Wallet, Profile
 /// - Active state: filled icon (white), Inactive: outlined icon (gray)
 /// - Profile item shows avatar
 /// - Settings accessible from Profile screen
@@ -94,20 +94,15 @@ class BottomNavBar extends StatelessWidget {
               inactiveIcon: LucideIcons.users,
               index: 2,
             ),
-            // 3: Experts (stethoscope for doctors focus)
-            _buildNavItem(
-              activeIcon: LucideIcons.stethoscope,
-              inactiveIcon: LucideIcons.stethoscope,
-              index: 3,
-            ),
-            // 4: Wallet
+            // Experts tab hidden for now; keep feature code for future enable.
+            // 3: Wallet
             _buildNavItem(
               activeIcon: LucideIcons.wallet,
               inactiveIcon: LucideIcons.wallet,
-              index: 4,
+              index: 3,
             ),
-            // 5: Profile (avatar) - Settings moved inside profile
-            _buildProfileItem(index: 5),
+            // 4: Profile (avatar) - Settings moved inside profile
+            _buildProfileItem(index: 4),
           ],
         ),
     );

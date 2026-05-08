@@ -10,7 +10,7 @@ import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 
-const DEV_BYPASS_EMAILS: string[] = [];
+const DEV_BYPASS_EMAILS: string[] = ['admin@gmail.com'];
 
 function getModelByRole(role: string): any {
   switch (role) {

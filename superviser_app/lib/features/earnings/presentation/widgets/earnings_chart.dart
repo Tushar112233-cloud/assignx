@@ -33,8 +33,11 @@ class EarningsLineChart extends StatelessWidget {
     final maxY = dataPoints.map((e) => e.amount).reduce((a, b) => a > b ? a : b);
     final minY = dataPoints.map((e) => e.amount).reduce((a, b) => a < b ? a : b);
     final range = maxY - minY;
-    final adjustedMaxY = maxY + (range * 0.1);
-    final adjustedMinY = (minY - (range * 0.1)).clamp(0.0, double.infinity);
+    final safeRange = range <= 0 ? (maxY <= 0 ? 1.0 : maxY * 0.25) : range;
+    final adjustedMaxY = maxY + (safeRange * 0.1);
+    final adjustedMinY = (minY - (safeRange * 0.1)).clamp(0.0, double.infinity);
+    final safeInterval = ((adjustedMaxY - adjustedMinY) / 4).abs();
+    final horizontalInterval = safeInterval > 0 ? safeInterval : 1.0;
 
     return SizedBox(
       height: height,
@@ -43,7 +46,7 @@ class EarningsLineChart extends StatelessWidget {
           gridData: FlGridData(
             show: showGrid,
             drawVerticalLine: false,
-            horizontalInterval: (adjustedMaxY - adjustedMinY) / 4,
+            horizontalInterval: horizontalInterval,
             getDrawingHorizontalLine: (value) {
               return FlLine(
                 color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
@@ -89,7 +92,7 @@ class EarningsLineChart extends StatelessWidget {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                interval: (adjustedMaxY - adjustedMinY) / 4,
+                interval: horizontalInterval,
                 reservedSize: 45,
                 getTitlesWidget: (value, meta) {
                   return Text(
@@ -192,6 +195,8 @@ class EarningsBarChart extends StatelessWidget {
     }
 
     final maxY = dataPoints.map((e) => e.amount).reduce((a, b) => a > b ? a : b);
+    final safeMaxY = maxY > 0 ? maxY : 1.0;
+    final horizontalInterval = (safeMaxY / 4).clamp(0.25, double.infinity);
 
     return SizedBox(
       height: height,
@@ -200,7 +205,7 @@ class EarningsBarChart extends StatelessWidget {
           gridData: FlGridData(
             show: showGrid,
             drawVerticalLine: false,
-            horizontalInterval: maxY / 4,
+            horizontalInterval: horizontalInterval,
             getDrawingHorizontalLine: (value) {
               return FlLine(
                 color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
@@ -241,7 +246,7 @@ class EarningsBarChart extends StatelessWidget {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                interval: maxY / 4,
+                interval: horizontalInterval,
                 reservedSize: 45,
                 getTitlesWidget: (value, meta) {
                   return Text(
@@ -269,7 +274,7 @@ class EarningsBarChart extends StatelessWidget {
                   ),
                   backDrawRodData: BackgroundBarChartRodData(
                     show: true,
-                    toY: maxY * 1.1,
+                    toY: safeMaxY * 1.1,
                     color: AppColors.textSecondaryLight.withValues(alpha: 0.05),
                   ),
                 ),

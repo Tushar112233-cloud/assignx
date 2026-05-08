@@ -41,14 +41,14 @@ final unreadCountProvider = FutureProvider<int>((ref) async {
 final navigationIndexProvider = StateProvider<int>((ref) => 0);
 
 /// Navigation items for bottom bar.
-/// Matches the 6-item IndexedStack in MainShell.
+/// Matches the 5-item IndexedStack in MainShell.
 enum NavItem {
   home,       // 0: Dashboard
   projects,   // 1: My Projects
   connect,    // 2: Campus Connect
-  experts,    // 3: Experts
-  wallet,     // 4: Wallet
-  profile,    // 5: Profile
+  // experts, // Hidden for now; keep enum slot commented for future restore.
+  wallet,     // 3: Wallet
+  profile,    // 4: Profile
 }
 
 extension NavItemExtension on NavItem {
@@ -60,8 +60,6 @@ extension NavItemExtension on NavItem {
         return 'Projects';
       case NavItem.connect:
         return 'Connect';
-      case NavItem.experts:
-        return 'Experts';
       case NavItem.wallet:
         return 'Wallet';
       case NavItem.profile:
