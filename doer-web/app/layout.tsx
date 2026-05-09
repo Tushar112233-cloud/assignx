@@ -19,6 +19,10 @@ export const metadata: Metadata = {
   title: 'DOLANCER - Your Skills, Your Earnings',
   description: 'Talent Connect platform for skilled professionals to earn by completing tasks',
   keywords: ['freelance', 'tasks', 'earn', 'skills', 'talent'],
+  icons: {
+    icon: [{ url: '/logo.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/logo.svg', type: 'image/svg+xml' }],
+  },
 }
 
 /**

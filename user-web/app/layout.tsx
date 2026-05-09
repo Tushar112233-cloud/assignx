@@ -21,6 +21,10 @@ export const metadata: Metadata = {
     "academic assistance",
     "professional help",
   ],
+  icons: {
+    icon: [{ url: "/logo.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/logo.svg", type: "image/svg+xml" }],
+  },
 };
 
 /**
