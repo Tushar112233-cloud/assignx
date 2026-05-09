@@ -107,6 +107,21 @@ flutter pub get
 flutter run
 ```
 
+### 4. Mobile Release Builds (All 3 Apps)
+
+Use the root build script to generate release APK + AAB for `user_app`, `doer_app`, and `superviser_app` in one go:
+
+```powershell
+cd D:\SoftwareEngineering\assignx
+.\build_all_release.ps1
+```
+
+Release artifacts are copied to:
+
+- `release/user_app`
+- `release/doer_app`
+- `release/superviser_app`
+
 ## Environment Variables
 
 ### API Server (`api-server/.env`)
