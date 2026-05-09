@@ -12,11 +12,11 @@ import '../storage/token_storage.dart';
 /// and provides convenience methods for all HTTP verbs.
 class ApiClient {
   /// Base URL for the API server.
-  /// Override with --dart-define=API_BASE_URL=https://api.assignx.in
+  /// Override with --dart-define=API_BASE_URL=https://api.assignx.com
   static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
 
   /// Production API URL
-  static const String _productionUrl = 'https://api.assignx.in';
+  static const String _productionUrl = 'https://api.assignx.com';
 
   static String get baseUrl {
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
