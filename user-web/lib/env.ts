@@ -74,6 +74,8 @@ const clientEnvSchema = z.object({
   NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  /** Support WhatsApp for wa.me (E.164 digits, may include + or spaces). */
+  NEXT_PUBLIC_SUPPORT_WHATSAPP: z.string().optional(),
   // Development settings for bypassing auth
   NEXT_PUBLIC_REQUIRE_LOGIN: z.string().optional().default("true"),
   NEXT_PUBLIC_DEV_USER_EMAIL: z.string().email().optional(),
@@ -125,6 +127,7 @@ function validateClientEnv(): ClientEnv {
     NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_SUPPORT_WHATSAPP: process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP,
     NEXT_PUBLIC_REQUIRE_LOGIN: process.env.NEXT_PUBLIC_REQUIRE_LOGIN,
     NEXT_PUBLIC_DEV_USER_EMAIL: process.env.NEXT_PUBLIC_DEV_USER_EMAIL,
   }

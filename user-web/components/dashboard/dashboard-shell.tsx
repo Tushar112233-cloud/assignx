@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { MobileNav } from "./mobile-nav";
 import { UploadSheet } from "./upload-sheet";
-import { SupportButton } from "@/components/shared/support-button";
 
 /**
  * Client-side wrapper for dashboard interactive elements
@@ -27,9 +26,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Upload Sheet - Opened by mobile nav or page-specific buttons */}
       <UploadSheet open={uploadSheetOpen} onOpenChange={setUploadSheetOpen} />
-
-      {/* Support Button */}
-      <SupportButton />
     </>
   );
 }

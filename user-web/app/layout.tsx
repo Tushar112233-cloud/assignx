@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { MotionProvider } from "@/components/providers/motion-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { WhatsAppFab } from "@/components/shared/whatsapp-fab";
 import { I18nProvider } from "@/lib/i18n/context";
 
 const inter = Inter({
@@ -42,6 +43,7 @@ export default function RootLayout({
         <I18nProvider>
           <MotionProvider>
             {children}
+            <WhatsAppFab />
           </MotionProvider>
           <Toaster />
         </I18nProvider>
