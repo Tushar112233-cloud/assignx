@@ -27,6 +27,9 @@ import {
   TrendingUp,
   FileSpreadsheet,
   Target,
+  ShieldCheck,
+  MessageCircle,
+  Mic,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -53,13 +56,15 @@ const userTypes: UserType[] = [
   {
     id: "students",
     title: "Students",
-    description: "Academic excellence with expert guidance on assignments, projects, and exam preparation.",
+    description:
+      "From academics to job search to finding a flatmate, an all-in-one student-oriented dashboard catering to all the problems that students might face.",
     icon: GraduationCap,
     gradient: "from-[#765341] to-[#5C4233]",
     services: [
-      { icon: BookOpen, label: "Assignments & Essays" },
-      { icon: FileText, label: "Research Projects" },
-      { icon: Target, label: "Exam Preparation" },
+      { icon: ShieldCheck, label: "Turnitin AI/Plag report" },
+      { icon: MessageCircle, label: "Academic consultancy" },
+      { icon: Target, label: "Project guidance" },
+      { icon: BookOpen, label: "Jobs/Residence/Student connect" },
     ],
     cta: "Get Started",
     href: "/signup?type=student",
@@ -67,10 +72,12 @@ const userTypes: UserType[] = [
   {
     id: "professionals",
     title: "Professionals",
-    description: "Elevate your work with polished reports, compelling presentations, and thorough research.",
+    description:
+      "Elevate your job hunt and work with customized CVs/resumes, polished reports, compelling presentations, and thorough research.",
     icon: Briefcase,
     gradient: "from-[#34312D] to-[#14110F]",
     services: [
+      { icon: FileText, label: "Customized CVs/Resumes" },
       { icon: FileSpreadsheet, label: "Reports & Analysis" },
       { icon: Presentation, label: "Presentations" },
       { icon: Search, label: "Research & Insights" },
@@ -81,10 +88,12 @@ const userTypes: UserType[] = [
   {
     id: "businessmen",
     title: "Business Owners",
-    description: "Strategic support with business plans, proposals, and data-driven analytics.",
+    description:
+      "Strategic support with business plans, proposals, and data-driven analytics and a lot more.",
     icon: Building2,
     gradient: "from-[#14110F] to-[#34312D]",
     services: [
+      { icon: Mic, label: "Graphics/Voiceovers" },
       { icon: TrendingUp, label: "Business Plans" },
       { icon: FileText, label: "Proposals & Pitches" },
       { icon: BarChart3, label: "Analytics & Reports" },

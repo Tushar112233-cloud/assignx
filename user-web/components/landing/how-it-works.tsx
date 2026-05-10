@@ -31,9 +31,9 @@ const steps = [
   },
   {
     number: "02",
-    title: "Get Matched",
+    title: "Get a supervisor",
     description:
-      "We match you with the perfect expert based on your subject, requirements, and budget.",
+      "Our supervisor gets the work done from the expert for you as per your requirements.",
     icon: Users,
     color: "from-[#5C4233] to-[#34312D]",
     preview: "match",

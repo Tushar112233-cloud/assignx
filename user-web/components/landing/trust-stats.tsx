@@ -60,7 +60,7 @@ const stats: Stat[] = [
     id: "experts",
     value: 500,
     suffix: "+",
-    label: "Verified Experts",
+    label: "Experts",
     description: "Skilled professionals across all domains",
     icon: Users,
   },

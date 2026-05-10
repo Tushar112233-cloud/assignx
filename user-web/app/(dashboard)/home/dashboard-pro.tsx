@@ -41,6 +41,9 @@ import { GreetingAnimation } from "@/components/dashboard/greeting-animation";
 /**
  * Campus Connect carousel items
  */
+/** Hide Expert Sessions bento card until the feature is ready for all users. */
+const SHOW_EXPERT_SESSIONS = false;
+
 const CAMPUS_CONNECT_ITEMS = [
   {
     id: "housing",
@@ -349,50 +352,57 @@ export function DashboardPro() {
                   </div>
                 </Link>
 
-                {/* ====== EXPERT CONSULTATIONS ====== */}
-                <Link
-                  href="/experts"
-                  className="group relative overflow-hidden rounded-[20px] p-4 lg:p-5 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 hover:bg-white/90 dark:hover:bg-white/10"
-                >
-                  {/* Subtle warm tint */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-100/40 to-orange-50/20 dark:from-amber-900/10 dark:to-transparent pointer-events-none rounded-[20px]" />
+                {SHOW_EXPERT_SESSIONS && (
+                  <>
+                    {/* ====== EXPERT CONSULTATIONS ====== */}
+                    <Link
+                      href="/experts"
+                      className="group relative overflow-hidden rounded-[20px] p-4 lg:p-5 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 hover:bg-white/90 dark:hover:bg-white/10"
+                    >
+                      {/* Subtle warm tint */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-amber-100/40 to-orange-50/20 dark:from-amber-900/10 dark:to-transparent pointer-events-none rounded-[20px]" />
 
-                  <div className="relative z-10">
-                    <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-4 shadow-lg shadow-amber-500/20">
-                      <GraduationCap className="h-5 w-5 text-white" strokeWidth={1.5} />
-                    </div>
+                      <div className="relative z-10">
+                        <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-4 shadow-lg shadow-amber-500/20">
+                          <GraduationCap className="h-5 w-5 text-white" strokeWidth={1.5} />
+                        </div>
 
-                    {/* Mini avatars */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex -space-x-1.5">
-                        {[...Array(3)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="h-5 w-5 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 dark:from-amber-600 dark:to-orange-500 border-2 border-white dark:border-stone-900"
-                          />
-                        ))}
+                        {/* Mini avatars */}
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="flex -space-x-1.5">
+                            {[...Array(3)].map((_, i) => (
+                              <div
+                                key={i}
+                                className="h-5 w-5 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 dark:from-amber-600 dark:to-orange-500 border-2 border-white dark:border-stone-900"
+                              />
+                            ))}
+                          </div>
+                          <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-100/80 dark:bg-amber-900/50 px-1.5 py-0.5 rounded-full">
+                            50+ experts
+                          </span>
+                        </div>
+
+                        <h3 className="font-semibold text-foreground text-[15px] mb-0.5">
+                          Expert Sessions
+                        </h3>
+                        <p className="text-xs text-muted-foreground/80">
+                          1-on-1 video consultations
+                        </p>
                       </div>
-                      <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-100/80 dark:bg-amber-900/50 px-1.5 py-0.5 rounded-full">
-                        50+ experts
-                      </span>
-                    </div>
 
-                    <h3 className="font-semibold text-foreground text-[15px] mb-0.5">
-                      Expert Sessions
-                    </h3>
-                    <p className="text-xs text-muted-foreground/80">
-                      1-on-1 video consultations
-                    </p>
-                  </div>
-
-                  {/* Hover indicator */}
-                  <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-0.5" />
-                </Link>
+                      {/* Hover indicator */}
+                      <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-0.5" />
+                    </Link>
+                  </>
+                )}
 
                 {/* ====== TURNITIN CHECK ====== */}
                 <Link
                   href="/projects/new?type=turnitin"
-                  className="group relative overflow-hidden rounded-[20px] p-4 lg:p-5 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 hover:bg-white/90 dark:hover:bg-white/10"
+                  className={cn(
+                    "group relative overflow-hidden rounded-[20px] p-4 lg:p-5 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 hover:bg-white/90 dark:hover:bg-white/10",
+                    !SHOW_EXPERT_SESSIONS && "col-span-2"
+                  )}
                 >
                   {/* Subtle green tint */}
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/40 to-teal-50/20 dark:from-emerald-900/10 dark:to-transparent pointer-events-none rounded-[20px]" />
@@ -412,7 +422,7 @@ export function DashboardPro() {
                       Turnitin Check
                     </h3>
                     <p className="text-xs text-muted-foreground/80">
-                      AI-powered detection
+                      Generate Turnitin Ai/ Plag Reports
                     </p>
                   </div>
 

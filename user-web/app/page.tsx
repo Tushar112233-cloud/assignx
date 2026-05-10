@@ -188,7 +188,7 @@ function ConnectWithExperts() {
               >
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#34312D]/10 border border-[#34312D]/20">
                   <span className="w-2 h-2 rounded-full bg-[#34312D]" />
-                  <span className="text-xs font-medium text-[var(--landing-text-secondary)]">Students</span>
+                  <span className="text-xs font-medium text-[var(--landing-text-secondary)]">You</span>
                 </div>
               </motion.div>
               <motion.div
@@ -405,7 +405,7 @@ function ConnectWithExperts() {
           className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 max-w-4xl mx-auto"
         >
           {[
-            { title: "Smart Matching", desc: "AI-powered expert selection based on your needs" },
+            { title: "Smart Matching", desc: "Expert selection from our pool based on your needs" },
             { title: "Quality Control", desc: "Every deliverable reviewed before you receive it" },
             { title: "24/7 Support", desc: "Your supervisor is always available for updates" },
           ].map((feature, i) => (
@@ -435,16 +435,22 @@ const reviews = [
     img: "https://i.pravatar.cc/80?img=1",
   },
   {
-    name: "Rahul M.",
-    username: "@rahul_eng",
+    name: "Paul",
+    username: "@paul_eng",
     body: "Fast delivery and excellent quality. The expert understood exactly what I needed for my thesis proposal.",
-    img: "https://i.pravatar.cc/80?img=3",
+    img: "https://i.pravatar.cc/80?img=12",
   },
   {
     name: "Ananya K.",
     username: "@ananya_k",
     body: "I was skeptical at first, but the quality of work exceeded my expectations. Will definitely use again!",
     img: "https://i.pravatar.cc/80?img=5",
+  },
+  {
+    name: "Rahul M.",
+    username: "@rahul_eng",
+    body: "Clear communication and steady progress updates. My coursework was delivered on time with strong quality.",
+    img: "https://i.pravatar.cc/80?img=3",
   },
   {
     name: "Vikram P.",
@@ -466,8 +472,8 @@ const reviews = [
   },
 ];
 
-const firstRow = reviews.slice(0, reviews.length / 2);
-const secondRow = reviews.slice(reviews.length / 2);
+const firstRow = reviews.slice(0, Math.ceil(reviews.length / 2));
+const secondRow = reviews.slice(Math.ceil(reviews.length / 2));
 
 const ReviewCard = ({
   img,
@@ -537,14 +543,14 @@ function TestimonialsSection() {
         >
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--landing-accent-lighter)] border border-[var(--landing-border)] mb-6">
             <span className="text-sm font-medium text-[var(--landing-text-secondary)]">
-              Student Reviews
+              Client Reviews
             </span>
           </span>
           <h2 className="landing-heading-lg text-[var(--landing-text-primary)] mb-4">
-            What <span className="landing-text-gradient">Students Say</span>
+            What people <span className="landing-text-gradient">say about us</span>
           </h2>
           <p className="text-lg text-[var(--landing-text-secondary)] max-w-2xl mx-auto">
-            Join thousands of satisfied students who've trusted us with their academic success.
+            Join thousands of satisfied clients who&apos;ve trusted us with their projects.
           </p>
         </motion.div>
 

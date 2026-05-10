@@ -99,8 +99,8 @@ export function HeroSection() {
           transition={{ delay: 0.2, duration: 0.8, ease: ASSIGNX_EASE }}
           className="text-lg sm:text-xl text-[var(--landing-text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed"
         >
-          Connect with verified experts who handle your assignments, reports,
-          and projects from start to finish. Quality work, delivered on time.
+          Connect with verified experts who handle your projects from start to finish.
+          Quality work, delivered on time.
         </motion.p>
 
         {/* CTA Buttons */}

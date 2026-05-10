@@ -22,62 +22,62 @@ const testimonials = [
   {
     id: 1,
     content:
-      "AssignX transformed my academic experience. The quality of work and attention to detail exceeded my expectations. Highly recommend!",
-    author: "Sarah M.",
-    role: "Graduate Student",
-    university: "Stanford University",
+      "The supervisor system is amazing! I always knew exactly what was happening with my project. Got an A on my research paper!",
+    author: "Priya S.",
+    role: "@priya_student",
+    university: "AssignX client",
     rating: 5,
-    avatar: "SM",
+    avatar: "PS",
   },
   {
     id: 2,
     content:
-      "Fast, reliable, and professional. Got my dissertation review back within 48 hours with incredibly detailed feedback. Game changer!",
-    author: "James K.",
-    role: "PhD Candidate",
-    university: "MIT",
+      "Fast delivery and excellent quality. The expert understood exactly what I needed for my thesis proposal.",
+    author: "Paul",
+    role: "@paul_eng",
+    university: "AssignX client",
     rating: 5,
-    avatar: "JK",
+    avatar: "P",
   },
   {
     id: 3,
     content:
-      "The tutoring sessions helped me understand complex topics I'd been struggling with for months. Worth every penny.",
-    author: "Emily R.",
-    role: "Undergraduate",
-    university: "UCLA",
+      "I was skeptical at first, but the quality of work exceeded my expectations. Will definitely use again!",
+    author: "Ananya K.",
+    role: "@ananya_k",
+    university: "AssignX client",
     rating: 5,
-    avatar: "ER",
+    avatar: "AK",
   },
   {
     id: 4,
     content:
-      "Professional proofreading service that caught errors I completely missed. My paper went from good to publication-ready.",
-    author: "Michael T.",
-    role: "Researcher",
-    university: "Harvard",
+      "The proofreading service saved my dissertation. Caught errors I completely missed. Highly recommend!",
+    author: "Vikram P.",
+    role: "@vikram_mba",
+    university: "AssignX client",
     rating: 5,
-    avatar: "MT",
+    avatar: "VP",
   },
   {
     id: 5,
     content:
-      "24/7 support is incredible. Had a deadline crisis at 2 AM and they came through. This service is a lifesaver.",
-    author: "Lisa P.",
-    role: "MBA Student",
-    university: "Wharton",
+      "Professional communication throughout. My supervisor kept me updated at every stage. Great experience!",
+    author: "Sneha R.",
+    role: "@sneha_r",
+    university: "AssignX client",
     rating: 5,
-    avatar: "LP",
+    avatar: "SR",
   },
   {
     id: 6,
     content:
-      "Best investment in my academic career. The consultation helped me completely restructure my thesis approach.",
-    author: "David W.",
-    role: "Masters Student",
-    university: "Columbia",
+      "Got my technical documentation done perfectly. The expert really knew their stuff. 10/10 would recommend.",
+    author: "Arjun D.",
+    role: "@arjun_dev",
+    university: "AssignX client",
     rating: 5,
-    avatar: "DW",
+    avatar: "AD",
   },
 ];
 
@@ -155,17 +155,16 @@ export function TestimonialsSection() {
         {/* Heading */}
         <div ref={headingRef} className="text-center max-w-3xl mx-auto mb-16 md:mb-20">
           <span className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-4">
-            Testimonials
+            Client Reviews
           </span>
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-slate-900 dark:text-white">
-            Loved by{" "}
+            What people{" "}
             <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Thousands
+              say about us
             </span>
           </h2>
           <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 leading-relaxed">
-            Join over 10,000 students and professionals who have transformed
-            their academic journey with AssignX.
+            Join thousands of satisfied clients who&apos;ve trusted us with their projects.
           </p>
         </div>
 

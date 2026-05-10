@@ -3,8 +3,8 @@
  *
  * Shows the 4-stage AssignX workflow:
  * 1. Client submits request
- * 2. Supervisor reviews
- * 3. Expert works on task
+ * 2. Expert works on task
+ * 3. Quality review
  * 4. Delivery to client
  *
  * Features:
@@ -36,21 +36,21 @@ import { AnimatedConnector } from "./animated-connector";
 const stages = [
   {
     id: "client",
-    label: "Submit Request",
+    label: "Submit Request / Get Quote",
     icon: User,
     color: "#765341", // Coffee Bean
-  },
-  {
-    id: "supervisor",
-    label: "Quality Review",
-    icon: ShieldCheck,
-    color: "#8D6A58", // Lighter Coffee
   },
   {
     id: "expert",
     label: "Expert Work",
     icon: GraduationCap,
     color: "#9D7B65", // Even Lighter Coffee
+  },
+  {
+    id: "supervisor",
+    label: "Quality Review by our Supervisor",
+    icon: ShieldCheck,
+    color: "#8D6A58", // Lighter Coffee
   },
   {
     id: "delivery",
@@ -139,7 +139,7 @@ export function HeroAnimation({ className }: { className?: string }) {
       {/* Desktop Layout - Horizontal */}
       <div className="hidden sm:flex items-center justify-center gap-0">
         {stages.map((stage, index) => (
-          <div key={stage.id} className="flex items-center">
+          <div key={stage.id} className="flex ">
             <WorkflowStage
               id={stage.id}
               label={stage.label}

@@ -219,7 +219,7 @@ export function WorkflowStage({
         className={cn(
           "text-sm sm:text-base font-medium text-center",
           "text-[var(--landing-text-secondary)]",
-          "max-w-[100px] sm:max-w-[120px] leading-tight",
+          "max-w-[120px] sm:max-w-[160px] leading-tight",
           orientation === "vertical" && "text-left max-w-none"
         )}
         initial={{ opacity: 0 }}

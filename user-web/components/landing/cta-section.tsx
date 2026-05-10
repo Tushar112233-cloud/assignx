@@ -46,7 +46,7 @@ export function CTASection() {
   const trustPoints = [
     {
       icon: Zap,
-      text: "First 500 students get 20% off",
+      text: "First 500 customers, get 20% off",
       color: "text-[var(--landing-accent-tertiary)]",
     },
     {
@@ -77,9 +77,9 @@ export function CTASection() {
           variants={prefersReducedMotion ? {} : itemVariants}
           className="landing-heading landing-heading-lg text-white mb-4"
         >
-          Ready to excel in
+          Ready to ease out
           <br />
-          your studies?
+          your tasks?
         </motion.h2>
 
         {/* Subheadline */}
@@ -87,8 +87,7 @@ export function CTASection() {
           variants={prefersReducedMotion ? {} : itemVariants}
           className="text-lg text-white/70 mb-10"
         >
-          Join thousands of successful students. Get matched with expert help
-          for your assignments today.
+          Join thousands of successful clients. Get matched with expert help for your projects today.
         </motion.p>
 
         {/* CTA Buttons */}
