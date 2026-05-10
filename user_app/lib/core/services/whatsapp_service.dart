@@ -21,7 +21,7 @@ const Map<String, String> whatsappTemplates = {
 /// Implements U40 from feature spec
 class WhatsAppService {
   /// AssignX support number
-  static const String supportNumber = '919876543210'; // Replace with actual number
+  static const String supportNumber = '918558873318';
 
   /// Open WhatsApp with support
   static Future<bool> openWhatsAppSupport({

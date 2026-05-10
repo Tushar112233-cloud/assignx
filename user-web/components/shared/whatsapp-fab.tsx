@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 
 /** Digits-only wa.me number (country code + national number, no +). Override via NEXT_PUBLIC_SUPPORT_WHATSAPP. */
-const DEFAULT_SUPPORT_WHATSAPP = "919876543210";
+const DEFAULT_SUPPORT_WHATSAPP = "918558873318";
 
 function normalizeWhatsAppDigits(raw: string | undefined): string {
   const trimmed = (raw ?? "").trim();

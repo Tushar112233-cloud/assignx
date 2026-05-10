@@ -107,7 +107,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
   }
 
   Future<void> _openWhatsApp() async {
-    const phone = '919876543210';
+    const phone = '918558873318';
     const message = 'Hi, I need help with AssignX app';
     final url = Uri.parse(
         'https://wa.me/$phone?text=${Uri.encodeComponent(message)}');
@@ -139,7 +139,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
   }
 
   Future<void> _openPhone() async {
-    final url = Uri.parse('tel:+919876543210');
+    final url = Uri.parse('tel:+918558873318');
 
     if (await canLaunchUrl(url)) {
       await launchUrl(url);

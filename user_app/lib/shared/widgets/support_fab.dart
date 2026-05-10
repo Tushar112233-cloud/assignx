@@ -16,8 +16,9 @@ Future<void> launchWhatsAppSupport(
   final encodedMessage = Uri.encodeComponent(
     message ?? AppConfig.defaultSupportMessage,
   );
+  final digits = phoneNumber.replaceAll(RegExp(r'\D'), '');
   final whatsappUrl = Uri.parse(
-    'https://wa.me/$phoneNumber?text=$encodedMessage',
+    'https://wa.me/$digits?text=$encodedMessage',
   );
 
   try {

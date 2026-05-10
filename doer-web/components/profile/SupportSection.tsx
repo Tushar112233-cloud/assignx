@@ -87,7 +87,7 @@ interface SupportSectionProps {
 export function SupportSection({
   tickets = [],
   faqs = mockFAQs,
-  whatsappNumber = '+919876543210',
+  whatsappNumber = '+918558873318',
   supportEmail = 'support@talentconnect.com',
   variant = 'default',
   onCreateTicket,

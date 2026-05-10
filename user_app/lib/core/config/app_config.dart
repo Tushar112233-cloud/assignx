@@ -26,7 +26,7 @@ class AppConfig {
   /// Defaults to the configured support number.
   static const String supportPhone = String.fromEnvironment(
     'SUPPORT_PHONE',
-    defaultValue: '+919876543210',
+    defaultValue: '+918558873318',
   );
 
   /// Support email address.
