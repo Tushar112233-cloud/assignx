@@ -77,9 +77,9 @@ export function WhatsAppFab() {
             onClick={openWhatsApp}
             className={cn(
               "fixed right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full",
-              "border border-white/15 bg-zinc-900 text-white shadow-lg",
-              "transition-transform hover:scale-105 active:scale-95",
-              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40",
+              "border border-white/25 bg-[#25D366] text-white shadow-lg",
+              "transition-[transform,background-color] hover:scale-105 hover:bg-[#20bd5a] active:scale-95",
+              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300/70",
               bottomClass
             )}
             aria-label="Chat with AssignX on WhatsApp"

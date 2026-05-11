@@ -126,12 +126,12 @@ export function CTASection() {
         {/* Trust Points */}
         <motion.div
           variants={prefersReducedMotion ? {} : itemVariants}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-sm"
+          className="flex flex-col sm:flex-row items-center sm:items-start justify-center gap-4 sm:gap-8 text-sm"
         >
           {trustPoints.map((point, i) => (
-            <div key={i} className="flex items-center gap-2 text-white/70">
-              <point.icon className="h-4 w-4 text-white" />
-              <span>{point.text}</span>
+            <div key={i} className="flex items-start gap-2 text-white/70">
+              <point.icon className="mt-0.5 h-4 w-4 shrink-0 text-white" aria-hidden />
+              <span className="leading-snug">{point.text}</span>
             </div>
           ))}
         </motion.div>
